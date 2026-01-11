@@ -1,0 +1,118 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #0f172a;
+  --color-foreground: #f8fafc;
+  --color-card: #1e293b;
+  --color-card-foreground: #f8fafc;
+  --color-primary: #3b82f6;
+  --color-secondary: #64748b;
+  --color-accent: #22c55e;
+  --color-destructive: #ef4444;
+  --color-border: #334155;
+
+  --font-inter: var(--font-inter);
+  --font-roboto: var(--font-roboto);
+  --font-poppins: var(--font-poppins);
+}
+
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-inter), sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-osx-font-smoothing: grayscale;
+    font-weight: 400;
+    /* Standard Weight */
+    line-height: 1.5;
+    letter-spacing: -0.011em;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-poppins), sans-serif;
+    font-weight: 600;
+    /* Clean and unrefined Semibold */
+    letter-spacing: -0.02em;
+  }
+
+  table {
+    font-family: var(--font-roboto), sans-serif;
+    font-weight: 400;
+  }
+
+  ::selection {
+    background-color: rgba(59, 130, 246, 0.3);
+    color: white;
+  }
+}
+
+@layer components {
+  .glass-card {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 1.5rem;
+    padding: 1.5rem;
+    box-shadow: 0 10px 30px -15px rgba(0, 0, 0, 0.5);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .glass-card:hover {
+    border-color: rgba(59, 130, 246, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.7);
+  }
+
+  .text-gradient {
+    background: linear-gradient(to right, #3b82f6, #2dd4bf, #3b82f6);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shine 5s linear infinite;
+  }
+
+  @keyframes shine {
+    to {
+      background-position: 200% center;
+    }
+  }
+
+  .premium-blur {
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    background: rgba(15, 23, 42, 0.8);
+  }
+}
+
+/* Custom Scrollbar Styling - Premium Dark Theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 10px;
+  border: 2px solid #0f172a;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3b82f6;
+}
+
+/* Firefox Support */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #1e293b #0f172a;
+}

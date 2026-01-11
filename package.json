@@ -1,0 +1,10 @@
+{
+    "name": "saas-muhasebe-root",
+    "version": "1.0.0",
+    "scripts": {
+        "dev": "npm run electron-dev --prefix client",
+        "install-all": "npm install --prefix client",
+        "electron-dev": "npm run electron-dev --prefix client",
+        "electron-build": "npm run electron-build --prefix client"
+    }
+}

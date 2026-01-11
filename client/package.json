@@ -1,0 +1,77 @@
+{
+  "name": "client",
+  "version": "0.1.0",
+  "description": "Kardeşler Kasap Muhasebe Uygulaması",
+  "author": "Kardeşler Kasap",
+  "homepage": "./",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "electron-dev": "concurrently \"npm run dev\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron-build": "next build && electron-builder"
+  },
+  "build": {
+    "appId": "com.kardesler.kasap",
+    "productName": "Kardesler Kasap",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "public/logo.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "asar": true,
+    "files": [
+      "main.js",
+      "out/**/*",
+      "package.json"
+    ]
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.90.1",
+    "chart.js": "^4.5.1",
+    "clsx": "^2.1.1",
+    "electron-is-dev": "^2.0.0",
+    "electron-serve": "^1.1.0",
+    "file-saver": "^2.0.5",
+    "framer-motion": "^12.25.0",
+    "jspdf": "^4.0.0",
+    "jspdf-autotable": "^5.0.7",
+    "lucide-react": "^0.562.0",
+    "next": "16.1.1",
+    "node-machine-id": "^1.1.12",
+    "react": "19.2.3",
+    "react-chartjs-2": "^5.3.1",
+    "react-dom": "19.2.3",
+    "react-to-print": "^3.2.0",
+    "saas-muhasebe-root": "file:..",
+    "tailwind-merge": "^3.4.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/electron-is-dev": "^0.3.0",
+    "@types/file-saver": "^2.0.7",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "concurrently": "^9.2.1",
+    "electron": "^39.2.7",
+    "electron-builder": "^26.4.0",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.1",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "wait-on": "^9.0.3"
+  }
+}
