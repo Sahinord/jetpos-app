@@ -583,7 +583,14 @@ export default function POS({
                             </div>
 
                             {/* Payment Buttons (Bottommost now) */}
-                            <div className="grid grid-cols-2 gap-3 mt-auto">
+                            {/* 
+                                KONUM DEĞİŞTİRME NOTU:
+                                - 'mt-auto' butonları kolonun en altına yaslar. 
+                                - Yukarı kaldırmak için 'mt-auto' yerine 'mt-4' (veya istediğiniz bir boşluk) yazabilirsiniz.
+                                - Eğer butonları tamamen başka bir yerin (mesela numpad'in) üstüne taşımak isterseniz, 
+                                  bu <div> bloğunu komple kesip istediğiniz satıra yapıştırmalısınız.
+                            */}
+                            <div className="grid grid-cols-2 gap-3 mt-4">
                                 <button onClick={() => handleCheckout("NAKİT")} className={`flex flex-col items-center justify-center p-4 rounded-3xl ${s.paymentNakit} text-white hover:scale-[1.02] transition-all shadow-lg active:scale-95 group border-b-4 ${theme === 'modern' ? 'border-emerald-700' : 'border-black/20'}`}>
                                     <Banknote size={20} className="mb-1 group-hover:scale-110 transition-transform" />
                                     <span className="text-[10px] font-black tracking-[1px]">NAKİT</span>

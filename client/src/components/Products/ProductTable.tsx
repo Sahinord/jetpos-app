@@ -15,18 +15,24 @@ import {
     ArrowUpDown,
     Filter,
     MoreHorizontal,
-    Package
+    Package,
+    X
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { exportToExcel, importFromExcel } from "@/lib/excel";
 
-export default function ProductTable({ products, onEdit, onDelete, onAdd, onManageCategories, onBulkImport, onClearAll, onToggleAllCampaign, campaignRate, hideFilters = false, limit }: any) {
+export default function ProductTable({ products, onEdit, onDelete, onAdd, onManageCategories, onBulkImport, onClearAll, onToggleAllCampaign, campaignRate, hideFilters = false, limit, onRefresh, showToast }: any) {
     const [search, setSearch] = useState("");
     const [filter, setFilter] = useState("all"); // all, active, passive, campaign
     const [sortBy, setSortBy] = useState("name-asc"); // name-asc, name-desc, stock-asc, stock-desc, price-desc
     const [previewCampaign, setPreviewCampaign] = useState(false);
     const [isRateModalOpen, setIsRateModalOpen] = useState(false);
     const [tempRate, setTempRate] = useState("15");
+
+    // NEW: Selective Price Increase States
+    const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+    const [isSelectivePriceModalOpen, setIsSelectivePriceModalOpen] = useState(false);
+    const [selectivePriceRate, setSelectivePriceRate] = useState("10");
 
     const anyInCampaign = useMemo(() => products.some((p: any) => p.is_campaign), [products]);
 
@@ -74,7 +80,10 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
     const ITEMS_PER_PAGE = 50;
 
     // Reset page on filter change
-    useMemo(() => setPage(1), [search, filter, sortBy]);
+    useMemo(() => {
+        setPage(1);
+        setSelectedProducts([]); // Clear selections when filter/search changes
+    }, [search, filter, sortBy]);
 
     const paginatedProducts = useMemo(() => {
         return sortedAndFilteredProducts.slice(0, page * ITEMS_PER_PAGE);
@@ -114,6 +123,78 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                 onBulkImport(data);
                 if (e.target) e.target.value = ''; // Reset input
             });
+        }
+    };
+
+    // NEW: Selective Price Increase Functions
+    const handleToggleSelectProduct = (productId: string) => {
+        setSelectedProducts(prev =>
+            prev.includes(productId)
+                ? prev.filter(id => id !== productId)
+                : [...prev, productId]
+        );
+    };
+
+    const handleToggleSelectAll = () => {
+        if (selectedProducts.length === sortedAndFilteredProducts.length) {
+            setSelectedProducts([]);
+        } else {
+            setSelectedProducts(sortedAndFilteredProducts.map((p: any) => p.id));
+        }
+    };
+
+    const handleApplySelectivePriceIncrease = async () => {
+        const rate = parseFloat(selectivePriceRate) || 0;
+        if (rate === 0 || selectedProducts.length === 0) return;
+
+        const { supabase } = await import("@/lib/supabase");
+
+        const logs: any[] = [];
+
+        for (const productId of selectedProducts) {
+            const product = products.find((p: any) => p.id === productId);
+            if (product) {
+                const oldPrice = product.sale_price;
+                const newPrice = parseFloat((product.sale_price * (1 + rate / 100)).toFixed(2));
+                const increaseAmount = newPrice - oldPrice;
+
+                // Update price
+                await supabase
+                    .from('products')
+                    .update({ sale_price: newPrice })
+                    .eq('id', productId);
+
+                // Prepare log entry
+                logs.push({
+                    product_id: productId,
+                    product_name: product.name,
+                    product_barcode: product.barcode || null,
+                    old_price: oldPrice,
+                    new_price: newPrice,
+                    increase_rate: rate,
+                    increase_amount: increaseAmount,
+                    changed_by: 'admin',
+                    notes: `${selectedProducts.length} ürüne toplu %${rate} zam uygulandı`
+                });
+            }
+        }
+
+        // Insert all logs at once
+        if (logs.length > 0) {
+            await supabase.from('price_change_logs').insert(logs);
+        }
+
+        setIsSelectivePriceModalOpen(false);
+        setSelectedProducts([]);
+
+        // Show success message
+        if (showToast) {
+            showToast(`${logs.length} ürüne %${rate} zam başarıyla uygulandı!`, "success");
+        }
+
+        // Refresh products without page reload
+        if (onRefresh) {
+            await onRefresh();
         }
     };
 
@@ -191,6 +272,33 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                         </div>
 
                         <div className="flex items-center gap-2">
+                            {/* NEW: Selective Price Increase Controls */}
+                            {selectedProducts.length > 0 && (
+                                <>
+                                    <div className="h-6 w-[1px] bg-border mx-2" />
+                                    <div className="flex items-center gap-2 bg-primary/10 border border-primary/30 rounded-xl px-3 py-2">
+                                        <span className="text-xs font-black text-primary">
+                                            {selectedProducts.length} ÜRÜN SEÇİLİ
+                                        </span>
+                                    </div>
+                                    <button
+                                        onClick={() => setIsSelectivePriceModalOpen(true)}
+                                        className="flex items-center space-x-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-400 transition-all"
+                                    >
+                                        <Calculator className="w-4 h-4" />
+                                        <span>SEÇİLİLERE ZAM UYGULA</span>
+                                    </button>
+                                    <button
+                                        onClick={() => setSelectedProducts([])}
+                                        className="p-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 rounded-xl transition-all"
+                                        title="Seçimi Temizle"
+                                    >
+                                        <X size={16} />
+                                    </button>
+                                    <div className="h-6 w-[1px] bg-border mx-2" />
+                                </>
+                            )}
+
                             <button
                                 onClick={onManageCategories}
                                 className="flex items-center space-x-2 bg-white/5 hover:bg-white/10 border border-border px-4 py-2.5 rounded-xl text-xs font-bold transition-all"
@@ -263,6 +371,15 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                     <table className="w-full text-left">
                         <thead className="bg-white/5 border-b border-border">
                             <tr>
+                                <th className="px-6 py-5 text-center w-12">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedProducts.length === sortedAndFilteredProducts.length && sortedAndFilteredProducts.length > 0}
+                                        onChange={handleToggleSelectAll}
+                                        className="w-5 h-5 rounded bg-white/5 border-2 border-primary/50 cursor-pointer accent-primary"
+                                        title="Tümünü Seç/Kaldır"
+                                    />
+                                </th>
                                 <th className="px-6 py-5 text-[10px] font-black text-secondary tracking-[2px] uppercase">Ürün Detayı</th>
                                 <th className="px-6 py-5 text-[10px] font-black text-secondary tracking-[2px] uppercase">Kategori</th>
                                 <th className="px-6 py-5 text-[10px] font-black text-secondary tracking-[2px] uppercase text-center">Maliyet / Satış</th>
@@ -284,6 +401,14 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                         key={product.id}
                                         className="hover:bg-white/5 transition-colors group"
                                     >
+                                        <td className="px-6 py-4 text-center">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedProducts.includes(product.id)}
+                                                onChange={() => handleToggleSelectProduct(product.id)}
+                                                className="w-5 h-5 rounded bg-white/5 border-2 border-primary/50 cursor-pointer accent-primary"
+                                            />
+                                        </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center space-x-3">
                                                 <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-primary group-hover:bg-primary/10 transition-colors">
@@ -388,6 +513,66 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                     </div>
                 )}
             </div>
+
+            {/* Selective Price Increase Modal */}
+            <AnimatePresence>
+                {isSelectivePriceModalOpen && (
+                    <div
+                        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+                        onClick={() => setIsSelectivePriceModalOpen(false)}
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="glass-card max-w-sm w-full p-8 space-y-8 relative shadow-2xl border border-emerald-500/20"
+                        >
+                            <div className="text-center space-y-3">
+                                <div className="w-20 h-20 bg-emerald-500/10 rounded-3xl flex items-center justify-center text-emerald-400 mx-auto mb-2 border border-emerald-500/20">
+                                    <Calculator className="w-10 h-10" />
+                                </div>
+                                <h3 className="text-2xl font-black text-white tracking-tight">SEÇİLİLERE ZAM</h3>
+                                <p className="text-secondary text-sm font-medium leading-relaxed">
+                                    Seçilen <strong className="text-emerald-400">{selectedProducts.length} ürünün</strong> satış fiyatına <br /> <strong className="text-emerald-400">% zam oranı</strong> belirleyin.
+                                </p>
+                            </div>
+
+                            <div className="relative group">
+                                <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent opacity-0 group-focus-within:opacity-100 transition-opacity" />
+                                <input
+                                    type="number"
+                                    value={selectivePriceRate}
+                                    onChange={(e) => setSelectivePriceRate(e.target.value)}
+                                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-6 px-6 text-4xl font-black text-center text-white outline-none focus:border-emerald-500/50 focus:bg-emerald-500/5 transition-all"
+                                    placeholder="10"
+                                    autoFocus
+                                />
+                                <span className="absolute right-8 top-1/2 -translate-y-1/2 text-2xl font-black text-secondary/40">%</span>
+                            </div>
+
+                            <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4 text-xs text-secondary space-y-1">
+                                <p><strong className="text-white">Örnek:</strong> 100₺ olan ürün → %{selectivePriceRate || "10"} zam → {(100 * (1 + parseFloat(selectivePriceRate || "10") / 100)).toFixed(2)}₺</p>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <button
+                                    onClick={() => setIsSelectivePriceModalOpen(false)}
+                                    className="py-4 px-6 rounded-2xl font-black text-xs tracking-widest bg-white/5 hover:bg-white/10 text-secondary transition-all active:scale-95"
+                                >
+                                    VAZGEÇ
+                                </button>
+                                <button
+                                    onClick={handleApplySelectivePriceIncrease}
+                                    className="py-4 px-6 rounded-2xl font-black text-xs tracking-widest bg-emerald-500 hover:bg-emerald-600 text-white shadow-xl shadow-emerald-500/30 transition-all active:scale-95"
+                                >
+                                    UYGULA
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
 
             {/* Campaign Rate Modal - Stabilized outside the glass-card */}
             <AnimatePresence>

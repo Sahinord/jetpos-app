@@ -12,9 +12,13 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import TenantSwitcher from "../Tenant/TenantSwitcher";
+import { useTenant } from "@/lib/tenant-context";
+import NotificationCenter from "../Notifications/NotificationCenter";
 
 export default function TopBar({ activeTab }: { activeTab: string }) {
     const [currentTime, setCurrentTime] = useState(new Date());
+    const { currentTenant } = useTenant();
 
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -41,7 +45,7 @@ export default function TopBar({ activeTab }: { activeTab: string }) {
             case "simulation": return "Fiyat Simülasyonu";
             case "calculator": return "Kâr Hesaplama";
             case "reports": return "Akıllı Raporlar";
-            default: return "Kardeşler Kasap";
+            default: return "JetPos";
         }
     };
 
@@ -50,12 +54,14 @@ export default function TopBar({ activeTab }: { activeTab: string }) {
             className="h-24 border-b border-border bg-card/10 backdrop-blur-md flex items-center justify-between px-10 sticky top-0 z-40 select-none"
             style={{ WebkitAppRegion: 'drag' } as any}
         >
-            {/* Left Section: Title & Breadcrumb */}
-            <div className="flex items-center space-x-4" style={{ WebkitAppRegion: 'no-drag' } as any}>
+            {/* Left Section: Tenant Switcher + Title */}
+            <div className="flex items-center gap-4" style={{ WebkitAppRegion: 'no-drag' } as any}>
+                <TenantSwitcher />
+
                 <div className="hidden md:flex flex-col space-y-1">
                     <div className="flex items-center space-x-2 text-primary font-bold text-[10px] uppercase tracking-[2px]">
                         <ShieldCheck className="w-3.5 h-3.5" />
-                        <span>Kardeşler Muhasebe v2.0</span>
+                        <span>JetPos v1.0</span>
                     </div>
                     <h1 className="text-2xl font-bold text-white tracking-tight leading-tight">
                         {getTitle(activeTab)}
@@ -80,12 +86,12 @@ export default function TopBar({ activeTab }: { activeTab: string }) {
                 {/* System Status & Windows Style Controls */}
                 <div className="flex items-center space-x-6">
                     <div className="flex items-center space-x-3">
-                        <button className="relative p-2.5 text-secondary hover:text-white hover:bg-white/5 rounded-xl transition-all">
-                            <Bell className="w-6 h-6" />
-                            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-primary rounded-full ring-2 ring-background animate-pulse" />
-                        </button>
+                        <NotificationCenter />
 
-                        <button className="p-2.5 text-secondary hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                        <button
+                            onClick={() => window.location.hash = 'profile'}
+                            className="p-2.5 text-secondary hover:text-white hover:bg-white/5 rounded-xl transition-all"
+                        >
                             <User className="w-6 h-6" />
                         </button>
                     </div>

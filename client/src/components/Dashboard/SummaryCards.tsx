@@ -55,14 +55,16 @@ export default function SummaryCards({
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
-                    className="glass-card flex items-center space-x-4"
+                    className="glass-card flex items-center space-x-4 overflow-hidden"
                 >
-                    <div className={`p-3 rounded-xl ${card.bg}`}>
+                    <div className={`p-3 rounded-xl ${card.bg} flex-shrink-0`}>
                         <card.icon className={`w-6 h-6 ${card.color}`} />
                     </div>
-                    <div>
-                        <p className="text-secondary text-sm font-medium">{card.title}</p>
-                        <h3 className="text-2xl font-bold mt-1">{card.value}</h3>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-secondary text-sm font-medium truncate">{card.title}</p>
+                        <h3 className="text-xl lg:text-2xl font-bold mt-1 truncate" title={card.value}>
+                            {card.value}
+                        </h3>
                     </div>
                 </motion.div>
             ))}

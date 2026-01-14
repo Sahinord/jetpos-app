@@ -18,11 +18,20 @@ import SmartReports from "@/components/Reports/SmartReports";
 import AdminPortal from "@/components/Admin/AdminPortal";
 import SalesHistory from "@/components/Dashboard/SalesHistory";
 import AppSettings from "@/components/Settings/AppSettings";
+import SuperAdmin from "@/components/Admin/SuperAdmin";
+import PriceChangeHistory from "@/components/Products/PriceChangeHistory";
+import TrendyolGOWidget from "@/components/Integrations/TrendyolGOWidget";
+import LicenseGate from "@/components/Auth/LicenseGate";
+import { useTenant } from "@/lib/tenant-context";
 import { calculateStockMetrics } from "@/lib/calculations";
 import { supabase } from "@/lib/supabase";
 import { LayoutDashboard, ShoppingCart, Package, AlertTriangle, ArrowLeft } from "lucide-react";
+import TenantProfile from "@/components/Tenant/TenantProfile";
+import SupportTicketModal from "@/components/Support/SupportTicketModal";
 
 export default function Home() {
+  const { currentTenant, loading: tenantLoading } = useTenant();
+  const [isLicenseValid, setIsLicenseValid] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
@@ -54,6 +63,17 @@ export default function Home() {
 
     const savedBeep = localStorage.getItem('isBeepEnabled');
     if (savedBeep !== null) setIsBeepEnabled(savedBeep === 'true');
+
+    // Hash control for profile tab
+    const handleHashChange = () => {
+      if (window.location.hash === '#profile') {
+        setActiveTab('profile');
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    handleHashChange(); // Check on mount
+
+    return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
   useEffect(() => {
@@ -527,8 +547,61 @@ export default function Home() {
     }
   };
 
+  // Show license gate if no valid tenant
+  if (!currentTenant && !tenantLoading) {
+    return <LicenseGate onSuccess={() => window.location.reload()} />;
+  }
+
+  // Show loading while checking tenant
+  if (tenantLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-white font-bold">JetPos Yükleniyor...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Admin Panel (Sadece lisans yönetimi)
+  const isAdmin = currentTenant?.license_key === 'ADM257SA67';
+
+  if (isAdmin) {
+    return (
+      <div className="min-h-screen text-white">
+        <div className="flex items-center justify-between p-6 border-b border-border bg-card/30 backdrop-blur-xl">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-primary to-blue-500 rounded-xl flex items-center justify-center shadow-lg">
+              <span className="text-white font-bold text-lg">🔐</span>
+            </div>
+            <div>
+              <h1 className="text-2xl font-black text-white">JetPos Admin</h1>
+              <p className="text-xs text-secondary">Super Admin Panel</p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => {
+              localStorage.clear();
+              window.location.reload();
+            }}
+            className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-xl text-red-400 font-bold transition-all"
+          >
+            Çıkış Yap
+          </button>
+        </div>
+
+        <div className="p-8 max-w-7xl mx-auto">
+          <SuperAdmin />
+        </div>
+      </div>
+    );
+  }
+
+  // Normal App (Kullanıcılar için)
   return (
-    <div className="flex min-h-screen bg-[#0f172a] text-white">
+    <div className="flex min-h-screen text-white">
       <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
 
       <main className="flex-1 overflow-y-auto max-h-screen relative flex flex-col">
@@ -557,6 +630,9 @@ export default function Home() {
                 </div>
               </div>
 
+              {/* Trendyol GO Integration */}
+              <TrendyolGOWidget />
+
               <section className="space-y-4 pt-10 border-t border-border/50">
                 <div className="flex items-center justify-between">
                   <h2 className="text-2xl font-bold">Son Ürünler</h2>
@@ -579,6 +655,8 @@ export default function Home() {
                   onClearAll={handleClearAllProducts}
                   onToggleAllCampaign={handleToggleAllCampaign}
                   campaignRate={campaignRate}
+                  onRefresh={fetchData}
+                  showToast={showToast}
                 />
               </section>
             </div>
@@ -624,6 +702,8 @@ export default function Home() {
                 onClearAll={handleClearAllProducts}
                 onToggleAllCampaign={handleToggleAllCampaign}
                 campaignRate={campaignRate}
+                onRefresh={fetchData}
+                showToast={showToast}
               />
             </div>
           )}
@@ -650,6 +730,12 @@ export default function Home() {
           {activeTab === "reports" && (
             <div className="max-w-[1500px] mx-auto w-full">
               <SmartReports products={products} />
+            </div>
+          )}
+
+          {activeTab === "profile" && (
+            <div className="max-w-[1500px] mx-auto w-full">
+              <TenantProfile />
             </div>
           )}
 
@@ -729,6 +815,8 @@ export default function Home() {
                 onToggleAllCampaign={handleToggleAllCampaign}
                 campaignRate={campaignRate}
                 hideFilters={true}
+                onRefresh={fetchData}
+                showToast={showToast}
               />
             </div>
           )}
@@ -738,8 +826,17 @@ export default function Home() {
               <SalesHistory />
             </div>
           )}
+
+          {activeTab === "price-history" && (
+            <div className="max-w-[1500px] mx-auto w-full">
+              <PriceChangeHistory onBack={() => setActiveTab("products")} />
+            </div>
+          )}
         </div>
       </main>
+
+      {/* Floating Support Modal */}
+      <SupportTicketModal />
 
       <ProductModal
         isOpen={isModalOpen}

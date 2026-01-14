@@ -1,13 +1,13 @@
 {
-  "name": "client",
-  "version": "0.1.0",
-  "description": "Kardeşler Kasap Muhasebe Uygulaması",
-  "author": "Kardeşler Kasap",
+  "name": "jetpos",
+  "version": "1.0.0",
+  "description": "JetPos - İşiniz Jet Hızında",
+  "author": "JetPos",
   "homepage": "./",
   "private": true,
   "main": "main.js",
   "scripts": {
-    "dev": "next dev",
+    "dev": "set TURBOPACK=0&& next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -15,8 +15,8 @@
     "electron-build": "next build && electron-builder"
   },
   "build": {
-    "appId": "com.kardesler.kasap",
-    "productName": "Kardesler Kasap",
+    "appId": "com.jetpos.app",
+    "productName": "JetPos",
     "directories": {
       "output": "dist"
     },
