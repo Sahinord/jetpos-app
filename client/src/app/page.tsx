@@ -29,6 +29,9 @@ import { LayoutDashboard, ShoppingCart, Package, AlertTriangle, ArrowLeft } from
 import TenantProfile from "@/components/Tenant/TenantProfile";
 import SupportTicketModal from "@/components/Support/SupportTicketModal";
 
+import AISalesInsights from '@/components/AI/AISalesInsights';
+import InvoicePanel from '@/components/Invoice/InvoicePanel';
+
 export default function Home() {
   const { currentTenant, loading: tenantLoading } = useTenant();
   const [isLicenseValid, setIsLicenseValid] = useState(false);
@@ -733,6 +736,16 @@ export default function Home() {
             </div>
           )}
 
+          {activeTab === "ai_insights" && (
+            <div className="max-w-[1500px] mx-auto w-full">
+              <AISalesInsights />
+            </div>
+          )}
+          {activeTab === "invoice" && (
+            <div className="max-w-[1500px] mx-auto w-full">
+              <InvoicePanel />
+            </div>
+          )}
           {activeTab === "profile" && (
             <div className="max-w-[1500px] mx-auto w-full">
               <TenantProfile />

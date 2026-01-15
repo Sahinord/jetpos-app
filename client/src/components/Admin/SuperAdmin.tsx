@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Building2, Key, Check, X, Save, Edit, Trash2, Plus, MessageSquare, Bell, LifeBuoy, Send, User, Trash } from 'lucide-react';
+import { Building2, Key, Check, X, Save, Edit, Trash2, Plus, MessageSquare, Bell, LifeBuoy, Send, User, Trash, Sparkles, FileText } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 interface Tenant {
@@ -39,6 +39,22 @@ export default function SuperAdmin() {
     const [notifMessage, setNotifMessage] = useState('');
     const [notifTarget, setNotifTarget] = useState<'all' | string>('all');
     const [notifType, setNotifType] = useState('info');
+
+    // Password change states
+    const [passwordModal, setPasswordModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
+    const [newPassword, setNewPassword] = useState('');
+
+    // Cross-database grouping states
+    const [groupModal, setGroupModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
+    const [selectedGroupTenants, setSelectedGroupTenants] = useState<string[]>([]);
+
+    // AI Key states
+    const [aiModal, setAiModal] = useState<{ tenantId: string; tenantName: string; currentKey: string } | null>(null);
+    const [tenantAiKey, setTenantAiKey] = useState('');
+
+    // QNB states
+    const [qnbModal, setQnbModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
+    const [qnbSettings, setQnbSettings] = useState({ vkn: '', username: '', password: '', isTest: true });
 
     useEffect(() => {
         if (activeTab === 'tenants') fetchTenants();
@@ -219,6 +235,128 @@ export default function SuperAdmin() {
         }
     };
 
+    const handleChangePassword = async () => {
+        if (!passwordModal || !newPassword) {
+            return alert('Yeni şifre girmelisiniz!');
+        }
+
+        if (newPassword.length < 4) {
+            return alert('Şifre en az 4 karakter olmalı!');
+        }
+
+        setSaving(true);
+        try {
+            const { error } = await supabase
+                .from('tenants')
+                .update({ password: newPassword })
+                .eq('id', passwordModal.tenantId);
+
+            if (error) throw error;
+
+            alert(`✅ ${passwordModal.tenantName} için şifre başarıyla değiştirildi!`);
+            setPasswordModal(null);
+            setNewPassword('');
+        } catch (err: any) {
+            alert('❌ Hata: ' + err.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleSaveGrouping = async () => {
+        if (!groupModal) return;
+
+        setSaving(true);
+        try {
+            // Önce mevcut grouping'leri temizle
+            await supabase
+                .from('tenant_groups')
+                .delete()
+                .or(`tenant_id.eq.${groupModal.tenantId},target_tenant_id.eq.${groupModal.tenantId}`);
+
+            // Yeni grouping'leri ekle - karşılıklı bağlantı
+            if (selectedGroupTenants.length > 0) {
+                const accessRecords: any[] = [];
+
+                selectedGroupTenants.forEach(targetTenantId => {
+                    // A -> B
+                    accessRecords.push({
+                        tenant_id: groupModal.tenantId,
+                        target_tenant_id: targetTenantId,
+                        access_level: 'write'
+                    });
+                    // B -> A
+                    accessRecords.push({
+                        tenant_id: targetTenantId,
+                        target_tenant_id: groupModal.tenantId,
+                        access_level: 'write'
+                    });
+                });
+
+                const { error } = await supabase
+                    .from('tenant_groups')
+                    .insert(accessRecords);
+
+                if (error) throw error;
+            }
+
+            alert(`✅ ${groupModal.tenantName} için veritabanı gruplandırması güncellendi!`);
+            setGroupModal(null);
+            setSelectedGroupTenants([]);
+        } catch (err: any) {
+            alert('❌ Hata: ' + err.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleSaveAiKey = async () => {
+        if (!aiModal) return;
+
+        setSaving(true);
+        try {
+            const { error } = await supabase.rpc('upsert_integration_settings', {
+                p_tenant_id: aiModal.tenantId,
+                p_type: 'gemini_ai',
+                p_settings: { apiKey: tenantAiKey },
+                p_is_active: true
+            });
+
+            if (error) throw error;
+
+            alert(`✅ ${aiModal.tenantName} için AI Anahtarı güncellendi!`);
+            setAiModal(null);
+            setTenantAiKey('');
+        } catch (err: any) {
+            alert('❌ Hata: ' + err.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleSaveQnbSettings = async () => {
+        if (!qnbModal) return;
+
+        setSaving(true);
+        try {
+            const { error } = await supabase.rpc('upsert_integration_settings', {
+                p_tenant_id: qnbModal.tenantId,
+                p_type: 'qnb_efinans',
+                p_settings: qnbSettings,
+                p_is_active: true
+            });
+
+            if (error) throw error;
+
+            alert(`✅ ${qnbModal.tenantName} için QNB Ayarları güncellendi!`);
+            setQnbModal(null);
+        } catch (err: any) {
+            alert('❌ Hata: ' + err.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
     return (
         <div className="space-y-8 pb-12">
             {/* Tab System */}
@@ -289,6 +427,95 @@ export default function SuperAdmin() {
                                         </div>
                                     </div>
                                     <div className="flex gap-2">
+                                        <button
+                                            onClick={() => setPasswordModal({ tenantId: tenant.id, tenantName: tenant.company_name || tenant.license_key })}
+                                            className="p-3 bg-white/5 hover:bg-amber-500/20 rounded-xl text-slate-400 hover:text-amber-500 transition-all"
+                                            title="Şifreyi Değiştir"
+                                        >
+                                            <Key className="w-5 h-5" />
+                                        </button>
+                                        <button
+                                            onClick={async () => {
+                                                setLoading(true);
+                                                try {
+                                                    const { data } = await supabase
+                                                        .from('integration_settings')
+                                                        .select('settings')
+                                                        .eq('tenant_id', tenant.id)
+                                                        .eq('type', 'gemini_ai')
+                                                        .single();
+
+                                                    setAiModal({
+                                                        tenantId: tenant.id,
+                                                        tenantName: tenant.company_name || tenant.license_key,
+                                                        currentKey: data?.settings?.apiKey || ''
+                                                    });
+                                                    setTenantAiKey(data?.settings?.apiKey || '');
+                                                } catch (err) {
+                                                    setAiModal({
+                                                        tenantId: tenant.id,
+                                                        tenantName: tenant.company_name || tenant.license_key,
+                                                        currentKey: ''
+                                                    });
+                                                } finally {
+                                                    setLoading(false);
+                                                }
+                                            }}
+                                            className="p-3 bg-white/5 hover:bg-purple-500/20 rounded-xl text-slate-400 hover:text-purple-500 transition-all font-bold"
+                                            title="AI API Key Tanımla"
+                                        >
+                                            <Sparkles className="w-5 h-5" />
+                                        </button>
+                                        <button
+                                            onClick={async () => {
+                                                setLoading(true);
+                                                try {
+                                                    const { data } = await supabase
+                                                        .from('integration_settings')
+                                                        .select('settings')
+                                                        .eq('tenant_id', tenant.id)
+                                                        .eq('type', 'qnb_efinans')
+                                                        .single();
+
+                                                    setQnbModal({
+                                                        tenantId: tenant.id,
+                                                        tenantName: tenant.company_name || tenant.license_key
+                                                    });
+                                                    setQnbSettings(data?.settings || { vkn: '', username: '', password: '', isTest: true });
+                                                } catch (err) {
+                                                    setQnbModal({
+                                                        tenantId: tenant.id,
+                                                        tenantName: tenant.company_name || tenant.license_key
+                                                    });
+                                                    setQnbSettings({ vkn: '', username: '', password: '', isTest: true });
+                                                } finally {
+                                                    setLoading(false);
+                                                }
+                                            }}
+                                            className="p-3 bg-white/5 hover:bg-emerald-500/20 rounded-xl text-slate-400 hover:text-emerald-500 transition-all font-bold"
+                                            title="QNB e-Fatura Ayarları"
+                                        >
+                                            <FileText className="w-5 h-5" />
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setGroupModal({ tenantId: tenant.id, tenantName: tenant.company_name || tenant.license_key });
+                                                // Mevcut grupları yükle
+                                                supabase
+                                                    .from('tenant_groups')
+                                                    .select('target_tenant_id')
+                                                    .eq('tenant_id', tenant.id)
+                                                    .then(({ data }) => {
+                                                        if (data) {
+                                                            setSelectedGroupTenants(data.map(g => g.target_tenant_id));
+                                                        }
+                                                    });
+                                            }}
+                                            className="p-3 bg-white/5 hover:bg-blue-500/20 rounded-xl text-slate-400 hover:text-blue-500 transition-all"
+                                            title="Database Gruplandır"
+                                        >
+                                            <User className="w-5 h-5" />
+                                        </button>
                                         <button onClick={() => setEditingTenant(tenant)} className="p-3 bg-white/5 hover:bg-primary/20 rounded-xl text-slate-400 hover:text-primary transition-all">
                                             <Edit className="w-5 h-5" />
                                         </button>
@@ -502,6 +729,258 @@ export default function SuperAdmin() {
                             <button onClick={() => setEditingTenant(null)} className="flex-1 py-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl font-bold transition-all border border-white/5">İptal</button>
                             <button onClick={editingTenant.id === 'new' ? handleCreate : handleSave} disabled={saving} className="flex-1 py-4 bg-primary hover:bg-primary/90 text-white rounded-2xl font-black shadow-xl shadow-primary/30 transition-all flex items-center justify-center gap-2">
                                 {saving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><Save className="w-5 h-5" /> {editingTenant.id === 'new' ? 'Oluştur' : 'Değişiklikleri Kaydet'}</>}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Password Change Modal */}
+            {passwordModal && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+                    <div className="bg-slate-900 border border-white/10 rounded-[2.5rem] max-w-md w-full shadow-2xl">
+                        <div className="p-8 border-b border-white/10">
+                            <div className="flex items-center gap-4 mb-2">
+                                <div className="w-12 h-12 bg-amber-500/20 rounded-2xl flex items-center justify-center">
+                                    <Key className="w-6 h-6 text-amber-500" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black text-white">Şifre Değiştir</h3>
+                                    <p className="text-xs text-slate-500 mt-1">{passwordModal.tenantName}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-8 space-y-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Yeni Şifre</label>
+                                <input
+                                    type="text"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    placeholder="En az 4 karakter"
+                                    className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl text-white outline-none focus:border-amber-500/50 transition-all font-mono tracking-widest"
+                                    autoFocus
+                                />
+                            </div>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => { setPasswordModal(null); setNewPassword(''); }}
+                                    className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold transition-all"
+                                >
+                                    İptal
+                                </button>
+                                <button
+                                    onClick={handleChangePassword}
+                                    disabled={saving}
+                                    className="flex-1 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-black shadow-lg shadow-amber-500/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {saving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><Key className="w-4 h-4" /> Şifreyi Güncelle</>}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* AI Key Modal */}
+            {aiModal && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+                    <div className="bg-slate-900 border border-white/10 rounded-[2.5rem] max-w-md w-full shadow-2xl">
+                        <div className="p-8 border-b border-white/10">
+                            <div className="flex items-center gap-4 mb-2">
+                                <div className="w-12 h-12 bg-purple-500/20 rounded-2xl flex items-center justify-center">
+                                    <Sparkles className="w-6 h-6 text-purple-500" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black text-white">AI API Anahtarı</h3>
+                                    <p className="text-xs text-slate-500 mt-1">{aiModal.tenantName}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-8 space-y-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Gemini API Key</label>
+                                <input
+                                    type="password"
+                                    value={tenantAiKey}
+                                    onChange={(e) => setTenantAiKey(e.target.value)}
+                                    placeholder="AIza..."
+                                    className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl text-white outline-none focus:border-purple-500/50 transition-all font-mono"
+                                    autoFocus
+                                />
+                            </div>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => { setAiModal(null); setTenantAiKey(''); }}
+                                    className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold transition-all"
+                                >
+                                    İptal
+                                </button>
+                                <button
+                                    onClick={handleSaveAiKey}
+                                    disabled={saving}
+                                    className="flex-1 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-xl font-black shadow-lg shadow-purple-500/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {saving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><Save className="w-4 h-4" /> Anahtarı Kaydet</>}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* QNB Modal */}
+            {qnbModal && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+                    <div className="bg-slate-900 border border-white/10 rounded-[2.5rem] max-w-md w-full shadow-2xl">
+                        <div className="p-8 border-b border-white/10">
+                            <div className="flex items-center gap-4 mb-2">
+                                <div className="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center">
+                                    <FileText className="w-6 h-6 text-emerald-500" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black text-white">QNB e-Fatura Ayarları</h3>
+                                    <p className="text-xs text-slate-500 mt-1">{qnbModal.tenantName}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-8 space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">VKN / TCKN</label>
+                                <input
+                                    type="text"
+                                    value={qnbSettings.vkn}
+                                    onChange={(e) => setQnbSettings({ ...qnbSettings, vkn: e.target.value })}
+                                    placeholder="1234567890"
+                                    className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-emerald-500/50"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Web Servis Kullanıcı Adı</label>
+                                <input
+                                    type="text"
+                                    value={qnbSettings.username}
+                                    onChange={(e) => setQnbSettings({ ...qnbSettings, username: e.target.value })}
+                                    placeholder="webservis.xxxxx"
+                                    className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-emerald-500/50"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Web Servis Şifresi</label>
+                                <input
+                                    type="password"
+                                    value={qnbSettings.password}
+                                    onChange={(e) => setQnbSettings({ ...qnbSettings, password: e.target.value })}
+                                    className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-emerald-500/50"
+                                />
+                            </div>
+                            <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                                <span className="text-sm font-bold text-white">Test Modu</span>
+                                <button
+                                    onClick={() => setQnbSettings({ ...qnbSettings, isTest: !qnbSettings.isTest })}
+                                    className={`w-12 h-6 rounded-full transition-all relative ${qnbSettings.isTest ? 'bg-amber-500' : 'bg-slate-700'}`}
+                                >
+                                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${qnbSettings.isTest ? 'right-1' : 'left-1'}`} />
+                                </button>
+                            </div>
+                            <div className="flex gap-3 pt-4">
+                                <button
+                                    onClick={() => setQnbModal(null)}
+                                    className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold transition-all"
+                                >
+                                    İptal
+                                </button>
+                                <button
+                                    onClick={handleSaveQnbSettings}
+                                    disabled={saving}
+                                    className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black shadow-lg shadow-emerald-500/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {saving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><Save className="w-4 h-4" /> Kaydet</>}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Database Grouping Modal */}
+            {groupModal && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+                    <div className="bg-slate-900 border border-white/10 rounded-[2.5rem] max-w-2xl w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+                        <div className="sticky top-0 bg-slate-900/95 backdrop-blur-md p-8 border-b border-white/10 z-10">
+                            <div className="flex items-center gap-4 mb-2">
+                                <div className="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center">
+                                    <User className="w-6 h-6 text-blue-500" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black text-white">Database Gruplandırma</h3>
+                                    <p className="text-xs text-slate-500 mt-1">{groupModal.tenantName}</p>
+                                </div>
+                            </div>
+                            <p className="text-sm text-slate-400 mt-4">
+                                Bu tenant hangi diğer tenantların veritabanını görebilsin?
+                            </p>
+                        </div>
+                        <div className="p-8 space-y-4">
+                            {tenants
+                                .filter(t => t.id !== groupModal.tenantId && t.license_key !== 'ADM257SA67')
+                                .map((tenant) => {
+                                    const isSelected = selectedGroupTenants.includes(tenant.id);
+                                    return (
+                                        <button
+                                            key={tenant.id}
+                                            onClick={() => {
+                                                if (isSelected) {
+                                                    setSelectedGroupTenants(prev => prev.filter(id => id !== tenant.id));
+                                                } else {
+                                                    setSelectedGroupTenants(prev => [...prev, tenant.id]);
+                                                }
+                                            }}
+                                            className={`w-full p-4 rounded-2xl border-2 transition-all text-left ${isSelected
+                                                ? 'border-blue-500 bg-blue-500/10'
+                                                : 'border-white/10 bg-white/5 hover:border-white/20'
+                                                }`}
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isSelected ? 'bg-blue-500 text-white' : 'bg-white/5 text-slate-400'
+                                                        }`}>
+                                                        {isSelected ? <Check className="w-5 h-5" /> : <Building2 className="w-5 h-5" />}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-white font-bold">{tenant.company_name || '(Kayıt Bekleniyor)'}</p>
+                                                        <p className="text-xs text-slate-500 font-mono mt-0.5">{tenant.license_key}</p>
+                                                    </div>
+                                                </div>
+                                                <span className={`px-3 py-1 rounded-lg text-xs font-bold ${isSelected ? 'bg-blue-500/20 text-blue-400' : 'bg-white/5 text-slate-500'
+                                                    }`}>
+                                                    {isSelected ? 'Erişebilir' : 'Erişemez'}
+                                                </span>
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+
+                            {tenants.filter(t => t.id !== groupModal.tenantId && t.license_key !== 'ADM257SA67').length === 0 && (
+                                <div className="text-center py-12 text-slate-500">
+                                    <Building2 className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                                    <p>Başka tenant bulunmuyor</p>
+                                </div>
+                            )}
+                        </div>
+                        <div className="sticky bottom-0 bg-slate-900/95 backdrop-blur-md p-8 border-t border-white/10 flex gap-3 z-10">
+                            <button
+                                onClick={() => { setGroupModal(null); setSelectedGroupTenants([]); }}
+                                className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold transition-all"
+                            >
+                                İptal
+                            </button>
+                            <button
+                                onClick={handleSaveGrouping}
+                                disabled={saving}
+                                className="flex-1 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-black shadow-lg shadow-blue-500/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                {saving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><User className="w-4 h-4" /> Gruplandırmayı Kaydet</>}
                             </button>
                         </div>
                     </div>

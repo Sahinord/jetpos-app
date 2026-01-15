@@ -62,6 +62,10 @@ export function TenantProvider({ children }: { children: ReactNode }) {
             setCurrentTenant(data);
             setAvailableTenants([data]);
 
+            // 🔥 RLS için tenant context'i set et
+            const { setCurrentTenant: setRLSTenant } = await import('./supabase');
+            await setRLSTenant(data.id);
+
         } catch (error: any) {
             console.error('Tenant fetch error:', error.message);
             localStorage.clear();

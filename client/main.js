@@ -12,13 +12,25 @@ function createWindow() {
         width: 1280,
         height: 800,
         frame: false, // Custom title bar
+        show: false, // Don't show until ready to prevent focus issues
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,
         },
-        title: "Kardeşler Kasap Muhasebe App",
+        title: "JetPos",
         backgroundColor: '#0f172a',
         autoHideMenuBar: true,
+        acceptFirstMouse: true, // Focus on first click
+    });
+
+    win.once('ready-to-show', () => {
+        win.show();
+        win.focus();
+    });
+
+    // Fix for focus issues on some Windows versions
+    win.on('focus', () => {
+        win.webContents.send('window-focused', true);
     });
 
     // IPC Handlers for custom title bar
@@ -36,11 +48,6 @@ function createWindow() {
     } else {
         loadURL(win);
     }
-
-    // DevTools closed as requested
-    // if (isDev) {
-    //   win.webContents.openDevTools();
-    // }
 }
 
 app.whenReady().then(createWindow);

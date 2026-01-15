@@ -2,11 +2,13 @@
 // Hızlı Market Entegrasyonu - Stok, Sipariş ve İade İşlemleri
 
 interface TrendyolGoConfig {
-    supplierId: string;
+    sellerId: string;
     storeId?: string;
+    apiKey: string;
+    apiSecret: string;
     agentName: string;
-    executorUser: string;
     baseUrl?: string;
+    isStage?: boolean;
 }
 
 interface TrendyolGoOrder {
@@ -69,7 +71,7 @@ export class TrendyolGoClient {
     constructor(config: TrendyolGoConfig) {
         this.config = {
             ...config,
-            baseUrl: config.baseUrl || 'https://api.tgoapis.com/integrator'
+            baseUrl: config.baseUrl || (config.isStage ? 'https://stageapi.tgoapis.com/integrator' : 'https://api.tgoapis.com/integrator')
         };
     }
 
@@ -77,10 +79,11 @@ export class TrendyolGoClient {
      * Gerekli header'ları oluştur
      */
     private getHeaders(): HeadersInit {
+        const auth = btoa(`${this.config.apiKey}:${this.config.apiSecret}`);
         return {
             'Content-Type': 'application/json',
-            'x-agentname': this.config.agentName,
-            'x-executor-user': this.config.executorUser
+            'Authorization': `Basic ${auth}`,
+            'User-Agent': `${this.config.sellerId} - ${this.config.agentName}`
         };
     }
 
@@ -95,7 +98,7 @@ export class TrendyolGoClient {
         endDate: Date,
         status: string = 'Created'
     ): Promise<TrendyolGoOrder[]> {
-        const url = `${this.config.baseUrl}/order/grocery/suppliers/${this.config.supplierId}/packages`;
+        const url = `${this.config.baseUrl}/order/grocery/suppliers/${this.config.sellerId}/packages`;
 
         const params = new URLSearchParams({
             status,
@@ -163,13 +166,10 @@ export class TrendyolGoClient {
     async updateBulkStock(items: StockUpdateItem[]): Promise<string> {
         // Maksimum 1000 ürün kontrolü
         if (items.length > 1000) {
-            throw new Error(
-                `Maksimum 1000 ürün güncellenebilir! Şu an: ${items.length}\n` +
-                'Lütfen batch'lere bölün.'
-            );
+            throw new Error(`Maksimum 1000 ürün güncellenebilir! Şu an: ${items.length}`);
         }
 
-        const url = `${this.config.baseUrl}/product/grocery/suppliers/${this.config.supplierId}/products/price-and-inventory`;
+        const url = `${this.config.baseUrl}/product/grocery/suppliers/${this.config.sellerId}/products/price-and-inventory`;
 
         try {
             const response = await fetch(url, {
@@ -188,12 +188,6 @@ export class TrendyolGoClient {
 
             if (!response.ok) {
                 const error = await response.text();
-
-                // 15 dakika kuralı hatası
-                if (error.includes('15 dakika')) {
-                    throw new Error('15 dakika içinde aynı isteği tekrar atamazsınız!');
-                }
-
                 throw new Error(`Stok güncellenemedi (${response.status}): ${error}`);
             }
 
@@ -225,7 +219,7 @@ export class TrendyolGoClient {
             failureReasons: string[];
         }>;
     }> {
-        const url = `${this.config.baseUrl}/product/grocery/suppliers/${this.config.supplierId}/batch-requests/${batchRequestId}`;
+        const url = `${this.config.baseUrl}/product/grocery/suppliers/${this.config.sellerId}/batch-requests/${batchRequestId}`;
 
         try {
             const response = await fetch(url, {
@@ -265,7 +259,7 @@ export class TrendyolGoClient {
             throw new Error('storeId gerekli! Config veya parametre olarak gönderin.');
         }
 
-        const url = `${this.config.baseUrl}/product/grocery/suppliers/${this.config.supplierId}/stores/${store}/products`;
+        const url = `${this.config.baseUrl}/product/grocery/suppliers/${this.config.sellerId}/stores/${store}/products`;
 
         const params = new URLSearchParams({ barcode });
 
@@ -310,7 +304,7 @@ export class TrendyolGoClient {
             throw new Error('storeId gerekli!');
         }
 
-        const url = `${this.config.baseUrl}/product/grocery/suppliers/${this.config.supplierId}/stores/${store}/products`;
+        const url = `${this.config.baseUrl}/product/grocery/suppliers/${this.config.sellerId}/stores/${store}/products`;
 
         const params = new URLSearchParams({
             listType,
@@ -348,7 +342,7 @@ export class TrendyolGoClient {
         endDate: Date,
         status: string = 'Accepted'
     ): Promise<any[]> {
-        const url = `${this.config.baseUrl}/claim/grocery/suppliers/${this.config.supplierId}/claims`;
+        const url = `${this.config.baseUrl}/claim/grocery/suppliers/${this.config.sellerId}/claims`;
 
         const params = new URLSearchParams({
             claimItemStatus: status,
@@ -382,7 +376,7 @@ export class TrendyolGoClient {
      * @param orderNumber Trendyol GO sipariş numarası
      */
     async getOrderByNumber(orderNumber: string): Promise<TrendyolGoOrder | null> {
-        const url = `${this.config.baseUrl}/order/grocery/suppliers/${this.config.supplierId}/packages/order-number/${orderNumber}`;
+        const url = `${this.config.baseUrl}/order/grocery/suppliers/${this.config.sellerId}/packages/order-number/${orderNumber}`;
 
         try {
             const response = await fetch(url, {
@@ -446,23 +440,16 @@ export class TrendyolGoClient {
         const batchSize = 1000;
         const batchIds: string[] = [];
 
-        console.log(`🔄 ${items.length} ürün güncelleniyor (${Math.ceil(items.length / batchSize)} batch)...`);
-
         for (let i = 0; i < items.length; i += batchSize) {
             const batch = items.slice(i, i + batchSize);
-
-            console.log(`📦 Batch ${Math.floor(i / batchSize) + 1}: ${batch.length} ürün`);
-
             const batchId = await this.updateBulkStock(batch);
             batchIds.push(batchId);
 
-            // Rate limiting için kısa bekleme
             if (i + batchSize < items.length) {
                 await new Promise(resolve => setTimeout(resolve, 1000));
             }
         }
 
-        console.log(`✅ Toplam ${items.length} ürün ${batchIds.length} batch'te gönderildi`);
         return batchIds;
     }
 }
@@ -471,36 +458,23 @@ export class TrendyolGoClient {
  * Helper: Environment variables'dan client oluştur
  */
 export function createTrendyolGoClient(): TrendyolGoClient {
-    const supplierId = process.env.TRENDYOL_GO_SUPPLIER_ID;
+    const sellerId = process.env.TRENDYOL_GO_SELLER_ID;
     const storeId = process.env.TRENDYOL_GO_STORE_ID;
-    const agentName = process.env.TRENDYOL_GO_AGENT_NAME;
-    const executorUser = process.env.TRENDYOL_GO_EXECUTOR_USER;
-    const baseUrl = process.env.TRENDYOL_GO_BASE_URL; // Opsiyonel (STAGE için)
+    const apiKey = process.env.TRENDYOL_GO_API_KEY;
+    const apiSecret = process.env.TRENDYOL_GO_API_SECRET;
+    const agentName = process.env.TRENDYOL_GO_AGENT_NAME || 'Self Integration';
+    const isStage = process.env.TRENDYOL_GO_STAGE === 'true';
 
-    if (!supplierId || !agentName || !executorUser) {
-        throw new Error(
-            '❌ Trendyol GO credentials eksik! .env.local dosyasını kontrol edin:\n\n' +
-            'TRENDYOL_GO_SUPPLIER_ID=107386\n' +
-            'TRENDYOL_GO_STORE_ID=116\n' +
-            'TRENDYOL_GO_AGENT_NAME=FirmaAdi_Entegrator\n' +
-            'TRENDYOL_GO_EXECUTOR_USER=admin@firmaadiniz.com\n'
-        );
+    if (!sellerId || !apiKey || !apiSecret) {
+        throw new Error('❌ Trendyol GO credentials eksik!');
     }
 
     return new TrendyolGoClient({
-        supplierId,
+        sellerId,
         storeId,
+        apiKey,
+        apiSecret,
         agentName,
-        executorUser,
-        baseUrl
+        isStage
     });
-}
-
-/**
- * Helper: Test ortamı (STAGE) için client oluştur
- */
-export function createTrendyolGoClientStage(): TrendyolGoClient {
-    const client = createTrendyolGoClient();
-    (client as any).config.baseUrl = 'https://stageapi.tgoapis.com/integrator';
-    return client;
 }

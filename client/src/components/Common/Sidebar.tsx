@@ -11,7 +11,9 @@ import {
     History,
     Clock,
     Lock,
-    LogOut
+    LogOut,
+    Sparkles,
+    FileText
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useTenant } from "@/lib/tenant-context";
@@ -32,6 +34,8 @@ export default function Sidebar({ activeTab, onTabChange }: SidebarProps) {
         { id: "calculator", label: "Kâr Hesapla", icon: Calculator, feature: "profit_calculator" },
         { id: "simulation", label: "Fiyat Simülasyonu", icon: TrendingUp, feature: "price_simulator" },
         { id: "reports", label: "Raporlar", icon: BarChart3, feature: "reports" },
+        { id: "ai_insights", label: "AI Öngörüleri", icon: Sparkles, feature: null },
+        { id: "invoice", label: "E-Fatura", icon: FileText, feature: "invoice" },
         { id: "alerts", label: "Stok Uyarıları", icon: Clock, feature: null },
     ];
 
