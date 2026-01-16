@@ -43,6 +43,59 @@ export default function InvoicePanel() {
     const formatDate = (date: any) => date ? new Date(date).toLocaleDateString('tr-TR') : '-';
     const formatCurrency = (val: any) => Number(val || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + " ₺";
 
+    // Ürün adından otomatik KDV oranı belirle
+    const getVatRateFromProductName = (productName: string): number => {
+        const name = (productName || '').toLowerCase();
+
+        // %20 - Temizlik, Züccaciye, Kozmetik
+        const vat20Patterns = [
+            'temizlik', 'deterjan', 'çamaşır', 'bulaşık', 'sabun', 'şampuan',
+            'züccaciye', 'mutfak', 'kova', 'fırça', 'paspas',
+            'kozmetik', 'parfüm', 'deodorant', 'krem', 'makyaj', 'ruj',
+            'kırtasiye', 'kalem', 'defter', 'elektronik', 'pil', 'şarj',
+            'kağıt havlu', 'peçete', 'tuvalet kağıdı', 'havlu', 'mendil'
+        ];
+
+        // %10 - Şarküteri (süt ürünleri)
+        const vat10Patterns = [
+            'süt', 'peynir', 'yoğurt', 'ayran', 'kefir', 'tereyağ', 'margarin',
+            'şarküteri', 'salam', 'sosis', 'sucuk', 'pastırma', 'jambon',
+            'kaşar', 'beyaz peynir', 'lor', 'tulum', 'ezine',
+            'dondurma', 'krema'
+        ];
+
+        // %1 - Temel gıda
+        const vat1Patterns = [
+            'gıda', 'et', 'tavuk', 'balık', 'köfte', 'kıyma', 'kuşbaşı', 'biftek',
+            'meyve', 'elma', 'portakal', 'muz', 'çilek', 'üzüm', 'armut', 'karpuz',
+            'sebze', 'domates', 'salatalık', 'biber', 'patlıcan', 'kabak', 'patates', 'soğan', 'sarımsak',
+            'bakliyat', 'fasulye', 'nohut', 'mercimek', 'pilav', 'pirinç', 'bulgur',
+            'un', 'şeker', 'tuz', 'makarna', 'erişte',
+            'ekmek', 'simit', 'poğaça', 'börek',
+            'yumurta', 'bal', 'reçel', 'pekmez', 'tahin', 'helva',
+            'zeytin', 'zeytinyağ', 'ayçiçek yağ', 'soya yağ',
+            'çay', 'kahve', 'maden suyu', 'su'
+        ];
+
+        // Önce %20 kontrol et
+        for (const pattern of vat20Patterns) {
+            if (name.includes(pattern)) return 20;
+        }
+
+        // Sonra %10 kontrol et
+        for (const pattern of vat10Patterns) {
+            if (name.includes(pattern)) return 10;
+        }
+
+        // %1 kontrol et (gıda varsayılan)
+        for (const pattern of vat1Patterns) {
+            if (name.includes(pattern)) return 1;
+        }
+
+        // Varsayılan: %1 (gıda)
+        return 1;
+    };
+
     useEffect(() => { setMounted(true); }, []);
 
     useEffect(() => {
@@ -105,6 +158,18 @@ export default function InvoicePanel() {
         const isTrendyol = type === 'trendyol';
         const details = isTrendyol ? (source.raw_data?.invoiceAddress || source.raw_data?.address || {}) : (source.metadata || {});
 
+        // Trendyol'dan gelen ürünleri al - lines veya items
+        let sourceItems = source.items || [];
+        if (isTrendyol && source.raw_data?.lines && source.raw_data.lines.length > 0) {
+            sourceItems = source.raw_data.lines.map((line: any) => ({
+                name: line.product?.productSaleName || line.product?.name || 'Ürün',
+                quantity: line.amount || line.quantity || 1,
+                price: line.price || 0,
+                unit: line.product?.weight?.typeName === 'KG' ? 'KG' : 'ADET',
+                vatRate: null // otomatik belirlenecek
+            }));
+        }
+
         const draft = {
             id: source.id,
             isManual: false,
@@ -123,14 +188,18 @@ export default function InvoicePanel() {
             postaKodu: details.postalCode || details.postal_code || '',
             vergiDairesi: details.taxOffice || details.tax_office || '',
             roundAmount: 0,
-            items: (source.items || []).map((i: any) => ({
-                name: i.name || i.productName || 'Muhtelif Gıda',
-                quantity: i.quantity || 1,
-                unit: i.unit || 'KG',
-                price: i.price || i.unit_price || 0,
-                vatRate: i.vatRate || 1,
-                lineTotal: 0, vatAmount: 0, fullTotal: 0
-            }))
+            items: sourceItems.map((i: any) => {
+                const productName = i.name || i.productName || i.product?.name || i.product?.productSaleName || 'Muhtelif Gıda';
+                const autoVatRate = i.vatRate || getVatRateFromProductName(productName);
+                return {
+                    name: productName,
+                    quantity: i.quantity || i.amount || 1,
+                    unit: i.unit || 'KG',
+                    price: i.price || i.unit_price || 0,
+                    vatRate: autoVatRate,
+                    lineTotal: 0, vatAmount: 0, fullTotal: 0
+                };
+            })
         };
 
         if (draft.items.length === 0) {

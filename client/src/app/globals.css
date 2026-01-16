@@ -73,6 +73,7 @@
   .text-gradient {
     background: linear-gradient(to right, #3b82f6, #2dd4bf, #3b82f6);
     background-size: 200% auto;
+    background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     animation: shine 5s linear infinite;
@@ -115,4 +116,49 @@
 * {
   scrollbar-width: thin;
   scrollbar-color: #0f172a #020617;
+}
+
+/* Select/Dropdown Premium Styling */
+select {
+  background-color: #0a1628 !important;
+}
+
+select option {
+  background-color: #0a1628;
+  color: white;
+  padding: 8px 12px;
+}
+
+select option:hover,
+select option:focus,
+select option:checked {
+  background: linear-gradient(#3b82f6, #3b82f6);
+  background-color: #3b82f6 !important;
+  color: white;
+}
+
+/* Input Focus States */
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Checkbox Custom Style */
+input[type="checkbox"] {
+  accent-color: #3b82f6;
+}
+
+/* Number input spinner hide */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
 }

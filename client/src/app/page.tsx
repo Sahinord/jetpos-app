@@ -31,11 +31,13 @@ import SupportTicketModal from "@/components/Support/SupportTicketModal";
 
 import AISalesInsights from '@/components/AI/AISalesInsights';
 import InvoicePanel from '@/components/Invoice/InvoicePanel';
+import HomePage from '@/components/Home/HomePage';
+import CariPage from '@/components/Cari/CariPage';
 
 export default function Home() {
   const { currentTenant, loading: tenantLoading } = useTenant();
   const [isLicenseValid, setIsLicenseValid] = useState(false);
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeTab, setActiveTab] = useState("home");
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -611,6 +613,10 @@ export default function Home() {
         <TopBar activeTab={activeTab} />
 
         <div className="p-8 lg:p-10 w-full flex-1 flex flex-col min-h-0">
+          {activeTab === "home" && (
+            <HomePage onNavigate={setActiveTab} />
+          )}
+
           {activeTab === "dashboard" && (
             <div className="space-y-10 max-w-[1500px] mx-auto w-full">
 
@@ -752,6 +758,13 @@ export default function Home() {
             </div>
           )}
 
+          {/* Cari Hesap Sayfaları */}
+          {activeTab.startsWith("cari_") && (
+            <div className="max-w-[1500px] mx-auto w-full">
+              <CariPage pageId={activeTab} />
+            </div>
+          )}
+
           {activeTab === "alerts" && (
             <div className="max-w-[1500px] mx-auto w-full space-y-6">
               <div className="flex items-center justify-between">
@@ -848,8 +861,11 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Floating Support Modal */}
-      <SupportTicketModal />
+      {/* Support Modal - Sidebar'dan kontrol ediliyor */}
+      <SupportTicketModal
+        isOpen={activeTab === "support"}
+        onClose={() => setActiveTab("home")}
+      />
 
       <ProductModal
         isOpen={isModalOpen}

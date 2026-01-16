@@ -22,6 +22,7 @@ const AVAILABLE_FEATURES = [
     { id: 'profit_calculator', label: 'Kâr Hesaplama' },
     { id: 'price_simulator', label: 'Fiyat Simülasyonu' },
     { id: 'reports', label: 'Akıllı Raporlar' },
+    { id: 'cari_hesap', label: 'Cari Hesap Takibi' },
     { id: 'trendyol_go', label: 'Trendyol GO' },
     { id: 'invoice', label: 'E-Fatura' },
 ];

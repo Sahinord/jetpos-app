@@ -18,6 +18,7 @@ const AVAILABLE_FEATURES: Feature[] = [
     { id: 'profit_calculator', label: 'Kâr Hesaplama', description: 'Kar-zarar hesaplama aracı' },
     { id: 'price_simulator', label: 'Fiyat Simülasyonu', description: 'Toplu fiyat güncelleme simülatörü' },
     { id: 'reports', label: 'Akıllı Raporlar', description: 'Detaylı analiz raporları' },
+    { id: 'cari_hesap', label: 'Cari Hesap Takibi', description: 'Müşteri ve tedarikçi cari hesap yönetimi' },
     { id: 'trendyol_go', label: 'Trendyol GO', description: 'Trendyol GO entegrasyonu' },
     { id: 'invoice', label: 'E-Fatura', description: 'Otomatik fatura kesme' },
 ];
@@ -108,8 +109,8 @@ export default function FeatureManager() {
                             key={feature.id}
                             onClick={() => toggleFeature(feature.id)}
                             className={`glass-card p-6 border-2 transition-all text-left ${isActive
-                                    ? 'border-primary bg-primary/5'
-                                    : 'border-white/10 hover:border-white/20'
+                                ? 'border-primary bg-primary/5'
+                                : 'border-white/10 hover:border-white/20'
                                 }`}
                         >
                             <div className="flex items-start justify-between mb-3">
@@ -123,8 +124,8 @@ export default function FeatureManager() {
                                 </div>
 
                                 <div className={`px-3 py-1 rounded-full text-xs font-bold ${isActive
-                                        ? 'bg-emerald-500/10 text-emerald-400'
-                                        : 'bg-red-500/10 text-red-400'
+                                    ? 'bg-emerald-500/10 text-emerald-400'
+                                    : 'bg-red-500/10 text-red-400'
                                     }`}>
                                     {isActive ? 'Aktif' : 'Kapalı'}
                                 </div>
