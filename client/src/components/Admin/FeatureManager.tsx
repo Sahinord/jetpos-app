@@ -19,6 +19,8 @@ const AVAILABLE_FEATURES: Feature[] = [
     { id: 'price_simulator', label: 'Fiyat Simülasyonu', description: 'Toplu fiyat güncelleme simülatörü' },
     { id: 'reports', label: 'Akıllı Raporlar', description: 'Detaylı analiz raporları' },
     { id: 'cari_hesap', label: 'Cari Hesap Takibi', description: 'Müşteri ve tedarikçi cari hesap yönetimi' },
+    { id: 'bank_management', label: 'Banka İşlemleri', description: 'Banka hesapları ve hareketleri yönetimi' },
+    { id: 'cash_management', label: 'Kasa İşlemleri', description: 'Kasa hesapları ve hareketleri yönetimi' },
     { id: 'trendyol_go', label: 'Trendyol GO', description: 'Trendyol GO entegrasyonu' },
     { id: 'invoice', label: 'E-Fatura', description: 'Otomatik fatura kesme' },
 ];

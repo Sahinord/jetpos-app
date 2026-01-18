@@ -33,6 +33,8 @@ import AISalesInsights from '@/components/AI/AISalesInsights';
 import InvoicePanel from '@/components/Invoice/InvoicePanel';
 import HomePage from '@/components/Home/HomePage';
 import CariPage from '@/components/Cari/CariPage';
+import KasaPage from '@/components/Kasa/KasaPage';
+import BankaPage from '@/components/Banka/BankaPage';
 
 export default function Home() {
   const { currentTenant, loading: tenantLoading } = useTenant();
@@ -49,6 +51,7 @@ export default function Home() {
   const [campaignRate, setCampaignRate] = useState(1.15); // Default %15
   const [theme, setTheme] = useState<'modern' | 'wood' | 'glass'>('modern');
   const [isBeepEnabled, setIsBeepEnabled] = useState(true);
+  const [showHelpIcons, setShowHelpIcons] = useState(false);
 
   const [toast, setToast] = useState({ isVisible: false, message: "", type: "success" as ToastType });
 
@@ -74,6 +77,9 @@ export default function Home() {
     const savedBeep = localStorage.getItem('isBeepEnabled');
     if (savedBeep !== null) setIsBeepEnabled(savedBeep === 'true');
 
+    const savedHelpIcons = localStorage.getItem('showHelpIcons');
+    if (savedHelpIcons !== null) setShowHelpIcons(savedHelpIcons === 'true');
+
     // Hash control for profile tab
     const handleHashChange = () => {
       if (window.location.hash === '#profile') {
@@ -89,7 +95,8 @@ export default function Home() {
   useEffect(() => {
     localStorage.setItem('theme', theme);
     localStorage.setItem('isBeepEnabled', isBeepEnabled.toString());
-  }, [theme, isBeepEnabled]);
+    localStorage.setItem('showHelpIcons', showHelpIcons.toString());
+  }, [theme, isBeepEnabled, showHelpIcons]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -530,7 +537,7 @@ export default function Home() {
   // Normal App (Kullanıcılar için)
   return (
     <div className="flex min-h-screen text-white">
-      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
+      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} showHelpIcons={showHelpIcons} />
 
       <main className="flex-1 overflow-y-auto max-h-screen relative flex flex-col">
         <TopBar activeTab={activeTab} />
@@ -617,6 +624,8 @@ export default function Home() {
                 setTheme={setTheme}
                 isBeepEnabled={isBeepEnabled}
                 setIsBeepEnabled={setIsBeepEnabled}
+                showHelpIcons={showHelpIcons}
+                setShowHelpIcons={setShowHelpIcons}
                 showToast={showToast}
               />
             </div>
@@ -685,6 +694,20 @@ export default function Home() {
           {activeTab.startsWith("cari_") && (
             <div className="max-w-[1500px] mx-auto w-full">
               <CariPage pageId={activeTab} />
+            </div>
+          )}
+
+          {/* Kasa İşlemleri Sayfaları */}
+          {activeTab.startsWith("cash_") && (
+            <div className="max-w-[1500px] mx-auto w-full">
+              <KasaPage pageId={activeTab} showToast={showToast} />
+            </div>
+          )}
+
+          {/* Banka İşlemleri Sayfaları */}
+          {activeTab.startsWith("bank_") && (
+            <div className="max-w-[1500px] mx-auto w-full">
+              <BankaPage pageId={activeTab} showToast={showToast} />
             </div>
           )}
 

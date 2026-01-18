@@ -8,7 +8,7 @@ import {
     Info, ExternalLink
 } from "lucide-react";
 
-export default function AppSettings({ theme, setTheme, isBeepEnabled, setIsBeepEnabled, showToast }: any) {
+export default function AppSettings({ theme, setTheme, isBeepEnabled, setIsBeepEnabled, showHelpIcons, setShowHelpIcons, showToast }: any) {
     const themes = [
         { id: 'modern', name: 'MODERN DARK', color: 'bg-primary', desc: 'Sleek ve modern bir arayüz' },
         { id: 'wood', name: 'KLASİK AHŞAP', color: 'bg-[#8b4513]', desc: 'Sıcak ve nostaljik hesap makinesi' },
@@ -83,17 +83,20 @@ export default function AppSettings({ theme, setTheme, isBeepEnabled, setIsBeepE
                         </div>
 
                         <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
-                            <div className="flex items-center gap-4 opacity-50">
-                                <div className="p-3 bg-blue-500/10 rounded-xl">
-                                    <Bell className="text-blue-500" />
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-primary/10 rounded-xl">
+                                    <Info className="text-primary" />
                                 </div>
                                 <div>
-                                    <div className="font-black text-sm uppercase tracking-wider">STOK UYARI SİSTEMİ</div>
-                                    <div className="text-[10px] text-secondary font-bold">Stok azaldığında sesli bildirim ver</div>
+                                    <div className="font-black text-sm uppercase tracking-wider">YARDIM İKONLARI</div>
+                                    <div className="text-[10px] text-secondary font-bold">Menü öğelerindeki (?) yardım butonlarını göster</div>
                                 </div>
                             </div>
-                            <button disabled className="w-16 h-8 rounded-full bg-white/5 cursor-not-allowed opacity-50 relative">
-                                <div className="absolute top-1 left-1 w-6 h-6 bg-white/20 rounded-full" />
+                            <button
+                                onClick={() => setShowHelpIcons(!showHelpIcons)}
+                                className={`w-16 h-8 rounded-full relative transition-all duration-300 ${showHelpIcons ? 'bg-primary' : 'bg-white/10'}`}
+                            >
+                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all duration-300 shadow-lg ${showHelpIcons ? 'left-9' : 'left-1'}`} />
                             </button>
                         </div>
                     </div>

@@ -23,6 +23,8 @@ const AVAILABLE_FEATURES = [
     { id: 'price_simulator', label: 'Fiyat Simülasyonu' },
     { id: 'reports', label: 'Akıllı Raporlar' },
     { id: 'cari_hesap', label: 'Cari Hesap Takibi' },
+    { id: 'bank_management', label: 'Banka İşlemleri' },
+    { id: 'cash_management', label: 'Kasa İşlemleri' },
     { id: 'trendyol_go', label: 'Trendyol GO' },
     { id: 'invoice', label: 'E-Fatura' },
 ];
