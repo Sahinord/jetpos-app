@@ -571,7 +571,7 @@ export default function LicenseGate({ onSuccess }: { onSuccess: () => void }) {
                 {/* Footer Credits */}
                 <div className="text-center mt-10">
                     <p className="text-slate-600 font-bold text-[10px] uppercase tracking-[0.3em]">
-                        JetPos v1.0.0 — 2026
+                        JetPos v{process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0'} — 2026
                     </p>
                 </div>
             </div>

@@ -61,7 +61,7 @@ export default function TopBar({ activeTab }: { activeTab: string }) {
                 <div className="hidden md:flex flex-col space-y-1">
                     <div className="flex items-center space-x-2 text-primary font-bold text-[10px] uppercase tracking-[2px]">
                         <ShieldCheck className="w-3.5 h-3.5" />
-                        <span>JetPos v1.0</span>
+                        <span>JetPos v{process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0'}</span>
                     </div>
                     <h1 className="text-2xl font-bold text-white tracking-tight leading-tight">
                         {getTitle(activeTab)}

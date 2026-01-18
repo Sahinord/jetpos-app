@@ -677,7 +677,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
                         <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
                         Çevrimiçi
                     </span>
-                    <span className="font-mono">v1.0</span>
+                    <span className="font-mono">v{process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0'}</span>
                 </div>
             </div>
         </aside>

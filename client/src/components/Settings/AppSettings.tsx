@@ -112,7 +112,7 @@ export default function AppSettings({ theme, setTheme, isBeepEnabled, setIsBeepE
                     <div className="space-y-3">
                         <div className="flex items-center justify-between p-3 text-xs">
                             <span className="text-secondary font-bold uppercase">Versiyon</span>
-                            <span className="font-black text-white px-3 py-1 bg-white/5 rounded-lg border border-white/5">v1.0.4 PRO</span>
+                            <span className="font-black text-white px-3 py-1 bg-white/5 rounded-lg border border-white/5">v{process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0'} PRO</span>
                         </div>
                         <div className="flex items-center justify-between p-3 text-xs">
                             <span className="text-secondary font-bold uppercase">Veritabanı Durumu</span>
