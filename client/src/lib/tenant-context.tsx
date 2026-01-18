@@ -51,9 +51,15 @@ export function TenantProvider({ children }: { children: ReactNode }) {
                 .single();
 
             if (error || !data) {
-                // Geçersiz lisans - temizle
-                localStorage.removeItem('licenseKey');
-                localStorage.removeItem('currentTenantId');
+                // Geçersiz lisans olabilir ama bağlantı hatası da olabilir.
+                // Hemen silmek yerine loglayıp devam etmiyoruz, kullanıcı manuel çıkış yapmalı.
+                console.error("License validation failed:", error);
+
+                // Sadece veritabanından açıkça "bulunamadı" geldiyse sil
+                if (!data && !error) {
+                    localStorage.removeItem('licenseKey');
+                    localStorage.removeItem('currentTenantId');
+                }
                 setLoading(false);
                 return;
             }

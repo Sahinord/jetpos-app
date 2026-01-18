@@ -59,7 +59,12 @@ export default function Home() {
   };
 
   useEffect(() => {
-    fetchData();
+    if (!tenantLoading && currentTenant) {
+      fetchData();
+    }
+  }, [tenantLoading, currentTenant]);
+
+  useEffect(() => {
     const savedRate = localStorage.getItem('campaignRate');
     if (savedRate) setCampaignRate(parseFloat(savedRate));
 
@@ -92,10 +97,19 @@ export default function Home() {
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-      // 1. Fetch Categories and Sales (small data usually)
+      if (!currentTenant) return;
+
+      // 1. Fetch Categories and Sales with Explicit Tenant Filter
       const [cd, si] = await Promise.all([
-        supabase.from('categories').select('*').order('name'),
-        supabase.from('sale_items').select('*').gte('created_at', sevenDaysAgo.toISOString()).limit(20000)
+        supabase.from('categories')
+          .select('*')
+          .eq('tenant_id', currentTenant.id)
+          .order('name'),
+        supabase.from('sale_items')
+          .select('*')
+          .eq('tenant_id', currentTenant.id)
+          .gte('created_at', sevenDaysAgo.toISOString())
+          .limit(20000)
       ]);
 
       if (cd.error) throw cd.error;
@@ -104,22 +118,28 @@ export default function Home() {
       setCategories(cd.data || []);
       setSaleItems(si.data || []);
 
-      // 2. Fetch ALL Products using Pagination (Bypassing 1000 limit)
+      // 2. Fetch ALL Products using Pagination with Explicit Tenant Filter
       let allProducts: any[] = [];
       let page = 0;
-      const PAGE_SIZE = 1000;
+      const PAGE_SIZE = 500;
       let hasMore = true;
 
       while (hasMore) {
+        console.log(`Zırhlı Çekim: Sayfa ${page} (Dükkan: ${currentTenant.license_key})`);
+
         const { data, error } = await supabase
           .from('products')
           .select('*, categories(name)')
-          .order('created_at', { ascending: false })
+          .eq('tenant_id', currentTenant.id) // 🔥 Explicit Filter for Security
+          .order('id', { ascending: true })
           .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
-        if (error) throw error;
+        if (error) {
+          console.error("Çekim Hatası:", error);
+          throw error;
+        }
 
-        if (data) {
+        if (data && data.length > 0) {
           allProducts = [...allProducts, ...data];
           if (data.length < PAGE_SIZE) {
             hasMore = false;
@@ -130,7 +150,7 @@ export default function Home() {
         page++;
       }
 
-      console.log(`Total Products Fetched: ${allProducts.length}`);
+      console.log(`Final Success! Total: ${allProducts.length}`);
       setProducts(allProducts);
 
     } catch (error: any) {
@@ -270,38 +290,20 @@ export default function Home() {
 
   const handleBulkImport = async (data: any[]) => {
     try {
-      // RLS Fix: Ensure tenant context is strictly set before processing
-      const { setCurrentTenant: setTenant } = await import("@/lib/supabase");
-      if (currentTenant?.id) await setTenant(currentTenant.id);
+      setLoading(true);
 
-      const newProducts = data.map((item: any) => {
-        // Log keys once for debugging if needed (check browser console)
-        console.log("Excel Row Data:", item);
-
-        // Helper to find a value by multiple potential key patterns
+      const productsToImport = data.map((item: any) => {
+        // Helper to find value
         const findValue = (obj: any, patterns: string[]) => {
           const keys = Object.keys(obj);
           const normPatterns = patterns.map(p => p.toLowerCase().replace(/[^a-z0-9]/g, ''));
-
-          // 1. Normalleştirilmiş eşleşme (Boşlukları, alt tireleri vb. silerek)
           for (const key of keys) {
             const normKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
-            const pIdx = normPatterns.indexOf(normKey);
-            if (pIdx !== -1) return obj[key];
-          }
-
-          // 2. Kısmi eşleşme (Eğer tam eşleşme bulamazsa)
-          for (const key of keys) {
-            const lowKey = key.toLowerCase();
-            for (const p of patterns) {
-              const lowP = p.toLowerCase();
-              if (lowP.length > 2 && (lowKey.includes(lowP) || lowP.includes(lowKey))) return obj[key];
-            }
+            if (normPatterns.includes(normKey)) return obj[key];
           }
           return undefined;
         };
 
-        // Helper to parse numbers correctly (handles both dot and comma)
         const parseNum = (val: any) => {
           if (val === undefined || val === null || val === "") return 0;
           if (typeof val === 'number') return val;
@@ -310,170 +312,74 @@ export default function Home() {
           return isNaN(res) ? 0 : res;
         };
 
-        // Find barcode first to use as fallback
-        let barcode = String(findValue(item, ["Barkod", "Stok_Kodu", "Stok Kodu", "Barkod No", "Barcode", "BARKOD", "CODE"]) || "");
+        let barcode = String(findValue(item, ["Barkod", "Stok_Kodu", "Stok Kodu", "Barkod No", "Barcode"]) || "");
+        if (!barcode || barcode.trim() === "") barcode = `AUTO-${Date.now()}-${Math.floor(Math.random() * 10000000)}`;
 
-        // If no barcode exists, generate one to ensure it loads
-        if (!barcode || barcode.trim() === "") {
-          barcode = `AUTO-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
-        }
+        let name = findValue(item, ["Adi_1", "Adi1", "Ürün Adı", "Ürün", "Adı", "Name", "Açıklama"]);
+        if (!name) name = item["ADI"] || item["CISIM_ADI"] || (barcode !== "" ? `Ürün ${barcode}` : "İsimsiz Ürün");
 
-        // Find name
-        let name = findValue(item, ["Adi_1", "Adi1", "Ürün Adı", "Ürün", "Adı", "Name", "STOK ADI", "Açıklama", "DEFINITION"]);
-
-        // Fallback for "Nutella" case where name might be in a different column or needs cleanup
-        if (!name || String(name).trim() === "") {
-          // Try searching specific potentially miss-mapped columns
-          if (item["ADI"] && String(item["ADI"]).trim() !== "") name = item["ADI"];
-          else if (item["CISIM_ADI"] && String(item["CISIM_ADI"]).trim() !== "") name = item["CISIM_ADI"];
-        }
-
-        if (!name || String(name).trim() === "") {
-          name = barcode !== "" ? `Ürün ${barcode}` : "İsimsiz Ürün";
-        } else {
-          // Trim whitespace
-          name = String(name).trim();
-        }
-
-        // Find prices
-        const purchase_price = parseNum(findValue(item, ["Alis_Fiyati", "Alış_Fiyatı", "Maliyet", "Cost", "ALIS_FIYATI"]));
-        const sale_price = parseNum(findValue(item, ["Fiyati", "Fiyatı", "Satış Fiyatı", "Fiyat", "Price", "SATIS_FIYATI"]));
-
-        // Find stock
-        const stock_quantity = parseNum(findValue(item, ["Bakiye", "Stok", "Stok Adedi", "Stok Miktarı", "Miktar", "Adet", "Quantity", "QTY", "BAKIYE", "STOK_MIKTARI", "AMOUNT"]));
-
-        // Find unit
-        const unit = findValue(item, ["Birim", "Unit", "BİRİM", "UNIT_CODE"]) || "Adet";
-
-        // Find VAT
-        const vat_rate = Math.round(parseNum(findValue(item, ["KDV", "Kdv Oranı", "VAT", "KDV_ORANI", "VAT_RATE"]) || 1));
+        // Fiyatlarda KDV dahil/hariç mantığı eklenebilir ama şu an düz alıyoruz
+        const purchase_price = parseNum(findValue(item, ["Alis_Fiyati", "Alış_Fiyatı", "Maliyet", "Cost"]));
+        const sale_price = parseNum(findValue(item, ["Fiyati", "Fiyatı", "Satış Fiyatı", "Fiyat", "Price"]));
+        const stock_quantity = parseNum(findValue(item, ["Bakiye", "Stok", "Stok Adedi", "Stok Miktarı", "Miktar", "Adet"]));
+        const vat_rate = Math.round(parseNum(findValue(item, ["KDV", "Kdv Oranı", "VAT"]) || 1));
 
         return {
-          name,
-          barcode,
+          barcode: String(barcode).trim(),
+          name: String(name).trim(),
           purchase_price,
           sale_price,
           stock_quantity,
-          unit,
+          unit: findValue(item, ["Birim", "Unit"]) || "Adet",
           vat_rate,
           status: item.status || "active",
-          is_campaign: item.is_campaign !== undefined ? Boolean(item.is_campaign) : false,
-          image_url: findValue(item, ["Gorsel", "Resim", "Image", "IMAGE_URL", "Görsel"]) || "",
-          tenant_id: currentTenant?.id,
+          is_campaign: item.is_campaign || false,
+          image_url: findValue(item, ["Gorsel", "Resim", "Image"]) || ""
         };
       });
 
-      setLoading(true);
+      // CHUNKED UPLOAD LOGIC (Time-out Prevention)
+      const BATCH_SIZE = 200; // Smaller batches to avoid timeout
+      let totalSuccess = 0;
+      let totalFailed = 0;
+      let allErrors = "";
 
-      // 1. Deduplicate newProducts by barcode to prevent Batch Upsert errors
-      // (Postgres fails if a batch contains the same unique key twice)
-      const uniqueProductsMap = new Map();
-      newProducts.forEach((p: any) => {
-        if (p.barcode) {
-          uniqueProductsMap.set(p.barcode, p);
+      for (let i = 0; i < productsToImport.length; i += BATCH_SIZE) {
+        const batch = productsToImport.slice(i, i + BATCH_SIZE);
+        showToast(`Yükleniyor... ${Math.min(i + BATCH_SIZE, productsToImport.length)} / ${productsToImport.length}`, "info");
+
+        // RPC Call per Batch
+        const { data: result, error } = await supabase.rpc('bulk_import_products', {
+          products_json: batch,
+          target_tenant_id: currentTenant?.id
+        });
+
+        if (error) {
+          console.error("Batch Error:", error);
+          totalFailed += batch.length;
+          allErrors += error.message + "; ";
         } else {
-          // Should not happen due to auto-generation, but strictly unique fallback
-          uniqueProductsMap.set(`NOBAR-${Math.random()}`, p);
+          totalSuccess += result.processed;
+          totalFailed += result.failed;
+          if (result.errors && result.errors !== 'No Error') allErrors += result.errors;
         }
-      });
-      const uniqueProductsList = Array.from(uniqueProductsMap.values());
 
-      const duplicateCount = newProducts.length - uniqueProductsList.length;
-      if (duplicateCount > 0) {
-        showToast(`${duplicateCount} adet mükerrer barkodlu satır birleştirildi.`, "info");
+        // UI'ın donmasını engellemek için kısa bir mola (Throttle)
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
 
-      // Batch Processing Logic (Manual Check-Insert-Update)
-      // Database does not have unique constraint on barcode, so we cannot use native upsert.
-      // We must manually check existence and split into Insert/Update.
-      const BATCH_SIZE = 50;
-      let successCount = 0;
-      let failCount = 0;
-      let firstErrorMessage = "";
+      const finalMsg = `İşlem Bitti! ${totalSuccess} yüklendi, ${totalFailed} hatalı.`;
+      showToast(finalMsg, totalFailed > 0 ? "warning" : "success");
 
-      for (let i = 0; i < uniqueProductsList.length; i += BATCH_SIZE) {
-        // RLS Keep-Alive: Refresh tenant session before every batch
-        if (currentTenant?.id) await setTenant(currentTenant.id);
-
-        const batch = uniqueProductsList.slice(i, i + BATCH_SIZE);
-        showToast(`İşleniyor: ${Math.min(i + BATCH_SIZE, uniqueProductsList.length)} / ${uniqueProductsList.length}`, "info");
-
-        try {
-          // 1. Check which barcodes already exist in DB
-          const batchBarcodes = batch.map((p: any) => p.barcode);
-          const { data: existingItems, error: fetchError } = await supabase
-            .from('products')
-            .select('barcode')
-            .in('barcode', batchBarcodes);
-
-          if (fetchError) throw fetchError;
-
-          const existingBarcodeSet = new Set(existingItems?.map((p: any) => p.barcode) || []);
-          const toInsert: any[] = [];
-          const toUpdate: any[] = [];
-
-          batch.forEach((item: any) => {
-            if (existingBarcodeSet.has(item.barcode)) {
-              toUpdate.push(item);
-            } else {
-              toInsert.push(item);
-            }
-          });
-
-          // 2. Bulk Insert New Items
-          if (toInsert.length > 0) {
-            const { error: insertError } = await supabase.from('products').insert(toInsert);
-            if (insertError) {
-              console.error("Batch Insert Error:", insertError);
-              if (!firstErrorMessage) firstErrorMessage = insertError.message;
-              // Fallback: Try one by one
-              for (const item of toInsert) {
-                const { error: singleError } = await supabase.from('products').insert([item]);
-                if (!singleError) successCount++;
-                else failCount++;
-              }
-            } else {
-              successCount += toInsert.length;
-            }
-          }
-
-          // 3. Update Existing Items (Sequentially)
-          // Note: Parallelizing this with Promise.all might be faster but rate limits could be an issue. 
-          // Keeping it sequential or small chunks is safer for stability.
-          if (toUpdate.length > 0) {
-            await Promise.all(toUpdate.map(async (item: any) => {
-              // Update all columns based on barcode
-              const { error: updateError } = await supabase
-                .from('products')
-                .update(item)
-                .eq('barcode', item.barcode);
-
-              if (updateError) {
-                console.error("Update Error:", updateError, item);
-                failCount++;
-              } else {
-                successCount++;
-              }
-            }));
-          }
-
-        } catch (err: any) {
-          console.error("Batch Process Critical Error:", err);
-          if (!firstErrorMessage) firstErrorMessage = err.message;
-          failCount += batch.length; // Assume whole batch failed if critical error
-        }
+      if (totalFailed > 0 || (allErrors && allErrors.replace(/No Error/g, '').trim().length > 0)) {
+        console.error("Yükleme Detayları:", allErrors);
       }
 
-      const finalMessage = `${successCount} ürün işlendi! (${failCount} hatalı)`;
-      showToast(finalMessage, successCount > 0 ? "success" : "warning");
+      await fetchData();
 
-      if (failCount > 0 && firstErrorMessage) {
-        setTimeout(() => alert(`Yükleme Hatası Detayı (İlk Hata): ${firstErrorMessage}`), 500);
-      }
-
-      await fetchData(); // Force wait
     } catch (error: any) {
-      showToast(error.message, "error");
+      console.error("Critical Import Error:", error);
+      showToast("Kritik Hata: " + error.message, "error");
     } finally {
       setLoading(false);
     }
