@@ -35,6 +35,8 @@ export default function NotificationCenter() {
     }, [currentTenant]);
 
     const fetchNotifications = async () => {
+        if (!currentTenant) return;
+
         try {
             const { data, error } = await supabase
                 .from('notifications')

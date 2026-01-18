@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import {
     Search,
     Edit2,
@@ -16,10 +16,15 @@ import {
     Filter,
     MoreHorizontal,
     Package,
-    X
+    X,
+    Eye, // Added Eye
+    EyeOff,
+    RefreshCw,
+    Hash
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { exportToExcel, importFromExcel } from "@/lib/excel";
+import { supabase, setCurrentTenant } from "@/lib/supabase";
 
 export default function ProductTable({ products, onEdit, onDelete, onAdd, onManageCategories, onBulkImport, onClearAll, onToggleAllCampaign, campaignRate, hideFilters = false, limit, onRefresh, showToast }: any) {
     const [search, setSearch] = useState("");
@@ -34,46 +39,74 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
     const [isSelectivePriceModalOpen, setIsSelectivePriceModalOpen] = useState(false);
     const [selectivePriceRate, setSelectivePriceRate] = useState("10");
 
+    // NEW: Bulk Stock States
+    const [isBulkStockModalOpen, setIsBulkStockModalOpen] = useState(false);
+    const [bulkStockValue, setBulkStockValue] = useState("0");
+    const [isRandomStock, setIsRandomStock] = useState(false);
+
+    // NEW: Processing state for bulk actions
+    const [processing, setProcessing] = useState<{ active: boolean; current: number; total: number; label: string }>({
+        active: false, current: 0, total: 0, label: ""
+    });
+    const isCancelledRef = useRef(false);
+
     const anyInCampaign = useMemo(() => products.some((p: any) => p.is_campaign), [products]);
 
-    // Optimized Search & Filter & Sort Logic
-    const sortedAndFilteredProducts = useMemo(() => {
-        let result = products.filter((p: any) => {
+    // 1. Filter Logic
+    const filteredProducts = useMemo(() => {
+        return products.filter((p: any) => {
             const searchLower = search.toLocaleLowerCase('tr-TR');
             const nameMatch = p.name?.toLocaleLowerCase('tr-TR').includes(searchLower);
             const barcodeMatch = p.barcode?.toLocaleLowerCase('tr-TR').includes(searchLower);
 
-            // Eğer tam barkod eşleşmesi varsa (okuyucu kullanıldığında) sadece o ürünleri göster
             if (search.length >= 3 && p.barcode?.toLocaleLowerCase('tr-TR') === searchLower) return true;
 
             const matchesSearch = nameMatch || barcodeMatch;
 
-            const status = p.status || (p.is_active === false ? "passive" : "active");
+            const isPassive = p.status === 'passive' || p.is_active === false;
+            const isPending = p.status === 'pending';
+            const isActive = !isPassive && !isPending;
+
             const matchesFilter =
                 filter === "all" ? true :
-                    filter === "active" ? status === "active" :
-                        filter === "passive" ? status === "passive" :
-                            filter === "pending" ? status === "pending" :
+                    filter === "active" ? isActive :
+                        filter === "passive" ? isPassive :
+                            filter === "pending" ? isPending :
                                 filter === "campaign" ? p.is_campaign === true : true;
 
             return matchesSearch && matchesFilter;
         });
+    }, [products, search, filter]);
 
-        // Sorting
-        const sorted = result.sort((a: any, b: any) => {
+    // 2. Count Logic
+    const counts = useMemo(() => {
+        return {
+            all: products.length,
+            active: products.filter((p: any) => {
+                const isPassive = p.status === 'passive' || p.is_active === false;
+                const isPending = p.status === 'pending';
+                return !isPassive && !isPending;
+            }).length,
+            passive: products.filter((p: any) => p.status === 'passive' || p.is_active === false).length,
+            pending: products.filter((p: any) => p.status === 'pending').length,
+            campaign: products.filter((p: any) => p.is_campaign).length
+        }
+    }, [products]);
+
+    // 3. Sorting Logic
+    const sortedAndFilteredProducts = useMemo(() => {
+        return [...filteredProducts].sort((a: any, b: any) => {
             switch (sortBy) {
-                case "name-asc": return a.name.localeCompare(b.name);
-                case "name-desc": return b.name.localeCompare(a.name);
-                case "stock-asc": return a.stock_quantity - b.stock_quantity;
-                case "stock-desc": return b.stock_quantity - a.stock_quantity;
-                case "price-desc": return b.sale_price - a.sale_price;
-                case "price-asc": return a.sale_price - b.sale_price;
+                case "name-asc": return (a.name || "").localeCompare(b.name || "");
+                case "name-desc": return (b.name || "").localeCompare(a.name || "");
+                case "stock-asc": return (a.stock_quantity || 0) - (b.stock_quantity || 0);
+                case "stock-desc": return (b.stock_quantity || 0) - (a.stock_quantity || 0);
+                case "price-desc": return (b.sale_price || 0) - (a.sale_price || 0);
+                case "price-asc": return (a.sale_price || 0) - (b.sale_price || 0);
                 default: return 0;
             }
         });
-
-        return sorted;
-    }, [products, search, filter, sortBy]);
+    }, [filteredProducts, sortBy]);
 
     // Pagination / Virtualization Logic
     const [page, setPage] = useState(1);
@@ -128,7 +161,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
 
     // NEW: Selective Price Increase Functions
     const handleToggleSelectProduct = (productId: string) => {
-        setSelectedProducts(prev =>
+        setSelectedProducts((prev: string[]) =>
             prev.includes(productId)
                 ? prev.filter(id => id !== productId)
                 : [...prev, productId]
@@ -147,54 +180,257 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
         const rate = parseFloat(selectivePriceRate) || 0;
         if (rate === 0 || selectedProducts.length === 0) return;
 
-        const { supabase } = await import("@/lib/supabase");
+        try {
+            const savedTenantId = localStorage.getItem('currentTenantId');
+            if (savedTenantId) await setCurrentTenant(savedTenantId);
 
-        const logs: any[] = [];
+            let successCount = 0;
+            const total = selectedProducts.length;
+            const BATCH_SIZE = 50;
 
-        for (const productId of selectedProducts) {
-            const product = products.find((p: any) => p.id === productId);
-            if (product) {
-                const oldPrice = product.sale_price;
-                const newPrice = parseFloat((product.sale_price * (1 + rate / 100)).toFixed(2));
-                const increaseAmount = newPrice - oldPrice;
+            isCancelledRef.current = false;
+            setProcessing({ active: true, current: 0, total, label: "Fiyatlar güncelleniyor (Sıralı)..." });
 
-                // Update price
-                await supabase
-                    .from('products')
-                    .update({ sale_price: newPrice })
-                    .eq('id', productId);
+            // Sequential processing in small batches to ensure stability
+            for (let i = 0; i < selectedProducts.length; i += BATCH_SIZE) {
+                if (isCancelledRef.current) break;
 
-                // Prepare log entry
-                logs.push({
-                    product_id: productId,
-                    product_name: product.name,
-                    product_barcode: product.barcode || null,
-                    old_price: oldPrice,
-                    new_price: newPrice,
-                    increase_rate: rate,
-                    increase_amount: increaseAmount,
-                    changed_by: 'admin',
-                    notes: `${selectedProducts.length} ürüne toplu %${rate} zam uygulandı`
-                });
+                const batchIds = selectedProducts.slice(i, i + BATCH_SIZE);
+                setProcessing(prev => ({ ...prev, current: Math.min(i + BATCH_SIZE, total) }));
+
+                const logs: any[] = [];
+                for (const productId of batchIds) {
+                    const product = products.find((p: any) => p.id === productId);
+                    if (!product) continue;
+
+                    const oldPrice = product.sale_price;
+                    const newPrice = parseFloat((product.sale_price * (1 + rate / 100)).toFixed(2));
+                    const increaseAmount = newPrice - oldPrice;
+
+                    // Update single product price
+                    const { error } = await supabase.from('products').update({ sale_price: newPrice }).eq('id', productId);
+
+                    if (error) {
+                        console.error(`Error updating product ${productId}:`, error.message);
+                    } else {
+                        successCount++;
+                        logs.push({
+                            product_id: productId,
+                            product_name: product.name,
+                            product_barcode: product.barcode || null,
+                            old_price: oldPrice,
+                            new_price: newPrice,
+                            increase_rate: rate,
+                            increase_amount: increaseAmount,
+                            changed_by: 'admin',
+                        });
+                    }
+                }
+
+                if (logs.length > 0) {
+                    await supabase.from('price_change_logs').insert(logs);
+                }
+
+                // Breathing space
+                await new Promise(r => setTimeout(r, 100));
             }
+
+            setIsSelectivePriceModalOpen(false);
+            setSelectedProducts([]);
+            if (showToast) {
+                const msg = isCancelledRef.current ? `İşlem durduruldu. ${successCount} ürün güncellendi.` : `${successCount} ürünün fiyatı güncellendi.`;
+                showToast(msg, successCount > 0 ? "success" : "error");
+            }
+            if (onRefresh) await onRefresh();
+        } catch (error: any) {
+            console.error("Selective price increase error:", error);
+            alert("Hata oluştu: " + error.message);
+        } finally {
+            setProcessing({ active: false, current: 0, total: 0, label: "" });
+            isCancelledRef.current = false;
+        }
+    };
+
+    const handleBulkStatusChange = async (status: 'active' | 'passive') => {
+        if (selectedProducts.length === 0) return;
+        if (!confirm(`${selectedProducts.length} ürünü ${status === 'active' ? 'AKTİF' : 'PASİF'} duruma getirmek istediğinize emin misiniz?`)) return;
+
+        try {
+            // Re-authenticate to ensure tenant RLS is active
+            const { supabase: sb, setCurrentTenant: setTenant } = await import("@/lib/supabase");
+            const savedTenantId = localStorage.getItem('currentTenantId');
+            if (savedTenantId) await setTenant(savedTenantId);
+
+            let successCount = 0;
+            const total = selectedProducts.length;
+            const BATCH_SIZE = 50;
+
+            isCancelledRef.current = false;
+            setProcessing({ active: true, current: 0, total, label: `Ürünler ${status === 'active' ? 'aktif' : 'pasif'} ediliyor...` });
+
+            // Using BATCHES with .in() for maximum efficiency and stability
+            for (let i = 0; i < total; i += BATCH_SIZE) {
+                if (isCancelledRef.current) break;
+
+                const batchIds = selectedProducts.slice(i, i + BATCH_SIZE);
+                setProcessing(prev => ({ ...prev, current: Math.min(i + BATCH_SIZE, total) }));
+
+                // Update call without .select() to avoid RLS empty returns
+                // Removed non-existent 'is_active' column
+                const { error, count } = await sb
+                    .from('products')
+                    .update({
+                        status: status
+                    })
+                    .in('id', batchIds);
+                // .select() removed explicitly as it caused "0 updated" on RLS hidden rows
+
+                if (error) {
+                    console.error(`Batch update error:`, error.message);
+                    // If we have an error, store it to show user
+                    throw new Error(error.message);
+                } else {
+                    // Assume success if no error, even if we can't see the rows anymore
+                    successCount += batchIds.length;
+                }
+
+                await new Promise(r => setTimeout(r, 100));
+            }
+
+            setSelectedProducts([]);
+            if (showToast) {
+                const msg = isCancelledRef.current
+                    ? `İşlem durduruldu. ${successCount} ürün güncellendi.`
+                    : `${successCount} ürün başarıyla güncellendi.`;
+                showToast(msg, "success");
+            }
+            if (onRefresh) await onRefresh();
+        } catch (error: any) {
+            console.error("Bulk status change error:", error);
+            alert("Hata: " + error.message);
+        } finally {
+            setProcessing({ active: false, current: 0, total: 0, label: "" });
+            isCancelledRef.current = false;
+        }
+    };
+
+    const handleAutoPassiveZeroStock = async () => {
+        const zeroStockProducts = products.filter((p: any) => p.stock_quantity <= 0 && (p.is_active !== false || p.status !== 'passive'));
+        if (zeroStockProducts.length === 0) {
+            if (showToast) showToast("Stoku sıfır olan ve aktif görünen ürün bulunamadı.", "info");
+            return;
         }
 
-        // Insert all logs at once
-        if (logs.length > 0) {
-            await supabase.from('price_change_logs').insert(logs);
+        if (!confirm(`Stoku sıfır olan ${zeroStockProducts.length} ürünü pasife almak üzeresiniz. Onaylıyor musunuz?`)) return;
+
+        try {
+            const { supabase: sb, setCurrentTenant: setTenant } = await import("@/lib/supabase");
+            const savedTenantId = localStorage.getItem('currentTenantId');
+            if (savedTenantId) await setTenant(savedTenantId);
+
+            let successCount = 0;
+            const total = zeroStockProducts.length;
+            const BATCH_SIZE = 50;
+
+            setProcessing({ active: true, current: 0, total, label: "Stoksuz ürünler pasife alınıyor..." });
+
+            for (let i = 0; i < total; i += BATCH_SIZE) {
+                const batchIds = zeroStockProducts.slice(i, i + BATCH_SIZE).map((p: any) => p.id);
+                setProcessing(prev => ({ ...prev, current: Math.min(i + BATCH_SIZE, total) }));
+
+                // No .select()
+                // Removed non-existent 'is_active' column
+                const { error } = await sb.from('products').update({ status: 'passive' }).in('id', batchIds);
+
+                if (error) {
+                    console.error("Batch auto passive error:", error.message);
+                    throw new Error(error.message);
+                } else {
+                    successCount += batchIds.length;
+                }
+
+                await new Promise(r => setTimeout(r, 50));
+            }
+
+            if (showToast) showToast(`${successCount} adet stoksuz ürün pasife alındı!`, "success");
+            if (onRefresh) await onRefresh();
+        } catch (error: any) {
+            console.error("Auto passive error:", error);
+            alert("Hata: " + error.message);
+        } finally {
+            setProcessing({ active: false, current: 0, total: 0, label: "" });
         }
+    };
 
-        setIsSelectivePriceModalOpen(false);
-        setSelectedProducts([]);
+    const handleBulkStockUpdate = async () => {
+        if (selectedProducts.length === 0) return;
+        const value = parseFloat(bulkStockValue) || 0;
 
-        // Show success message
-        if (showToast) {
-            showToast(`${logs.length} ürüne %${rate} zam başarıyla uygulandı!`, "success");
-        }
+        if (!confirm(`${selectedProducts.length} ürünün stoklarını ${isRandomStock ? 'RASTGELE' : value} olarak güncellemek üzeresiniz. Emin misiniz?`)) return;
 
-        // Refresh products without page reload
-        if (onRefresh) {
-            await onRefresh();
+        try {
+            const { supabase: sb, setCurrentTenant: setTenant } = await import("@/lib/supabase");
+            const savedTenantId = localStorage.getItem('currentTenantId');
+            if (savedTenantId) await setTenant(savedTenantId);
+
+            let successCount = 0;
+            const total = selectedProducts.length;
+            const BATCH_SIZE = 50;
+
+            isCancelledRef.current = false;
+            setProcessing({ active: true, current: 0, total, label: "Stoklar güncelleniyor..." });
+
+            if (isRandomStock) {
+                // Random stock must be one by one to have different values
+                for (let i = 0; i < total; i++) {
+                    if (isCancelledRef.current) break;
+                    const id = selectedProducts[i];
+                    setProcessing(prev => ({ ...prev, current: i + 1 }));
+
+                    const finalStock = Math.floor(Math.random() * 100) + 1;
+                    const { error } = await sb.from('products').update({ stock_quantity: finalStock }).eq('id', id);
+                    if (error) {
+                        console.error(`Error updating product ${id}:`, error.message);
+                        throw new Error(error.message);
+                    } else {
+                        successCount++;
+                    }
+
+                    if (i % 10 === 0) await new Promise(r => setTimeout(r, 20));
+                }
+            } else {
+                // Fixed stock can be batch using .in()
+                for (let i = 0; i < total; i += BATCH_SIZE) {
+                    if (isCancelledRef.current) break;
+                    const batchIds = selectedProducts.slice(i, i + BATCH_SIZE);
+                    setProcessing(prev => ({ ...prev, current: Math.min(i + BATCH_SIZE, total) }));
+
+                    const { error } = await sb.from('products').update({ stock_quantity: value }).in('id', batchIds);
+
+                    if (error) {
+                        console.error("Batch stock error:", error.message);
+                        throw new Error(error.message);
+                    } else {
+                        successCount += batchIds.length;
+                    }
+
+                    await new Promise(r => setTimeout(r, 100));
+                }
+            }
+
+            setIsBulkStockModalOpen(false);
+            setSelectedProducts([]);
+            if (showToast) {
+                const msg = isCancelledRef.current ? `İşlem durduruldu. ${successCount} ürün güncellendi.` : `${successCount} ürünün stoku güncellendi.`;
+                showToast(msg, "success");
+            }
+            if (onRefresh) await onRefresh();
+        } catch (error: any) {
+            console.error("Bulk stock update error:", error);
+            alert("Hata: " + error.message);
+        } finally {
+            setProcessing({ active: false, current: 0, total: 0, label: "" });
+            isCancelledRef.current = false;
         }
     };
 
@@ -263,9 +499,12 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                     <button
                                         key={btn.id}
                                         onClick={() => setFilter(btn.id)}
-                                        className={`px-4 py-2 rounded-lg text-xs font-black transition-all ${filter === btn.id ? 'bg-primary text-white shadow-lg' : 'text-secondary hover:text-white'}`}
+                                        className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 ${filter === btn.id ? 'bg-primary text-white shadow-lg' : 'text-secondary hover:text-white'}`}
                                     >
-                                        {btn.label.toUpperCase()}
+                                        <span>{btn.label.toUpperCase()}</span>
+                                        <span className={`px-1.5 py-0.5 rounded-md text-[9px] ${filter === btn.id ? 'bg-white/20 text-white' : 'bg-white/5 text-secondary'}`}>
+                                            {(counts as any)[btn.id]}
+                                        </span>
                                     </button>
                                 ))}
                             </div>
@@ -286,18 +525,41 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                         className="flex items-center space-x-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-400 transition-all"
                                     >
                                         <Calculator className="w-4 h-4" />
-                                        <span>SEÇİLİLERE ZAM UYGULA</span>
+                                        <span>ZAM UYGULA</span>
                                     </button>
                                     <button
-                                        onClick={() => setSelectedProducts([])}
-                                        className="p-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 rounded-xl transition-all"
-                                        title="Seçimi Temizle"
+                                        onClick={() => handleBulkStatusChange('active')}
+                                        className="flex items-center space-x-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-400 transition-all"
                                     >
-                                        <X size={16} />
+                                        <Eye className="w-4 h-4" />
+                                        <span>AKTİFE AL</span>
+                                    </button>
+                                    <button
+                                        onClick={() => handleBulkStatusChange('passive')}
+                                        className="flex items-center space-x-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 px-4 py-2.5 rounded-xl text-xs font-bold text-rose-500 transition-all"
+                                    >
+                                        <EyeOff className="w-4 h-4" />
+                                        <span>PASİFE AL</span>
+                                    </button>
+                                    <button
+                                        onClick={() => setIsBulkStockModalOpen(true)}
+                                        className="flex items-center space-x-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 px-4 py-2.5 rounded-xl text-xs font-bold text-blue-400 transition-all"
+                                    >
+                                        <Hash className="w-4 h-4" />
+                                        <span>STOK GÜNCELLE</span>
                                     </button>
                                     <div className="h-6 w-[1px] bg-border mx-2" />
                                 </>
                             )}
+
+                            <button
+                                onClick={handleAutoPassiveZeroStock}
+                                className="flex items-center space-x-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-4 py-2.5 rounded-xl text-xs font-bold text-amber-500 transition-all"
+                                title="Stoku sıfır olanları otomatik pasife alır"
+                            >
+                                <RefreshCw className="w-4 h-4" />
+                                <span>STOKSUZLARI PASİFE AL</span>
+                            </button>
 
                             <button
                                 onClick={onManageCategories}
@@ -399,7 +661,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                 return (
                                     <tr
                                         key={product.id}
-                                        className="hover:bg-white/5 transition-colors group"
+                                        className={`hover:bg-white/5 transition-colors group ${product.status === 'passive' || product.is_active === false ? 'opacity-50' : ''}`}
                                     >
                                         <td className="px-6 py-4 text-center">
                                             <input
@@ -415,10 +677,13 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                                     <Package className="w-5 h-5" />
                                                 </div>
                                                 <div className="flex flex-col">
-                                                    <span className="font-bold text-white text-sm">
+                                                    <span className="font-bold text-white text-sm flex items-center gap-2">
                                                         {product.name}
                                                         {product.is_campaign && (
-                                                            <span className="ml-2 px-1.5 py-0.5 rounded-md text-[9px] bg-amber-500 text-black font-black">KAMPANYA</span>
+                                                            <span className="px-1.5 py-0.5 rounded-md text-[9px] bg-amber-500 text-black font-black">KAMPANYA</span>
+                                                        )}
+                                                        {(product.status === 'passive' || product.is_active === false) && (
+                                                            <span className="px-1.5 py-0.5 rounded-md text-[9px] bg-slate-700 text-slate-300 font-black">PASİF</span>
                                                         )}
                                                     </span>
                                                     <span className="text-xs text-secondary/60 flex items-center mt-0.5 font-medium font-mono">
@@ -574,6 +839,82 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                 )}
             </AnimatePresence>
 
+            {/* Bulk Stock Update Modal */}
+            <AnimatePresence>
+                {isBulkStockModalOpen && (
+                    <div
+                        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+                        onClick={() => setIsBulkStockModalOpen(false)}
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="glass-card max-w-sm w-full p-8 space-y-8 relative shadow-2xl border border-blue-500/20"
+                        >
+                            <div className="text-center space-y-3">
+                                <div className="w-20 h-20 bg-blue-500/10 rounded-3xl flex items-center justify-center text-blue-400 mx-auto mb-2 border border-blue-500/20">
+                                    <Hash className="w-10 h-10" />
+                                </div>
+                                <h3 className="text-2xl font-black text-white tracking-tight text-center">TOPLU STOK GÜNCELLE</h3>
+                                <p className="text-secondary text-sm font-medium leading-relaxed text-center">
+                                    Seçilen <strong className="text-blue-400">{selectedProducts.length} ürün</strong> için yeni stok değeri belirleyin.
+                                </p>
+                            </div>
+
+                            <div className="flex flex-col gap-4">
+                                <div className="flex items-center justify-between bg-white/5 p-3 rounded-xl border border-white/10">
+                                    <span className="text-xs font-bold text-white">Rastgele Sayı Ata</span>
+                                    <button
+                                        onClick={() => setIsRandomStock(!isRandomStock)}
+                                        className={`w-12 h-6 rounded-full transition-all relative ${isRandomStock ? 'bg-blue-500' : 'bg-slate-700'}`}
+                                    >
+                                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${isRandomStock ? 'right-1' : 'left-1'}`} />
+                                    </button>
+                                </div>
+
+                                {!isRandomStock && (
+                                    <div className="relative z-10 group">
+                                        <input
+                                            type="text"
+                                            inputMode="numeric"
+                                            pattern="[0-9]*"
+                                            value={bulkStockValue}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                // Only allow numbers
+                                                if (val === '' || /^\d+$/.test(val)) {
+                                                    setBulkStockValue(val);
+                                                }
+                                            }}
+                                            className="w-full bg-white/5 border border-white/10 rounded-2xl py-6 px-6 text-4xl font-black text-center text-white outline-none focus:border-blue-500/50 focus:bg-blue-500/5 transition-all"
+                                            placeholder="0"
+                                            autoFocus
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <button
+                                    onClick={() => setIsBulkStockModalOpen(false)}
+                                    className="py-4 px-6 rounded-2xl font-black text-xs tracking-widest bg-white/5 hover:bg-white/10 text-secondary transition-all active:scale-95"
+                                >
+                                    VAZGEÇ
+                                </button>
+                                <button
+                                    onClick={handleBulkStockUpdate}
+                                    className="py-4 px-6 rounded-2xl font-black text-xs tracking-widest bg-blue-500 hover:bg-blue-600 text-white shadow-xl shadow-blue-500/30 transition-all active:scale-95"
+                                >
+                                    UYGULA
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
             {/* Campaign Rate Modal - Stabilized outside the glass-card */}
             <AnimatePresence>
                 {isRateModalOpen && (
@@ -628,6 +969,51 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                 >
                                     UYGULA
                                 </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Processing Overlay */}
+            <AnimatePresence>
+                {processing.active && (
+                    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="bg-slate-900 border border-white/10 p-10 rounded-[40px] shadow-2xl flex flex-col items-center gap-6 max-w-sm w-full relative"
+                        >
+                            {/* Cancel Button */}
+                            <button
+                                onClick={() => {
+                                    if (confirm("İşlemi durdurmak istediğinize emin misiniz?")) {
+                                        isCancelledRef.current = true;
+                                    }
+                                }}
+                                className="absolute top-6 right-6 w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-rose-500 hover:bg-rose-500/10 transition-all active:scale-90"
+                            >
+                                <X size={16} />
+                            </button>
+
+                            <div className="relative w-24 h-24">
+                                <svg className="w-full h-full -rotate-90">
+                                    <circle cx="48" cy="48" r="40" fill="transparent" stroke="currentColor" strokeWidth="8" className="text-white/5" />
+                                    <circle
+                                        cx="48" cy="48" r="40" fill="transparent" stroke="currentColor" strokeWidth="8"
+                                        strokeDasharray={251.2}
+                                        strokeDashoffset={251.2 * (1 - processing.current / (processing.total || 1))}
+                                        className="text-primary transition-all duration-300 stroke-round"
+                                    />
+                                </svg>
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <span className="text-xl font-black text-white">%{Math.round((processing.current / (processing.total || 1)) * 100)}</span>
+                                </div>
+                            </div>
+                            <div className="text-center">
+                                <h3 className="text-white font-black text-xl mb-2">{processing.label}</h3>
+                                <p className="text-secondary text-sm font-bold">{processing.current} / {processing.total} ürün işleniyor...</p>
+                                <p className="text-rose-500/60 text-[10px] font-black tracking-widest uppercase mt-4">DURDURMAK İÇİN SAĞ ÜSTTEKİ ÇARPIYA BASIN</p>
                             </div>
                         </motion.div>
                     </div>

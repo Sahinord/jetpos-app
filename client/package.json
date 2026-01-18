@@ -1,6 +1,6 @@
 {
   "name": "jetpos",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "JetPos - İşiniz Jet Hızında",
   "author": "JetPos",
   "homepage": "./",
@@ -35,6 +35,13 @@
       "main.js",
       "out/**/*",
       "package.json"
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Sahinord",
+        "repo": "jetpos-app"
+      }
     ]
   },
   "dependencies": {
@@ -43,6 +50,7 @@
     "clsx": "^2.1.1",
     "electron-is-dev": "^2.0.0",
     "electron-serve": "^1.1.0",
+    "electron-updater": "^6.7.3",
     "file-saver": "^2.0.5",
     "framer-motion": "^12.25.0",
     "jspdf": "^4.0.0",
@@ -55,7 +63,6 @@
     "react-dom": "19.2.3",
     "react-markdown": "^10.1.0",
     "react-to-print": "^3.2.0",
-    "saas-muhasebe-root": "file:..",
     "tailwind-merge": "^3.4.0",
     "xlsx": "^0.18.5"
   },

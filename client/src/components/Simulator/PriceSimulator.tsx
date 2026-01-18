@@ -43,7 +43,7 @@ export default function PriceSimulator({ products, onApplyChanges, showToast }: 
     }, [simulatedProducts, searchQuery]);
 
     const handleApply = () => {
-        const updated = simulatedProducts.map(p => ({
+        const updated = simulatedProducts.map((p: any) => ({
             ...p,
             purchase_price: p.new_purchase_price,
             sale_price: p.suggested_sale_price

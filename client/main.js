@@ -1,8 +1,37 @@
-const { app, BrowserWindow, Menu, ipcMain } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, dialog } = require('electron');
 const path = require('path');
 const isDev = require('electron-is-dev');
 const serve = require('electron-serve');
+const { autoUpdater } = require('electron-updater');
+
 const loadURL = serve({ directory: 'out' });
+
+// Auto-updater configuration
+autoUpdater.autoDownload = true;
+autoUpdater.allowPrerelease = false;
+
+function checkUpdates() {
+    if (!isDev) {
+        autoUpdater.checkForUpdatesAndNotify();
+    }
+}
+
+autoUpdater.on('update-available', () => {
+    // Optionally notify user
+});
+
+autoUpdater.on('update-downloaded', () => {
+    dialog.showMessageBox({
+        type: 'info',
+        title: 'Güncelleme Hazır',
+        message: 'Yeni bir sürüm indirildi. Uygulamanın güncellenmesi için yeniden başlatılması gerekiyor.',
+        buttons: ['Şimdi Yeniden Başlat', 'Sonra']
+    }).then((result) => {
+        if (result.response === 0) {
+            autoUpdater.quitAndInstall();
+        }
+    });
+});
 
 function createWindow() {
     // Remove the menu completely
@@ -50,7 +79,10 @@ function createWindow() {
     }
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+    createWindow();
+    checkUpdates();
+});
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {

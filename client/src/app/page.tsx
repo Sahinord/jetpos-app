@@ -522,8 +522,12 @@ export default function Home() {
 
       // Update Stock and check for depleted items
       const depletedProducts: string[] = [];
+      const { supabase: sb, setCurrentTenant: setTenant } = await import("@/lib/supabase");
+      const savedTenantId = localStorage.getItem('currentTenantId');
+      if (savedTenantId) await setTenant(savedTenantId);
+
       for (const item of cartItems) {
-        const { error: rpcError } = await supabase.rpc('decrement_stock', {
+        const { error: rpcError } = await sb.rpc('decrement_stock', {
           product_id: item.id,
           qty: item.quantity
         });
@@ -532,8 +536,13 @@ export default function Home() {
           console.error("Stok düşme hatası:", rpcError);
         } else {
           const productInState = products.find((p: any) => p.id === item.id);
+          // Check if stock became zero or less after this sale
+          // Note: productInState has OLD stock. item.quantity is what we just sold.
           if (productInState && (productInState.stock_quantity - item.quantity) <= 0) {
             depletedProducts.push(productInState.name);
+
+            // Automatically set to passive
+            await sb.from('products').update({ status: 'passive' }).eq('id', item.id);
           }
         }
       }
@@ -542,7 +551,7 @@ export default function Home() {
 
       if (depletedProducts.length > 0) {
         depletedProducts.forEach(name => {
-          showToast(`${name} ürünü tükendi ve otomatik olarak pasif duruma alındı.`, "info");
+          showToast(`${name} tükendi ve otomatik pasife alındı.`, "info");
         });
       }
 
@@ -674,7 +683,7 @@ export default function Home() {
           {activeTab === "pos" && (
             <div className="max-w-[1500px] mx-auto w-full flex-1 flex flex-col min-h-0">
               <POS
-                products={products.filter((p: any) => p.status === 'active')}
+                products={products.filter((p: any) => p.status === 'active' || (p.is_active !== false && p.status !== 'passive'))}
                 categories={categories}
                 onCheckout={handleCheckout}
                 showToast={showToast}

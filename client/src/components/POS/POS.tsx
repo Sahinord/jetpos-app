@@ -95,7 +95,8 @@ export default function POS({
         return () => observer.disconnect();
     }, [search, selectedCategory]);
 
-    // Barcode Auto-Add Logic
+    // Barcode Auto-Add Logic disabled as per user request (User prefers manual add)
+    /*
     useEffect(() => {
         if (search.length >= 3) {
             const exactMatch = products.find((p: any) => p.barcode === search);
@@ -106,6 +107,7 @@ export default function POS({
             }
         }
     }, [search]);
+    */
 
 
     // Theme styles mapping
@@ -238,6 +240,11 @@ export default function POS({
         }));
     };
 
+    const removeFromCart = (id: string) => {
+        setCart(prev => prev.filter(item => item.id !== id));
+        playBeep();
+    };
+
     const applyNumpadAction = () => {
         const val = parseFloat(numpadValue.replace(',', '.'));
         if (isNaN(val)) return;
@@ -364,7 +371,14 @@ export default function POS({
                                                 exit={{ opacity: 0, x: 20 }}
                                                 className="group hover:bg-white/5 transition-colors"
                                             >
-                                                <td className="p-4 text-center text-secondary font-bold text-xs">{index + 1}</td>
+                                                <td className="p-4 text-center">
+                                                    <button
+                                                        onClick={() => removeFromCart(item.id)}
+                                                        className="p-2 text-secondary hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </td>
                                                 <td className="p-4">
                                                     <div className="font-bold text-sm text-white leading-tight break-words max-w-[250px]">{item.name}</div>
                                                     <div className="text-[10px] text-secondary font-medium tracking-wider">{item.barcode}</div>
