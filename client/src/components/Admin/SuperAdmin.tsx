@@ -156,6 +156,7 @@ export default function SuperAdmin() {
                     company_name: editingTenant.company_name,
                     license_key: editingTenant.license_key,
                     contact_email: editingTenant.contact_email,
+                    logo_url: editingTenant.logo_url,
                     features: editingTenant.features,
                     status: editingTenant.status
                 })
@@ -219,6 +220,7 @@ export default function SuperAdmin() {
                 .insert([{
                     license_key: editingTenant.license_key,
                     company_name: editingTenant.company_name || null,
+                    logo_url: editingTenant.logo_url,
                     contact_email: editingTenant.contact_email,
                     features: editingTenant.features,
                     status: editingTenant.status
@@ -694,6 +696,10 @@ export default function SuperAdmin() {
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Firma Adı (Opsiyonel)</label>
                                     <input type="text" value={editingTenant.company_name} onChange={(e) => setEditingTenant({ ...editingTenant, company_name: e.target.value })} className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl text-white focus:border-primary/50 outline-none" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Logo URL</label>
+                                    <input type="text" value={editingTenant.logo_url || ''} onChange={(e) => setEditingTenant({ ...editingTenant, logo_url: e.target.value })} className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl text-white focus:border-primary/50 outline-none" placeholder="https://..." />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Destek E-Posta</label>

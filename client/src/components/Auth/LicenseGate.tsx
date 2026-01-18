@@ -371,7 +371,7 @@ export default function LicenseGate({ onSuccess }: { onSuccess: () => void }) {
                                 <div className="space-y-6">
                                     {/* License Badge */}
                                     <div className="bg-slate-950/50 border border-white/5 rounded-2xl px-4 py-2 text-center">
-                                        <span className="text-[10px] font-black tracking-widest text-slate-500 uppercase block mb-1">Aktif Lisans</span>
+                                        <span className="text-[10px] font-black tracking-widest text-emerald-500 uppercase block mb-1">✓ BU BİLGİSAYARA TANIMLI LİSANS</span>
                                         <span className="text-blue-400 font-mono text-sm tracking-wider">{licenseKey}</span>
                                     </div>
 
@@ -405,7 +405,7 @@ export default function LicenseGate({ onSuccess }: { onSuccess: () => void }) {
                                             </div>
                                         </div>
                                         <span className="text-sm font-medium text-slate-400 group-hover:text-slate-300 transition-colors">
-                                            30 gün boyunca beni hatırla
+                                            Bu cihazda oturumu açık tut (Otomatik Giriş)
                                         </span>
                                     </label>
 

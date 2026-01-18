@@ -270,6 +270,10 @@ export default function Home() {
 
   const handleBulkImport = async (data: any[]) => {
     try {
+      // RLS Fix: Ensure tenant context is strictly set before processing
+      const { setCurrentTenant: setTenant } = await import("@/lib/supabase");
+      if (currentTenant?.id) await setTenant(currentTenant.id);
+
       const newProducts = data.map((item: any) => {
         // Log keys once for debugging if needed (check browser console)
         console.log("Excel Row Data:", item);
@@ -355,6 +359,7 @@ export default function Home() {
           status: item.status || "active",
           is_campaign: item.is_campaign !== undefined ? Boolean(item.is_campaign) : false,
           image_url: findValue(item, ["Gorsel", "Resim", "Image", "IMAGE_URL", "Görsel"]) || "",
+          tenant_id: currentTenant?.id,
         };
       });
 
@@ -387,6 +392,9 @@ export default function Home() {
       let firstErrorMessage = "";
 
       for (let i = 0; i < uniqueProductsList.length; i += BATCH_SIZE) {
+        // RLS Keep-Alive: Refresh tenant session before every batch
+        if (currentTenant?.id) await setTenant(currentTenant.id);
+
         const batch = uniqueProductsList.slice(i, i + BATCH_SIZE);
         showToast(`İşleniyor: ${Math.min(i + BATCH_SIZE, uniqueProductsList.length)} / ${uniqueProductsList.length}`, "info");
 
