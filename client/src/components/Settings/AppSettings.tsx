@@ -5,10 +5,10 @@ import {
     Volume2, VolumeX, Monitor,
     Palette, CheckCircle2,
     Shield, Bell, Database,
-    Info, ExternalLink
+    Info, ExternalLink, Users
 } from "lucide-react";
 
-export default function AppSettings({ theme, setTheme, isBeepEnabled, setIsBeepEnabled, showHelpIcons, setShowHelpIcons, showToast }: any) {
+export default function AppSettings({ theme, setTheme, isBeepEnabled, setIsBeepEnabled, showHelpIcons, setShowHelpIcons, isEmployeeModuleEnabled, setIsEmployeeModuleEnabled, showToast }: any) {
     const themes = [
         { id: 'modern', name: 'MODERN DARK', color: 'bg-primary', desc: 'Sleek ve modern bir arayüz' },
         { id: 'wood', name: 'KLASİK AHŞAP', color: 'bg-[#8b4513]', desc: 'Sıcak ve nostaljik hesap makinesi' },
@@ -97,6 +97,24 @@ export default function AppSettings({ theme, setTheme, isBeepEnabled, setIsBeepE
                                 className={`w-16 h-8 rounded-full relative transition-all duration-300 ${showHelpIcons ? 'bg-primary' : 'bg-white/10'}`}
                             >
                                 <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all duration-300 shadow-lg ${showHelpIcons ? 'left-9' : 'left-1'}`} />
+                            </button>
+                        </div>
+
+                        <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-emerald-500/10 rounded-xl">
+                                    <Users className="text-emerald-500" />
+                                </div>
+                                <div>
+                                    <div className="font-black text-sm uppercase tracking-wider">ÇALIŞAN MODÜLÜ</div>
+                                    <div className="text-[10px] text-secondary font-bold">Vardiya takibi ve çalışan yönetimi</div>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setIsEmployeeModuleEnabled(!isEmployeeModuleEnabled)}
+                                className={`w-16 h-8 rounded-full relative transition-all duration-300 ${isEmployeeModuleEnabled ? 'bg-emerald-500' : 'bg-white/10'}`}
+                            >
+                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all duration-300 shadow-lg ${isEmployeeModuleEnabled ? 'left-9' : 'left-1'}`} />
                             </button>
                         </div>
                     </div>
