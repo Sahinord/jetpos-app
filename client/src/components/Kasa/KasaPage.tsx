@@ -139,44 +139,6 @@ export default function KasaPage({ pageId, showToast }: KasaPageProps) {
 
     return (
         <div className="min-h-screen">
-            {/* Elegant Header Section */}
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 px-2"
-            >
-                <div className="space-y-2">
-                    <div className="flex items-center gap-3 mb-1">
-                        <div className={`p-2 rounded-lg bg-white/5 border border-white/10 ${info.color}`}>
-                            <Icon className="w-5 h-5" />
-                        </div>
-                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-secondary">MODÜL / KASA VE ODA</span>
-                    </div>
-                    <h1 className="text-4xl font-black text-white tracking-tight flex items-center gap-3">
-                        {info.title}
-                        <Sparkles className="w-6 h-6 text-primary animate-pulse" />
-                    </h1>
-                    <p className="text-secondary text-sm font-medium max-w-lg leading-relaxed">
-                        {info.description}
-                    </p>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    <div className="flex -space-x-3">
-                        {[1, 2, 3].map(i => (
-                            <div key={i} className="w-8 h-8 rounded-full border-2 border-[#020617] bg-white/5 flex items-center justify-center">
-                                <div className="w-1.5 h-1.5 rounded-full bg-primary/40" />
-                            </div>
-                        ))}
-                    </div>
-                    <div className="h-10 w-px bg-white/10 mx-2" />
-                    <button className="px-5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-xs font-bold text-white transition-all flex items-center gap-2 group">
-                        YARDIM AL
-                        <ChevronRight className="w-4 h-4 text-primary group-hover:translate-x-1 transition-transform" />
-                    </button>
-                </div>
-            </motion.div>
-
             {/* Dynamic Content Area */}
             <div className="relative">
                 <AnimatePresence mode="wait">

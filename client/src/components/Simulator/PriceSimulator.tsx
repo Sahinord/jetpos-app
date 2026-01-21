@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { TrendingUp, AlertCircle, Save, ArrowRight, Search } from "lucide-react";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { TrendingUp, AlertCircle, Save, ArrowRight, Search, ZoomIn, ZoomOut } from "lucide-react";
 
 export default function PriceSimulator({ products, onApplyChanges, showToast }: any) {
     const [costIncrease, setCostIncrease] = useState(0);
     const [targetMargin, setTargetMargin] = useState(0);
     const [searchQuery, setSearchQuery] = useState("");
     const [displayLimit, setDisplayLimit] = useState(50);
+    const [zoomLevel, setZoomLevel] = useState(100); // 50-150 aralığında
+    const containerRef = useRef<HTMLDivElement>(null);
 
     // Optimize calculations with useMemo
     const simulatedProducts = useMemo(() => {
@@ -52,8 +54,31 @@ export default function PriceSimulator({ products, onApplyChanges, showToast }: 
         showToast(`${updated.length} ürünün fiyatları başarıyla güncellendi!`, "success");
     };
 
+    // Ctrl + Mouse Wheel Zoom Handler
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        const handleWheel = (e: WheelEvent) => {
+            if (e.ctrlKey) {
+                e.preventDefault();
+                setZoomLevel((prev) => {
+                    const delta = -e.deltaY;
+                    const step = 5;
+                    const newZoom = prev + (delta > 0 ? step : -step);
+                    return Math.max(50, Math.min(150, newZoom));
+                });
+            }
+        };
+
+        container.addEventListener('wheel', handleWheel, { passive: false });
+        return () => container.removeEventListener('wheel', handleWheel);
+    }, []);
+
+    const resetZoom = () => setZoomLevel(100);
+
     return (
-        <div className="space-y-8 animate-in fade-in duration-500">
+        <div ref={containerRef} className="space-y-8 animate-in fade-in duration-500 transition-transform duration-200" style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top center' }}>
             {/* Control Panel */}
             <div className="flex flex-col lg:flex-row gap-6 bg-card/20 p-6 rounded-3xl border border-border/50 backdrop-blur-xl">
                 <div className="flex items-center space-x-4 flex-1">
@@ -62,7 +87,7 @@ export default function PriceSimulator({ products, onApplyChanges, showToast }: 
                     </div>
                     <div>
                         <h2 className="text-xl font-black text-white uppercase tracking-tight">Akıllı Fiyat Simülatörü</h2>
-                        <p className="text-xs text-secondary font-medium">Global maliyet artışlarını tek tıkla fiyatlara yansıtın.</p>
+                        <p className="text-xs text-secondary font-medium">Global maliyet artışlarını tek tıkla fiyatlara yansıtın. <span className="text-primary">Ctrl+Wheel ile yakınlaştır</span></p>
                     </div>
                 </div>
 
@@ -76,6 +101,24 @@ export default function PriceSimulator({ products, onApplyChanges, showToast }: 
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
+                    </div>
+
+                    {/* Zoom Controls */}
+                    <div className="flex items-center gap-2 bg-white/5 border border-border px-3 py-2 rounded-2xl">
+                        <ZoomOut className="w-4 h-4 text-secondary" />
+                        <div className="flex flex-col items-center">
+                            <span className="text-[9px] font-black text-secondary uppercase tracking-widest">Zoom</span>
+                            <span className="text-sm font-black text-primary">{zoomLevel}%</span>
+                        </div>
+                        <ZoomIn className="w-4 h-4 text-primary" />
+                        {zoomLevel !== 100 && (
+                            <button
+                                onClick={resetZoom}
+                                className="ml-2 px-2 py-1 bg-primary/10 hover:bg-primary/20 text-primary text-[9px] font-black rounded-lg transition-all"
+                            >
+                                RESET
+                            </button>
+                        )}
                     </div>
 
                     <div className="flex items-center bg-white/5 border border-border p-1.5 rounded-2xl">

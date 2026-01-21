@@ -37,16 +37,73 @@ export default function TopBar({ activeTab }: { activeTab: string }) {
     };
 
     const getTitle = (tab: string) => {
-        switch (tab) {
-            case "dashboard": return "Yönetim Paneli";
-            case "pos": return "Satış Terminali";
-            case "products": return "Ürün Yönetimi";
-            case "expenses": return "Gider Takibi";
-            case "simulation": return "Fiyat Simülasyonu";
-            case "calculator": return "Kâr Hesaplama";
-            case "reports": return "Akıllı Raporlar";
-            default: return "JetPos";
-        }
+        const titles: Record<string, string> = {
+            // Ana Menü
+            "home": "Ana Ekran",
+            "dashboard": "Yönetim Paneli",
+
+            // Satış & POS
+            "pos": "Satış Terminali",
+            "history": "Satış Geçmişi",
+            "invoice": "E-Fatura",
+
+            // Ürün Yönetimi
+            "products": "Ürün Listesi",
+            "alerts": "Stok Uyarıları",
+
+            // Finans
+            "expenses": "Gider Yönetimi",
+            "calculator": "Kâr Hesaplama",
+
+            // Raporlar & Analiz
+            "reports": "Satış Raporları",
+            "simulation": "Fiyat Simülasyonu",
+            "ai_insights": "AI Öngörüleri",
+
+            // Cari Hesap
+            "cari_tanim": "Cari Tanıtımı",
+            "cari_grup": "Grup Tanıtımı",
+            "cari_ozelkod": "Özel Kod Tanıtımı",
+            "cari_borc": "Borç Dekontu",
+            "cari_alacak": "Alacak Dekontu",
+            "cari_virman": "Virman Dekontu",
+            "cari_devir": "Devir Fişi",
+            "cari_liste": "Cari Kartı Listesi",
+            "cari_bakiye": "Bakiye Raporu",
+            "cari_hareket": "Hareket Raporu",
+            "cari_mutabakat": "Mutabakat Raporu",
+            "cari_gunluk": "Günlük Hareket",
+            "cari_analiz": "Cari Analizi",
+
+            // Kasa İşlemleri
+            "cash_define": "Kasa Tanıtımı",
+            "cash_room": "Oda Tanıtımı",
+            "cash_in": "Kasa Tahsil Fişi",
+            "cash_out": "Kasa Tediye Fişi",
+            "cash_transfer": "Kasa Virman Fişi",
+            "cash_opening": "Kasa Devir Fişi",
+            "cash_balance": "Kasa Bakiye Raporu",
+            "cash_history": "Kasa Hareket Raporu",
+
+            // Banka İşlemleri
+            "bank_define": "Banka Tanıtımı",
+            "bank_withdraw": "Bankadan Para Çekme",
+            "bank_deposit": "Bankaya Para Yatırma",
+            "bank_transfer_in": "Gelen Havaleler",
+            "bank_transfer_out": "Yapılan Havaleler",
+            "bank_transfer": "Banka Virman Fişi",
+            "bank_opening": "Banka Devir Fişi",
+            "bank_list": "Banka Listesi",
+            "bank_balance": "Hesap Bakiye Raporu",
+            "bank_history": "Banka Hareket Raporu",
+
+            // Diğer
+            "settings": "Ayarlar",
+            "profile": "Profil",
+            "support": "Destek"
+        };
+
+        return titles[tab] || "JetPos";
     };
 
     return (

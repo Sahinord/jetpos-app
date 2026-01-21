@@ -116,18 +116,8 @@ export default function AISalesInsights() {
 
     return (
         <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-[2rem] flex items-center justify-center shadow-lg shadow-purple-500/20">
-                        <Sparkles className="w-7 h-7 text-white" />
-                    </div>
-                    <div>
-                        <h1 className="text-4xl font-black text-white tracking-tight">AI Akıllı Öngörüler</h1>
-                        <p className="text-slate-400 mt-1">Yapay zeka ile satışlarınızı analiz edin</p>
-                    </div>
-                </div>
-
+            {/* API settings button - Top Right */}
+            <div className="flex justify-end">
                 <button
                     onClick={() => setShowKeyInput(!showKeyInput)}
                     className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl text-secondary hover:text-white transition-all border border-white/5"

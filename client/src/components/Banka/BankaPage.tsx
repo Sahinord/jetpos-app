@@ -87,47 +87,6 @@ export default function BankaPage({ pageId, showToast }: BankaPageProps) {
 
     return (
         <div className="min-h-screen space-y-10">
-            {/* Ultra Premium Header Section */}
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-2"
-            >
-                <div className="space-y-3">
-                    <div className="flex items-center gap-3 mb-1">
-                        <div className={`p-2.5 rounded-xl bg-white/5 border border-white/10 ${info.color} shadow-inner`}>
-                            <Icon className="w-5 h-5" />
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-secondary/60 leading-none">MODÜL / BANKA YÖNETİMİ</span>
-                            <div className="flex items-center gap-2 mt-1">
-                                <h1 className="text-4xl font-black text-white tracking-tight uppercase">
-                                    {info.title}
-                                </h1>
-                                <Sparkles className="w-6 h-6 text-primary animate-pulse hidden sm:block" />
-                            </div>
-                        </div>
-                    </div>
-                    <p className="text-secondary/70 text-sm font-medium max-w-xl leading-relaxed italic border-l-2 border-primary/20 pl-4">
-                        {info.desc}
-                    </p>
-                </div>
-
-                <div className="flex items-center gap-4">
-                    <div className="hidden lg:flex items-center gap-2 px-4 py-2 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
-                        <Zap className="w-3.5 h-3.5 text-emerald-500 animate-bounce" />
-                        <span className="text-[10px] font-black text-emerald-500 tracking-[0.2em] uppercase">SİSTEM ÇALIŞIYOR</span>
-                    </div>
-
-                    <div className="h-10 w-px bg-white/10 hidden md:block" />
-
-                    <button className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-[10px] font-black text-white tracking-widest transition-all flex items-center gap-3 group shadow-xl">
-                        KULLANIM KILAVUZU
-                        <ChevronRight className="w-4 h-4 text-primary group-hover:translate-x-1 transition-transform" />
-                    </button>
-                </div>
-            </motion.div>
-
             {/* Dynamic Content Area */}
             <div className="relative">
                 <AnimatePresence mode="wait">

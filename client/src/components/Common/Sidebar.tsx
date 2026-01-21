@@ -341,11 +341,33 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
         onTabChange(tabId);
     };
 
+    // Aktif sayfanın başlığını bul
+    const getPageTitle = (): string => {
+        for (const category of menuCategories) {
+            // Ana kategorideki itemlerde ara
+            const item = category.items?.find(i => i.id === activeTab);
+            if (item) return item.label;
+
+            // Alt kategorilerdeki itemlerde ara
+            if (category.subCategories) {
+                for (const sub of category.subCategories) {
+                    const subItem = sub.items?.find(i => i.id === activeTab);
+                    if (subItem) return subItem.label;
+                }
+            }
+        }
+
+        // Default
+        return 'Ana Ekran';
+    };
+
+    const pageTitle = getPageTitle();
+
     return (
         <aside className="w-72 border-r border-border bg-card/50 backdrop-blur-sm flex flex-col h-screen sticky top-0 overflow-hidden">
             {/* Logo / Firma Header */}
             <div className="p-6 border-b border-border">
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center justify-center space-x-3">
                     {currentTenant?.logo_url ? (
                         <img
                             src={currentTenant.logo_url}

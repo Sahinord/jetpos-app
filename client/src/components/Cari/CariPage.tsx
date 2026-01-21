@@ -202,17 +202,6 @@ export default function CariPage({ pageId, showToast }: CariPageProps) {
                 animate={{ opacity: 1, y: 0 }}
                 className="glass-card p-8"
             >
-                {/* Header */}
-                <div className="flex items-center gap-6 mb-8">
-                    <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${info.color} flex items-center justify-center shadow-lg`}>
-                        <Icon className="w-10 h-10 text-white" />
-                    </div>
-                    <div>
-                        <h1 className="text-3xl font-black text-white">{info.title}</h1>
-                        <p className="text-secondary mt-1">{info.description}</p>
-                    </div>
-                </div>
-
                 {/* Coming Soon */}
                 <div className="border-2 border-dashed border-white/20 rounded-2xl p-12 text-center">
                     <Construction className="w-16 h-16 text-secondary/40 mx-auto mb-4" />
