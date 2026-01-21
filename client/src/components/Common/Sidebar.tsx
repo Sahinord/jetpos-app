@@ -143,6 +143,24 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
             ]
         },
         {
+            id: "tools",
+            label: "Araçlar",
+            icon: Layers,
+            items: [
+                { id: "label_designer", label: "Ürün Etiketleri", icon: Tags, feature: null, description: "Barkodlu fiyat etiketleri tasarla ve yazdır." },
+            ]
+        },
+        {
+            id: "employees",
+            label: "Çalışan Yönetimi",
+            icon: Users,
+            feature: "employee_module",
+            items: [
+                { id: "employee_manager", label: "Çalışan Listesi", icon: Users, feature: null, description: "Personel bilgileri ve tanımlamalarını yönet." },
+                { id: "shift_manager", label: "Vardiya Takibi", icon: Clock, feature: null, description: "Çalışan giriş/çıkış ve vardiya performans takibi." },
+            ]
+        },
+        {
             id: "cari_hesap",
             label: "Cari Hesap Takibi",
             icon: Users,

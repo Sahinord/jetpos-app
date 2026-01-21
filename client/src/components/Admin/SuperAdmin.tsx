@@ -25,6 +25,8 @@ const AVAILABLE_FEATURES = [
     { id: 'cari_hesap', label: 'Cari Hesap Takibi' },
     { id: 'bank_management', label: 'Banka İşlemleri' },
     { id: 'cash_management', label: 'Kasa İşlemleri' },
+    { id: 'employee_module', label: 'Çalışan Yönetimi & Vardiya' },
+    { id: 'label_designer', label: 'Ürün Etiket Tasarımı' },
     { id: 'trendyol_go', label: 'Trendyol GO' },
     { id: 'invoice', label: 'E-Fatura' },
 ];

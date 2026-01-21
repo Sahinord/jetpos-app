@@ -35,6 +35,9 @@ import HomePage from '@/components/Home/HomePage';
 import CariPage from '@/components/Cari/CariPage';
 import KasaPage from '@/components/Kasa/KasaPage';
 import BankaPage from '@/components/Banka/BankaPage';
+import EmployeeManager from '@/components/Employee/EmployeeManager';
+import ShiftManager from '@/components/Employee/ShiftManager';
+import ProductLabelDesigner from '@/components/Tools/ProductLabelDesigner';
 
 export default function Home() {
   const { currentTenant, loading: tenantLoading } = useTenant();
@@ -52,6 +55,7 @@ export default function Home() {
   const [theme, setTheme] = useState<'modern' | 'wood' | 'glass'>('modern');
   const [isBeepEnabled, setIsBeepEnabled] = useState(true);
   const [showHelpIcons, setShowHelpIcons] = useState(false);
+  const [isEmployeeModuleEnabled, setIsEmployeeModuleEnabled] = useState(true);
 
   const [toast, setToast] = useState({ isVisible: false, message: "", type: "success" as ToastType });
 
@@ -80,6 +84,9 @@ export default function Home() {
     const savedHelpIcons = localStorage.getItem('showHelpIcons');
     if (savedHelpIcons !== null) setShowHelpIcons(savedHelpIcons === 'true');
 
+    const savedEmployeeModule = localStorage.getItem('isEmployeeModuleEnabled');
+    if (savedEmployeeModule !== null) setIsEmployeeModuleEnabled(savedEmployeeModule === 'true');
+
     // Hash control for profile tab
     const handleHashChange = () => {
       if (window.location.hash === '#profile') {
@@ -96,7 +103,8 @@ export default function Home() {
     localStorage.setItem('theme', theme);
     localStorage.setItem('isBeepEnabled', isBeepEnabled.toString());
     localStorage.setItem('showHelpIcons', showHelpIcons.toString());
-  }, [theme, isBeepEnabled, showHelpIcons]);
+    localStorage.setItem('isEmployeeModuleEnabled', isEmployeeModuleEnabled.toString());
+  }, [theme, isBeepEnabled, showHelpIcons, isEmployeeModuleEnabled]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -626,6 +634,8 @@ export default function Home() {
                 setIsBeepEnabled={setIsBeepEnabled}
                 showHelpIcons={showHelpIcons}
                 setShowHelpIcons={setShowHelpIcons}
+                isEmployeeModuleEnabled={isEmployeeModuleEnabled}
+                setIsEmployeeModuleEnabled={setIsEmployeeModuleEnabled}
                 showToast={showToast}
               />
             </div>
@@ -708,6 +718,27 @@ export default function Home() {
           {activeTab.startsWith("bank_") && (
             <div className="max-w-[1500px] mx-auto w-full">
               <BankaPage pageId={activeTab} showToast={showToast} />
+            </div>
+          )}
+
+          {/* Employee Management - Çalışan Yönetimi */}
+          {activeTab === "employee_manager" && isEmployeeModuleEnabled && (
+            <div className="max-w-[1500px] mx-auto w-full">
+              <EmployeeManager showToast={showToast} />
+            </div>
+          )}
+
+          {/* Shift Management - Vardiya Takibi */}
+          {activeTab === "shift_manager" && isEmployeeModuleEnabled && (
+            <div className="max-w-[1500px] mx-auto w-full">
+              <ShiftManager showToast={showToast} />
+            </div>
+          )}
+
+          {/* Product Label Designer - Ürün Etiket Tasarımı */}
+          {activeTab === "label_designer" && (
+            <div className="max-w-[1500px] mx-auto w-full">
+              <ProductLabelDesigner products={products} showToast={showToast} />
             </div>
           )}
 

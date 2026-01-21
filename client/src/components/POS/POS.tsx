@@ -95,19 +95,10 @@ export default function POS({
         return () => observer.disconnect();
     }, [search, selectedCategory]);
 
-    // Barcode Auto-Add Logic disabled as per user request (User prefers manual add)
-    /*
-    useEffect(() => {
-        if (search.length >= 3) {
-            const exactMatch = products.find((p: any) => p.barcode === search);
-            if (exactMatch) {
-                addToCart(exactMatch);
-                setSearch("");
-                showToast(`${exactMatch.name} eklendi`, "success");
-            }
-        }
-    }, [search]);
-    */
+    // Barcode scanner simply filters - User clicks + to add
+    // Existing filteredProducts logic handles the barcode search automatically
+
+
 
 
     // Theme styles mapping

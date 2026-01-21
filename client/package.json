@@ -1,6 +1,6 @@
 {
   "name": "jetpos",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "JetPos - İşiniz Jet Hızında",
   "author": "JetPos",
   "homepage": "./",
@@ -53,6 +53,7 @@
     "electron-updater": "^6.7.3",
     "file-saver": "^2.0.5",
     "framer-motion": "^12.25.0",
+    "jsbarcode": "^3.11.6",
     "jspdf": "^4.0.0",
     "jspdf-autotable": "^5.0.7",
     "lucide-react": "^0.562.0",
