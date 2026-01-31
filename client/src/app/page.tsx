@@ -52,7 +52,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [campaignRate, setCampaignRate] = useState(1.15); // Default %15
-  const [theme, setTheme] = useState<'modern' | 'wood' | 'glass'>('modern');
+  const [theme, setTheme] = useState<'modern' | 'light' | 'wood' | 'glass'>('modern');
   const [isBeepEnabled, setIsBeepEnabled] = useState(true);
   const [showHelpIcons, setShowHelpIcons] = useState(false);
   const [isEmployeeModuleEnabled, setIsEmployeeModuleEnabled] = useState(true);
@@ -544,7 +544,7 @@ export default function Home() {
 
   // Normal App (Kullanıcılar için)
   return (
-    <div className="flex min-h-screen text-white">
+    <div className={`flex min-h-screen bg-background text-foreground theme-${theme}`}>
       <Sidebar activeTab={activeTab} onTabChange={setActiveTab} showHelpIcons={showHelpIcons} />
 
       <main className="flex-1 overflow-y-auto max-h-screen relative flex flex-col">

@@ -191,7 +191,7 @@ export default function CariListesi({ showToast }: CariListesiProps) {
                 <div className="flex items-center justify-between flex-wrap gap-3">
                     <div className="flex items-center gap-2">
                         <ClipboardList className="w-5 h-5 text-indigo-500" />
-                        <span className="text-lg font-bold text-white">Cari Kartı Listesi</span>
+                        <span className="text-lg font-bold text-foreground">Cari Kartı Listesi</span>
                         <span className="text-xs bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded">
                             {filteredCariler.length} kayıt
                         </span>
@@ -206,13 +206,13 @@ export default function CariListesi({ showToast }: CariListesiProps) {
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 placeholder="Ara..."
-                                className="pl-9 pr-4 py-1.5 bg-white/5 border border-white/10 rounded-lg text-white text-sm w-48 focus:border-indigo-500 focus:outline-none"
+                                className="pl-9 pr-4 py-1.5 bg-background border border-border rounded-lg text-foreground text-sm w-48 focus:border-indigo-500 focus:outline-none placeholder:text-secondary"
                             />
                         </div>
 
                         <button
                             onClick={() => setShowColumnSelector(!showColumnSelector)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white text-sm"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-background hover:bg-primary/5 border border-border rounded-lg text-foreground text-sm"
                         >
                             <Filter className="w-4 h-4" />
                             <span>Kolonlar</span>
@@ -221,7 +221,7 @@ export default function CariListesi({ showToast }: CariListesiProps) {
                         <button
                             onClick={loadCariler}
                             disabled={loading}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white text-sm"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-background hover:bg-primary/5 border border-border rounded-lg text-foreground text-sm"
                         >
                             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                             <span>Yenile</span>
@@ -244,7 +244,7 @@ export default function CariListesi({ showToast }: CariListesiProps) {
 
                 {/* Kolon Seçici */}
                 {showColumnSelector && (
-                    <div className="mt-3 p-3 bg-white/5 rounded-lg border border-white/10">
+                    <div className="mt-3 p-3 bg-card rounded-lg border border-border">
                         <div className="text-xs text-secondary mb-2">Görünür Kolonlar</div>
                         <div className="flex flex-wrap gap-2">
                             {visibleColumns.map(col => (
@@ -253,9 +253,9 @@ export default function CariListesi({ showToast }: CariListesiProps) {
                                         type="checkbox"
                                         checked={col.visible}
                                         onChange={() => toggleColumn(col.id)}
-                                        className="w-3.5 h-3.5 rounded border-white/20 bg-white/5 text-indigo-600"
+                                        className="w-3.5 h-3.5 rounded border-border bg-background text-indigo-600"
                                     />
-                                    <span className="text-xs text-white">{col.label}</span>
+                                    <span className="text-xs text-foreground">{col.label}</span>
                                 </label>
                             ))}
                         </div>
@@ -267,21 +267,21 @@ export default function CariListesi({ showToast }: CariListesiProps) {
             <div className="glass-card flex-1 flex flex-col overflow-hidden">
                 <div className="flex-1 overflow-auto">
                     <table className="w-full text-sm">
-                        <thead className="bg-white/5 sticky top-0">
+                        <thead className="bg-primary/5 sticky top-0">
                             <tr className="text-left">
                                 <th className="px-3 py-2 w-10">
                                     <input
                                         type="checkbox"
                                         checked={selectedIds.length === paginatedCariler.length && paginatedCariler.length > 0}
                                         onChange={toggleAllSelection}
-                                        className="w-4 h-4 rounded border-white/20 bg-white/5"
+                                        className="w-4 h-4 rounded border-border bg-background"
                                     />
                                 </th>
                                 {visibleColumns.filter(c => c.visible).map(col => (
                                     <th
                                         key={col.id}
                                         onClick={() => handleSort(col.id)}
-                                        className="px-3 py-2 text-secondary font-medium cursor-pointer hover:text-white transition-colors"
+                                        className="px-3 py-2 text-secondary font-medium cursor-pointer hover:text-foreground transition-colors"
                                     >
                                         <div className="flex items-center gap-1">
                                             {col.label}
@@ -296,26 +296,26 @@ export default function CariListesi({ showToast }: CariListesiProps) {
                                 <th className="px-3 py-2 w-24 text-secondary font-medium">İşlemler</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/5">
+                        <tbody className="divide-y divide-border/50">
                             {paginatedCariler.map(cari => (
                                 <tr
                                     key={cari.id}
-                                    className={`hover:bg-white/[0.02] ${selectedIds.includes(cari.id) ? 'bg-indigo-500/10' : ''}`}
+                                    className={`hover:bg-primary/5 ${selectedIds.includes(cari.id) ? 'bg-indigo-500/10' : ''}`}
                                 >
                                     <td className="px-3 py-2">
                                         <input
                                             type="checkbox"
                                             checked={selectedIds.includes(cari.id)}
                                             onChange={() => toggleSelection(cari.id)}
-                                            className="w-4 h-4 rounded border-white/20 bg-white/5"
+                                            className="w-4 h-4 rounded border-border bg-background"
                                         />
                                     </td>
                                     {visibleColumns.filter(c => c.visible).map(col => (
-                                        <td key={col.id} className="px-3 py-2 text-white">
+                                        <td key={col.id} className="px-3 py-2 text-foreground">
                                             {col.id === 'borc_toplami' || col.id === 'alacak_toplami' || col.id === 'bakiye' ? (
                                                 <span className={`font-mono ${col.id === 'borc_toplami' ? 'text-red-400' :
-                                                        col.id === 'alacak_toplami' ? 'text-emerald-400' :
-                                                            (cari.bakiye || 0) >= 0 ? 'text-red-400' : 'text-emerald-400'
+                                                    col.id === 'alacak_toplami' ? 'text-emerald-400' :
+                                                        (cari.bakiye || 0) >= 0 ? 'text-red-400' : 'text-emerald-400'
                                                     }`}>
                                                     {((cari as any)[col.id] || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
                                                 </span>
@@ -331,15 +331,15 @@ export default function CariListesi({ showToast }: CariListesiProps) {
                                     ))}
                                     <td className="px-3 py-2">
                                         <div className="flex items-center gap-1">
-                                            <button className="p-1 hover:bg-white/10 rounded text-secondary hover:text-white">
+                                            <button className="p-1 hover:bg-primary/10 rounded text-secondary hover:text-foreground">
                                                 <Eye className="w-4 h-4" />
                                             </button>
-                                            <button className="p-1 hover:bg-white/10 rounded text-secondary hover:text-blue-400">
+                                            <button className="p-1 hover:bg-primary/10 rounded text-secondary hover:text-blue-500">
                                                 <Edit className="w-4 h-4" />
                                             </button>
                                             <button
                                                 onClick={() => handleDelete(cari.id)}
-                                                className="p-1 hover:bg-white/10 rounded text-secondary hover:text-red-400"
+                                                className="p-1 hover:bg-primary/10 rounded text-secondary hover:text-red-500"
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
@@ -376,22 +376,22 @@ export default function CariListesi({ showToast }: CariListesiProps) {
                         <button
                             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                             disabled={currentPage === 1}
-                            className="p-1.5 bg-white/5 hover:bg-white/10 disabled:opacity-50 rounded"
+                            className="p-1.5 bg-background hover:bg-primary/5 border border-border disabled:opacity-50 rounded"
                         >
-                            <ChevronLeft className="w-4 h-4 text-white" />
+                            <ChevronLeft className="w-4 h-4 text-foreground" />
                         </button>
                         <span className="text-sm text-secondary">
-                            Sayfa <span className="text-white font-medium">{currentPage}</span> / {totalPages || 1}
+                            Sayfa <span className="text-foreground font-medium">{currentPage}</span> / {totalPages || 1}
                         </span>
                         <button
                             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                             disabled={currentPage === totalPages || totalPages === 0}
-                            className="p-1.5 bg-white/5 hover:bg-white/10 disabled:opacity-50 rounded"
+                            className="p-1.5 bg-background hover:bg-primary/5 border border-border disabled:opacity-50 rounded"
                         >
-                            <ChevronRight className="w-4 h-4 text-white" />
+                            <ChevronRight className="w-4 h-4 text-foreground" />
                         </button>
                         <span className="text-xs text-secondary ml-2">
-                            Kayıt Sayısı: <span className="text-white font-medium">{filteredCariler.length}</span>
+                            Kayıt Sayısı: <span className="text-foreground font-medium">{filteredCariler.length}</span>
                         </span>
                     </div>
 

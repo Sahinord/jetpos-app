@@ -382,7 +382,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
     const pageTitle = getPageTitle();
 
     return (
-        <aside className="w-72 border-r border-border bg-card/50 backdrop-blur-sm flex flex-col h-screen sticky top-0 overflow-hidden">
+        <aside className="w-72 premium-sidebar flex flex-col h-screen sticky top-0 overflow-hidden border-r">
             {/* Logo / Firma Header */}
             <div className="p-6 border-b border-border">
                 <div className="flex items-center justify-center space-x-3">
@@ -400,10 +400,10 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
                         </div>
                     )}
                     <div className="flex-1 min-w-0">
-                        <h1 className="text-lg font-black text-white truncate">
+                        <h1 className="text-lg font-black text-[var(--color-sidebar-foreground)] truncate">
                             {currentTenant?.company_name || 'JetPos'}
                         </h1>
-                        <p className="text-xs text-secondary truncate">Yönetim Paneli</p>
+                        <p className="text-xs text-[var(--color-sidebar-muted)] truncate">Yönetim Paneli</p>
                     </div>
                 </div>
             </div>
@@ -430,8 +430,8 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
                                 <button
                                     onClick={() => toggleCategory(category.id)}
                                     className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all ${hasActiveItem
-                                        ? 'bg-white/10 text-white'
-                                        : 'text-secondary hover:bg-white/5 hover:text-white'
+                                        ? 'sidebar-item-active'
+                                        : 'text-[var(--color-sidebar-muted)] hover:bg-primary/5 hover:text-[var(--color-sidebar-foreground)]'
                                         }`}
                                 >
                                     <div className="flex items-center gap-3">
@@ -469,8 +469,8 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
                                                             <button
                                                                 onClick={() => toggleCategory(subCategory.id)}
                                                                 className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all text-sm ${subHasActiveItem
-                                                                    ? 'bg-white/10 text-white'
-                                                                    : 'text-secondary hover:bg-white/5 hover:text-white'
+                                                                    ? 'bg-primary/10 text-[var(--color-sidebar-foreground)]'
+                                                                    : 'text-[var(--color-sidebar-muted)] hover:bg-primary/5 hover:text-[var(--color-sidebar-foreground)]'
                                                                     }`}
                                                             >
                                                                 <div className="flex items-center gap-2">
@@ -506,8 +506,8 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
                                                                                             whileTap={{ scale: 0.98 }}
                                                                                             onClick={() => handleTabChange(item.id)}
                                                                                             className={`flex-1 flex items-center gap-2 px-2 py-2 rounded-lg transition-all text-xs ${activeTab === item.id
-                                                                                                ? 'bg-primary text-white shadow-lg shadow-primary/25'
-                                                                                                : 'text-secondary hover:bg-white/5 hover:text-white'
+                                                                                                ? 'sidebar-item-active'
+                                                                                                : 'text-[var(--color-sidebar-muted)] hover:bg-primary/5 hover:text-[var(--color-sidebar-foreground)]'
                                                                                                 }`}
                                                                                         >
                                                                                             <item.icon className="w-3.5 h-3.5" />
@@ -564,8 +564,8 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
                                                                 whileTap={{ scale: 0.98 }}
                                                                 onClick={() => handleTabChange(item.id)}
                                                                 className={`flex-1 flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm ${activeTab === item.id
-                                                                    ? 'bg-primary text-white shadow-lg shadow-primary/25'
-                                                                    : 'text-secondary hover:bg-white/5 hover:text-white'
+                                                                    ? 'sidebar-item-active'
+                                                                    : 'text-[var(--color-sidebar-muted)] hover:bg-primary/5 hover:text-[var(--color-sidebar-foreground)]'
                                                                     }`}
                                                             >
                                                                 <item.icon className="w-4 h-4" />
@@ -576,7 +576,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
                                                                 {showHelpIcons && item.description && (
                                                                     <div className="relative group/info">
                                                                         <HelpCircle className="w-3.5 h-3.5 text-secondary/30 hover:text-primary transition-colors cursor-help" />
-                                                                        <div className="absolute right-0 bottom-full mb-3 w-56 p-4 bg-[#0a1628]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.5)] opacity-0 group-hover/info:opacity-100 transition-all pointer-events-none z-[100] translate-y-2 group-hover/info:translate-y-0">
+                                                                        <div className="absolute right-0 bottom-full mb-3 w-56 p-4 bg-card/95 backdrop-blur-xl border border-border rounded-2xl shadow-xl opacity-0 group-hover/info:opacity-100 transition-all pointer-events-none z-[100] translate-y-2 group-hover/info:translate-y-0">
                                                                             <div className="absolute right-4 top-full w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[8px] border-t-white/10" />
                                                                             <div className="flex items-center gap-2 mb-2">
                                                                                 <div className="w-1 h-3 bg-primary rounded-full" />
@@ -595,9 +595,9 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
                                                                             e.stopPropagation();
                                                                             toggleFavorite(item.id);
                                                                         }}
-                                                                        className={`p-1.5 rounded-lg transition-all hover:bg-white/10 ${isItemFavorite
+                                                                        className={`p-1.5 rounded-lg transition-all hover:bg-primary/5 ${isItemFavorite
                                                                             ? 'text-yellow-500 opacity-100'
-                                                                            : 'text-secondary/40 hover:text-yellow-500 opacity-0 group-hover/item:opacity-100'
+                                                                            : 'text-[var(--color-sidebar-muted)] hover:text-yellow-500 opacity-0 group-hover/item:opacity-100'
                                                                             }`}
                                                                         title={isItemFavorite ? 'Favorilerden çıkar' : 'Favorilere ekle'}
                                                                     >
@@ -627,7 +627,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
                             {allLockedItems.slice(0, 3).map((item) => (
                                 <div
                                     key={item.id}
-                                    className="flex items-center gap-3 px-3 py-2 rounded-lg bg-white/5 border border-white/5 opacity-50 cursor-not-allowed"
+                                    className="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/5 border border-border opacity-50 cursor-not-allowed"
                                 >
                                     <item.icon className="w-4 h-4 text-secondary" />
                                     <span className="text-xs font-medium text-secondary flex-1">{item.label}</span>
@@ -648,7 +648,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
             </div>
 
             {/* Bottom Section - User & Settings */}
-            <div className="p-4 border-t border-border mt-auto bg-card/30">
+            <div className="p-4 border-t border-border mt-auto bg-primary/5">
                 {/* User Info */}
                 <div className="flex items-center space-x-3 mb-3 px-2">
                     <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-lg">
@@ -657,10 +657,10 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
                         </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-white truncate">
+                        <p className="text-sm font-bold text-[var(--color-sidebar-foreground)] truncate">
                             {currentTenant?.company_name || 'JetPos'}
                         </p>
-                        <p className="text-xs text-secondary">Admin</p>
+                        <p className="text-xs text-[var(--color-sidebar-muted)]">Admin</p>
                     </div>
                 </div>
 
@@ -669,8 +669,8 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
                     <button
                         onClick={() => handleTabChange('settings')}
                         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm ${activeTab === 'settings'
-                            ? 'bg-primary text-white'
-                            : 'text-secondary hover:bg-white/5 hover:text-white'
+                            ? 'sidebar-item-active'
+                            : 'text-[var(--color-sidebar-muted)] hover:bg-primary/5 hover:text-[var(--color-sidebar-foreground)]'
                             }`}
                     >
                         <Settings className="w-4 h-4" />
@@ -680,8 +680,8 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
                     <button
                         onClick={() => handleTabChange('support')}
                         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm ${activeTab === 'support'
-                            ? 'bg-primary text-white'
-                            : 'text-secondary hover:bg-white/5 hover:text-white'
+                            ? 'sidebar-item-active'
+                            : 'text-[var(--color-sidebar-muted)] hover:bg-primary/5 hover:text-[var(--color-sidebar-foreground)]'
                             }`}
                     >
                         <LifeBuoy className="w-4 h-4" />
@@ -691,8 +691,8 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
                     <button
                         onClick={() => handleTabChange('profile')}
                         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm ${activeTab === 'profile'
-                            ? 'bg-primary text-white'
-                            : 'text-secondary hover:bg-white/5 hover:text-white'
+                            ? 'sidebar-item-active'
+                            : 'text-[var(--color-sidebar-muted)] hover:bg-primary/5 hover:text-[var(--color-sidebar-foreground)]'
                             }`}
                     >
                         <User className="w-4 h-4" />
@@ -712,7 +712,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
                 </div>
 
                 {/* Version Info */}
-                <div className="flex items-center justify-between text-xs text-secondary mt-3 pt-3 border-t border-white/10 px-2">
+                <div className="flex items-center justify-between text-xs text-secondary mt-3 pt-3 border-t border-border px-2">
                     <span className="flex items-center gap-1">
                         <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
                         Çevrimiçi

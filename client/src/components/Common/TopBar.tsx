@@ -108,7 +108,7 @@ export default function TopBar({ activeTab }: { activeTab: string }) {
 
     return (
         <header
-            className="h-24 border-b border-border bg-card/10 backdrop-blur-md flex items-center justify-between px-10 sticky top-0 z-40 select-none"
+            className="h-24 border-b border-border bg-card/80 backdrop-blur-xl flex items-center justify-between px-10 sticky top-0 z-40 select-none"
             style={{ WebkitAppRegion: 'drag' } as any}
         >
             {/* Left Section: Tenant Switcher + Title */}
@@ -120,7 +120,7 @@ export default function TopBar({ activeTab }: { activeTab: string }) {
                         <ShieldCheck className="w-3.5 h-3.5" />
                         <span>JetPos v{process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0'}</span>
                     </div>
-                    <h1 className="text-2xl font-bold text-white tracking-tight leading-tight">
+                    <h1 className="text-2xl font-bold text-foreground tracking-tight leading-tight">
                         {getTitle(activeTab)}
                     </h1>
                 </div>
@@ -134,7 +134,7 @@ export default function TopBar({ activeTab }: { activeTab: string }) {
                         <Calendar className="w-4 h-4" />
                         <span>{currentTime.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                     </div>
-                    <div className="flex items-center space-x-2 text-white text-base font-black font-mono">
+                    <div className="flex items-center space-x-2 text-foreground text-base font-black font-mono">
                         <Clock className="w-4 h-4 text-primary" />
                         <span>{currentTime.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
@@ -147,7 +147,7 @@ export default function TopBar({ activeTab }: { activeTab: string }) {
 
                         <button
                             onClick={() => window.location.hash = 'profile'}
-                            className="p-2.5 text-secondary hover:text-white hover:bg-white/5 rounded-xl transition-all"
+                            className="p-2.5 text-secondary hover:text-primary hover:bg-primary/5 rounded-xl transition-all"
                         >
                             <User className="w-6 h-6" />
                         </button>
@@ -159,14 +159,14 @@ export default function TopBar({ activeTab }: { activeTab: string }) {
                     <div className="flex items-center space-x-1">
                         <button
                             onClick={() => handleWindowAction('window-minimize')}
-                            className="p-2 text-secondary hover:text-white hover:bg-white/10 rounded-lg transition-all"
+                            className="p-2 text-secondary hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
                             title="Küçült"
                         >
                             <Minus className="w-4 h-4" />
                         </button>
                         <button
                             onClick={() => handleWindowAction('window-maximize')}
-                            className="p-2 text-secondary hover:text-white hover:bg-white/10 rounded-lg transition-all"
+                            className="p-2 text-secondary hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
                             title="Büyült"
                         >
                             <Square className="w-3.5 h-3.5" />

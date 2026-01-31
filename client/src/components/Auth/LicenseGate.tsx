@@ -124,7 +124,8 @@ export default function LicenseGate({ onSuccess }: { onSuccess: () => void }) {
                 .single();
 
             if (fetchError || !data) {
-                setError('❌ Geçersiz veya pasif lisans anahtarı!');
+                console.error('License check error:', fetchError);
+                setError(fetchError ? `❌ Bağlantı hatası: ${fetchError.message}` : '❌ Geçersiz veya pasif lisans anahtarı!');
                 setLicenseKey('');
                 setLoading(false);
                 return;

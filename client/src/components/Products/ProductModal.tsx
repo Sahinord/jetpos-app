@@ -70,7 +70,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
 
     return (
         <AnimatePresence>
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -78,8 +78,8 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                     className="bg-card border border-border w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden"
                 >
                     <div className="flex justify-between items-center p-6 border-b border-border">
-                        <h2 className="text-xl font-bold">{product ? "Ürünü Düzenle" : "Yeni Ürün Ekle"}</h2>
-                        <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-lg text-secondary">
+                        <h2 className="text-xl font-bold text-foreground">{product ? "Ürünü Düzenle" : "Yeni Ürün Ekle"}</h2>
+                        <button onClick={onClose} className="p-2 hover:bg-primary/5 rounded-lg text-secondary">
                             <X className="w-5 h-5" />
                         </button>
                     </div>
@@ -128,7 +128,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
 
                                     <button
                                         onClick={() => fileInputRef.current?.click()}
-                                        className="w-full bg-background border border-border rounded-xl px-4 py-2 text-xs font-bold hover:bg-white/5 flex items-center justify-center gap-2 transition-all"
+                                        className="w-full bg-background border border-border rounded-xl px-4 py-2 text-xs font-bold hover:bg-primary/5 flex items-center justify-center gap-2 transition-all"
                                     >
                                         <ImageIcon className="w-4 h-4 text-primary" />
                                         BİLGİSAYARDAN SEÇ
@@ -141,7 +141,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                 <label className="block text-sm font-medium text-secondary mb-1.5">Ürün Adı</label>
                                 <input
                                     type="text"
-                                    className="w-full bg-background border border-border rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary/50 outline-none"
+                                    className="w-full bg-background border border-border rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary/50 outline-none text-foreground"
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                     placeholder="Örn: Dana Kuşbaşı"
@@ -152,7 +152,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                     <span>Kategori</span>
                                 </label>
                                 <select
-                                    className="w-full bg-background border border-border rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary/50 outline-none"
+                                    className="w-full bg-background border border-border rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary/50 outline-none text-foreground"
                                     value={formData.category_id}
                                     onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
                                 >
@@ -177,7 +177,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                     <label className="block text-sm font-medium text-secondary mb-1.5">Alış Fiyatı (₺)</label>
                                     <input
                                         type="number"
-                                        className="w-full bg-background border border-border rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary/50 outline-none"
+                                        className="w-full bg-background border border-border rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary/50 outline-none text-foreground"
                                         value={formData.purchase_price === 0 ? "" : formData.purchase_price}
                                         onChange={(e) => setFormData({ ...formData, purchase_price: e.target.value === "" ? 0 : parseFloat(e.target.value) })}
                                     />
@@ -185,7 +185,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                 <div>
                                     <label className="block text-sm font-medium text-secondary mb-1.5">KDV Oranı (%)</label>
                                     <select
-                                        className="w-full bg-background border border-border rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary/50 outline-none"
+                                        className="w-full bg-background border border-border rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary/50 outline-none text-foreground"
                                         value={formData.vat_rate}
                                         onChange={(e) => setFormData({ ...formData, vat_rate: parseInt(e.target.value) })}
                                     >
@@ -216,7 +216,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                 />
                             </div>
 
-                            <div className="bg-white/5 rounded-xl p-4 border border-dashed border-border mt-2">
+                            <div className="bg-primary/5 rounded-xl p-4 border border-dashed border-border mt-2">
                                 <div className="flex justify-between items-center mb-2">
                                     <span className="text-sm text-secondary flex items-center">
                                         <Calculator className="w-4 h-4 mr-2" /> Kar Analizi
@@ -225,11 +225,11 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                 <div className="flex justify-between items-end">
                                     <div>
                                         <p className="text-xs text-secondary">Net Kar</p>
-                                        <p className="text-lg font-bold text-emerald-400">₺{stats.amount}</p>
+                                        <p className="text-lg font-bold text-emerald-600">₺{stats.amount}</p>
                                     </div>
                                     <div className="text-right">
                                         <p className="text-xs text-secondary">Kar Oranı</p>
-                                        <p className="text-lg font-bold text-emerald-400">%{stats.percentage}</p>
+                                        <p className="text-lg font-bold text-emerald-600">%{stats.percentage}</p>
                                     </div>
                                 </div>
                             </div>
@@ -252,7 +252,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                 </label>
                                 <input
                                     type="number"
-                                    className="w-full bg-background border border-border rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary/50 outline-none text-lg font-bold"
+                                    className="w-full bg-background border border-border rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary/50 outline-none text-lg font-bold text-foreground"
                                     value={formData.stock_quantity === 0 ? "" : formData.stock_quantity}
                                     onChange={(e) => setFormData({ ...formData, stock_quantity: e.target.value === "" ? 0 : parseFloat(e.target.value) })}
                                     step="0.001"
@@ -265,9 +265,9 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                     <label className="block text-sm font-medium text-secondary mb-3">Ürün Durumu (Tıkla Değiştir)</label>
                                     <div className="flex items-center gap-2">
                                         {[
-                                            { id: 'active', label: 'AKTİF', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
-                                            { id: 'pending', label: 'BEKLEMEDE', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
-                                            { id: 'passive', label: 'PASİF', color: 'bg-rose-500/10 text-rose-400 border-rose-500/20' }
+                                            { id: 'active', label: 'AKTİF', color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' },
+                                            { id: 'pending', label: 'BEKLEMEDE', color: 'bg-amber-500/10 text-amber-600 border-amber-500/20' },
+                                            { id: 'passive', label: 'PASİF', color: 'bg-rose-500/10 text-rose-600 border-rose-500/20' }
                                         ].map((opt) => (
                                             <button
                                                 key={opt.id}
@@ -288,7 +288,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                         </span>
                                         <span className="text-xs text-primary/70">%15 Fiyat Artışı Uygulanır</span>
                                     </div>
-                                    <div className={`w-12 h-6 rounded-full transition-all duration-300 relative ${formData.is_campaign ? 'bg-primary' : 'bg-white/10'}`}>
+                                    <div className={`w-12 h-6 rounded-full transition-all duration-300 relative ${formData.is_campaign ? 'bg-primary' : 'bg-primary/10'}`}>
                                         <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 ${formData.is_campaign ? 'left-7' : 'left-1'}`} />
                                     </div>
                                     <input
@@ -304,7 +304,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
 
                     <div className="p-6 border-t border-border flex justify-end space-x-3">
 
-                        <button onClick={onClose} disabled={isSaving} className="px-6 py-2 rounded-xl text-secondary hover:bg-white/5 transition-all disabled:opacity-50">
+                        <button onClick={onClose} disabled={isSaving} className="px-6 py-2 rounded-xl text-secondary hover:bg-primary/5 transition-all disabled:opacity-50">
                             İptal
                         </button>
                         <button

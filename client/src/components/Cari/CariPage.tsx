@@ -203,18 +203,18 @@ export default function CariPage({ pageId, showToast }: CariPageProps) {
                 className="glass-card p-8"
             >
                 {/* Coming Soon */}
-                <div className="border-2 border-dashed border-white/20 rounded-2xl p-12 text-center">
+                <div className="border-2 border-dashed border-border/50 rounded-2xl p-12 text-center">
                     <Construction className="w-16 h-16 text-secondary/40 mx-auto mb-4" />
-                    <h2 className="text-xl font-bold text-white mb-2">Yapım Aşamasında</h2>
+                    <h2 className="text-xl font-bold text-foreground mb-2">Yapım Aşamasında</h2>
                     <p className="text-secondary max-w-md mx-auto">
                         Bu sayfa şu anda geliştirme aşamasındadır. Yakında burada {info.title.toLowerCase()} özelliğini kullanabileceksiniz.
                     </p>
 
                     <div className="mt-8 flex flex-wrap gap-3 justify-center">
-                        <div className="px-4 py-2 rounded-lg bg-white/5 border border-white/10">
+                        <div className="px-4 py-2 rounded-lg bg-primary/5 border border-border">
                             <span className="text-secondary text-sm">✅ Tasarım hazır</span>
                         </div>
-                        <div className="px-4 py-2 rounded-lg bg-white/5 border border-white/10">
+                        <div className="px-4 py-2 rounded-lg bg-primary/5 border border-border">
                             <span className="text-secondary text-sm">🔄 Geliştiriliyor</span>
                         </div>
                         <div className="px-4 py-2 rounded-lg bg-primary/20 border border-primary/30">
@@ -225,15 +225,15 @@ export default function CariPage({ pageId, showToast }: CariPageProps) {
 
                 {/* Quick Info */}
                 <div className="grid grid-cols-3 gap-4 mt-8">
-                    <div className="bg-white/5 rounded-xl p-4 text-center">
-                        <div className="text-2xl font-black text-white">0</div>
+                    <div className="bg-primary/5 rounded-xl p-4 text-center border border-border">
+                        <div className="text-2xl font-black text-foreground">0</div>
                         <div className="text-xs text-secondary mt-1">Toplam Kayıt</div>
                     </div>
-                    <div className="bg-white/5 rounded-xl p-4 text-center">
+                    <div className="bg-primary/5 rounded-xl p-4 text-center border border-border">
                         <div className="text-2xl font-black text-emerald-500">₺0</div>
                         <div className="text-xs text-secondary mt-1">Alacak</div>
                     </div>
-                    <div className="bg-white/5 rounded-xl p-4 text-center">
+                    <div className="bg-primary/5 rounded-xl p-4 text-center border border-border">
                         <div className="text-2xl font-black text-red-500">₺0</div>
                         <div className="text-xs text-secondary mt-1">Borç</div>
                     </div>

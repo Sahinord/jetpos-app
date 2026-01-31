@@ -5,15 +5,53 @@
   --color-foreground: #f8fafc;
   --color-card: #0f172a;
   --color-card-foreground: #f8fafc;
-  --color-primary: #3b82f6;
-  --color-secondary: #64748b;
-  --color-accent: #22c55e;
+  --color-primary: #6366f1;
+  --color-secondary: #94a3b8;
+  --color-accent: #10b981;
   --color-destructive: #ef4444;
   --color-border: #1e293b;
+  --color-sidebar: #0f172a;
+  --color-sidebar-foreground: #f8fafc;
+  --color-sidebar-muted: #94a3b8;
 
   --font-inter: var(--font-inter);
   --font-roboto: var(--font-roboto);
   --font-poppins: var(--font-poppins);
+}
+
+:root:has(.theme-light),
+.theme-light {
+  --color-background: #ffffff !important;
+  --color-foreground: #1e3a8a !important;
+  --color-card: #ffffff !important;
+  --color-card-foreground: #1e3a8a !important;
+  --color-border: #dbeafe !important;
+  --color-primary: #2563eb !important;
+  --color-secondary: #3b82f6 !important;
+  --color-accent: #10b981 !important;
+  --color-sidebar: #ffffff !important;
+  --color-sidebar-foreground: #1e3a8a !important;
+  --color-sidebar-muted: #64748b !important;
+}
+
+.theme-wood {
+  --color-background: #4a3728;
+  --color-foreground: #fffaf0;
+  --color-card: #3d2b1f;
+  --color-card-foreground: #fffaf0;
+  --color-border: #5d4037;
+  --color-primary: #8b4513;
+  --color-accent: #d4a017;
+}
+
+.theme-glass {
+  --color-background: #f0f9ff;
+  --color-foreground: #0c4a6e;
+  --color-card: rgba(255, 255, 255, 0.7);
+  --color-card-foreground: #0c4a6e;
+  --color-border: rgba(255, 255, 255, 0.5);
+  --color-primary: #0284c7;
+  --color-accent: #059669;
 }
 
 @layer base {
@@ -24,9 +62,9 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-osx-font-smoothing: grayscale;
     font-weight: 400;
-    /* Standard Weight */
     line-height: 1.5;
     letter-spacing: -0.011em;
+    overflow-x: hidden;
   }
 
   h1,
@@ -37,7 +75,6 @@
   h6 {
     font-family: var(--font-poppins), sans-serif;
     font-weight: 600;
-    /* Clean and unrefined Semibold */
     letter-spacing: -0.02em;
   }
 
@@ -53,87 +90,160 @@
 }
 
 @layer components {
-  .glass-card {
-    background: rgba(15, 23, 42, 0.4);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 2rem;
-    padding: 2rem;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Dynamic Background Glows */
+  .glow-container {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
+    overflow: hidden;
   }
 
-  .glass-card:hover {
-    border-color: rgba(59, 130, 246, 0.2);
-    transform: translateY(-4px);
-    box-shadow: 0 40px 80px rgba(0, 0, 0, 0.5);
+  .glow-top-left {
+    position: absolute;
+    top: -10%;
+    left: -10%;
+    width: 40%;
+    height: 40%;
+    background: radial-gradient(circle, color-mix(in srgb, var(--color-primary), transparent 85%), transparent 70%);
+    filter: blur(80px);
+    border-radius: 100%;
+    animation: pulse 8s ease-in-out infinite alternate;
   }
 
-  .text-gradient {
-    background: linear-gradient(to right, #3b82f6, #2dd4bf, #3b82f6);
-    background-size: 200% auto;
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: shine 5s linear infinite;
+  .glow-bottom-right {
+    position: absolute;
+    bottom: -10%;
+    right: -10%;
+    width: 40%;
+    height: 40%;
+    background: radial-gradient(circle, color-mix(in srgb, var(--color-primary), transparent 85%), transparent 70%);
+    filter: blur(80px);
+    border-radius: 100%;
+    animation: pulse 8s ease-in-out infinite alternate-reverse;
   }
 
-  @keyframes shine {
+  @keyframes pulse {
+    from {
+      transform: scale(1);
+      opacity: 0.5;
+    }
+
     to {
-      background-position: 200% center;
+      transform: scale(1.2);
+      opacity: 0.8;
     }
   }
 
-  .premium-blur {
-    backdrop-filter: blur(60px);
-    -webkit-backdrop-filter: blur(60px);
-    background: rgba(2, 6, 23, 0.8);
+  .glass-card {
+    background: var(--color-card);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    color: var(--color-foreground);
+    border: 1px solid var(--color-border);
+    border-radius: 2rem;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .theme-light .glass-card {
+    background: #ffffff !important;
+    box-shadow: 0 10px 40px rgba(30, 64, 175, 0.05) !important;
+    border: 1px solid #dbeafe !important;
+  }
+
+  .glass-card:hover {
+    border-color: var(--color-primary);
+    transform: translateY(-4px);
+    box-shadow: 0 40px 80px rgba(0, 0, 0, 0.1);
+  }
+
+  .premium-sidebar {
+    background: var(--color-sidebar) !important;
+    color: var(--color-sidebar-foreground) !important;
+    border-right: 1px solid var(--color-border);
+    transition: all 0.3s ease;
+  }
+
+  .sidebar-item {
+    color: var(--color-sidebar-muted);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .sidebar-item:hover {
+    color: var(--color-sidebar-foreground);
+    background: color-mix(in srgb, var(--color-sidebar-foreground), transparent 92%);
+  }
+
+  .sidebar-item-active {
+    background: var(--color-primary) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary), transparent 80%);
   }
 }
 
-/* Custom Scrollbar Styling - Premium Dark Theme */
+/* Custom Scrollbar Styling - Modern Blue Design */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #020617;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #0f172a;
+  background: linear-gradient(to bottom, #3b82f6, #2563eb);
   border-radius: 10px;
-  border: 2px solid #020617;
+  border: 3px solid transparent;
+  background-clip: content-box;
+  transition: all 0.3s;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3b82f6;
+  background: #1d4ed8;
+  border: 1px solid transparent;
+  background-clip: content-box;
+}
+
+/* Specific design for light mode scrollbar */
+.theme-light ::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #60a5fa, #3b82f6);
+}
+
+.theme-light ::-webkit-scrollbar-thumb:hover {
+  background: #2563eb;
 }
 
 /* Firefox Support */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #0f172a #020617;
+  scrollbar-color: #3b82f6 transparent;
+}
+
+.theme-light {
+  scrollbar-color: #60a5fa transparent;
 }
 
 /* Select/Dropdown Premium Styling */
 select {
-  background-color: #0a1628 !important;
+  background-color: var(--color-card) !important;
+  color: var(--color-foreground) !important;
 }
 
 select option {
-  background-color: #0a1628;
-  color: white;
+  background-color: var(--color-card);
+  color: var(--color-foreground);
   padding: 8px 12px;
 }
 
 select option:hover,
 select option:focus,
 select option:checked {
-  background: linear-gradient(#3b82f6, #3b82f6);
-  background-color: #3b82f6 !important;
+  background-color: var(--color-primary) !important;
   color: white;
 }
 
@@ -142,8 +252,8 @@ input:focus,
 select:focus,
 textarea:focus {
   outline: none;
-  border-color: #3b82f6 !important;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary), transparent 80%);
 }
 
 /* Checkbox Custom Style */

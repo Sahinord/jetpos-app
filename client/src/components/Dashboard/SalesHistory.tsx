@@ -95,7 +95,7 @@ export default function SalesHistory() {
                         <Clock className="w-6 h-6" />
                     </div>
                     <div>
-                        <h2 className="text-2xl font-bold text-white tracking-tight">İşlem Geçmişi</h2>
+                        <h2 className="text-2xl font-bold text-foreground tracking-tight">İşlem Geçmişi</h2>
                         <p className="text-sm text-secondary font-medium">Geçmiş satışları görüntüle ve yönet</p>
                     </div>
                 </div>
@@ -107,14 +107,14 @@ export default function SalesHistory() {
                         <input
                             type="text"
                             placeholder="İşlem No veya Ürün Ara..."
-                            className="w-full bg-white/5 border border-border rounded-xl py-3 pl-10 pr-4 text-sm font-bold focus:outline-none focus:border-blue-500/50 transition-all placeholder:font-medium"
+                            className="w-full bg-primary/5 border border-border rounded-xl py-3 pl-10 pr-4 text-sm font-bold focus:outline-none focus:border-blue-500/50 transition-all placeholder:font-medium"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
 
                     {/* Date Filter */}
-                    <div className="flex items-center bg-white/5 border border-border rounded-xl p-1">
+                    <div className="flex items-center bg-primary/5 border border-border rounded-xl p-1">
                         {[
                             { id: 'today', label: 'Bugün' },
                             { id: 'week', label: 'Bu Hafta' },
@@ -124,7 +124,7 @@ export default function SalesHistory() {
                             <button
                                 key={filter.id}
                                 onClick={() => setDateFilter(filter.id)}
-                                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${dateFilter === filter.id ? 'bg-blue-500 text-white shadow-lg' : 'text-secondary hover:text-white'}`}
+                                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${dateFilter === filter.id ? 'bg-blue-600 text-white shadow-lg' : 'text-secondary hover:text-foreground'}`}
                             >
                                 {filter.label}
                             </button>
@@ -136,7 +136,7 @@ export default function SalesHistory() {
             {/* Sales List Table */}
             <div className="glass-card !p-0 overflow-hidden">
                 <table className="w-full text-left">
-                    <thead className="bg-white/5 border-b border-border">
+                    <thead className="bg-primary/5 border-b border-border">
                         <tr>
                             <th className="px-6 py-4 text-[10px] font-bold text-secondary uppercase tracking-[2px]">İşlem No</th>
                             <th className="px-6 py-4 text-[10px] font-bold text-secondary uppercase tracking-[2px]">Tarih / Saat</th>
@@ -153,7 +153,7 @@ export default function SalesHistory() {
                             <tr><td colSpan={6} className="p-10 text-center text-secondary font-bold">Kayıt bulunamadı.</td></tr>
                         ) : (
                             filteredSales.map((sale) => (
-                                <tr key={sale.id} className="hover:bg-white/5 transition-colors group cursor-pointer" onClick={() => { setSelectedSale(sale); setIsDetailModalOpen(true); }}>
+                                <tr key={sale.id} className="hover:bg-primary/5 transition-colors group cursor-pointer" onClick={() => { setSelectedSale(sale); setIsDetailModalOpen(true); }}>
                                     <td className="px-6 py-4">
                                         <div className="font-mono text-xs text-secondary group-hover:text-blue-400 transition-colors">
                                             #{sale.id.slice(0, 8).toUpperCase()}
@@ -161,14 +161,14 @@ export default function SalesHistory() {
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex flex-col">
-                                            <span className="font-bold text-sm text-white">{new Date(sale.created_at).toLocaleDateString('tr-TR')}</span>
+                                            <span className="font-bold text-sm text-foreground">{new Date(sale.created_at).toLocaleDateString('tr-TR')}</span>
                                             <span className="text-xs text-secondary">{new Date(sale.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</span>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border ${sale.payment_method === 'NAKİT'
-                                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                                                : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
+                                            ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+                                            : 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20'
                                             }`}>
                                             {sale.payment_method === 'NAKİT' ? <Banknote className="w-3 h-3 mr-1.5" /> : <CreditCard className="w-3 h-3 mr-1.5" />}
                                             {sale.payment_method || 'NAKİT'}
@@ -180,10 +180,10 @@ export default function SalesHistory() {
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <span className="text-lg font-black text-white">₺{sale.total_amount.toFixed(2)}</span>
+                                        <span className="text-lg font-black text-foreground">₺{sale.total_amount.toFixed(2)}</span>
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <button className="p-2 bg-white/5 rounded-lg text-secondary group-hover:bg-blue-500 group-hover:text-white transition-all">
+                                        <button className="p-2 bg-primary/5 rounded-lg text-secondary group-hover:bg-blue-600 group-hover:text-white transition-all">
                                             <ArrowRight className="w-4 h-4" />
                                         </button>
                                     </td>
@@ -206,13 +206,13 @@ export default function SalesHistory() {
                             className="w-full max-w-2xl glass-card !p-0 overflow-hidden shadow-2xl border-white/10 flex flex-col max-h-[85vh]"
                         >
                             {/* Modal Header */}
-                            <div className="p-6 border-b border-border bg-white/5 flex items-center justify-between">
+                            <div className="p-6 border-b border-border bg-primary/5 flex items-center justify-between">
                                 <div>
                                     <p className="text-[10px] font-bold text-secondary uppercase tracking-[2px]">İşlem Detayı</p>
-                                    <h3 className="text-xl font-bold text-white mt-1">#{selectedSale.id.slice(0, 8).toUpperCase()}</h3>
+                                    <h3 className="text-xl font-bold text-foreground mt-1">#{selectedSale.id.slice(0, 8).toUpperCase()}</h3>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-sm font-bold text-white">{new Date(selectedSale.created_at).toLocaleDateString('tr-TR')}</p>
+                                    <p className="text-sm font-bold text-foreground">{new Date(selectedSale.created_at).toLocaleDateString('tr-TR')}</p>
                                     <p className="text-xs text-secondary">{new Date(selectedSale.created_at).toLocaleTimeString('tr-TR')}</p>
                                 </div>
                             </div>
@@ -223,13 +223,13 @@ export default function SalesHistory() {
                                 <div className="space-y-3">
                                     <h4 className="text-xs font-bold text-secondary uppercase tracking-widest mb-4">Satılan Ürünler</h4>
                                     {selectedSale.sale_items?.map((item: any, idx: number) => (
-                                        <div key={idx} className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5">
+                                        <div key={idx} className="flex justify-between items-center p-3 bg-primary/5 rounded-xl border border-border">
                                             <div>
-                                                <p className="font-bold text-sm text-white">{item.products?.name || "Silinmiş Ürün"}</p>
+                                                <p className="font-bold text-sm text-foreground">{item.products?.name || "Silinmiş Ürün"}</p>
                                                 <p className="text-[10px] text-secondary font-mono">{item.products?.barcode || "-"}</p>
                                             </div>
                                             <div className="text-right">
-                                                <p className="font-bold text-white">₺{(item.unit_price * item.quantity).toFixed(2)}</p>
+                                                <p className="font-bold text-foreground">₺{(item.unit_price * item.quantity).toFixed(2)}</p>
                                                 <p className="text-xs text-secondary">{item.quantity} x ₺{item.unit_price}</p>
                                             </div>
                                         </div>
@@ -240,17 +240,17 @@ export default function SalesHistory() {
                                 <div className="border-t border-border pt-6 space-y-2">
                                     <div className="flex justify-between items-center">
                                         <span className="text-secondary font-bold text-sm">Ödeme Yöntemi</span>
-                                        <span className="text-white font-bold">{selectedSale.payment_method}</span>
+                                        <span className="text-foreground font-bold">{selectedSale.payment_method}</span>
                                     </div>
                                     <div className="flex justify-between items-center pt-2">
-                                        <span className="text-white font-black text-lg">TOPLAM TUTAR</span>
-                                        <span className="text-emerald-400 font-black text-2xl">₺{selectedSale.total_amount.toFixed(2)}</span>
+                                        <span className="text-foreground font-black text-lg">TOPLAM TUTAR</span>
+                                        <span className="text-emerald-600 font-black text-2xl">₺{selectedSale.total_amount.toFixed(2)}</span>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Modal Footer (Actions) */}
-                            <div className="p-6 border-t border-border bg-white/5 flex gap-4">
+                            <div className="p-6 border-t border-border bg-primary/5 flex gap-4">
                                 <button
                                     onClick={() => {
                                         // Trigger duplicate receipt print by passing sale data formatted for receipt component
@@ -271,7 +271,7 @@ export default function SalesHistory() {
                                         // or ideally use a hidden print button ref.
                                         alert("Fiş yazdırma tetiklendi (Demo)");
                                     }}
-                                    className="flex-1 py-4 bg-white/5 hover:bg-white/10 text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2"
+                                    className="flex-1 py-4 bg-primary/5 hover:bg-primary/10 text-foreground font-bold rounded-xl transition-all flex items-center justify-center gap-2"
                                 >
                                     <Printer className="w-4 h-4" />
                                     TEKRAR YAZDIR

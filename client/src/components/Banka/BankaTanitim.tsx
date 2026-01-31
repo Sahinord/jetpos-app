@@ -139,7 +139,7 @@ export default function BankaTanitim({ showToast }: BankaTanitimProps) {
                 <div className="flex items-center gap-3 bg-[#020617]/40 backdrop-blur-md p-1 rounded-xl border border-white/5 shadow-xl">
                     <button
                         onClick={() => setView("list")}
-                        className={`flex-1 sm:flex-none px-6 py-2.5 rounded-lg text-[11px] font-bold tracking-wider transition-all flex items-center justify-center gap-2 ${view === 'list' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-secondary hover:text-white hover:bg-white/5'}`}
+                        className={`flex-1 sm:flex-none px-6 py-2.5 rounded-lg text-[11px] font-bold tracking-wider transition-all flex items-center justify-center gap-2 ${view === 'list' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'text-secondary hover:text-foreground hover:bg-muted'}`}
                     >
                         <List className="w-4 h-4" /> LİSTE
                     </button>
@@ -149,7 +149,7 @@ export default function BankaTanitim({ showToast }: BankaTanitimProps) {
                             setEditingId(null);
                             setView("form");
                         }}
-                        className={`flex-1 sm:flex-none px-6 py-2.5 rounded-lg text-[11px] font-bold tracking-wider transition-all flex items-center justify-center gap-2 ${view === 'form' && !editingId ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-secondary hover:text-white hover:bg-white/5'}`}
+                        className={`flex-1 sm:flex-none px-6 py-2.5 rounded-lg text-[11px] font-bold tracking-wider transition-all flex items-center justify-center gap-2 ${view === 'form' && !editingId ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'text-secondary hover:text-foreground hover:bg-muted'}`}
                     >
                         <Plus className="w-4 h-4" /> YENİ TANIM
                     </button>
@@ -167,7 +167,7 @@ export default function BankaTanitim({ showToast }: BankaTanitimProps) {
                         </button>
                         <button
                             onClick={() => setView("list")}
-                            className="p-2.5 bg-white/5 hover:bg-white/10 text-secondary hover:text-white border border-white/10 rounded-xl transition-all active:scale-95"
+                            className="p-2.5 bg-background hover:bg-muted text-secondary hover:text-foreground border border-border rounded-xl transition-all active:scale-95"
                             title="İptal Et"
                         >
                             <X className="w-5 h-5" />
@@ -183,12 +183,12 @@ export default function BankaTanitim({ showToast }: BankaTanitimProps) {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
-                        className="glass-card border-white/5 overflow-hidden shadow-2xl"
+                        className="glass-card border-border overflow-hidden shadow-2xl"
                     >
                         <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
                             <table className="w-full text-left border-collapse min-w-[1000px]">
                                 <thead>
-                                    <tr className="bg-white/[0.02] border-b border-white/5">
+                                    <tr className="bg-primary/5 border-b border-border">
                                         <th className="px-6 py-4 text-[10px] font-bold text-secondary uppercase tracking-widest w-40">Banka Kodu</th>
                                         <th className="px-6 py-4 text-[10px] font-bold text-secondary uppercase tracking-widest">Banka Tanımı & Kurum</th>
                                         <th className="px-6 py-4 text-[10px] font-bold text-secondary uppercase tracking-widest">Şube & IBAN</th>
@@ -196,7 +196,7 @@ export default function BankaTanitim({ showToast }: BankaTanitimProps) {
                                         <th className="px-6 py-4 text-[10px] font-bold text-secondary uppercase tracking-widest text-right w-32">İşlemler</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-white/5">
+                                <tbody className="divide-y divide-border/50">
                                     {banks.length === 0 ? (
                                         <tr>
                                             <td colSpan={5} className="px-8 py-24 text-center">
@@ -205,7 +205,7 @@ export default function BankaTanitim({ showToast }: BankaTanitimProps) {
                                             </td>
                                         </tr>
                                     ) : banks.map((bank) => (
-                                        <tr key={bank.id} className="hover:bg-white/[0.01] transition-colors group">
+                                        <tr key={bank.id} className="hover:bg-primary/5 transition-colors group">
                                             <td className="px-8 py-5">
                                                 <span className="font-mono text-xs font-black text-primary bg-primary/5 px-3 py-1.5 rounded-lg border border-primary/10 tracking-wider">
                                                     {bank.banka_kodu || 'N/A'}
@@ -213,7 +213,7 @@ export default function BankaTanitim({ showToast }: BankaTanitimProps) {
                                             </td>
                                             <td className="px-8 py-5">
                                                 <div className="space-y-1">
-                                                    <p className="text-sm font-black text-white tracking-tight uppercase">{bank.tanimi}</p>
+                                                    <p className="text-sm font-black text-foreground tracking-tight uppercase">{bank.tanimi}</p>
                                                     <div className="flex items-center gap-2">
                                                         <Globe className="w-3 h-3 text-secondary/30" />
                                                         <p className="text-[10px] text-secondary font-bold uppercase tracking-tighter opacity-70">{bank.banka_adi || 'Banka Belirtilmemiş'}</p>
@@ -221,11 +221,8 @@ export default function BankaTanitim({ showToast }: BankaTanitimProps) {
                                                 </div>
                                             </td>
                                             <td className="px-8 py-5">
-                                                <div className="space-y-1.5">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-1.5 h-1.5 rounded-full bg-primary/40" />
-                                                        <p className="text-xs text-white/70 font-bold tracking-tight">{bank.sube_adi || 'Merkez Şube'}</p>
-                                                    </div>
+                                                <div className="space-y-1">
+                                                    <p className="text-[10px] font-bold text-secondary tracking-tight uppercase">{bank.sube_adi || 'Merkez Şube'}</p>
                                                     <p className="text-[10px] text-secondary/40 font-mono tracking-widest pl-3.5 select-all">{bank.iban_no || 'IBAN TANIMSIZ'}</p>
                                                 </div>
                                             </td>
@@ -236,14 +233,14 @@ export default function BankaTanitim({ showToast }: BankaTanitimProps) {
                                                 <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
                                                     <button
                                                         onClick={() => handleEdit(bank)}
-                                                        className="p-2.5 bg-white/5 hover:bg-primary/20 text-secondary hover:text-primary rounded-xl transition-all border border-white/5 active:scale-90"
+                                                        className="p-2.5 bg-background hover:bg-primary/20 text-secondary hover:text-primary rounded-xl transition-all border border-border active:scale-90"
                                                         title="Düzenle"
                                                     >
                                                         <Settings className="w-4 h-4" />
                                                     </button>
                                                     <button
                                                         onClick={() => handleDelete(bank.id)}
-                                                        className="p-2.5 bg-white/5 hover:bg-rose-500/20 text-secondary hover:text-rose-500 rounded-xl transition-all border border-white/5 active:scale-90"
+                                                        className="p-2.5 bg-background hover:bg-rose-500/20 text-secondary hover:text-rose-500 rounded-xl transition-all border border-border active:scale-90"
                                                         title="Sil"
                                                     >
                                                         <Trash2 className="w-4 h-4" />
@@ -266,7 +263,7 @@ export default function BankaTanitim({ showToast }: BankaTanitimProps) {
                     >
                         {/* Primary Info */}
                         <div className="lg:col-span-8 space-y-8">
-                            <div className="glass-card p-6 md:p-10 border-white/5 space-y-10 relative overflow-hidden shadow-2xl">
+                            <div className="glass-card p-6 md:p-10 border-border space-y-10 relative overflow-hidden shadow-2xl">
                                 <div className="absolute top-0 right-0 p-12 opacity-[0.02] -rotate-12 pointer-events-none">
                                     <Landmark className="w-64 h-64" />
                                 </div>
@@ -282,7 +279,7 @@ export default function BankaTanitim({ showToast }: BankaTanitimProps) {
                                             type="text"
                                             value={form.banka_kodu}
                                             onChange={e => setForm({ ...form, banka_kodu: e.target.value })}
-                                            className="w-full bg-[#020617]/40 border border-white/10 rounded-xl px-5 py-3 text-white text-sm font-bold outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/5 transition-all"
+                                            className="w-full bg-background/40 border border-border rounded-xl px-5 py-3 text-foreground text-sm font-bold outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/5 transition-all"
                                             placeholder="Örn: TR-BNK-001"
                                         />
                                     </div>
@@ -295,7 +292,7 @@ export default function BankaTanitim({ showToast }: BankaTanitimProps) {
                                             type="text"
                                             value={form.tanimi}
                                             onChange={e => setForm({ ...form, tanimi: e.target.value })}
-                                            className="w-full bg-[#020617]/40 border border-white/10 rounded-xl px-5 py-3 text-white text-sm font-bold outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/5 transition-all"
+                                            className="w-full bg-background/40 border border-border rounded-xl px-5 py-3 text-foreground text-sm font-bold outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/5 transition-all"
                                             placeholder="Örn: Ana Ticari Türk Lirası Hesabı"
                                         />
                                     </div>
@@ -305,7 +302,7 @@ export default function BankaTanitim({ showToast }: BankaTanitimProps) {
                                             type="text"
                                             value={form.banka_adi}
                                             onChange={e => setForm({ ...form, banka_adi: e.target.value })}
-                                            className="w-full bg-[#020617]/40 border border-white/10 rounded-xl px-5 py-3 text-white text-sm font-bold outline-none focus:border-primary/50 transition-all placeholder:text-secondary/20"
+                                            className="w-full bg-background/40 border border-border rounded-xl px-5 py-3 text-foreground text-sm font-bold outline-none focus:border-primary/50 transition-all placeholder:text-muted-foreground"
                                             placeholder="Örn: Garanti Bankası A.Ş."
                                         />
                                     </div>
@@ -315,7 +312,7 @@ export default function BankaTanitim({ showToast }: BankaTanitimProps) {
                                             type="text"
                                             value={form.sube_adi}
                                             onChange={e => setForm({ ...form, sube_adi: e.target.value })}
-                                            className="w-full bg-[#020617]/40 border border-white/10 rounded-xl px-5 py-3 text-white text-sm font-bold outline-none focus:border-primary/50 transition-all placeholder:text-secondary/20"
+                                            className="w-full bg-background/40 border border-border rounded-xl px-5 py-3 text-foreground text-sm font-bold outline-none focus:border-primary/50 transition-all placeholder:text-muted-foreground"
                                             placeholder="Örn: Şişli Ticari Şubesi"
                                         />
                                     </div>
@@ -331,7 +328,7 @@ export default function BankaTanitim({ showToast }: BankaTanitimProps) {
                                             type="text"
                                             value={form.iban_no}
                                             onChange={e => setForm({ ...form, iban_no: e.target.value })}
-                                            className="w-full bg-[#020617]/60 border border-white/20 rounded-xl px-5 py-3.5 text-white text-base font-mono tracking-widest outline-none focus:border-primary transition-all shadow-inner placeholder:text-secondary/5"
+                                            className="w-full bg-background border border-border rounded-xl px-5 py-3.5 text-foreground text-base font-mono tracking-widest outline-none focus:border-primary transition-all shadow-inner placeholder:text-muted-foreground"
                                             placeholder="TR00 0000 0000 0000 0000 0000 00"
                                         />
                                     </div>
@@ -341,7 +338,7 @@ export default function BankaTanitim({ showToast }: BankaTanitimProps) {
                                             <select
                                                 value={form.para_birimi}
                                                 onChange={e => setForm({ ...form, para_birimi: e.target.value })}
-                                                className="w-full bg-[#020617] border border-white/10 rounded-xl px-5 py-3 text-white text-sm font-bold outline-none focus:border-primary/50 appearance-none cursor-pointer"
+                                                className="w-full bg-background border border-border rounded-xl px-5 py-3 text-foreground text-sm font-bold outline-none focus:border-primary/50 appearance-none cursor-pointer"
                                             >
                                                 <option value="TRY">TRY</option>
                                                 <option value="USD">USD</option>
@@ -356,7 +353,7 @@ export default function BankaTanitim({ showToast }: BankaTanitimProps) {
                                             type="text"
                                             value={form.hesap_no}
                                             onChange={e => setForm({ ...form, hesap_no: e.target.value })}
-                                            className="w-full bg-[#020617]/40 border border-white/10 rounded-xl px-5 py-3 text-white text-sm font-bold outline-none focus:border-primary/50"
+                                            className="w-full bg-background/40 border border-border rounded-xl px-5 py-3 text-foreground text-sm font-bold outline-none focus:border-primary/50"
                                             placeholder="0000000"
                                         />
                                     </div>
@@ -366,15 +363,15 @@ export default function BankaTanitim({ showToast }: BankaTanitimProps) {
                                             type="text"
                                             value={form.tcmb_kodu}
                                             onChange={e => setForm({ ...form, tcmb_kodu: e.target.value })}
-                                            className="w-full bg-[#020617]/40 border border-white/10 rounded-xl px-5 py-3 text-white text-sm font-bold outline-none focus:border-primary/50"
+                                            className="w-full bg-background/40 border border-border rounded-xl px-5 py-3 text-foreground text-sm font-bold outline-none focus:border-primary/50"
                                             placeholder="000"
                                         />
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="glass-card p-6 md:p-10 border-white/5 space-y-8 shadow-xl">
-                                <div className="flex items-center justify-between border-b border-white/5 pb-6">
+                            <div className="glass-card p-6 md:p-10 border-border space-y-8 shadow-xl">
+                                <div className="flex items-center justify-between border-b border-border pb-6">
                                     <h3 className="text-xs font-black text-primary uppercase tracking-[0.3em] flex items-center gap-4">
                                         <div className="w-2 h-8 bg-primary/20 rounded-full" />
                                         Muhasebe Entegrasyonu & Limit Yönetimi
@@ -394,7 +391,7 @@ export default function BankaTanitim({ showToast }: BankaTanitimProps) {
                                                 type="text"
                                                 value={(form as any)[item.key]}
                                                 onChange={e => setForm({ ...form, [item.key]: e.target.value })}
-                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-xs font-mono outline-none focus:border-primary/50 transition-all"
+                                                className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-foreground text-xs font-mono outline-none focus:border-primary/50 transition-all"
                                                 placeholder="102.01.001"
                                             />
                                         </div>
@@ -408,7 +405,7 @@ export default function BankaTanitim({ showToast }: BankaTanitimProps) {
                                                 type="number"
                                                 value={form.limit_tutari}
                                                 onChange={e => setForm({ ...form, limit_tutari: parseFloat(e.target.value) })}
-                                                className="w-full bg-[#020617]/40 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm font-black outline-none focus:border-primary/50"
+                                                className="w-full bg-background/40 border border-border rounded-2xl px-5 py-4 text-foreground text-sm font-black outline-none focus:border-primary/50"
                                             />
                                             <div className="absolute right-5 top-1/2 -translate-y-1/2 text-[10px] font-black text-secondary opacity-30 tracking-tight">TRY</div>
                                         </div>
@@ -417,7 +414,7 @@ export default function BankaTanitim({ showToast }: BankaTanitimProps) {
                                         <label className="text-[10px] font-black text-secondary uppercase tracking-[0.2em] italic">EFT/Havale İzin Durumu</label>
                                         <button
                                             onClick={() => setForm({ ...form, havale_uygun: !form.havale_uygun })}
-                                            className={`w-full py-4 rounded-2xl border flex items-center justify-center gap-3 transition-all font-black text-[10px] tracking-[0.2em] group shadow-inner ${form.havale_uygun ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' : 'bg-white/5 border-white/10 text-secondary'}`}
+                                            className={`w-full py-4 rounded-2xl border flex items-center justify-center gap-3 transition-all font-black text-[10px] tracking-[0.2em] group shadow-inner ${form.havale_uygun ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' : 'bg-background hover:bg-muted border-border text-secondary'}`}
                                         >
                                             <div className={`w-2 h-2 rounded-full ${form.havale_uygun ? 'bg-emerald-500 animate-pulse' : 'bg-secondary/30'}`} />
                                             {form.havale_uygun ? "TRANSFERE UYGUN / AKTİF" : "TRANSFERE KAPALI"}
@@ -429,7 +426,7 @@ export default function BankaTanitim({ showToast }: BankaTanitimProps) {
                                             type="text"
                                             value={form.masraf_hesabi}
                                             onChange={e => setForm({ ...form, masraf_hesabi: e.target.value })}
-                                            className="w-full bg-[#020617]/40 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm font-bold outline-none focus:border-primary/50 transition-all placeholder:text-secondary/10"
+                                            className="w-full bg-background/40 border border-border rounded-2xl px-5 py-4 text-foreground text-sm font-bold outline-none focus:border-primary/50 transition-all placeholder:text-muted-foreground"
                                             placeholder="780.01.001"
                                         />
                                     </div>
@@ -439,11 +436,11 @@ export default function BankaTanitim({ showToast }: BankaTanitimProps) {
 
                         {/* Secondary Details */}
                         <div className="lg:col-span-4 space-y-8">
-                            <div className="glass-card p-6 md:p-8 border-white/5 space-y-8 relative overflow-hidden shadow-xl">
+                            <div className="glass-card p-6 md:p-8 border-border space-y-8 relative overflow-hidden shadow-xl">
                                 <div className="absolute -top-12 -right-12 p-8 opacity-[0.03] scale-150 rotate-12">
                                     <Phone className="w-48 h-48" />
                                 </div>
-                                <h3 className="text-xs font-black text-white uppercase tracking-[0.3em] flex items-center gap-4 relative">
+                                <h3 className="text-xs font-black text-foreground uppercase tracking-[0.3em] flex items-center gap-4 relative">
                                     <div className="p-2.5 bg-primary/10 rounded-xl border border-primary/20"><Phone className="w-4 h-4 text-primary" /></div>
                                     İletişim & Lokasyon
                                 </h3>
@@ -457,7 +454,7 @@ export default function BankaTanitim({ showToast }: BankaTanitimProps) {
                                             type="text"
                                             value={form.telefon1}
                                             onChange={e => setForm({ ...form, telefon1: e.target.value })}
-                                            className="w-full bg-[#020617]/40 border border-white/10 rounded-2xl px-5 py-3.5 text-white text-sm font-bold outline-none focus:border-primary/50 transition-all"
+                                            className="w-full bg-background/40 border border-border rounded-2xl px-5 py-3.5 text-foreground text-sm font-bold outline-none focus:border-primary/50 transition-all"
                                             placeholder="(05__) ___ __ __"
                                         />
                                     </div>
@@ -470,7 +467,7 @@ export default function BankaTanitim({ showToast }: BankaTanitimProps) {
                                             type="text"
                                             value={form.telefon2}
                                             onChange={e => setForm({ ...form, telefon2: e.target.value })}
-                                            className="w-full bg-[#020617]/40 border border-white/10 rounded-2xl px-5 py-3.5 text-white text-sm font-bold outline-none focus:border-primary/50 transition-all"
+                                            className="w-full bg-background/40 border border-border rounded-2xl px-5 py-3.5 text-foreground text-sm font-bold outline-none focus:border-primary/50 transition-all"
                                         />
                                     </div>
                                     <div className="space-y-3">
@@ -482,7 +479,7 @@ export default function BankaTanitim({ showToast }: BankaTanitimProps) {
                                             type="text"
                                             value={form.fax_no}
                                             onChange={e => setForm({ ...form, fax_no: e.target.value })}
-                                            className="w-full bg-[#020617]/40 border border-white/10 rounded-2xl px-5 py-3.5 text-white text-sm font-bold outline-none focus:border-primary/50 transition-all"
+                                            className="w-full bg-background/40 border border-border rounded-2xl px-5 py-3.5 text-foreground text-sm font-bold outline-none focus:border-primary/50 transition-all"
                                         />
                                     </div>
                                     <div className="space-y-3 pt-2">
@@ -493,15 +490,15 @@ export default function BankaTanitim({ showToast }: BankaTanitimProps) {
                                             value={form.adres}
                                             onChange={e => setForm({ ...form, adres: e.target.value })}
                                             rows={4}
-                                            className="w-full bg-[#020617]/60 border border-white/10 rounded-2xl px-6 py-4 text-white text-sm font-medium outline-none focus:border-primary/50 transition-all resize-none shadow-inner leading-relaxed placeholder:text-secondary/5"
+                                            className="w-full bg-background/60 border border-border rounded-2xl px-6 py-4 text-foreground text-sm font-medium outline-none focus:border-primary/50 transition-all resize-none shadow-inner leading-relaxed placeholder:text-muted-foreground"
                                             placeholder="Şube tam adresi buraya girilecek..."
                                         />
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="glass-card p-6 md:p-8 border-white/5 space-y-8 relative overflow-hidden shadow-xl">
-                                <h3 className="text-xs font-black text-white uppercase tracking-[0.3em] flex items-center gap-4">
+                            <div className="glass-card p-6 md:p-8 border-border space-y-8 relative overflow-hidden shadow-xl">
+                                <h3 className="text-xs font-black text-foreground uppercase tracking-[0.3em] flex items-center gap-4">
                                     <div className="p-2.5 bg-primary/10 rounded-xl border border-primary/20"><Settings className="w-4 h-4 text-primary" /></div>
                                     Sistem Parametreleri
                                 </h3>
@@ -512,7 +509,7 @@ export default function BankaTanitim({ showToast }: BankaTanitimProps) {
                                             type="text"
                                             value={form.ozel_kodu}
                                             onChange={e => setForm({ ...form, ozel_kodu: e.target.value })}
-                                            className="w-full bg-[#020617]/40 border border-white/10 rounded-2xl px-5 py-3.5 text-white text-sm font-black outline-none focus:border-primary/50 placeholder:text-secondary/5"
+                                            className="w-full bg-background/40 border border-border rounded-2xl px-5 py-3.5 text-foreground text-sm font-black outline-none focus:border-primary/50 placeholder:text-muted-foreground"
                                             placeholder="ÖZEL-01"
                                         />
                                     </div>
@@ -523,7 +520,7 @@ export default function BankaTanitim({ showToast }: BankaTanitimProps) {
                                                 type="number"
                                                 value={form.kk_hes_gecis_gunu}
                                                 onChange={e => setForm({ ...form, kk_hes_gecis_gunu: parseInt(e.target.value) })}
-                                                className="w-full bg-[#020617]/40 border border-white/10 rounded-2xl px-5 py-3.5 text-white text-sm font-black outline-none focus:border-primary/50 text-center"
+                                                className="w-full bg-background/40 border border-border rounded-2xl px-5 py-3.5 text-foreground text-sm font-black outline-none focus:border-primary/50 text-center"
                                             />
                                         </div>
                                         <div className="space-y-3">

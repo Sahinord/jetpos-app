@@ -201,7 +201,7 @@ export default function BankaFis({ type, showToast }: BankaFisProps) {
             <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-[#020617]/40 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/5 shadow-2xl relative overflow-hidden"
+                className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-card/40 backdrop-blur-xl p-6 rounded-[2.5rem] border border-border shadow-2xl relative overflow-hidden"
             >
                 <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary/5 via-transparent to-transparent pointer-events-none" />
 
@@ -216,7 +216,7 @@ export default function BankaFis({ type, showToast }: BankaFisProps) {
                     </button>
                     <button
                         onClick={handleClear}
-                        className="px-8 py-3.5 bg-white/5 hover:bg-white/10 text-secondary hover:text-white border border-white/10 rounded-xl font-bold text-[11px] tracking-widest flex items-center justify-center gap-3 transition-all active:scale-95"
+                        className="px-8 py-3.5 bg-background hover:bg-muted text-secondary hover:text-foreground border border-border rounded-xl font-bold text-[11px] tracking-widest flex items-center justify-center gap-3 transition-all active:scale-95"
                     >
                         <X className="w-5 h-5" /> VAZGEÇ
                     </button>
@@ -232,7 +232,7 @@ export default function BankaFis({ type, showToast }: BankaFisProps) {
             <motion.div
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="glass-card p-8 md:p-10 border-white/5 relative overflow-hidden group shadow-2xl"
+                className="glass-card p-8 md:p-10 border-border relative overflow-hidden group shadow-2xl"
             >
                 <div className="absolute -right-20 -top-20 p-20 opacity-[0.02] group-hover:opacity-[0.04] transition-opacity pointer-events-none">
                     <Landmark className="w-96 h-96 -rotate-12" />
@@ -248,7 +248,7 @@ export default function BankaFis({ type, showToast }: BankaFisProps) {
                                 type="text"
                                 value={header.fisNo}
                                 onChange={e => setHeader({ ...header, fisNo: e.target.value })}
-                                className="w-full bg-[#020617]/60 border border-white/10 rounded-xl px-5 py-3 text-white text-sm font-bold outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/5 transition-all uppercase tracking-wider"
+                                className="w-full bg-background border border-border rounded-xl px-5 py-3 text-foreground text-sm font-bold outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/5 transition-all uppercase tracking-wider"
                                 placeholder="FİŞ NO..."
                             />
                             {!header.fisNo && <Sparkles className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-primary opacity-30 animate-pulse" />}
@@ -263,7 +263,7 @@ export default function BankaFis({ type, showToast }: BankaFisProps) {
                             type="date"
                             value={header.fisTarihi}
                             onChange={e => setHeader({ ...header, fisTarihi: e.target.value })}
-                            className="w-full bg-[#020617]/60 border border-white/10 rounded-xl px-5 py-3 text-white text-sm font-bold outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/5 transition-all"
+                            className="w-full bg-background border border-border rounded-xl px-5 py-3 text-foreground text-sm font-bold outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/5 transition-all"
                         />
                     </div>
 
@@ -275,7 +275,7 @@ export default function BankaFis({ type, showToast }: BankaFisProps) {
                             <select
                                 value={header.belgeTipi}
                                 onChange={e => setHeader({ ...header, belgeTipi: e.target.value })}
-                                className="w-24 bg-[#020617] border border-white/10 rounded-xl px-2 py-3 text-xs font-bold text-white outline-none focus:border-primary/50 transition-all uppercase appearance-none text-center"
+                                className="w-24 bg-background border border-border rounded-xl px-2 py-3 text-xs font-bold text-foreground outline-none focus:border-primary/50 transition-all uppercase appearance-none text-center"
                             >
                                 <option value="">TİP</option>
                                 <option value="Dekont">DKNT</option>
@@ -286,7 +286,7 @@ export default function BankaFis({ type, showToast }: BankaFisProps) {
                                 type="text"
                                 value={header.belgeNo}
                                 onChange={e => setHeader({ ...header, belgeNo: e.target.value })}
-                                className="flex-1 bg-[#020617]/60 border border-white/10 rounded-xl px-5 py-3 text-white text-sm font-bold outline-none focus:border-primary/50 transition-all uppercase"
+                                className="flex-1 bg-background border border-border rounded-xl px-5 py-3 text-foreground text-sm font-bold outline-none focus:border-primary/50 transition-all uppercase"
                                 placeholder="NO..."
                             />
                         </div>
@@ -300,7 +300,7 @@ export default function BankaFis({ type, showToast }: BankaFisProps) {
                             type="date"
                             value={header.belgeTarihi}
                             onChange={e => setHeader({ ...header, belgeTarihi: e.target.value })}
-                            className="w-full bg-[#020617]/60 border border-white/10 rounded-xl px-5 py-3 text-white text-sm font-bold outline-none focus:border-primary/50 transition-all"
+                            className="w-full bg-background border border-border rounded-xl px-5 py-3 text-foreground text-sm font-bold outline-none focus:border-primary/50 transition-all"
                         />
                     </div>
 
@@ -311,7 +311,7 @@ export default function BankaFis({ type, showToast }: BankaFisProps) {
                         <select
                             value={header.paraBirimi}
                             onChange={e => setHeader({ ...header, paraBirimi: e.target.value })}
-                            className="w-full bg-[#020617] border border-white/10 rounded-xl px-5 py-3 text-white text-sm font-bold outline-none focus:border-primary/50 transition-all cursor-pointer appearance-none uppercase tracking-wider text-center"
+                            className="w-full bg-background border border-border rounded-xl px-5 py-3 text-foreground text-sm font-bold outline-none focus:border-primary/50 transition-all cursor-pointer appearance-none uppercase tracking-wider text-center"
                         >
                             <option value="TRY">TRY - TÜRK LİRASI</option>
                             <option value="USD">USD - DOLAR</option>
@@ -323,7 +323,7 @@ export default function BankaFis({ type, showToast }: BankaFisProps) {
 
             {/* Tab Navigation */}
             <div className="space-y-6">
-                <div className="flex flex-wrap items-center gap-4 bg-[#020617]/40 backdrop-blur-md p-2 rounded-3xl border border-white/5 w-fit">
+                <div className="flex flex-wrap items-center gap-4 bg-card/40 backdrop-blur-md p-2 rounded-3xl border border-border w-fit">
                     <TabButton
                         active={activeTab === "items"}
                         onClick={() => setActiveTab("items")}
@@ -345,14 +345,14 @@ export default function BankaFis({ type, showToast }: BankaFisProps) {
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: 20 }}
-                            className="glass-card border-white/5 overflow-hidden shadow-2xl relative"
+                            className="glass-card border-border overflow-hidden shadow-2xl relative"
                         >
                             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/0 via-primary/40 to-primary/0" />
 
                             <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
                                 <table className="w-full text-left border-collapse min-w-[1400px]">
                                     <thead>
-                                        <tr className="bg-white/[0.02] border-b border-white/5">
+                                        <tr className="bg-primary/5 border-b border-border">
                                             <th className="px-6 py-4 text-[10px] font-bold text-secondary uppercase tracking-widest w-16 text-center">#</th>
                                             <th className="px-6 py-4 text-[10px] font-bold text-secondary uppercase tracking-widest w-72">Banka Hesabı</th>
                                             <th className="px-6 py-4 text-[10px] font-bold text-secondary uppercase tracking-widest w-40 text-center">Hedef Türü</th>
@@ -363,11 +363,11 @@ export default function BankaFis({ type, showToast }: BankaFisProps) {
                                             <th className="px-4 py-4 w-20"></th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-white/5">
+                                    <tbody className="divide-y divide-border/50">
                                         {rows.map((row, index) => (
-                                            <tr key={row.id} className="hover:bg-white/[0.01] transition-colors group">
+                                            <tr key={row.id} className="hover:bg-primary/5 transition-colors group">
                                                 <td className="px-8 py-4">
-                                                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-[10px] font-black text-secondary/40 mx-auto group-hover:bg-primary/10 group-hover:text-primary transition-all">
+                                                    <div className="w-8 h-8 rounded-lg bg-background flex items-center justify-center text-[10px] font-black text-secondary/40 mx-auto group-hover:bg-primary/10 group-hover:text-primary transition-all">
                                                         {index + 1}
                                                     </div>
                                                 </td>
@@ -376,7 +376,7 @@ export default function BankaFis({ type, showToast }: BankaFisProps) {
                                                         <select
                                                             value={row.banka_id}
                                                             onChange={e => updateRow(row.id, "banka_id", e.target.value)}
-                                                            className="w-full bg-[#020617]/40 border border-white/10 rounded-2xl px-5 py-3.5 text-white text-xs font-black outline-none focus:border-primary/40 focus:ring-4 focus:ring-primary/5 transition-all cursor-pointer appearance-none uppercase tracking-widest"
+                                                            className="w-full bg-background/40 border border-border rounded-2xl px-5 py-3.5 text-foreground text-xs font-black outline-none focus:border-primary/40 focus:ring-4 focus:ring-primary/5 transition-all cursor-pointer appearance-none uppercase tracking-widest"
                                                         >
                                                             <option value="">HESAP SEÇİN...</option>
                                                             {banks.map(b => (
@@ -392,7 +392,7 @@ export default function BankaFis({ type, showToast }: BankaFisProps) {
                                                     <select
                                                         value={row.karsi_hesap_tipi}
                                                         onChange={e => updateRow(row.id, "karsi_hesap_tipi", e.target.value)}
-                                                        className="w-full bg-[#020617] border border-white/10 rounded-2xl px-4 py-3.5 text-white text-[10px] font-black outline-none focus:border-primary/40 transition-all cursor-pointer text-center uppercase tracking-[0.2em]"
+                                                        className="w-full bg-background border border-border rounded-2xl px-4 py-3.5 text-foreground text-[10px] font-black outline-none focus:border-primary/40 transition-all cursor-pointer text-center uppercase tracking-[0.2em]"
                                                     >
                                                         <option value="Cari">CARİ</option>
                                                         <option value="Kasa">KASA</option>
@@ -416,7 +416,7 @@ export default function BankaFis({ type, showToast }: BankaFisProps) {
                                                         type="text"
                                                         value={row.aciklama}
                                                         onChange={e => updateRow(row.id, "aciklama", e.target.value)}
-                                                        className="w-full bg-[#020617]/40 border border-white/10 rounded-2xl px-5 py-3.5 text-white text-xs font-medium outline-none focus:border-primary/40 transition-all placeholder:text-secondary/20"
+                                                        className="w-full bg-background/40 border border-border rounded-2xl px-5 py-3.5 text-foreground text-xs font-medium outline-none focus:border-primary/40 transition-all placeholder:text-secondary/40"
                                                         placeholder="İŞLEM DETAYI..."
                                                     />
                                                 </td>
@@ -427,7 +427,7 @@ export default function BankaFis({ type, showToast }: BankaFisProps) {
                                                             type="number"
                                                             value={row.borc}
                                                             onChange={e => updateRow(row.id, "borc", e.target.value)}
-                                                            className="w-full bg-[#020617]/40 border border-white/10 rounded-2xl pl-10 pr-5 py-3.5 text-white text-sm outline-none text-right font-black text-emerald-400 focus:border-emerald-500/30 transition-all"
+                                                            className="w-full bg-background/40 border border-border rounded-2xl pl-10 pr-5 py-3.5 text-foreground text-sm outline-none text-right font-black text-emerald-500 focus:border-emerald-500/30 transition-all"
                                                             placeholder="0,00"
                                                         />
                                                     </div>
@@ -439,7 +439,7 @@ export default function BankaFis({ type, showToast }: BankaFisProps) {
                                                             type="number"
                                                             value={row.alacak}
                                                             onChange={e => updateRow(row.id, "alacak", e.target.value)}
-                                                            className="w-full bg-[#020617]/40 border border-white/10 rounded-2xl pl-10 pr-5 py-3.5 text-white text-sm outline-none text-right font-black text-rose-400 focus:border-rose-500/30 transition-all"
+                                                            className="w-full bg-background/40 border border-border rounded-2xl pl-10 pr-5 py-3.5 text-foreground text-sm outline-none text-right font-black text-rose-500 focus:border-rose-500/30 transition-all"
                                                             placeholder="0,00"
                                                         />
                                                     </div>
@@ -458,7 +458,7 @@ export default function BankaFis({ type, showToast }: BankaFisProps) {
                                     </tbody>
                                 </table>
                             </div>
-                            <div className="p-6 bg-white/[0.01] border-t border-white/5 flex justify-center">
+                            <div className="p-6 bg-primary/5 border-t border-border flex justify-center">
                                 <button
                                     onClick={addRow}
                                     className="px-12 py-3.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-xl text-[11px] font-bold tracking-widest transition-all flex items-center gap-4 active:scale-95 shadow-2xl shadow-primary/5 group"
@@ -474,7 +474,7 @@ export default function BankaFis({ type, showToast }: BankaFisProps) {
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -20 }}
-                            className="glass-card p-10 md:p-14 border-white/5 grid grid-cols-1 lg:grid-cols-2 gap-12"
+                            className="glass-card p-10 md:p-14 border-border grid grid-cols-1 lg:grid-cols-2 gap-12"
                         >
                             <div className="space-y-10">
                                 <div className="space-y-4">
@@ -488,7 +488,7 @@ export default function BankaFis({ type, showToast }: BankaFisProps) {
                                         value={header.muhAciklama}
                                         onChange={e => setHeader({ ...header, muhAciklama: e.target.value })}
                                         rows={5}
-                                        className="w-full bg-[#020617]/40 border border-white/10 rounded-[2rem] px-8 py-6 text-white text-sm font-medium outline-none focus:border-primary/50 resize-none leading-relaxed transition-all placeholder:text-secondary/10"
+                                        className="w-full bg-background/40 border border-border rounded-[2rem] px-8 py-6 text-foreground text-sm font-medium outline-none focus:border-primary/50 resize-none leading-relaxed transition-all placeholder:text-muted-foreground"
                                         placeholder="Muhasebe kayıtları için özel entegrasyon notları..."
                                     />
                                 </div>
@@ -503,7 +503,7 @@ export default function BankaFis({ type, showToast }: BankaFisProps) {
                                         value={header.aciklama}
                                         onChange={e => setHeader({ ...header, aciklama: e.target.value })}
                                         rows={5}
-                                        className="w-full bg-[#020617]/40 border border-white/10 rounded-[2rem] px-8 py-6 text-white text-sm font-medium outline-none focus:border-primary/50 resize-none leading-relaxed transition-all placeholder:text-secondary/10"
+                                        className="w-full bg-background/40 border border-border rounded-[2rem] px-8 py-6 text-foreground text-sm font-medium outline-none focus:border-primary/50 resize-none leading-relaxed transition-all placeholder:text-muted-foreground"
                                         placeholder="İşlem ile ilgili detaylı bilgi ve notlar..."
                                     />
                                 </div>
@@ -517,7 +517,7 @@ export default function BankaFis({ type, showToast }: BankaFisProps) {
                                             type="text"
                                             value={header.isyeriKodu}
                                             onChange={e => setHeader({ ...header, isyeriKodu: e.target.value })}
-                                            className="w-full bg-[#020617]/40 border border-white/10 rounded-2xl px-6 py-4 text-white text-sm font-black outline-none focus:border-primary/50 transition-all uppercase tracking-widest"
+                                            className="w-full bg-background/40 border border-border rounded-2xl px-6 py-4 text-foreground text-sm font-black outline-none focus:border-primary/50 transition-all uppercase tracking-widest"
                                         />
                                     </div>
                                     <div className="space-y-4">
@@ -527,13 +527,13 @@ export default function BankaFis({ type, showToast }: BankaFisProps) {
                                                 type="text"
                                                 value="01 (JETPOS)"
                                                 disabled
-                                                className="w-full bg-[#020617] border border-white/10 rounded-2xl px-6 py-4 text-secondary/30 text-sm font-black outline-none opacity-50 tracking-widest"
+                                                className="w-full bg-background border border-border rounded-2xl px-6 py-4 text-secondary/50 text-sm font-black outline-none opacity-50 tracking-widest"
                                             />
                                             <Shield className="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 opacity-10" />
                                         </div>
                                     </div>
                                 </div>
-                                <div className="glass-card p-10 border-white/5 bg-primary/5 space-y-6 relative overflow-hidden group shadow-inner">
+                                <div className="glass-card p-10 border-border bg-primary/5 space-y-6 relative overflow-hidden group shadow-inner">
                                     <div className="absolute -right-6 -bottom-6 opacity-[0.03] group-hover:scale-110 group-hover:-rotate-12 transition-all duration-700">
                                         <Tag className="w-40 h-40" />
                                     </div>
@@ -541,7 +541,7 @@ export default function BankaFis({ type, showToast }: BankaFisProps) {
                                         <div className="w-10 h-10 rounded-2xl bg-primary/20 flex items-center justify-center">
                                             <Tag className="w-5 h-5 text-primary" />
                                         </div>
-                                        <span className="text-xs font-black text-white uppercase tracking-[0.3em]">GELİŞMİŞ İŞLEM ETİKETLERİ</span>
+                                        <span className="text-xs font-black text-foreground uppercase tracking-[0.3em]">GELİŞMİŞ İŞLEM ETİKETLERİ</span>
                                     </div>
                                     <p className="text-sm text-secondary/60 italic leading-relaxed font-medium">
                                         Bu fiş içerisinde yapılan tüm hareketler otomatik olarak kurumsal raporlama sisteminize dahil edilecektir.
@@ -559,7 +559,7 @@ export default function BankaFis({ type, showToast }: BankaFisProps) {
             </div>
 
             {/* Desktop Floating Summary Section */}
-            <div className="hidden xl:flex fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] gap-10 bg-[#020617]/80 backdrop-blur-3xl px-10 py-5 rounded-3xl border border-white/10 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.8)] animate-in fade-in slide-in-from-bottom-10 duration-700">
+            <div className="hidden xl:flex fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] gap-10 bg-card/90 backdrop-blur-3xl px-10 py-5 rounded-3xl border border-white/10 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.8)] animate-in fade-in slide-in-from-bottom-10 duration-700">
                 <div className="flex flex-col items-start gap-1 min-w-[220px] border-r border-white/10 pr-10">
                     <div className="flex items-center gap-2 text-emerald-500">
                         <ArrowDownLeft className="w-3.5 h-3.5" />
@@ -600,8 +600,8 @@ export default function BankaFis({ type, showToast }: BankaFisProps) {
 
             {/* Mobile/Small Screen Footer Totals */}
             <div className="xl:hidden fixed bottom-0 left-0 w-full p-4 z-[100] pointer-events-none">
-                <div className="glass-card p-5 border-white/10 bg-[#020617]/95 backdrop-blur-3xl space-y-4 shadow-[0_-20px_50px_rgba(0,0,0,0.5)] pointer-events-auto rounded-[2rem]">
-                    <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                <div className="glass-card p-5 border-border bg-card/95 backdrop-blur-3xl space-y-4 shadow-[0_-20px_50px_rgba(0,0,0,0.5)] pointer-events-auto rounded-[2rem]">
+                    <div className="flex items-center justify-between border-b border-border pb-3">
                         <div className="flex items-center gap-2">
                             <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-500" />
                             <span className="text-[10px] font-bold text-secondary/60 uppercase tracking-wider">BORÇ</span>
@@ -618,7 +618,7 @@ export default function BankaFis({ type, showToast }: BankaFisProps) {
                     <button
                         onClick={handleSave}
                         disabled={loading}
-                        className="w-full py-4 bg-primary text-white rounded-2xl font-bold text-xs tracking-widest shadow-2xl shadow-primary/30 active:scale-95 disabled:opacity-50 px-2"
+                        className="w-full py-4 bg-primary text-primary-foreground rounded-2xl font-bold text-xs tracking-widest shadow-2xl shadow-primary/30 active:scale-95 disabled:opacity-50 px-2"
                     >
                         FİŞİ KAYDET
                     </button>
@@ -635,7 +635,7 @@ function TabButton({ active, onClick, icon: Icon, label }: any) {
             onClick={onClick}
             className={`px-6 py-2.5 rounded-xl flex items-center gap-3 transition-all font-bold text-[11px] tracking-wider uppercase border ${active
                 ? 'bg-primary text-white border-primary shadow-2xl shadow-primary/25'
-                : 'bg-transparent text-secondary hover:text-white border-transparent hover:bg-white/5'
+                : 'bg-transparent text-secondary hover:text-foreground border-transparent hover:bg-primary/5'
                 }`}
         >
             <Icon className="w-4 h-4" />
@@ -676,11 +676,11 @@ function AccountSelector({ type, value, onChange, data }: any) {
                     const item = list.find((i: any) => i.id === e.target.value);
                     onChange(e.target.value, item ? item[labelField] : "");
                 }}
-                className="w-full bg-[#020617]/40 border border-white/10 rounded-2xl px-6 py-3.5 text-white text-xs font-black outline-none focus:border-primary/40 group-hover/sel:border-white/20 transition-all appearance-none uppercase tracking-widest"
+                className="w-full bg-background/40 border border-border rounded-2xl px-6 py-3.5 text-foreground text-xs font-black outline-none focus:border-primary/40 group-hover/sel:border-primary/20 transition-all appearance-none uppercase tracking-widest"
             >
                 <option value="">{type} ARŞİVİ...</option>
                 {list.map((item: any) => (
-                    <option key={item.id} value={item.id} className="bg-[#020617]">
+                    <option key={item.id} value={item.id} className="bg-background">
                         {item[labelField]?.toUpperCase()} {item.cari_kodu || item.kasa_kodu || item.banka_kodu ? `[${item.cari_kodu || item.kasa_kodu || item.banka_kodu}]` : ""}
                     </option>
                 ))}

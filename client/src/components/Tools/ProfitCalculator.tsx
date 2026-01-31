@@ -12,7 +12,7 @@ const InputField = ({ label, icon: Icon, value, onChange, placeholder = "0.00", 
         <div className="relative group">
             <input
                 type="number"
-                className="w-full bg-white/5 border border-border group-hover:border-white/20 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-primary/50 transition-all font-semibold text-white placeholder:text-white/10 pr-10"
+                className="w-full bg-background border border-border group-hover:border-primary/50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-primary/50 transition-all font-semibold text-foreground placeholder:text-muted-foreground pr-10"
                 value={value === 0 ? "" : value}
                 onChange={(e) => {
                     const val = e.target.value === "" ? 0 : parseFloat(e.target.value);
@@ -119,7 +119,7 @@ export default function ProfitCalculatorPage() {
                         </label>
                         <input
                             type="text"
-                            className="w-full bg-white/5 border border-white/10 rounded-xl px-6 py-4 outline-none focus:ring-2 focus:ring-primary/50 transition-all font-semibold text-xl placeholder:text-white/10"
+                            className="w-full bg-background border border-border rounded-xl px-6 py-4 outline-none focus:ring-2 focus:ring-primary/50 transition-all font-semibold text-xl placeholder:text-muted-foreground text-foreground"
                             placeholder="Örn: Dana Kuşbaşı Kampanyası"
                             value={values.title}
                             onChange={(e) => setValues({ ...values, title: e.target.value })}
@@ -142,7 +142,7 @@ export default function ProfitCalculatorPage() {
                                 </label>
                                 <input
                                     type="number"
-                                    className="w-full bg-emerald-500/10 border-2 border-emerald-500/30 rounded-xl px-4 py-3 outline-none focus:border-emerald-500 transition-all font-black text-xl text-emerald-400"
+                                    className="w-full bg-emerald-500/10 border-2 border-emerald-500/30 rounded-xl px-4 py-3 outline-none focus:border-emerald-500 transition-all font-black text-xl text-emerald-600"
                                     value={values.salePrice === 0 ? "" : values.salePrice}
                                     onChange={(e) => setValues({ ...values, salePrice: parseFloat(e.target.value) || 0 })}
                                     placeholder="0.00"
@@ -167,14 +167,14 @@ export default function ProfitCalculatorPage() {
                     </h3>
 
                     <div className="space-y-6 flex-1">
-                        <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-border">
+                        <div className="flex items-center justify-between p-4 rounded-xl bg-background border border-border">
                             <span className="text-secondary font-semibold text-sm">TOPLAM MALİYET</span>
-                            <span className="text-xl font-semibold">₺{results.totalCost.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            <span className="text-xl font-semibold text-foreground">₺{results.totalCost.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
 
-                        <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-border">
+                        <div className="flex items-center justify-between p-4 rounded-xl bg-background border border-border">
                             <span className="text-secondary font-semibold text-sm">STOPAJ (%1)</span>
-                            <span className="text-xl font-semibold text-rose-400">₺{(values.salePrice * 0.01).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            <span className="text-xl font-semibold text-rose-500">₺{(values.salePrice * 0.01).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
 
                         <div className="flex items-center justify-between p-6 rounded-2xl bg-emerald-500 text-white shadow-xl shadow-emerald-500/20">
@@ -183,13 +183,13 @@ export default function ProfitCalculatorPage() {
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="p-4 rounded-xl bg-white/5 border border-border">
+                            <div className="p-4 rounded-xl bg-background border border-border">
                                 <p className="text-[10px] text-secondary font-black uppercase mb-1">MARJ</p>
-                                <p className={`text-2xl font-black ${results.margin < 0 ? 'text-rose-500' : 'text-emerald-400'}`}>%{results.margin.toFixed(1)}</p>
+                                <p className={`text-2xl font-black ${results.margin < 0 ? 'text-rose-500' : 'text-emerald-500'}`}>%{results.margin.toFixed(1)}</p>
                             </div>
-                            <div className="p-4 rounded-xl bg-white/5 border border-border">
+                            <div className="p-4 rounded-xl bg-background border border-border">
                                 <p className="text-[10px] text-secondary font-black uppercase mb-1">ROI</p>
-                                <p className={`text-2xl font-black ${results.roi < 0 ? 'text-rose-500' : 'text-blue-400'}`}>%{results.roi.toFixed(1)}</p>
+                                <p className={`text-2xl font-black ${results.roi < 0 ? 'text-rose-500' : 'text-blue-500'}`}>%{results.roi.toFixed(1)}</p>
                             </div>
                         </div>
                     </div>
@@ -204,7 +204,7 @@ export default function ProfitCalculatorPage() {
                                 <label className="text-[8px] font-black text-secondary uppercase block mb-1">En (cm)</label>
                                 <input
                                     type="number"
-                                    className="w-full bg-white/5 border border-border rounded-lg px-2 py-2 outline-none text-sm"
+                                    className="w-full bg-background border border-border rounded-lg px-2 py-2 outline-none text-sm text-foreground"
                                     value={dimensions.width === 0 ? "" : dimensions.width}
                                     onChange={(e) => setDimensions({ ...dimensions, width: e.target.value === "" ? 0 : parseFloat(e.target.value) })}
                                 />
@@ -213,7 +213,7 @@ export default function ProfitCalculatorPage() {
                                 <label className="text-[8px] font-black text-secondary uppercase block mb-1">Boy (cm)</label>
                                 <input
                                     type="number"
-                                    className="w-full bg-white/5 border border-border rounded-lg px-2 py-2 outline-none text-sm"
+                                    className="w-full bg-background border border-border rounded-lg px-2 py-2 outline-none text-sm text-foreground"
                                     value={dimensions.height === 0 ? "" : dimensions.height}
                                     onChange={(e) => setDimensions({ ...dimensions, height: e.target.value === "" ? 0 : parseFloat(e.target.value) })}
                                 />
@@ -222,7 +222,7 @@ export default function ProfitCalculatorPage() {
                                 <label className="text-[8px] font-black text-secondary uppercase block mb-1">Yük. (cm)</label>
                                 <input
                                     type="number"
-                                    className="w-full bg-white/5 border border-border rounded-lg px-2 py-2 outline-none text-sm"
+                                    className="w-full bg-background border border-border rounded-lg px-2 py-2 outline-none text-sm text-foreground"
                                     value={dimensions.length === 0 ? "" : dimensions.length}
                                     onChange={(e) => setDimensions({ ...dimensions, length: e.target.value === "" ? 0 : parseFloat(e.target.value) })}
                                 />
@@ -270,11 +270,11 @@ export default function ProfitCalculatorPage() {
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, scale: 0.9 }}
                                 key={item.id}
-                                className="glass-card !p-6 border-white/5 hover:border-white/10 transition-all group"
+                                className="glass-card !p-6 border-border hover:border-primary/20 transition-all group"
                             >
                                 <div className="flex justify-between items-start mb-4">
                                     <div>
-                                        <h4 className="font-semibold text-lg text-white group-hover:text-primary transition-colors">{item.title}</h4>
+                                        <h4 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors">{item.title}</h4>
                                         <span className="text-[10px] text-secondary flex items-center font-semibold">
                                             <Clock className="w-3 h-3 mr-1" /> {item.date}
                                         </span>
@@ -294,13 +294,13 @@ export default function ProfitCalculatorPage() {
                                     </div>
                                     <div className="text-right">
                                         <p className="text-[10px] text-secondary font-black uppercase">KAR</p>
-                                        <p className={`font-black text-lg ${item.netProfit < 0 ? 'text-rose-500' : 'text-emerald-400'}`}>
+                                        <p className={`font-black text-lg ${item.netProfit < 0 ? 'text-rose-500' : 'text-emerald-500'}`}>
                                             ₺{item.netProfit.toLocaleString('tr-TR', { minimumFractionDigits: 1 })}
                                         </p>
                                     </div>
                                 </div>
 
-                                <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+                                <div className="mt-4 pt-4 border-t border-border flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
                                     <span className="text-secondary">MARJ: <span className={item.margin < 15 ? 'text-amber-500' : 'text-emerald-500'}>%{item.margin.toFixed(1)}</span></span>
                                     <span className="text-secondary">ROI: <span className="text-blue-400">%{item.roi.toFixed(1)}</span></span>
                                 </div>
@@ -309,10 +309,10 @@ export default function ProfitCalculatorPage() {
                     </AnimatePresence>
 
                     {history.length === 0 && (
-                        <div className="col-span-full py-20 glass-card text-center border-dashed border-white/10 opacity-30">
-                            <History className="w-12 h-12 mx-auto mb-4" />
-                            <p className="text-lg font-bold">Henüz kaydedilmiş hesaplama yok.</p>
-                            <p className="text-sm">Yukarıdaki formdan hesaplama yapıp kaydedebilirsiniz.</p>
+                        <div className="col-span-full py-20 glass-card text-center border-dashed border-border py-opacity-30">
+                            <History className="w-12 h-12 mx-auto mb-4 text-secondary/40" />
+                            <p className="text-lg font-bold text-foreground">Henüz kaydedilmiş hesaplama yok.</p>
+                            <p className="text-sm text-secondary">Yukarıdaki formdan hesaplama yapıp kaydedebilirsiniz.</p>
                         </div>
                     )}
                 </div>

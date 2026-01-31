@@ -154,7 +154,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                         <motion.h1
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="text-2xl font-black text-white"
+                            className="text-2xl font-black text-foreground"
                         >
                             Merhaba, <span className="text-primary">{currentTenant?.company_name || "JetPos"}</span>! 👋
                         </motion.h1>
@@ -171,7 +171,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="hidden md:flex items-center gap-2 bg-white/5 px-4 py-2 rounded-xl border border-white/10"
+                        className="hidden md:flex items-center gap-2 bg-primary/5 px-4 py-2 rounded-xl border border-primary/10"
                     >
                         <Lightbulb className="w-4 h-4 text-yellow-500" />
                         <AnimatePresence mode="wait">
@@ -196,7 +196,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                         <div className="glass-card p-5 flex-1">
                             <div className="flex items-center gap-2 mb-4">
                                 <Star className="w-4 h-4 text-yellow-500" />
-                                <h2 className="text-base font-bold text-white">Hızlı Erişim</h2>
+                                <h2 className="text-base font-bold text-foreground">Hızlı Erişim</h2>
                                 {favoritePages.length === 0 && (
                                     <span className="text-xs text-secondary ml-2">(Yıldıza tıklayarak ekle)</span>
                                 )}
@@ -213,12 +213,12 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                                             whileHover={{ scale: 1.03, y: -3 }}
                                             whileTap={{ scale: 0.97 }}
                                             onClick={() => onNavigate(page.id)}
-                                            className={`rounded-2xl border border-white/10 backdrop-blur-sm p-5 flex flex-col items-center justify-center gap-3 transition-all hover:border-white/20 hover:shadow-xl cursor-pointer ${page.gradient}`}
+                                            className={`rounded-2xl border border-primary/10 backdrop-blur-sm p-5 flex flex-col items-center justify-center gap-3 transition-all hover:border-primary/20 hover:shadow-xl cursor-pointer ${page.gradient}`}
                                         >
                                             <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${page.color} flex items-center justify-center shadow-lg`}>
                                                 <page.icon className="w-8 h-8 text-white" />
                                             </div>
-                                            <span className="text-white font-semibold text-sm text-center leading-tight">{page.label}</span>
+                                            <span className="text-foreground font-semibold text-sm text-center leading-tight">{page.label}</span>
                                         </motion.button>
                                     ))}
                                 </div>
@@ -233,12 +233,12 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                                             whileHover={{ scale: 1.03, y: -3 }}
                                             whileTap={{ scale: 0.97 }}
                                             onClick={() => onNavigate(page.id)}
-                                            className={`rounded-2xl border border-white/10 backdrop-blur-sm p-5 flex flex-col items-center justify-center gap-3 transition-all hover:border-white/20 hover:shadow-xl cursor-pointer ${page.gradient}`}
+                                            className={`rounded-2xl border border-primary/10 backdrop-blur-sm p-5 flex flex-col items-center justify-center gap-3 transition-all hover:border-primary/20 hover:shadow-xl cursor-pointer ${page.gradient}`}
                                         >
                                             <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${page.color} flex items-center justify-center shadow-lg`}>
                                                 <page.icon className="w-8 h-8 text-white" />
                                             </div>
-                                            <span className="text-white font-semibold text-sm text-center leading-tight">{page.label}</span>
+                                            <span className="text-foreground font-semibold text-sm text-center leading-tight">{page.label}</span>
                                         </motion.button>
                                     ))}
                                 </div>
@@ -251,48 +251,48 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
                                 onClick={() => onNavigate("pos")}
-                                className="glass-card p-4 flex items-center gap-3 cursor-pointer hover:bg-white/10 transition-all group"
+                                className="glass-card p-4 flex items-center gap-3 cursor-pointer hover:bg-primary/5 transition-all group"
                             >
                                 <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
                                     <Zap className="w-5 h-5 text-white" />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-white font-bold text-sm truncate">Yeni Satış</p>
+                                    <p className="text-foreground font-bold text-sm truncate">Yeni Satış</p>
                                     <p className="text-secondary text-xs">POS'u aç</p>
                                 </div>
-                                <ChevronRight className="w-4 h-4 text-secondary group-hover:text-white" />
+                                <ChevronRight className="w-4 h-4 text-secondary group-hover:text-primary" />
                             </motion.div>
 
                             <motion.div
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
                                 onClick={() => onNavigate("products")}
-                                className="glass-card p-4 flex items-center gap-3 cursor-pointer hover:bg-white/10 transition-all group"
+                                className="glass-card p-4 flex items-center gap-3 cursor-pointer hover:bg-primary/5 transition-all group"
                             >
                                 <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
                                     <Package className="w-5 h-5 text-white" />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-white font-bold text-sm truncate">Ürünler</p>
+                                    <p className="text-foreground font-bold text-sm truncate">Ürünler</p>
                                     <p className="text-secondary text-xs">Stok yönet</p>
                                 </div>
-                                <ChevronRight className="w-4 h-4 text-secondary group-hover:text-white" />
+                                <ChevronRight className="w-4 h-4 text-secondary group-hover:text-primary" />
                             </motion.div>
 
                             <motion.div
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
                                 onClick={() => onNavigate("reports")}
-                                className="glass-card p-4 flex items-center gap-3 cursor-pointer hover:bg-white/10 transition-all group"
+                                className="glass-card p-4 flex items-center gap-3 cursor-pointer hover:bg-primary/5 transition-all group"
                             >
                                 <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center">
                                     <BarChart3 className="w-5 h-5 text-white" />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-white font-bold text-sm truncate">Raporlar</p>
+                                    <p className="text-foreground font-bold text-sm truncate">Raporlar</p>
                                     <p className="text-secondary text-xs">Analiz et</p>
                                 </div>
-                                <ChevronRight className="w-4 h-4 text-secondary group-hover:text-white" />
+                                <ChevronRight className="w-4 h-4 text-secondary group-hover:text-primary" />
                             </motion.div>
                         </div>
                     </div>
@@ -303,44 +303,44 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                         <div className="glass-card p-5">
                             <div className="flex items-center gap-2 mb-4">
                                 <Activity className="w-4 h-4 text-primary" />
-                                <h2 className="text-base font-bold text-white">Bugünkü Özet</h2>
+                                <h2 className="text-base font-bold text-foreground">Bugünkü Özet</h2>
                             </div>
 
                             <div className="space-y-3">
-                                <div className="flex items-center justify-between p-3 rounded-lg bg-white/5">
+                                <div className="flex items-center justify-between p-3 rounded-lg bg-primary/5">
                                     <div className="flex items-center gap-3">
                                         <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
                                             <DollarSign className="w-4 h-4 text-emerald-500" />
                                         </div>
                                         <span className="text-secondary text-sm">Satış</span>
                                     </div>
-                                    <span className="text-white font-bold">₺0</span>
+                                    <span className="text-foreground font-bold">₺0</span>
                                 </div>
 
-                                <div className="flex items-center justify-between p-3 rounded-lg bg-white/5">
+                                <div className="flex items-center justify-between p-3 rounded-lg bg-primary/5">
                                     <div className="flex items-center gap-3">
                                         <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
                                             <ShoppingCart className="w-4 h-4 text-blue-500" />
                                         </div>
                                         <span className="text-secondary text-sm">İşlem</span>
                                     </div>
-                                    <span className="text-white font-bold">0</span>
+                                    <span className="text-foreground font-bold">0</span>
                                 </div>
 
-                                <div className="flex items-center justify-between p-3 rounded-lg bg-white/5">
+                                <div className="flex items-center justify-between p-3 rounded-lg bg-primary/5">
                                     <div className="flex items-center gap-3">
                                         <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
                                             <TrendingUp className="w-4 h-4 text-purple-500" />
                                         </div>
                                         <span className="text-secondary text-sm">Kâr</span>
                                     </div>
-                                    <span className="text-white font-bold">₺0</span>
+                                    <span className="text-foreground font-bold">₺0</span>
                                 </div>
                             </div>
 
                             <button
                                 onClick={() => onNavigate("dashboard")}
-                                className="w-full mt-4 py-2 text-sm text-primary hover:text-white hover:bg-primary/20 rounded-lg transition-all"
+                                className="w-full mt-4 py-2 text-sm text-primary hover:text-white hover:bg-primary rounded-lg transition-all"
                             >
                                 Detaylı Dashboard →
                             </button>
@@ -350,7 +350,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                         <div className="glass-card p-5 flex-1">
                             <div className="flex items-center gap-2 mb-4">
                                 <Clock className="w-4 h-4 text-amber-500" />
-                                <h2 className="text-base font-bold text-white">Son Aktivite</h2>
+                                <h2 className="text-base font-bold text-foreground">Son Aktivite</h2>
                             </div>
 
                             <div className="flex flex-col items-center justify-center h-32 text-center">

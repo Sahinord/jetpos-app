@@ -70,7 +70,7 @@ export default function BankaPage({ pageId, showToast }: BankaPageProps) {
                     <motion.div
                         initial={{ opacity: 0, scale: 0.98 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="glass-card p-12 text-center border-white/5 relative overflow-hidden"
+                        className="glass-card p-12 text-center border-border relative overflow-hidden"
                     >
                         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
                         <div className="relative z-10">

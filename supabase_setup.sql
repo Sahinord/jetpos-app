@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS sales (
   user_id UUID REFERENCES auth.users(id),
   total_amount DECIMAL(15, 2) DEFAULT 0.00,
   total_profit DECIMAL(15, 2) DEFAULT 0.00,
-  payment_method TEXT CHECK (payment_method IN ('NAKİT', 'KART', 'VERESİYE')),
+  payment_method TEXT CHECK (payment_method IN ('NAKİT', 'KART', 'VERESİYE', 'HAVALE/EFT')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

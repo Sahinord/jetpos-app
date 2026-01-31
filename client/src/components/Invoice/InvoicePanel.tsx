@@ -244,7 +244,7 @@ export default function InvoicePanel() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-xl font-bold text-white flex items-center gap-2">
+                    <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
                         <FileText className="w-6 h-6 text-primary" /> E-Fatura Merkezi
                     </h1>
                 </div>
@@ -252,7 +252,7 @@ export default function InvoicePanel() {
                     <button onClick={() => openInvoice(null, 'manual')} className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg transition-all active:scale-95">
                         <Plus className="w-4 h-4" /> YENİ FATURA OLUŞTUR
                     </button>
-                    <button onClick={fetchData} className="glass-card p-2 text-slate-400 hover:text-white transition-all">
+                    <button onClick={fetchData} className="glass-card p-2 text-secondary hover:text-primary transition-all">
                         <Search className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                     </button>
                 </div>
@@ -262,22 +262,22 @@ export default function InvoicePanel() {
             <div className="flex gap-2 bg-white/5 p-1 rounded-xl w-fit">
                 <button
                     onClick={() => setView('sales')}
-                    className={`px-6 py-2 rounded-lg text-xs font-bold transition-all ${view === 'sales' ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                    className={`px-6 py-2 rounded-lg text-xs font-bold transition-all ${view === 'sales' ? 'bg-primary text-white shadow-lg' : 'text-secondary hover:text-foreground'}`}
                 >
                     MAĞAZA SATIŞLARI
                 </button>
                 <button
                     onClick={() => setView('trendyol')}
-                    className={`px-6 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${view === 'trendyol' ? 'bg-orange-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                    className={`px-6 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${view === 'trendyol' ? 'bg-orange-500 text-white shadow-lg' : 'text-secondary hover:text-foreground'}`}
                 >
                     <ShoppingBag className="w-3.5 h-3.5" /> TRENDYOL SİPARİŞLERİ
                 </button>
             </div>
 
             {/* Liste */}
-            <div className="glass-card overflow-hidden !rounded-2xl border-white/5 bg-black/40">
+            <div className="glass-card overflow-hidden !rounded-2xl border-border/50 bg-primary/5">
                 <table className="w-full text-left text-xs">
-                    <thead className="bg-white/5 text-[9px] font-bold uppercase tracking-widest text-slate-500 border-b border-white/5">
+                    <thead className="bg-primary/5 text-[9px] font-bold uppercase tracking-widest text-secondary border-b border-border">
                         <tr>
                             <th className="px-4 py-3">Tarih</th>
                             <th className="px-4 py-3">Referans / Platform</th>
@@ -287,18 +287,18 @@ export default function InvoicePanel() {
                             <th className="px-4 py-3 text-right">Aksiyon</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5">
+                    <tbody className="divide-y divide-border/50">
                         {(view === 'sales' ? sales : trendyolOrders).map(item => (
                             <tr key={item.id} className="hover:bg-white/[0.02] transition-colors group">
                                 <td className="px-4 py-2.5 text-slate-400 font-mono italic">{formatDate(item.created_at)}</td>
                                 <td className="px-4 py-2.5">
                                     <div className="flex items-center gap-2">
-                                        <span className="font-bold text-white">#{item.order_number || item.id.slice(0, 8)}</span>
+                                        <span className="font-bold text-foreground">#{item.order_number || item.id.slice(0, 8)}</span>
                                         {view === 'trendyol' && <span className="text-[8px] bg-orange-500/20 text-orange-500 px-1.5 py-0.5 rounded border border-orange-500/20 font-black">TRENDYOL</span>}
                                         {view === 'sales' && <span className="text-[8px] bg-primary/20 text-primary px-1.5 py-0.5 rounded border border-primary/20 font-black">MAĞAZA</span>}
                                     </div>
                                 </td>
-                                <td className="px-4 py-2.5 font-bold text-slate-200">{item.customer_name || 'Nihai Tüketici'}</td>
+                                <td className="px-4 py-2.5 font-bold text-foreground">{item.customer_name || 'Nihai Tüketici'}</td>
                                 <td className="px-4 py-2.5 font-black text-emerald-500 font-mono tracking-tighter">{formatCurrency(item.total_price)}</td>
                                 <td className="px-4 py-2.5">
                                     <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold border ${item.status === 'invoiced' || item.status === 'Picking' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-slate-500/10 text-slate-500 border-slate-500/20'}`}>
@@ -306,7 +306,7 @@ export default function InvoicePanel() {
                                     </span>
                                 </td>
                                 <td className="px-4 py-2.5 text-right">
-                                    <button onClick={() => openInvoice(item, view === 'sales' ? 'sale' : 'trendyol')} className="bg-white/5 hover:bg-primary text-slate-400 hover:text-white px-3 py-1 rounded-lg text-[10px] font-bold transition-all border border-white/5">DÜZENLE VE KES</button>
+                                    <button onClick={() => openInvoice(item, view === 'sales' ? 'sale' : 'trendyol')} className="bg-primary/5 hover:bg-primary text-secondary hover:text-white px-3 py-1 rounded-lg text-[10px] font-bold transition-all border border-border">DÜZENLE VE KES</button>
                                 </td>
                             </tr>
                         ))}
@@ -316,11 +316,11 @@ export default function InvoicePanel() {
 
             {/* ----- MODAL (Aynı Kalıyor) ----- */}
             {editModal && (
-                <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex items-center justify-center overflow-y-auto p-4 md:p-10">
-                    <div className="glass-card w-full max-w-7xl h-[90vh] my-auto !bg-[#0f172a] shadow-[0_0_100px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col border border-white/10 animate-in fade-in zoom-in duration-200">
+                <div className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-md flex items-center justify-center overflow-y-auto p-4 md:p-10">
+                    <div className="glass-card w-full max-w-7xl h-[90vh] my-auto !bg-card shadow-2xl overflow-hidden flex flex-col border border-border animate-in fade-in zoom-in duration-200">
 
                         <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between bg-white/[0.02] shrink-0">
-                            <h2 className="text-sm font-bold text-white flex items-center gap-2 uppercase tracking-tighter">
+                            <h2 className="text-sm font-bold text-foreground flex items-center gap-2 uppercase tracking-tighter">
                                 <Calculator className="text-primary w-4 h-4" /> {editModal.platform || 'MANUEL'} FATURA DÜZENLEME
                             </h2>
                             <button onClick={() => setEditModal(null)} className="text-slate-500 hover:text-white transition-all"> <X className="w-5 h-5" /> </button>
@@ -334,18 +334,18 @@ export default function InvoicePanel() {
                                 transition: 'transform 0.1s ease-out'
                             }}
                         >
-                            <div className="bg-white/5 p-4 rounded-xl border border-white/5 space-y-3 shrink-0">
+                            <div className="bg-primary/5 p-4 rounded-xl border border-border space-y-3 shrink-0">
                                 <h3 className="text-[10px] font-bold text-primary uppercase tracking-widest flex items-center gap-2"> <MapPin className="w-3 h-3" /> Alıcı Bilgileri</h3>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-                                    <div className="space-y-1"><label className="text-[9px] text-slate-500 font-bold uppercase">VKN / TCKN</label><input value={editModal.vkn} onChange={e => setEditModal(calculate({ ...editModal, vkn: e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-md px-2 py-1.5 text-white outline-none focus:border-primary font-mono" /></div>
-                                    <div className="sm:col-span-1 lg:col-span-2 space-y-1"><label className="text-[9px] text-slate-500 font-bold uppercase">Ünvan / Ad Soyad</label><input value={editModal.unvan || (`${editModal.ad} ${editModal.soyad}`).trim()} onChange={e => setEditModal(calculate({ ...editModal, unvan: e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-md px-2 py-1.5 text-white outline-none focus:border-primary" /></div>
-                                    <div className="space-y-1"><label className="text-[9px] text-slate-500 font-bold uppercase">Vergi Dairesi</label><input value={editModal.vergiDairesi} onChange={e => setEditModal(calculate({ ...editModal, vergiDairesi: e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-md px-2 py-1.5 text-white outline-none focus:border-primary" /></div>
+                                    <div className="space-y-1"><label className="text-[9px] text-secondary font-bold uppercase">VKN / TCKN</label><input value={editModal.vkn} onChange={e => setEditModal(calculate({ ...editModal, vkn: e.target.value }))} className="w-full bg-background border border-border rounded-md px-2 py-1.5 text-foreground outline-none focus:border-primary font-mono" /></div>
+                                    <div className="sm:col-span-1 lg:col-span-2 space-y-1"><label className="text-[9px] text-secondary font-bold uppercase">Ünvan / Ad Soyad</label><input value={editModal.unvan || (`${editModal.ad} ${editModal.soyad}`).trim()} onChange={e => setEditModal(calculate({ ...editModal, unvan: e.target.value }))} className="w-full bg-background border border-border rounded-md px-2 py-1.5 text-foreground outline-none focus:border-primary" /></div>
+                                    <div className="space-y-1"><label className="text-[9px] text-secondary font-bold uppercase">Vergi Dairesi</label><input value={editModal.vergiDairesi} onChange={e => setEditModal(calculate({ ...editModal, vergiDairesi: e.target.value }))} className="w-full bg-background border border-border rounded-md px-2 py-1.5 text-foreground outline-none focus:border-primary" /></div>
 
                                     <div className="space-y-1"><label className="text-[9px] text-primary font-bold uppercase">Şehir</label><select value={editModal.sehir} onChange={e => {
                                         const nC = e.target.value; setEditModal(calculate({ ...editModal, sehir: nC, ilce: TURKEY_LOCATIONS[nC]?.[0] || '' }));
-                                    }} className="w-full bg-black/40 border border-primary/20 rounded-md px-2 py-1.5 text-white outline-none font-bold">{Object.keys(TURKEY_LOCATIONS).map(c => <option key={c} value={c}>{c}</option>)}</select></div>
-                                    <div className="space-y-1"><label className="text-[9px] text-primary font-bold uppercase">İlçe</label><select value={editModal.ilce} onChange={e => setEditModal(calculate({ ...editModal, ilce: e.target.value }))} className="w-full bg-black/40 border border-primary/20 rounded-md px-2 py-1.5 text-white outline-none font-bold">{(TURKEY_LOCATIONS[editModal.sehir] || []).map(d => <option key={d} value={d}>{d}</option>)}</select></div>
-                                    <div className="sm:col-span-1 lg:col-span-2 space-y-1"><label className="text-[9px] text-slate-500 font-bold uppercase">Adres Detayı</label><input value={editModal.adres} onChange={e => setEditModal(calculate({ ...editModal, adres: e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-md px-2 py-1.5 text-white outline-none focus:border-primary" /></div>
+                                    }} className="w-full bg-background border border-primary/20 rounded-md px-2 py-1.5 text-foreground outline-none font-bold">{Object.keys(TURKEY_LOCATIONS).map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+                                    <div className="space-y-1"><label className="text-[9px] text-primary font-bold uppercase">İlçe</label><select value={editModal.ilce} onChange={e => setEditModal(calculate({ ...editModal, ilce: e.target.value }))} className="w-full bg-background border border-primary/20 rounded-md px-2 py-1.5 text-foreground outline-none font-bold">{(TURKEY_LOCATIONS[editModal.sehir] || []).map(d => <option key={d} value={d}>{d}</option>)}</select></div>
+                                    <div className="sm:col-span-1 lg:col-span-2 space-y-1"><label className="text-[9px] text-secondary font-bold uppercase">Adres Detayı</label><input value={editModal.adres} onChange={e => setEditModal(calculate({ ...editModal, adres: e.target.value }))} className="w-full bg-background border border-border rounded-md px-2 py-1.5 text-foreground outline-none focus:border-primary" /></div>
                                 </div>
                             </div>
 
@@ -357,9 +357,9 @@ export default function InvoicePanel() {
                                         setEditModal(calculate({ ...editModal, items: newItems }));
                                     }} className="text-emerald-500 hover:text-emerald-400 text-[10px] font-bold flex items-center gap-1 transition-all"> <Plus className="w-3 h-3" /> SATIR EKLE</button>
                                 </div>
-                                <div className="border border-white/5 rounded-xl overflow-hidden bg-black/20 flex-1 overflow-y-auto">
+                                <div className="border border-border rounded-xl overflow-hidden bg-primary/5 flex-1 overflow-y-auto">
                                     <table className="w-full text-xs text-left border-collapse">
-                                        <thead className="bg-white/5 text-slate-500 font-bold border-b border-white/5">
+                                        <thead className="bg-primary/5 text-secondary font-bold border-b border-border">
                                             <tr>
                                                 <th className="px-4 py-3">Ürün Adı</th>
                                                 <th className="px-4 py-3 w-32 text-center text-primary">Miktar</th>
@@ -370,29 +370,29 @@ export default function InvoicePanel() {
                                                 <th className="px-4 py-3 w-10"></th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-white/5">
+                                        <tbody className="divide-y divide-border/50">
                                             {editModal.items.map((item: any, idx: number) => (
                                                 <tr key={idx} className="hover:bg-white/[0.01]">
                                                     <td className="p-2 px-4"><input value={item.name} onChange={e => {
                                                         const newA = [...editModal.items]; newA[idx].name = e.target.value; setEditModal(calculate({ ...editModal, items: newA }));
-                                                    }} className="w-full bg-transparent border-none text-white outline-none" /></td>
+                                                    }} className="w-full bg-transparent border-none text-foreground font-bold outline-none" /></td>
                                                     <td className="p-2"><input type="number" step="0.001" value={item.quantity} onChange={e => {
                                                         const newA = [...editModal.items]; newA[idx].quantity = e.target.value; setEditModal(calculate({ ...editModal, items: newA }));
-                                                    }} className="w-full bg-primary/20 border border-primary/20 rounded-lg px-2 py-1.5 text-white font-black text-center outline-none focus:border-primary" /></td>
+                                                    }} className="w-full bg-primary/20 border border-primary/20 rounded-lg px-2 py-1.5 text-primary font-black text-center outline-none focus:border-primary" /></td>
                                                     <td className="p-2">
                                                         <select value={item.unit} onChange={e => {
                                                             const newA = [...editModal.items]; newA[idx].unit = e.target.value; setEditModal(calculate({ ...editModal, items: newA }));
-                                                        }} className="w-full bg-black/40 border border-white/5 rounded-lg px-1 py-1.5 text-white text-center"><option>KG</option><option>ADET</option></select>
+                                                        }} className="w-full bg-background border border-border rounded-lg px-1 py-1.5 text-foreground text-center"><option>KG</option><option>ADET</option></select>
                                                     </td>
                                                     <td className="p-2"><input type="number" step="0.01" value={item.price} onChange={e => {
                                                         const newA = [...editModal.items]; newA[idx].price = e.target.value; setEditModal(calculate({ ...editModal, items: newA }));
-                                                    }} className="w-full bg-black/40 border border-white/5 rounded-lg px-2 py-1.5 text-white font-mono text-center outline-none focus:border-primary" /></td>
+                                                    }} className="w-full bg-background border border-border rounded-lg px-2 py-1.5 text-foreground font-mono text-center outline-none focus:border-primary" /></td>
                                                     <td className="p-2">
                                                         <select value={item.vatRate} onChange={e => {
                                                             const newA = [...editModal.items]; newA[idx].vatRate = e.target.value; setEditModal(calculate({ ...editModal, items: newA }));
-                                                        }} className="w-full bg-black/40 border border-white/5 rounded-lg px-1 py-1.5 text-white text-center"><option value="1">%1</option><option value="10">%10</option><option value="20">%20</option></select>
+                                                        }} className="w-full bg-background border border-border rounded-lg px-1 py-1.5 text-foreground text-center"><option value="1">%1</option><option value="10">%10</option><option value="20">%20</option></select>
                                                     </td>
-                                                    <td className="py-2 px-6 text-right font-black text-white bg-primary/10 font-mono italic">{formatCurrency(item.fullTotal)}</td>
+                                                    <td className="py-2 px-6 text-right font-black text-foreground bg-primary/10 font-mono italic">{formatCurrency(item.fullTotal)}</td>
                                                     <td className="p-1 text-center">
                                                         {editModal.items.length > 1 && (
                                                             <button onClick={() => {
@@ -408,10 +408,10 @@ export default function InvoicePanel() {
                             </div>
 
                             <div className="flex flex-col sm:flex-row gap-4 items-end sm:items-center justify-between border-t border-white/5 pt-4 shrink-0">
-                                <div className="bg-white/5 rounded-xl border border-white/5 p-4 flex flex-wrap gap-12 flex-1 shadow-inner">
+                                <div className="bg-primary/5 rounded-xl border border-border p-4 flex flex-wrap gap-12 flex-1 shadow-inner">
                                     <div className="space-y-1">
-                                        <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Ara Toplam</div>
-                                        <div className="text-sm font-bold text-slate-200 font-mono tracking-tighter">{formatCurrency(editModal.totalLineAmount)}</div>
+                                        <div className="text-[9px] font-black text-secondary uppercase tracking-widest">Ara Toplam</div>
+                                        <div className="text-sm font-bold text-foreground font-mono tracking-tighter">{formatCurrency(editModal.totalLineAmount)}</div>
                                     </div>
                                     <div className="space-y-1">
                                         <div className="text-[9px] font-black text-emerald-500/70 uppercase tracking-widest">KDV Toplam</div>

@@ -33,9 +33,9 @@ export default function QuickStockAlerts({ products, onViewAll }: { products: an
             </div>
 
             {criticalProducts.length > 4 && (
-                <button 
+                <button
                     onClick={onViewAll}
-                    className="w-full mt-4 text-center text-xs text-secondary hover:text-white transition-colors"
+                    className="w-full mt-4 text-center text-xs text-secondary hover:text-primary font-bold transition-colors"
                 >
                     Tüm uyarıları gör ({criticalProducts.length})
                 </button>

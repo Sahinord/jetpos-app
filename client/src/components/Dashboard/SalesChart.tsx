@@ -32,10 +32,12 @@ const options = {
             display: false,
         },
         tooltip: {
-            backgroundColor: '#1e293b',
+            backgroundColor: 'var(--color-card)',
             padding: 12,
             borderWidth: 1,
-            borderColor: '#334155',
+            borderColor: 'var(--color-border)',
+            titleColor: 'var(--color-foreground)',
+            bodyColor: 'var(--color-foreground)',
         },
     },
     scales: {
@@ -44,7 +46,7 @@ const options = {
                 color: 'rgba(255, 255, 255, 0.05)',
             },
             ticks: {
-                color: '#94a3b8',
+                color: 'var(--color-sidebar-muted)',
             },
         },
         x: {
@@ -52,7 +54,7 @@ const options = {
                 display: false,
             },
             ticks: {
-                color: '#94a3b8',
+                color: 'var(--color-sidebar-muted)',
             },
         },
     },
@@ -113,7 +115,7 @@ export default function SalesChart({ sales = [] }: { sales: any[] }) {
         <div className="glass-card h-[400px]">
             <div className="flex items-center justify-between mb-8">
                 <div>
-                    <div className="flex items-center space-x-2 text-emerald-400 font-semibold text-[10px] mb-2">
+                    <div className="flex items-center space-x-2 text-emerald-600 font-semibold text-[10px] mb-2">
                         <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
                         <span className="tracking-[2px] uppercase">Canlı Performans</span>
                     </div>
@@ -121,8 +123,8 @@ export default function SalesChart({ sales = [] }: { sales: any[] }) {
                     <p className="text-sm text-secondary opacity-70">Son 7 günlük işletme hacmi</p>
                 </div>
                 <div className="text-right">
-                    <span className="text-2xl font-bold text-white block">₺{totalThisWeek.toLocaleString('tr-TR')}</span>
-                    <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">TOPLAM CİRO</span>
+                    <span className="text-2xl font-bold text-foreground block">₺{totalThisWeek.toLocaleString('tr-TR')}</span>
+                    <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">TOPLAM CİRO</span>
                 </div>
             </div>
             <div className="h-[260px]">

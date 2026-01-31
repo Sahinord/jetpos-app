@@ -447,7 +447,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                 <input
                                     type="text"
                                     placeholder="Barkod okutun veya ürün arayın..."
-                                    className="w-full bg-card/50 border border-border rounded-2xl py-3.5 pl-12 pr-4 focus:outline-none focus:border-primary/50 transition-all text-lg font-medium placeholder:text-secondary/40"
+                                    className="w-full bg-primary/5 border border-border rounded-2xl py-3.5 pl-12 pr-4 focus:outline-none focus:border-primary/50 transition-all text-lg font-medium placeholder:text-secondary/40 text-foreground"
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                 />
@@ -458,14 +458,14 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                 <select
                                     value={sortBy}
                                     onChange={(e) => setSortBy(e.target.value)}
-                                    className="bg-transparent border-none outline-none text-sm font-bold text-white py-3 pr-8 cursor-pointer appearance-none"
+                                    className="bg-transparent border-none outline-none text-sm font-bold text-foreground py-3 pr-8 cursor-pointer appearance-none"
                                 >
-                                    <option value="name-asc" className="bg-slate-900">İsim (A-Z)</option>
-                                    <option value="name-desc" className="bg-slate-900">İsim (Z-A)</option>
-                                    <option value="stock-desc" className="bg-slate-900">Stok (Yüksekten Düşüğe)</option>
-                                    <option value="stock-asc" className="bg-slate-900">Stok (Kritik Stoklar)</option>
-                                    <option value="price-desc" className="bg-slate-900">Fiyat (En Yüksek)</option>
-                                    <option value="price-asc" className="bg-slate-900">Fiyat (En Düşük)</option>
+                                    <option value="name-asc" className="bg-background text-foreground">İsim (A-Z)</option>
+                                    <option value="name-desc" className="bg-background text-foreground">İsim (Z-A)</option>
+                                    <option value="stock-desc" className="bg-background text-foreground">Stok (Yüksekten Düşüğe)</option>
+                                    <option value="stock-asc" className="bg-background text-foreground">Stok (Kritik Stoklar)</option>
+                                    <option value="price-desc" className="bg-background text-foreground">Fiyat (En Yüksek)</option>
+                                    <option value="price-asc" className="bg-background text-foreground">Fiyat (En Düşük)</option>
                                 </select>
                             </div>
                         </div>
@@ -482,7 +482,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                     </div>
 
                     {/* Filters & Tools Group */}
-                    <div className="flex flex-wrap items-center justify-between gap-6 p-4 bg-white/5 rounded-2xl border border-border/50">
+                    <div className="flex flex-wrap items-center justify-between gap-6 p-4 bg-primary/5 rounded-2xl border border-border/50">
                         <div className="flex items-center space-x-6">
                             <div className="flex items-center space-x-2">
                                 <Filter className="w-4 h-4 text-primary" />
@@ -499,7 +499,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                     <button
                                         key={btn.id}
                                         onClick={() => setFilter(btn.id)}
-                                        className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 ${filter === btn.id ? 'bg-primary text-white shadow-lg' : 'text-secondary hover:text-white'}`}
+                                        className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 ${filter === btn.id ? 'bg-primary text-white shadow-lg' : 'text-secondary hover:text-foreground'}`}
                                     >
                                         <span>{btn.label.toUpperCase()}</span>
                                         <span className={`px-1.5 py-0.5 rounded-md text-[9px] ${filter === btn.id ? 'bg-white/20 text-white' : 'bg-white/5 text-secondary'}`}>
@@ -522,14 +522,14 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                     </div>
                                     <button
                                         onClick={() => setIsSelectivePriceModalOpen(true)}
-                                        className="flex items-center space-x-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-400 transition-all"
+                                        className="flex items-center space-x-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-600 transition-all"
                                     >
                                         <Calculator className="w-4 h-4" />
                                         <span>ZAM UYGULA</span>
                                     </button>
                                     <button
                                         onClick={() => handleBulkStatusChange('active')}
-                                        className="flex items-center space-x-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-400 transition-all"
+                                        className="flex items-center space-x-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-600 transition-all"
                                     >
                                         <Eye className="w-4 h-4" />
                                         <span>AKTİFE AL</span>
@@ -543,7 +543,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                     </button>
                                     <button
                                         onClick={() => setIsBulkStockModalOpen(true)}
-                                        className="flex items-center space-x-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 px-4 py-2.5 rounded-xl text-xs font-bold text-blue-400 transition-all"
+                                        className="flex items-center space-x-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 px-4 py-2.5 rounded-xl text-xs font-bold text-blue-600 transition-all"
                                     >
                                         <Hash className="w-4 h-4" />
                                         <span>STOK GÜNCELLE</span>
@@ -563,7 +563,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
 
                             <button
                                 onClick={onManageCategories}
-                                className="flex items-center space-x-2 bg-white/5 hover:bg-white/10 border border-border px-4 py-2.5 rounded-xl text-xs font-bold transition-all"
+                                className="flex items-center space-x-2 bg-primary/5 hover:bg-primary/10 border border-border px-4 py-2.5 rounded-xl text-xs font-bold transition-all"
                             >
                                 <FolderTree className="w-4 h-4 text-primary" />
                                 <span>KATEGORİLER</span>
@@ -574,7 +574,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={handleExport}
-                                    className="p-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-xl transition-all"
+                                    className="p-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 border border-emerald-500/20 rounded-xl transition-all"
                                     title="Excel Olarak İndir"
                                 >
                                     <Download className="w-4 h-4" />
@@ -582,13 +582,13 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
 
                                 <button
                                     onClick={handleCampaignExport}
-                                    className="p-2.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 rounded-xl transition-all"
+                                    className="p-2.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border border-amber-500/20 rounded-xl transition-all"
                                     title="Kampanya Listesini İndir (Excel)"
                                 >
                                     <FileSpreadsheet className="w-4 h-4" />
                                 </button>
 
-                                <label className="p-2.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 rounded-xl transition-all cursor-pointer">
+                                <label className="p-2.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 border border-blue-500/20 rounded-xl transition-all cursor-pointer">
                                     <Upload className="w-4 h-4" />
                                     <input type="file" accept=".xlsx, .xls" className="hidden" onChange={handleFileImport} />
                                 </label>
@@ -606,7 +606,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
 
                                 <button
                                     onClick={() => setPreviewCampaign(!previewCampaign)}
-                                    className={`flex items-center space-x-2 border px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${previewCampaign ? 'bg-amber-500 text-white border-amber-500' : 'bg-white/5 border-border text-secondary hover:text-white'}`}
+                                    className={`flex items-center space-x-2 border px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${previewCampaign ? 'bg-amber-500 text-white border-amber-500' : 'bg-primary/5 border-border text-secondary hover:text-foreground'}`}
                                 >
                                     <Calculator className="w-4 h-4" />
                                     <span>ÖNİZLEME</span>
@@ -631,14 +631,14 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
             <div className="glass-card overflow-hidden !p-0 border-border/40">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
-                        <thead className="bg-white/5 border-b border-border">
+                        <thead className="bg-primary/5 border-b border-border">
                             <tr>
                                 <th className="px-6 py-5 text-center w-12">
                                     <input
                                         type="checkbox"
                                         checked={selectedProducts.length === sortedAndFilteredProducts.length && sortedAndFilteredProducts.length > 0}
                                         onChange={handleToggleSelectAll}
-                                        className="w-5 h-5 rounded bg-white/5 border-2 border-primary/50 cursor-pointer accent-primary"
+                                        className="w-5 h-5 rounded bg-primary/5 border-2 border-primary/50 cursor-pointer accent-primary"
                                         title="Tümünü Seç/Kaldır"
                                     />
                                 </th>
@@ -668,16 +668,16 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                                 type="checkbox"
                                                 checked={selectedProducts.includes(product.id)}
                                                 onChange={() => handleToggleSelectProduct(product.id)}
-                                                className="w-5 h-5 rounded bg-white/5 border-2 border-primary/50 cursor-pointer accent-primary"
+                                                className="w-5 h-5 rounded bg-primary/5 border-2 border-primary/50 cursor-pointer accent-primary"
                                             />
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center space-x-3">
-                                                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-primary group-hover:bg-primary/10 transition-colors">
+                                                <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center text-primary group-hover:bg-primary/20 transition-colors">
                                                     <Package className="w-5 h-5" />
                                                 </div>
                                                 <div className="flex flex-col">
-                                                    <span className="font-bold text-white text-sm flex items-center gap-2">
+                                                    <span className="font-bold text-foreground text-sm flex items-center gap-2">
                                                         {product.name}
                                                         {product.is_campaign && (
                                                             <span className="px-1.5 py-0.5 rounded-md text-[9px] bg-amber-500 text-black font-black">KAMPANYA</span>
@@ -700,12 +700,12 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                         <td className="px-6 py-4 text-center">
                                             <div className="flex flex-col items-center">
                                                 <span className="text-secondary text-[10px] font-bold line-through opacity-50">₺{product.purchase_price.toFixed(2)}</span>
-                                                <span className="text-white font-bold text-base">₺{product.sale_price.toFixed(2)}</span>
+                                                <span className="text-foreground font-bold text-base">₺{product.sale_price.toFixed(2)}</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <div className="inline-flex flex-col items-center px-3 py-1.5 rounded-xl bg-emerald-500/5 border border-emerald-500/10 min-w-[80px]">
-                                                <span className={`text-xs font-black ${profitPercent < 20 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                                                <span className={`text-xs font-black ${profitPercent < 20 ? 'text-amber-600' : 'text-emerald-600'}`}>
                                                     %{profitPercent.toFixed(0)}
                                                 </span>
                                                 <span className="text-[10px] text-secondary/60 font-bold tracking-tight">₺{profit.toFixed(2)}</span>
@@ -713,7 +713,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <div className="flex flex-col items-center">
-                                                <span className={`text-sm font-bold ${product.stock_quantity <= 2 ? 'text-rose-400 animate-pulse' : 'text-white'}`}>
+                                                <span className={`text-sm font-bold ${product.stock_quantity <= 2 ? 'text-rose-500 animate-pulse' : 'text-foreground'}`}>
                                                     {product.unit?.toLowerCase() === 'kg'
                                                         ? (product.stock_quantity >= 1
                                                             ? `${product.stock_quantity.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 3 })}`
@@ -721,7 +721,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                                         : product.stock_quantity
                                                     }
                                                 </span>
-                                                <div className={`mt-1 h-1 w-12 rounded-full bg-white/10 overflow-hidden`}>
+                                                <div className={`mt-1 h-1 w-12 rounded-full bg-primary/10 overflow-hidden`}>
                                                     <div
                                                         className={`h-full ${product.stock_quantity <= 2 ? 'bg-rose-500' : 'bg-emerald-500'}`}
                                                         style={{ width: `${Math.min(100, (product.stock_quantity / 10) * 100)}%` }}
@@ -732,7 +732,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                         {previewCampaign && (
                                             <td className="px-6 py-4 text-center">
                                                 <div className="px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30">
-                                                    <p className="text-sm font-black text-amber-400">₺{(product.sale_price * campaignRate).toFixed(2)}</p>
+                                                    <p className="text-sm font-black text-amber-600">₺{(product.sale_price * campaignRate).toFixed(2)}</p>
                                                 </div>
                                             </td>
                                         )}
@@ -760,7 +760,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                 </div>
 
                 {hasMore && (
-                    <div className="p-4 bg-white/5 border-t border-border flex justify-center">
+                    <div className="p-4 bg-primary/5 border-t border-border flex justify-center">
                         <button
                             onClick={() => setPage(p => p + 1)}
                             className="bg-primary/10 text-primary px-8 py-3 rounded-xl font-bold hover:bg-primary hover:text-white transition-all text-xs tracking-widest uppercase"
@@ -799,7 +799,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                 </div>
                                 <h3 className="text-2xl font-black text-white tracking-tight">SEÇİLİLERE ZAM</h3>
                                 <p className="text-secondary text-sm font-medium leading-relaxed">
-                                    Seçilen <strong className="text-emerald-400">{selectedProducts.length} ürünün</strong> satış fiyatına <br /> <strong className="text-emerald-400">% zam oranı</strong> belirleyin.
+                                    Seçilen <strong className="text-emerald-600">{selectedProducts.length} ürünün</strong> satış fiyatına <br /> <strong className="text-emerald-600">% zam oranı</strong> belirleyin.
                                 </p>
                             </div>
 
@@ -809,7 +809,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                     type="number"
                                     value={selectivePriceRate}
                                     onChange={(e) => setSelectivePriceRate(e.target.value)}
-                                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-6 px-6 text-4xl font-black text-center text-white outline-none focus:border-emerald-500/50 focus:bg-emerald-500/5 transition-all"
+                                    className="w-full bg-primary/5 border border-border rounded-2xl py-6 px-6 text-4xl font-black text-center text-foreground outline-none focus:border-emerald-500/50 focus:bg-emerald-500/5 transition-all"
                                     placeholder="10"
                                     autoFocus
                                 />
@@ -817,13 +817,13 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                             </div>
 
                             <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4 text-xs text-secondary space-y-1">
-                                <p><strong className="text-white">Örnek:</strong> 100₺ olan ürün → %{selectivePriceRate || "10"} zam → {(100 * (1 + parseFloat(selectivePriceRate || "10") / 100)).toFixed(2)}₺</p>
+                                <p><strong className="text-foreground font-bold">Örnek:</strong> 100₺ olan ürün → %{selectivePriceRate || "10"} zam → {(100 * (1 + parseFloat(selectivePriceRate || "10") / 100)).toFixed(2)}₺</p>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <button
                                     onClick={() => setIsSelectivePriceModalOpen(false)}
-                                    className="py-4 px-6 rounded-2xl font-black text-xs tracking-widest bg-white/5 hover:bg-white/10 text-secondary transition-all active:scale-95"
+                                    className="py-4 px-6 rounded-2xl font-black text-xs tracking-widest bg-primary/5 hover:bg-primary/10 text-secondary transition-all active:scale-95"
                                 >
                                     VAZGEÇ
                                 </button>
@@ -859,13 +859,13 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                 </div>
                                 <h3 className="text-2xl font-black text-white tracking-tight text-center">TOPLU STOK GÜNCELLE</h3>
                                 <p className="text-secondary text-sm font-medium leading-relaxed text-center">
-                                    Seçilen <strong className="text-blue-400">{selectedProducts.length} ürün</strong> için yeni stok değeri belirleyin.
+                                    Seçilen <strong className="text-blue-600">{selectedProducts.length} ürün</strong> için yeni stok değeri belirleyin.
                                 </p>
                             </div>
 
                             <div className="flex flex-col gap-4">
                                 <div className="flex items-center justify-between bg-white/5 p-3 rounded-xl border border-white/10">
-                                    <span className="text-xs font-bold text-white">Rastgele Sayı Ata</span>
+                                    <span className="text-xs font-bold text-foreground">Rastgele Sayı Ata</span>
                                     <button
                                         onClick={() => setIsRandomStock(!isRandomStock)}
                                         className={`w-12 h-6 rounded-full transition-all relative ${isRandomStock ? 'bg-blue-500' : 'bg-slate-700'}`}
@@ -888,7 +888,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                                     setBulkStockValue(val);
                                                 }
                                             }}
-                                            className="w-full bg-white/5 border border-white/10 rounded-2xl py-6 px-6 text-4xl font-black text-center text-white outline-none focus:border-blue-500/50 focus:bg-blue-500/5 transition-all"
+                                            className="w-full bg-primary/5 border border-border rounded-2xl py-6 px-6 text-4xl font-black text-center text-foreground outline-none focus:border-blue-500/50 focus:bg-blue-500/5 transition-all"
                                             placeholder="0"
                                             autoFocus
                                         />
@@ -899,7 +899,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                             <div className="grid grid-cols-2 gap-4">
                                 <button
                                     onClick={() => setIsBulkStockModalOpen(false)}
-                                    className="py-4 px-6 rounded-2xl font-black text-xs tracking-widest bg-white/5 hover:bg-white/10 text-secondary transition-all active:scale-95"
+                                    className="py-4 px-6 rounded-2xl font-black text-xs tracking-widest bg-primary/5 hover:bg-primary/10 text-secondary transition-all active:scale-95"
                                 >
                                     VAZGEÇ
                                 </button>
@@ -945,7 +945,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                     type="number"
                                     value={tempRate}
                                     onChange={(e) => setTempRate(e.target.value)}
-                                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-6 px-6 text-4xl font-black text-center text-white outline-none focus:border-primary/50 focus:bg-primary/5 transition-all"
+                                    className="w-full bg-primary/5 border border-border rounded-2xl py-6 px-6 text-4xl font-black text-center text-foreground outline-none focus:border-primary/50 focus:bg-primary/5 transition-all"
                                     placeholder="15"
                                     autoFocus
                                 />
@@ -955,7 +955,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                             <div className="grid grid-cols-2 gap-4">
                                 <button
                                     onClick={() => setIsRateModalOpen(false)}
-                                    className="py-4 px-6 rounded-2xl font-black text-xs tracking-widest bg-white/5 hover:bg-white/10 text-secondary transition-all active:scale-95"
+                                    className="py-4 px-6 rounded-2xl font-black text-xs tracking-widest bg-primary/5 hover:bg-primary/10 text-secondary transition-all active:scale-95"
                                 >
                                     VAZGEÇ
                                 </button>
