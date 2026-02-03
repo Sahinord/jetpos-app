@@ -86,7 +86,7 @@ export default function PriceSimulator({ products, onApplyChanges, showToast }: 
                         <TrendingUp className="w-7 h-7" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-black text-white uppercase tracking-tight">Akıllı Fiyat Simülatörü</h2>
+                        <h2 className="text-xl font-black text-[var(--color-foreground)] uppercase tracking-tight">Akıllı Fiyat Simülatörü</h2>
                         <p className="text-xs text-secondary font-medium">Global maliyet artışlarını tek tıkla fiyatlara yansıtın. <span className="text-primary">Ctrl+Wheel ile yakınlaştır</span></p>
                     </div>
                 </div>
@@ -128,7 +128,7 @@ export default function PriceSimulator({ products, onApplyChanges, showToast }: 
                                 <span className="text-rose-500 font-bold text-sm mr-1">+%</span>
                                 <input
                                     type="number"
-                                    className="w-12 bg-transparent font-black outline-none text-white text-lg"
+                                    className="w-12 bg-transparent font-black outline-none text-[var(--color-foreground)] text-lg"
                                     value={costIncrease}
                                     onChange={(e) => setCostIncrease(parseFloat(e.target.value) || 0)}
                                 />
@@ -143,7 +143,7 @@ export default function PriceSimulator({ products, onApplyChanges, showToast }: 
                                 <span className="text-primary font-bold text-sm mr-1">%</span>
                                 <input
                                     type="number"
-                                    className="w-12 bg-transparent font-black outline-none text-white text-lg"
+                                    className="w-12 bg-transparent font-black outline-none text-[var(--color-foreground)] text-lg"
                                     value={targetMargin}
                                     placeholder="Auto"
                                     onChange={(e) => setTargetMargin(parseFloat(e.target.value) || 0)}
@@ -158,7 +158,7 @@ export default function PriceSimulator({ products, onApplyChanges, showToast }: 
             <div className="glass-card overflow-hidden !p-0 border-white/5 shadow-2xl">
                 <div className="max-h-[600px] overflow-y-auto custom-scrollbar">
                     <table className="w-full text-left border-collapse">
-                        <thead className="sticky top-0 z-20 bg-[#1e293b] text-[10px] font-black text-secondary uppercase tracking-[2px] border-b border-white/5">
+                        <thead className="sticky top-0 z-20 bg-[var(--color-card)] text-[10px] font-black text-secondary uppercase tracking-[2px] border-b border-[var(--color-input-border)]">
                             <tr>
                                 <th className="px-8 py-5">Ürün Detayı</th>
                                 <th className="px-8 py-5">Mevcut Veriler</th>
@@ -171,13 +171,13 @@ export default function PriceSimulator({ products, onApplyChanges, showToast }: 
                             {filteredProducts.slice(0, displayLimit).map((p: any) => (
                                 <tr key={p.id} className="hover:bg-white/5 transition-all group">
                                     <td className="px-8 py-5">
-                                        <div className="font-bold text-white group-hover:text-primary transition-colors">{p.name}</div>
+                                        <div className="font-bold text-[var(--color-foreground)] group-hover:text-primary transition-colors">{p.name}</div>
                                         <div className="text-[10px] text-secondary font-bold uppercase mt-1 tracking-wider">Mevcut Marj: %{p.current_margin.toFixed(1)}</div>
                                     </td>
                                     <td className="px-8 py-5">
                                         <div className="space-y-0.5">
                                             <div className="text-[10px] text-secondary line-through opacity-50 font-bold">MALIYET: ₺{p.purchase_price.toFixed(2)}</div>
-                                            <div className="text-sm font-black text-white/80 tracking-tight">SATIS: ₺{p.sale_price.toFixed(2)}</div>
+                                            <div className="text-sm font-black text-[var(--color-foreground)]/80 tracking-tight">SATIS: ₺{p.sale_price.toFixed(2)}</div>
                                         </div>
                                     </td>
                                     <td className="px-8 py-5">

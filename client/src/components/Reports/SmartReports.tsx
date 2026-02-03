@@ -179,7 +179,7 @@ export default function SmartReports({ products }: any) {
             {/* Main Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
-                    { label: "Bugünkü Ciro", val: `₺${stats.totalSales.toLocaleString('tr-TR', { minimumFractionDigits: 1 })}`, color: "text-white", icon: BarChart3, sub: stats.totalSales > 0 ? "Gerçek satış verisi" : "Henüz satış yok" },
+                    { label: "Bugünkü Ciro", val: `₺${stats.totalSales.toLocaleString('tr-TR', { minimumFractionDigits: 1 })}`, color: "text-[var(--color-foreground)]", icon: BarChart3, sub: stats.totalSales > 0 ? "Gerçek satış verisi" : "Henüz satış yok" },
                     { label: "Net Kar", val: `₺${stats.totalProfit.toLocaleString('tr-TR', { minimumFractionDigits: 1 })}`, color: "text-emerald-400", icon: TrendingUp, sub: `Marj: %${stats.totalSales > 0 ? ((stats.totalProfit / stats.totalSales) * 100).toFixed(1) : 0}` },
                     { label: "İşlem Sayısı", val: stats.itemCount, color: "text-blue-400", icon: Target, sub: `Ort. Sepet: ₺${stats.avgBasket.toFixed(0)}` },
                     { label: "Kritik Stok", val: lowStock.length, color: "text-rose-500", icon: Package, sub: "Ürün acil tedarik bekliyor" },

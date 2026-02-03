@@ -188,7 +188,7 @@ export default function OzelKodTanitim({ showToast }: OzelKodTanitimProps) {
                     <div className="flex items-center gap-2 text-secondary">
                         {loading && <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />}
                         <Tag className="w-4 h-4" />
-                        <span className="text-sm font-medium text-white">Özel Kod Sayısı:</span>
+                        <span className="text-sm font-medium text-[var(--color-foreground)]">Özel Kod Sayısı:</span>
                         <span className="text-primary font-bold">{kodCount}</span>
                         {editingId && <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded ml-2">Düzenleniyor</span>}
                     </div>
@@ -205,10 +205,10 @@ export default function OzelKodTanitim({ showToast }: OzelKodTanitimProps) {
                             type="text"
                             value={formData.ozelKodu}
                             onChange={(e) => updateField("ozelKodu", e.target.value)}
-                            className="flex-1 bg-[#0a1628] border border-white/10 rounded px-3 py-2 text-white text-sm focus:border-primary focus:outline-none"
+                            className="flex-1 bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded px-3 py-2 text-[var(--color-foreground)] text-sm focus:border-primary focus:outline-none placeholder:text-secondary/50"
                             placeholder="Özel kod girin..."
                         />
-                        <button onClick={handleSearch} disabled={loading} className="px-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition-colors">
+                        <button onClick={handleSearch} disabled={loading} className="px-3 bg-white/5 hover:bg-white/10 border border-[var(--color-input-border)] rounded transition-colors">
                             <MoreHorizontal className="w-4 h-4 text-secondary" />
                         </button>
                     </div>
@@ -221,7 +221,7 @@ export default function OzelKodTanitim({ showToast }: OzelKodTanitimProps) {
                         type="text"
                         value={formData.ozelAdi}
                         onChange={(e) => updateField("ozelAdi", e.target.value)}
-                        className="w-full bg-[#0a1628] border border-white/10 rounded px-3 py-2 text-white text-sm focus:border-primary focus:outline-none"
+                        className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded px-3 py-2 text-[var(--color-foreground)] text-sm focus:border-primary focus:outline-none placeholder:text-secondary/50"
                         placeholder="Özel adı girin..."
                     />
                 </div>
@@ -233,7 +233,7 @@ export default function OzelKodTanitim({ showToast }: OzelKodTanitimProps) {
                         type="text"
                         value={formData.aciklama}
                         onChange={(e) => updateField("aciklama", e.target.value)}
-                        className="w-full bg-[#0a1628] border border-white/10 rounded px-3 py-2 text-white text-sm focus:border-primary focus:outline-none"
+                        className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded px-3 py-2 text-[var(--color-foreground)] text-sm focus:border-primary focus:outline-none placeholder:text-secondary/50"
                         placeholder="Açıklama girin..."
                     />
                 </div>

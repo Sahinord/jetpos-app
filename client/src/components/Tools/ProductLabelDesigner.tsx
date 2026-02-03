@@ -506,7 +506,7 @@ export default function ProductLabelDesigner({ products, showToast }: { products
                                         : 'border-border hover:border-border/50'
                                         }`}
                                 >
-                                    <p className="font-bold text-white text-sm">{template.name}</p>
+                                    <p className="font-bold text-[var(--color-foreground)] text-sm">{template.name}</p>
                                     <p className="text-xs text-secondary mt-1">{template.width}x{template.height}mm</p>
                                 </button>
                             ))}
@@ -527,7 +527,7 @@ export default function ProductLabelDesigner({ products, showToast }: { products
                                     value={customBrandName}
                                     onChange={(e) => setCustomBrandName(e.target.value)}
                                     placeholder={currentTenant?.company_name || "Marka adı"}
-                                    className="w-full px-3 py-2 bg-background border border-border rounded-xl text-white placeholder-secondary/50 focus:outline-none focus:border-primary transition-all text-sm"
+                                    className="w-full px-3 py-2 bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded-xl text-[var(--color-foreground)] placeholder-secondary/50 focus:outline-none focus:border-primary transition-all text-sm"
                                 />
                             </div>
                             <div>
@@ -661,7 +661,7 @@ export default function ProductLabelDesigner({ products, showToast }: { products
                         placeholder="Ürün ara..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full px-4 py-2 bg-background border border-border rounded-xl text-white placeholder-secondary focus:outline-none focus:border-primary transition-all mb-4"
+                        className="w-full px-4 py-2 bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded-xl text-[var(--color-foreground)] placeholder-secondary focus:outline-none focus:border-primary transition-all mb-4"
                     />
 
                     <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2">
@@ -683,7 +683,7 @@ export default function ProductLabelDesigner({ products, showToast }: { products
                                             className="w-5 h-5 accent-primary cursor-pointer"
                                         />
                                         <div className="flex-1 min-w-0">
-                                            <p className="font-bold text-white text-sm truncate">{product.name}</p>
+                                            <p className="font-bold text-[var(--color-foreground)] text-sm truncate">{product.name}</p>
                                             <p className="text-xs text-secondary font-mono">{product.barcode}</p>
                                         </div>
                                         <p className="font-black text-primary text-sm">₺{product.sale_price.toFixed(2)}</p>

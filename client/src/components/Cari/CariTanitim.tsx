@@ -37,7 +37,7 @@ const FormInput = memo(({ label, value, onChange, type = "text", placeholder = "
             type={type}
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className="w-full bg-[#0a1628] border border-white/10 rounded px-3 py-1.5 text-white text-sm focus:border-primary focus:outline-none transition-colors"
+            className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded px-3 py-1.5 text-[var(--color-foreground)] text-sm focus:border-primary focus:outline-none transition-colors placeholder:text-secondary/50"
             placeholder={placeholder}
         />
     </div>
@@ -57,10 +57,10 @@ const FormInputWithSearch = memo(({ label, value, onChange }: {
                 type="text"
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
-                className="flex-1 bg-[#0a1628] border border-white/10 rounded px-3 py-1.5 text-white text-sm focus:border-primary focus:outline-none transition-colors"
+                className="flex-1 bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded px-3 py-1.5 text-[var(--color-foreground)] text-sm focus:border-primary focus:outline-none transition-colors"
             />
-            <button type="button" className="px-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition-colors">
-                <MoreHorizontal className="w-4 h-4 text-secondary" />
+            <button type="button" className="px-2 bg-white/5 hover:bg-white/10 border border-[var(--color-input-border)] rounded transition-colors text-secondary hover:text-[var(--color-foreground)]">
+                <MoreHorizontal className="w-4 h-4" />
             </button>
         </div>
     </div>
@@ -79,7 +79,7 @@ const FormSelect = memo(({ label, value, onChange, options }: {
         <select
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className="w-full bg-[#0a1628] border border-white/10 rounded px-3 py-1.5 text-white text-sm focus:border-primary focus:outline-none transition-colors appearance-none cursor-pointer"
+            className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded px-3 py-1.5 text-[var(--color-foreground)] text-sm focus:border-primary focus:outline-none transition-colors appearance-none cursor-pointer"
             style={{
                 backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
                 backgroundRepeat: 'no-repeat',
@@ -89,7 +89,7 @@ const FormSelect = memo(({ label, value, onChange, options }: {
             }}
         >
             {options.map(opt => (
-                <option key={opt.value} value={opt.value} className="bg-[#0a1628] text-white">{opt.label}</option>
+                <option key={opt.value} value={opt.value} className="bg-[var(--color-input-bg)] text-[var(--color-foreground)]">{opt.label}</option>
             ))}
         </select>
     </div>
@@ -110,10 +110,10 @@ const FormNumber = memo(({ label, value, onChange, suffix = "" }: {
                 type="number"
                 value={value}
                 onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-                className="flex-1 bg-[#0a1628] border border-white/10 rounded-l px-3 py-1.5 text-white text-sm text-right focus:border-primary focus:outline-none transition-colors"
+                className="flex-1 bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded-l px-3 py-1.5 text-[var(--color-foreground)] text-sm text-right focus:border-primary focus:outline-none transition-colors"
             />
             {suffix && (
-                <span className="bg-white/5 border border-l-0 border-white/10 rounded-r px-2 py-1.5 text-secondary text-sm">
+                <span className="bg-white/5 border border-l-0 border-[var(--color-input-border)] rounded-r px-2 py-1.5 text-secondary text-sm">
                     {suffix}
                 </span>
             )}
@@ -565,7 +565,7 @@ export default function CariTanitim({ showToast }: CariTanitimProps) {
                     <div className="flex items-center gap-2 text-secondary">
                         {loading && <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />}
                         <Users className="w-4 h-4" />
-                        <span className="text-sm font-medium text-white">Cari Sayısı:</span>
+                        <span className="text-sm font-medium text-[var(--color-foreground)]">Cari Sayısı:</span>
                         <span className="text-primary font-bold">{cariCount}</span>
                         {editingId && <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded ml-2">Düzenleniyor</span>}
                     </div>
@@ -581,10 +581,10 @@ export default function CariTanitim({ showToast }: CariTanitimProps) {
                             type="text"
                             value={formData.cariKodu}
                             onChange={(e) => updateField("cariKodu", e.target.value)}
-                            className="flex-1 bg-[#0a1628] border border-white/10 rounded px-3 py-1.5 text-white text-sm focus:border-primary focus:outline-none"
+                            className="flex-1 bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded px-3 py-1.5 text-[var(--color-foreground)] text-sm focus:border-primary focus:outline-none"
                             placeholder="Cari kodu girin..."
                         />
-                        <button onClick={handleSearch} disabled={loading} className="p-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition-colors disabled:opacity-50">
+                        <button onClick={handleSearch} disabled={loading} className="p-1.5 bg-white/5 hover:bg-white/10 border border-[var(--color-input-border)] rounded transition-colors disabled:opacity-50">
                             <Search className="w-4 h-4 text-secondary" />
                         </button>
                     </div>
@@ -663,9 +663,9 @@ export default function CariTanitim({ showToast }: CariTanitimProps) {
                                     id="mutabakat"
                                     checked={formData.mutabakat}
                                     onChange={(e) => updateField("mutabakat", e.target.checked)}
-                                    className="w-4 h-4 rounded border-white/20 bg-[#0a1628] text-primary focus:ring-primary"
+                                    className="w-4 h-4 rounded border-[var(--color-input-border)] bg-[var(--color-input-bg)] text-primary focus:ring-primary"
                                 />
-                                <label htmlFor="mutabakat" className="text-white text-sm">Mutabakat</label>
+                                <label htmlFor="mutabakat" className="text-[var(--color-foreground)] text-sm">Mutabakat</label>
                             </div>
                         </div>
 

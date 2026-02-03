@@ -86,7 +86,7 @@ export default function Expenses() {
                     </div>
                     <div>
                         <p className="text-[10px] font-bold text-rose-500 uppercase tracking-[3px]">Toplam Giderler</p>
-                        <p className="text-2xl font-bold text-white tracking-tighter">₺{totalExpenses.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</p>
+                        <p className="text-2xl font-bold text-[var(--color-foreground)] tracking-tighter">₺{totalExpenses.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</p>
                     </div>
                 </div>
 
@@ -123,7 +123,7 @@ export default function Expenses() {
                             ) : expenses.map((expense) => (
                                 <tr key={expense.id} className="hover:bg-white/5 transition-colors group">
                                     <td className="px-8 py-5">
-                                        <span className="font-semibold text-white group-hover:text-rose-400 transition-colors uppercase tracking-tight">{expense.title}</span>
+                                        <span className="font-semibold text-[var(--color-foreground)] group-hover:text-rose-400 transition-colors uppercase tracking-tight">{expense.title}</span>
                                     </td>
                                     <td className="px-8 py-5">
                                         <span className="inline-flex items-center px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-secondary group-hover:border-secondary/30 transition-all">
@@ -174,7 +174,7 @@ export default function Expenses() {
                         >
                             <div className="flex justify-between items-center mb-8">
                                 <div>
-                                    <h3 className="text-3xl font-bold tracking-tight uppercase">Yeni Gider</h3>
+                                    <h3 className="text-3xl font-bold tracking-tight uppercase text-[var(--color-foreground)]">Yeni Gider</h3>
                                     <p className="text-secondary text-sm mt-1">Gider detaylarını aşağıdaki forma girin.</p>
                                 </div>
                                 <button
@@ -192,7 +192,7 @@ export default function Expenses() {
                                         required
                                         type="text"
                                         placeholder="Örn: Kira, Fatura, Maaş..."
-                                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-rose-500/50 transition-all font-semibold"
+                                        className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-rose-500/50 transition-all font-semibold text-[var(--color-foreground)]"
                                         value={formData.title}
                                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                                     />
@@ -206,7 +206,7 @@ export default function Expenses() {
                                             type="number"
                                             step="0.01"
                                             placeholder="0.00"
-                                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-rose-500/50 transition-all font-semibold text-rose-500"
+                                            className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-rose-500/50 transition-all font-semibold text-rose-500"
                                             value={formData.amount}
                                             onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                                         />
@@ -214,17 +214,17 @@ export default function Expenses() {
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-bold text-secondary uppercase tracking-[2px]">Kategori</label>
                                         <select
-                                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-rose-500/50 transition-all font-semibold appearance-none"
+                                            className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-rose-500/50 transition-all font-semibold appearance-none text-[var(--color-foreground)]"
                                             value={formData.category}
                                             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                                         >
-                                            <option value="Genel">Genel</option>
-                                            <option value="Kira">Kira</option>
-                                            <option value="Fatura">Fatura</option>
-                                            <option value="Maaş">Maaş</option>
-                                            <option value="Mal Alımı">Mal Alımı</option>
-                                            <option value="Vergi">Vergi</option>
-                                            <option value="Diger">Diğer</option>
+                                            <option value="Genel" className="bg-[var(--color-input-bg)]">Genel</option>
+                                            <option value="Kira" className="bg-[var(--color-input-bg)]">Kira</option>
+                                            <option value="Fatura" className="bg-[var(--color-input-bg)]">Fatura</option>
+                                            <option value="Maaş" className="bg-[var(--color-input-bg)]">Maaş</option>
+                                            <option value="Mal Alımı" className="bg-[var(--color-input-bg)]">Mal Alımı</option>
+                                            <option value="Vergi" className="bg-[var(--color-input-bg)]">Vergi</option>
+                                            <option value="Diger" className="bg-[var(--color-input-bg)]">Diğer</option>
                                         </select>
                                     </div>
                                 </div>
@@ -234,7 +234,7 @@ export default function Expenses() {
                                     <input
                                         required
                                         type="date"
-                                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-rose-500/50 transition-all font-semibold"
+                                        className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-rose-500/50 transition-all font-semibold text-[var(--color-foreground)]"
                                         value={formData.expense_date}
                                         onChange={(e) => setFormData({ ...formData, expense_date: e.target.value })}
                                     />

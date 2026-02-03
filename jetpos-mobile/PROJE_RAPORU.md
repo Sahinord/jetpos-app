@@ -1,4 +1,4 @@
-# ✅ JETPOS MOBILE SCANNER - PROJE HAZIR!
+ # ✅ JETPOS MOBILE SCANNER - PROJE HAZIR!
 
 **Tarih:** 2026-01-22  
 **Durum:** 🟢 Tamamlandı - Teste Hazır  

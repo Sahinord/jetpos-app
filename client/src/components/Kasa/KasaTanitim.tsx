@@ -190,7 +190,7 @@ export default function KasaTanitim({ showToast }: KasaTanitimProps) {
                             <Wallet className="w-5 h-5 text-primary" />
                         </div>
                         <p className="text-[10px] text-secondary font-bold uppercase tracking-widest mb-1 opacity-60">Aktif Kasa Sayısı</p>
-                        <h3 className="text-3xl font-bold text-white tracking-tight">{kasaCount}</h3>
+                        <h3 className="text-3xl font-bold text-[var(--color-foreground)] tracking-tight">{kasaCount}</h3>
                     </div>
                 </motion.div>
 
@@ -206,7 +206,7 @@ export default function KasaTanitim({ showToast }: KasaTanitimProps) {
                                 <div className="p-1.5 bg-emerald-500/10 rounded-lg border border-emerald-500/20"><ArrowUpRight className="w-4 h-4" /></div>
                                 <span className="text-[10px] uppercase font-bold tracking-widest">Borç Toplamı</span>
                             </div>
-                            <p className="text-2xl font-bold text-white tracking-tight">
+                            <p className="text-2xl font-bold text-[var(--color-foreground)] tracking-tight">
                                 <span className="text-xs opacity-30 mr-2 font-bold whitespace-nowrap">TRY</span>
                                 {totals.borc.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
                             </p>
@@ -216,7 +216,7 @@ export default function KasaTanitim({ showToast }: KasaTanitimProps) {
                                 <div className="p-1.5 bg-rose-500/10 rounded-lg border border-rose-500/20"><ArrowDownLeft className="w-4 h-4" /></div>
                                 <span className="text-[10px] uppercase font-bold tracking-widest">Alacak Toplamı</span>
                             </div>
-                            <p className="text-2xl font-bold text-white tracking-tight">
+                            <p className="text-2xl font-bold text-[var(--color-foreground)] tracking-tight">
                                 <span className="text-xs opacity-30 mr-2 font-bold whitespace-nowrap">TRY</span>
                                 {totals.alacak.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
                             </p>
@@ -257,7 +257,7 @@ export default function KasaTanitim({ showToast }: KasaTanitimProps) {
                         <div className="flex items-center gap-5 relative">
                             <div className="w-1.5 h-10 bg-primary/40 rounded-full" />
                             <div>
-                                <h2 className="text-xl font-black text-white tracking-widest uppercase">Kasa Kimlik Bilgileri</h2>
+                                <h2 className="text-xl font-black text-[var(--color-foreground)] tracking-widest uppercase">Kasa Kimlik Bilgileri</h2>
                                 <p className="text-[10px] text-secondary font-bold uppercase tracking-widest opacity-40 mt-1">Sistem içi benzersiz tanımlamalar ve yetkiler</p>
                             </div>
                         </div>
@@ -273,7 +273,7 @@ export default function KasaTanitim({ showToast }: KasaTanitimProps) {
                                         type="text"
                                         value={formData.kasaKodu}
                                         onChange={e => updateField("kasaKodu", e.target.value)}
-                                        className="w-full bg-[#020617]/40 border border-white/10 hover:border-primary/40 focus:border-primary focus:ring-4 focus:ring-primary/5 rounded-xl px-5 py-3 text-white text-sm font-bold transition-all outline-none"
+                                        className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] hover:border-primary/40 focus:border-primary focus:ring-4 focus:ring-primary/5 rounded-xl px-5 py-3 text-[var(--color-foreground)] text-sm font-bold transition-all outline-none placeholder:text-secondary/50"
                                         placeholder="KASA-001"
                                     />
                                     <button
@@ -295,7 +295,7 @@ export default function KasaTanitim({ showToast }: KasaTanitimProps) {
                                     type="text"
                                     value={formData.kasaAdi}
                                     onChange={e => updateField("kasaAdi", e.target.value)}
-                                    className="w-full bg-[#020617]/40 border border-white/10 hover:border-primary/40 focus:border-primary focus:ring-4 focus:ring-primary/5 rounded-xl px-5 py-3 text-white text-sm font-bold transition-all outline-none"
+                                    className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] hover:border-primary/40 focus:border-primary focus:ring-4 focus:ring-primary/5 rounded-xl px-5 py-3 text-[var(--color-foreground)] text-sm font-bold transition-all outline-none placeholder:text-secondary/50"
                                     placeholder="Örn: Ana Merkez Kasası (TL)"
                                 />
                             </div>
@@ -309,7 +309,7 @@ export default function KasaTanitim({ showToast }: KasaTanitimProps) {
                                     type="text"
                                     value={formData.yetkiliKisi}
                                     onChange={e => updateField("yetkiliKisi", e.target.value)}
-                                    className="w-full bg-[#020617]/40 border border-white/10 hover:border-primary/40 focus:border-primary focus:ring-4 focus:ring-primary/5 rounded-2xl px-6 py-4 text-white text-sm font-bold transition-all outline-none"
+                                    className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] hover:border-primary/40 focus:border-primary focus:ring-4 focus:ring-primary/5 rounded-2xl px-6 py-4 text-[var(--color-foreground)] text-sm font-bold transition-all outline-none placeholder:text-secondary/50"
                                     placeholder="Ad Soyad giriniz..."
                                 />
                             </div>
@@ -323,11 +323,11 @@ export default function KasaTanitim({ showToast }: KasaTanitimProps) {
                                     <select
                                         value={formData.paraBirimi}
                                         onChange={e => updateField("paraBirimi", e.target.value)}
-                                        className="w-full bg-[#020617] border border-white/10 hover:border-primary/40 focus:border-primary focus:ring-4 focus:ring-primary/5 rounded-2xl px-6 py-4 text-white text-sm font-black transition-all outline-none appearance-none cursor-pointer"
+                                        className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] hover:border-primary/40 focus:border-primary focus:ring-4 focus:ring-primary/5 rounded-2xl px-6 py-4 text-[var(--color-foreground)] text-sm font-black transition-all outline-none appearance-none cursor-pointer"
                                     >
-                                        <option value="TRY">TRY - Türk Lirası</option>
-                                        <option value="USD">USD - Amerikan Doları</option>
-                                        <option value="EUR">EUR - Euro Para Birimi</option>
+                                        <option value="TRY" className="bg-[var(--color-input-bg)]">TRY - Türk Lirası</option>
+                                        <option value="USD" className="bg-[var(--color-input-bg)]">USD - Amerikan Doları</option>
+                                        <option value="EUR" className="bg-[var(--color-input-bg)]">EUR - Euro Para Birimi</option>
                                     </select>
                                     <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-primary opacity-50 font-black text-[10px] italic">DEĞİŞTİR</div>
                                 </div>
@@ -339,7 +339,7 @@ export default function KasaTanitim({ showToast }: KasaTanitimProps) {
                             <div className="flex items-center gap-5 relative">
                                 <div className="w-1.5 h-10 bg-primary/20 rounded-full" />
                                 <div>
-                                    <h2 className="text-xl font-black text-white tracking-widest uppercase">Muhasebe & Organizasyon</h2>
+                                    <h2 className="text-xl font-black text-[var(--color-foreground)] tracking-widest uppercase">Muhasebe & Organizasyon</h2>
                                     <p className="text-[10px] text-secondary font-bold uppercase tracking-widest opacity-40 mt-1">Genişletilmiş raporlama ve entegrasyon ayarları</p>
                                 </div>
                             </div>
@@ -351,7 +351,7 @@ export default function KasaTanitim({ showToast }: KasaTanitimProps) {
                                         type="text"
                                         value={formData.muhKodu1}
                                         onChange={e => updateField("muhKodu1", e.target.value)}
-                                        className="w-full bg-[#020617]/40 border border-white/10 rounded-2xl px-6 py-4 text-white text-sm font-mono tracking-widest outline-none focus:border-primary/50 transition-all placeholder:text-secondary/10"
+                                        className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded-2xl px-6 py-4 text-[var(--color-foreground)] text-sm font-mono tracking-widest outline-none focus:border-primary/50 transition-all placeholder:text-secondary/20"
                                         placeholder="100.01.001"
                                     />
                                 </div>
@@ -361,7 +361,7 @@ export default function KasaTanitim({ showToast }: KasaTanitimProps) {
                                         type="text"
                                         value={formData.muhKodu2}
                                         onChange={e => updateField("muhKodu2", e.target.value)}
-                                        className="w-full bg-[#020617]/40 border border-white/10 rounded-2xl px-6 py-4 text-white text-sm font-mono tracking-widest outline-none focus:border-primary/50 transition-all placeholder:text-secondary/10"
+                                        className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded-2xl px-6 py-4 text-[var(--color-foreground)] text-sm font-mono tracking-widest outline-none focus:border-primary/50 transition-all placeholder:text-secondary/20"
                                         placeholder="100.01.002"
                                     />
                                 </div>
@@ -374,7 +374,7 @@ export default function KasaTanitim({ showToast }: KasaTanitimProps) {
                                         type="text"
                                         value={formData.isyeriKodu}
                                         onChange={e => updateField("isyeriKodu", e.target.value)}
-                                        className="w-full bg-[#020617]/40 border border-white/10 rounded-2xl px-6 py-4 text-white text-sm font-bold outline-none focus:border-primary/50 transition-all"
+                                        className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded-2xl px-6 py-4 text-[var(--color-foreground)] text-sm font-bold outline-none focus:border-primary/50 transition-all placeholder:text-secondary/50"
                                         placeholder="Merkez"
                                     />
                                 </div>
@@ -384,7 +384,7 @@ export default function KasaTanitim({ showToast }: KasaTanitimProps) {
                                         type="text"
                                         value={formData.ozelKod}
                                         onChange={e => updateField("ozelKod", e.target.value)}
-                                        className="w-full bg-[#020617]/40 border border-white/10 rounded-2xl px-6 py-4 text-white text-sm font-bold outline-none focus:border-primary/50 transition-all"
+                                        className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded-2xl px-6 py-4 text-[var(--color-foreground)] text-sm font-bold outline-none focus:border-primary/50 transition-all placeholder:text-secondary/50"
                                         placeholder="ÖZEL-01"
                                     />
                                 </div>
@@ -402,7 +402,7 @@ export default function KasaTanitim({ showToast }: KasaTanitimProps) {
                     <div className="glass-card p-6 md:p-8 border-white/5 space-y-5 shadow-2xl relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -translate-y-12 translate-x-12 blur-2xl" />
 
-                        <h4 className="text-[11px] font-black text-white uppercase tracking-[0.3em] mb-2 flex items-center gap-3">
+                        <h4 className="text-[11px] font-black text-[var(--color-foreground)] uppercase tracking-[0.3em] mb-2 flex items-center gap-3">
                             <div className="w-2 h-2 rounded-full bg-primary" />
                             İşlem Paneli
                         </h4>
@@ -452,7 +452,7 @@ export default function KasaTanitim({ showToast }: KasaTanitimProps) {
                         </div>
                         <div className="flex items-center gap-4 mb-5 relative">
                             <div className="p-2 bg-indigo-400/10 rounded-xl border border-indigo-400/20"><Activity className="w-5 h-5 text-indigo-400" /></div>
-                            <h4 className="text-[11px] font-black text-white uppercase tracking-widest italic">Sistem Rehberi</h4>
+                            <h4 className="text-[11px] font-black text-[var(--color-foreground)] uppercase tracking-widest italic">Sistem Rehberi</h4>
                         </div>
                         <p className="text-xs text-secondary leading-relaxed font-medium opacity-70 relative">
                             Kasa tanımları, işletmenizin nakit akışını takip etmek için temel birimdir.

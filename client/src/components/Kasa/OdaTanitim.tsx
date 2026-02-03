@@ -173,7 +173,7 @@ export default function OdaTanitim({ showToast }: OdaTanitimProps) {
                             <LayoutDashboard className="w-5 h-5 text-primary" />
                         </div>
                         <p className="text-sm text-secondary font-medium">Toplam Oda / Masa</p>
-                        <h3 className="text-3xl font-black text-white mt-1">{odaCount}</h3>
+                        <h3 className="text-3xl font-black text-[var(--color-foreground)] mt-1">{odaCount}</h3>
                     </div>
                 </motion.div>
 
@@ -219,7 +219,7 @@ export default function OdaTanitim({ showToast }: OdaTanitimProps) {
 
                         <div className="flex items-center gap-4">
                             <div className="h-8 w-1.5 bg-primary rounded-full" />
-                            <h2 className="text-xl font-bold text-white tracking-tight">Oda / Masa Detayları</h2>
+                            <h2 className="text-xl font-bold text-[var(--color-foreground)] tracking-tight">Oda / Masa Detayları</h2>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-7">
@@ -232,7 +232,7 @@ export default function OdaTanitim({ showToast }: OdaTanitimProps) {
                                         type="text"
                                         value={formData.odaNo}
                                         onChange={e => updateField("odaNo", e.target.value)}
-                                        className="w-full bg-white/5 border border-white/10 hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl px-5 py-3.5 text-white text-sm transition-all outline-none"
+                                        className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl px-5 py-3.5 text-[var(--color-foreground)] text-sm transition-all outline-none placeholder:text-secondary/50"
                                         placeholder="Benzersiz numara veya ad..."
                                     />
                                     <button
@@ -252,7 +252,7 @@ export default function OdaTanitim({ showToast }: OdaTanitimProps) {
                                     type="text"
                                     value={formData.odaAdi}
                                     onChange={e => updateField("odaAdi", e.target.value)}
-                                    className="w-full bg-white/5 border border-white/10 hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl px-5 py-3.5 text-white text-sm transition-all outline-none"
+                                    className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl px-5 py-3.5 text-[var(--color-foreground)] text-sm transition-all outline-none placeholder:text-secondary/50"
                                     placeholder="Opsiyonel açıklayıcı isim..."
                                 />
                             </div>
@@ -266,7 +266,7 @@ export default function OdaTanitim({ showToast }: OdaTanitimProps) {
                                         type="number"
                                         value={formData.katNo}
                                         onChange={e => updateField("katNo", e.target.value)}
-                                        className="w-full bg-white/5 border border-white/10 hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl px-5 py-3.5 text-white text-sm transition-all outline-none"
+                                        className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl px-5 py-3.5 text-[var(--color-foreground)] text-sm transition-all outline-none"
                                         placeholder="0"
                                     />
                                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-white/20 font-bold">floor.id</span>
@@ -281,13 +281,13 @@ export default function OdaTanitim({ showToast }: OdaTanitimProps) {
                                     <select
                                         value={formData.odaTipi}
                                         onChange={e => updateField("odaTipi", e.target.value)}
-                                        className="w-full bg-white/5 border border-white/10 hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl px-5 py-3.5 text-white text-sm transition-all outline-none appearance-none cursor-pointer"
+                                        className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl px-5 py-3.5 text-[var(--color-foreground)] text-sm transition-all outline-none appearance-none cursor-pointer"
                                     >
-                                        <option value="Standart">Standart Oda</option>
-                                        <option value="Süit">Süit Oda</option>
-                                        <option value="Deluxe">Deluxe Oda</option>
-                                        <option value="Masa">Masa (Restoran)</option>
-                                        <option value="Stand">Ayakta / Stand</option>
+                                        <option value="Standart" className="bg-[var(--color-input-bg)]">Standart Oda</option>
+                                        <option value="Süit" className="bg-[var(--color-input-bg)]">Süit Oda</option>
+                                        <option value="Deluxe" className="bg-[var(--color-input-bg)]">Deluxe Oda</option>
+                                        <option value="Masa" className="bg-[var(--color-input-bg)]">Masa (Restoran)</option>
+                                        <option value="Stand" className="bg-[var(--color-input-bg)]">Ayakta / Stand</option>
                                     </select>
                                     <ChevronRight className="w-4 h-4 text-secondary absolute right-4 top-1/2 -translate-y-1/2 rotate-90 pointer-events-none" />
                                 </div>
@@ -305,17 +305,17 @@ export default function OdaTanitim({ showToast }: OdaTanitimProps) {
                                             type="text"
                                             value={formData.fiyat}
                                             onChange={e => updateField("fiyat", e.target.value)}
-                                            className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-white text-sm outline-none focus:border-primary/50"
+                                            className="flex-1 bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded-2xl px-5 py-3.5 text-[var(--color-foreground)] text-sm outline-none focus:border-primary/50 placeholder:text-secondary/50"
                                             placeholder="0.00"
                                         />
                                         <select
                                             value={formData.paraBirimi}
                                             onChange={e => updateField("paraBirimi", e.target.value)}
-                                            className="w-24 bg-white/5 border border-white/10 rounded-2xl px-2 text-white text-sm outline-none appearance-none text-center"
+                                            className="w-24 bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded-2xl px-2 text-[var(--color-foreground)] text-sm outline-none appearance-none text-center"
                                         >
-                                            <option value="TRY">TRY</option>
-                                            <option value="USD">USD</option>
-                                            <option value="EUR">EUR</option>
+                                            <option value="TRY" className="bg-[var(--color-input-bg)]">TRY</option>
+                                            <option value="USD" className="bg-[var(--color-input-bg)]">USD</option>
+                                            <option value="EUR" className="bg-[var(--color-input-bg)]">EUR</option>
                                         </select>
                                     </div>
                                 </div>
@@ -328,8 +328,8 @@ export default function OdaTanitim({ showToast }: OdaTanitimProps) {
                                                 key={s}
                                                 onClick={() => updateField("durum", s)}
                                                 className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-[11px] font-black transition-all ${formData.durum === s
-                                                        ? 'bg-primary/20 border-primary text-white'
-                                                        : 'bg-white/5 border-white/10 text-secondary hover:bg-white/10'
+                                                    ? 'bg-primary/20 border-primary text-[var(--color-foreground)]'
+                                                    : 'bg-[var(--color-input-bg)] border-[var(--color-input-border)] text-secondary hover:bg-white/10'
                                                     }`}
                                             >
                                                 {statusIcons[s]}
@@ -352,7 +352,7 @@ export default function OdaTanitim({ showToast }: OdaTanitimProps) {
                     <div className="glass-card p-6 border-white/5 space-y-4 shadow-2xl shadow-primary/5">
                         <div className="flex items-center gap-3 mb-2">
                             <ShieldCheck className="w-5 h-5 text-primary" />
-                            <h4 className="text-sm font-bold text-white uppercase tracking-tight">Kayıt İşlemleri</h4>
+                            <h4 className="text-sm font-bold text-[var(--color-foreground)] uppercase tracking-tight">Kayıt İşlemleri</h4>
                         </div>
 
                         <button

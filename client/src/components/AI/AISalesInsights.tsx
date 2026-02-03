@@ -139,7 +139,7 @@ export default function AISalesInsights() {
                             <Key className="w-5 h-5 text-purple-400" />
                         </div>
                         <div className="flex-1 space-y-1">
-                            <h3 className="font-bold text-white">Gemini API Key Gerekli</h3>
+                            <h3 className="font-bold text-[var(--color-foreground)]">Gemini API Key Gerekli</h3>
                             <p className="text-xs text-slate-500">Ücretsiz AI servisi için aistudio.google.com üzerinden bir anahtar almanız gerekiyor.</p>
                         </div>
                     </div>
@@ -149,7 +149,7 @@ export default function AISalesInsights() {
                             value={apiKey}
                             onChange={(e) => setApiKey(e.target.value)}
                             placeholder="AI API Key buraya yapıştırın..."
-                            className="flex-1 bg-slate-950/50 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-purple-500/50 outline-none transition-all"
+                            className="flex-1 bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded-xl px-4 py-3 text-sm text-[var(--color-foreground)] focus:border-purple-500/50 outline-none transition-all"
                         />
                         <button
                             onClick={handleSaveKey}
@@ -169,7 +169,7 @@ export default function AISalesInsights() {
                         <Sparkles className="w-20 h-20 text-purple-500 relative animate-pulse" />
                     </div>
                     <div className="max-w-lg mx-auto space-y-4">
-                        <h2 className="text-2xl font-bold text-white">Satışlarınızı AI ile Geleceğe Taşıyın</h2>
+                        <h2 className="text-2xl font-bold text-[var(--color-foreground)]">Satışlarınızı AI ile Geleceğe Taşıyın</h2>
                         <p className="text-slate-400 text-sm leading-relaxed">
                             Yapay zeka, son satış verilerinizi analiz ederek hangi ürünlerin tükenebileceğini,
                             haftalık ciro tahminlerinizi ve kârınızı artıracak stratejileri size sunar.
@@ -181,13 +181,13 @@ export default function AISalesInsights() {
                         className="relative group p-[1px] rounded-2xl overflow-hidden hover:scale-105 transition-all active:scale-95"
                     >
                         <div className="absolute inset-[-1000%] animate-[spin_4s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#8b5cf6_0%,#c084fc_50%,#8b5cf6_100%)]" />
-                        <div className="relative px-12 py-5 bg-slate-950 rounded-2xl flex items-center justify-center gap-3">
+                        <div className="relative px-12 py-5 bg-[var(--color-input-bg)] rounded-2xl flex items-center justify-center gap-3">
                             {loading ? (
                                 <RefreshCw className="w-5 h-5 text-purple-400 animate-spin" />
                             ) : (
                                 <Sparkles className="w-5 h-5 text-purple-400" />
                             )}
-                            <span className="text-white font-black">
+                            <span className="text-[var(--color-foreground)] font-black">
                                 {loading ? 'Veriler Analiz Ediliyor...' : 'Analizi Başlat'}
                             </span>
                         </div>
@@ -205,7 +205,7 @@ export default function AISalesInsights() {
                             <Sparkles className="w-32 h-32 text-purple-500" />
                         </div>
 
-                        <div className="prose prose-invert max-w-none prose-p:text-slate-400 prose-p:leading-relaxed prose-headings:text-white prose-li:text-slate-400 prose-strong:text-purple-400">
+                        <div className="prose prose-invert max-w-none prose-p:text-secondary prose-p:leading-relaxed prose-headings:text-[var(--color-foreground)] prose-li:text-secondary prose-strong:text-purple-400">
                             <ReactMarkdown>{insight}</ReactMarkdown>
                         </div>
 
@@ -235,8 +235,8 @@ export default function AISalesInsights() {
                             <f.icon className="w-5 h-5 text-purple-400" />
                         </div>
                         <div>
-                            <h4 className="font-bold text-white text-sm">{f.title}</h4>
-                            <p className="text-xs text-slate-500 leading-relaxed mt-1">{f.desc}</p>
+                            <h4 className="font-bold text-[var(--color-foreground)] text-sm">{f.title}</h4>
+                            <p className="text-xs text-secondary leading-relaxed mt-1">{f.desc}</p>
                         </div>
                     </div>
                 ))}

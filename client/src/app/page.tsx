@@ -38,6 +38,7 @@ import BankaPage from '@/components/Banka/BankaPage';
 import EmployeeManager from '@/components/Employee/EmployeeManager';
 import ShiftManager from '@/components/Employee/ShiftManager';
 import ProductLabelDesigner from '@/components/Tools/ProductLabelDesigner';
+import FinancialCalendar from '@/components/Calendar/FinancialCalendar';
 
 export default function Home() {
   const { currentTenant, loading: tenantLoading } = useTenant();
@@ -681,6 +682,11 @@ export default function Home() {
           {activeTab === "reports" && (
             <div className="max-w-[1500px] mx-auto w-full">
               <SmartReports products={products} />
+            </div>
+          )}
+          {activeTab === "mali_takvim" && (
+            <div className="max-w-[1500px] mx-auto w-full">
+              <FinancialCalendar />
             </div>
           )}
 

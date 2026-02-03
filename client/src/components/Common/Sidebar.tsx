@@ -128,6 +128,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
             label: "Finans",
             icon: Wallet,
             items: [
+                { id: "mali_takvim", label: "Mali Takvim", icon: CalendarDays, feature: null, description: "Ödemelerinizi, tahsilatlarınızı ve vergi takviminizi yönetin." },
                 { id: "expenses", label: "Gider Yönetimi", icon: Receipt, feature: null, description: "İşletme giderlerinin kaydedilmesi ve takibi." },
                 { id: "calculator", label: "Kâr Hesaplama", icon: Calculator, feature: "profit_calculator", description: "Ürün bazlı veya genel kâr oranlarını hesaplama aracı." },
             ]

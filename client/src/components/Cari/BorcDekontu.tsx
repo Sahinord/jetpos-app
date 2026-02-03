@@ -182,7 +182,7 @@ export default function BorcDekontu({ showToast }: BorcDekontuProps) {
                     <div className="flex items-center gap-2 text-secondary">
                         {loading && <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />}
                         <FileText className="w-4 h-4 text-red-500" />
-                        <span className="text-sm font-medium text-white">Borç Dekontu</span>
+                        <span className="text-sm font-medium text-[var(--color-foreground)]">Borç Dekontu</span>
                     </div>
                 </div>
             </div>
@@ -197,10 +197,10 @@ export default function BorcDekontu({ showToast }: BorcDekontuProps) {
                             <select
                                 value={formData.subeKodu}
                                 onChange={(e) => updateField("subeKodu", e.target.value)}
-                                className="w-full bg-[#0a1628] border border-white/10 rounded px-3 py-1.5 text-white text-sm"
+                                className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded px-3 py-1.5 text-[var(--color-foreground)] text-sm"
                             >
-                                <option>1 - MERKEZ</option>
-                                <option>2 - ŞUBE</option>
+                                <option className="bg-[var(--color-input-bg)]">1 - MERKEZ</option>
+                                <option className="bg-[var(--color-input-bg)]">2 - ŞUBE</option>
                             </select>
                         </div>
                         <div className="space-y-1">
@@ -209,7 +209,7 @@ export default function BorcDekontu({ showToast }: BorcDekontuProps) {
                                 type="text"
                                 value={formData.fisNo}
                                 onChange={(e) => updateField("fisNo", e.target.value)}
-                                className="w-full bg-[#0a1628] border border-white/10 rounded px-3 py-1.5 text-white text-sm"
+                                className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded px-3 py-1.5 text-[var(--color-foreground)] text-sm placeholder:text-secondary/50"
                                 readOnly
                             />
                         </div>
@@ -219,7 +219,7 @@ export default function BorcDekontu({ showToast }: BorcDekontuProps) {
                                 type="date"
                                 value={formData.fisTarihi}
                                 onChange={(e) => updateField("fisTarihi", e.target.value)}
-                                className="w-full bg-[#0a1628] border border-white/10 rounded px-3 py-1.5 text-white text-sm"
+                                className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded px-3 py-1.5 text-[var(--color-foreground)] text-sm"
                             />
                         </div>
                     </div>
@@ -233,10 +233,10 @@ export default function BorcDekontu({ showToast }: BorcDekontuProps) {
                                     type="text"
                                     value={formData.chKodu}
                                     onChange={(e) => updateField("chKodu", e.target.value)}
-                                    className="flex-1 bg-[#0a1628] border border-white/10 rounded px-3 py-1.5 text-white text-sm"
+                                    className="flex-1 bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded px-3 py-1.5 text-[var(--color-foreground)] text-sm placeholder:text-secondary/50"
                                     placeholder="Cari kodu..."
                                 />
-                                <button className="px-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded">
+                                <button className="px-2 bg-white/5 hover:bg-white/10 border border-[var(--color-input-border)] rounded">
                                     <Search className="w-4 h-4 text-secondary" />
                                 </button>
                             </div>
@@ -247,7 +247,7 @@ export default function BorcDekontu({ showToast }: BorcDekontuProps) {
                                 type="date"
                                 value={formData.belgeTar}
                                 onChange={(e) => updateField("belgeTar", e.target.value)}
-                                className="w-full bg-[#0a1628] border border-white/10 rounded px-3 py-1.5 text-white text-sm"
+                                className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded px-3 py-1.5 text-[var(--color-foreground)] text-sm"
                             />
                         </div>
                         <div className="space-y-1">
@@ -256,7 +256,7 @@ export default function BorcDekontu({ showToast }: BorcDekontuProps) {
                                 type="text"
                                 value={formData.belgeTipi}
                                 onChange={(e) => updateField("belgeTipi", e.target.value)}
-                                className="w-full bg-[#0a1628] border border-white/10 rounded px-3 py-1.5 text-white text-sm"
+                                className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded px-3 py-1.5 text-[var(--color-foreground)] text-sm placeholder:text-secondary/50"
                             />
                         </div>
                     </div>
@@ -269,7 +269,7 @@ export default function BorcDekontu({ showToast }: BorcDekontuProps) {
                                 type="text"
                                 value={formData.belgeNo}
                                 onChange={(e) => updateField("belgeNo", e.target.value)}
-                                className="w-full bg-[#0a1628] border border-white/10 rounded px-3 py-1.5 text-white text-sm"
+                                className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded px-3 py-1.5 text-[var(--color-foreground)] text-sm placeholder:text-secondary/50"
                             />
                         </div>
                         <div className="space-y-1">
@@ -277,11 +277,11 @@ export default function BorcDekontu({ showToast }: BorcDekontuProps) {
                             <select
                                 value={formData.paraBirimi}
                                 onChange={(e) => updateField("paraBirimi", e.target.value)}
-                                className="w-full bg-[#0a1628] border border-white/10 rounded px-3 py-1.5 text-white text-sm"
+                                className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded px-3 py-1.5 text-[var(--color-foreground)] text-sm"
                             >
-                                <option value="TRY">TRY</option>
-                                <option value="USD">USD</option>
-                                <option value="EUR">EUR</option>
+                                <option value="TRY" className="bg-[var(--color-input-bg)]">TRY</option>
+                                <option value="USD" className="bg-[var(--color-input-bg)]">USD</option>
+                                <option value="EUR" className="bg-[var(--color-input-bg)]">EUR</option>
                             </select>
                         </div>
                     </div>
@@ -294,7 +294,7 @@ export default function BorcDekontu({ showToast }: BorcDekontuProps) {
                                 type="text"
                                 value={formData.odemePlani}
                                 onChange={(e) => updateField("odemePlani", e.target.value)}
-                                className="w-full bg-[#0a1628] border border-white/10 rounded px-3 py-1.5 text-white text-sm"
+                                className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded px-3 py-1.5 text-[var(--color-foreground)] text-sm placeholder:text-secondary/50"
                             />
                         </div>
                     </div>
@@ -308,8 +308,8 @@ export default function BorcDekontu({ showToast }: BorcDekontuProps) {
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
                         className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-all ${activeTab === tab.id
-                                ? 'bg-primary text-white'
-                                : 'bg-white/5 text-secondary hover:bg-white/10'
+                            ? 'bg-primary text-white'
+                            : 'bg-white/5 text-secondary hover:bg-white/10'
                             }`}
                     >
                         {tab.label}
@@ -356,7 +356,7 @@ export default function BorcDekontu({ showToast }: BorcDekontuProps) {
                                                     type="text"
                                                     value={kalem.cariKodu}
                                                     onChange={(e) => updateKalem(kalem.id, 'cariKodu', e.target.value)}
-                                                    className="w-full bg-transparent border border-white/10 rounded px-2 py-1 text-white text-xs focus:border-primary focus:outline-none"
+                                                    className="w-full bg-transparent border border-[var(--color-input-border)] rounded px-2 py-1 text-[var(--color-foreground)] text-xs focus:border-primary focus:outline-none"
                                                 />
                                             </td>
                                             <td className="px-2 py-1">
@@ -364,7 +364,7 @@ export default function BorcDekontu({ showToast }: BorcDekontuProps) {
                                                     type="text"
                                                     value={kalem.unvani}
                                                     onChange={(e) => updateKalem(kalem.id, 'unvani', e.target.value)}
-                                                    className="w-full bg-transparent border border-white/10 rounded px-2 py-1 text-white text-xs focus:border-primary focus:outline-none"
+                                                    className="w-full bg-transparent border border-[var(--color-input-border)] rounded px-2 py-1 text-[var(--color-foreground)] text-xs focus:border-primary focus:outline-none"
                                                 />
                                             </td>
                                             <td className="px-2 py-1">
@@ -372,7 +372,7 @@ export default function BorcDekontu({ showToast }: BorcDekontuProps) {
                                                     type="date"
                                                     value={kalem.belgeTarihi}
                                                     onChange={(e) => updateKalem(kalem.id, 'belgeTarihi', e.target.value)}
-                                                    className="w-full bg-transparent border border-white/10 rounded px-2 py-1 text-white text-xs focus:border-primary focus:outline-none"
+                                                    className="w-full bg-transparent border border-[var(--color-input-border)] rounded px-2 py-1 text-[var(--color-foreground)] text-xs focus:border-primary focus:outline-none"
                                                 />
                                             </td>
                                             <td className="px-2 py-1">
@@ -380,7 +380,7 @@ export default function BorcDekontu({ showToast }: BorcDekontuProps) {
                                                     type="text"
                                                     value={kalem.aciklama}
                                                     onChange={(e) => updateKalem(kalem.id, 'aciklama', e.target.value)}
-                                                    className="w-full bg-transparent border border-white/10 rounded px-2 py-1 text-white text-xs focus:border-primary focus:outline-none"
+                                                    className="w-full bg-transparent border border-[var(--color-input-border)] rounded px-2 py-1 text-[var(--color-foreground)] text-xs focus:border-primary focus:outline-none"
                                                 />
                                             </td>
                                             <td className="px-2 py-1">
@@ -389,18 +389,18 @@ export default function BorcDekontu({ showToast }: BorcDekontuProps) {
                                                     step="0.01"
                                                     value={kalem.tutar}
                                                     onChange={(e) => updateKalem(kalem.id, 'tutar', parseFloat(e.target.value) || 0)}
-                                                    className="w-full bg-transparent border border-primary/30 rounded px-2 py-1 text-white text-xs text-right font-mono focus:border-primary focus:outline-none"
+                                                    className="w-full bg-transparent border border-primary/30 rounded px-2 py-1 text-[var(--color-foreground)] text-xs text-right font-mono focus:border-primary focus:outline-none"
                                                 />
                                             </td>
                                             <td className="px-2 py-1">
                                                 <select
                                                     value={kalem.paraBirimi}
                                                     onChange={(e) => updateKalem(kalem.id, 'paraBirimi', e.target.value)}
-                                                    className="w-full bg-transparent border border-white/10 rounded px-1 py-1 text-white text-xs"
+                                                    className="w-full bg-transparent border border-[var(--color-input-border)] rounded px-1 py-1 text-[var(--color-foreground)] text-xs"
                                                 >
-                                                    <option value="TRY">TRY</option>
-                                                    <option value="USD">USD</option>
-                                                    <option value="EUR">EUR</option>
+                                                    <option value="TRY" className="bg-[var(--color-input-bg)]">TRY</option>
+                                                    <option value="USD" className="bg-[var(--color-input-bg)]">USD</option>
+                                                    <option value="EUR" className="bg-[var(--color-input-bg)]">EUR</option>
                                                 </select>
                                             </td>
                                             <td className="px-2 py-1">
@@ -408,7 +408,7 @@ export default function BorcDekontu({ showToast }: BorcDekontuProps) {
                                                     type="text"
                                                     value={kalem.hizKodu}
                                                     onChange={(e) => updateKalem(kalem.id, 'hizKodu', e.target.value)}
-                                                    className="w-full bg-transparent border border-white/10 rounded px-2 py-1 text-white text-xs focus:border-primary focus:outline-none"
+                                                    className="w-full bg-transparent border border-[var(--color-input-border)] rounded px-2 py-1 text-[var(--color-foreground)] text-xs focus:border-primary focus:outline-none"
                                                 />
                                             </td>
                                             <td className="px-2 py-1">
@@ -416,7 +416,7 @@ export default function BorcDekontu({ showToast }: BorcDekontuProps) {
                                                     type="text"
                                                     value={kalem.hizAdi}
                                                     onChange={(e) => updateKalem(kalem.id, 'hizAdi', e.target.value)}
-                                                    className="w-full bg-transparent border border-white/10 rounded px-2 py-1 text-white text-xs focus:border-primary focus:outline-none"
+                                                    className="w-full bg-transparent border border-[var(--color-input-border)] rounded px-2 py-1 text-[var(--color-foreground)] text-xs focus:border-primary focus:outline-none"
                                                 />
                                             </td>
                                             <td className="px-2 py-1">
@@ -449,7 +449,7 @@ export default function BorcDekontu({ showToast }: BorcDekontuProps) {
                             <textarea
                                 value={formData.aciklama}
                                 onChange={(e) => updateField("aciklama", e.target.value)}
-                                className="w-full bg-[#0a1628] border border-white/10 rounded px-3 py-2 text-white text-sm h-24 resize-none"
+                                className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded px-3 py-2 text-[var(--color-foreground)] text-sm h-24 resize-none placeholder:text-secondary/50"
                                 placeholder="Dekont açıklaması..."
                             />
                         </div>
@@ -458,7 +458,7 @@ export default function BorcDekontu({ showToast }: BorcDekontuProps) {
                             <textarea
                                 value={formData.muhAciklama}
                                 onChange={(e) => updateField("muhAciklama", e.target.value)}
-                                className="w-full bg-[#0a1628] border border-white/10 rounded px-3 py-2 text-white text-sm h-24 resize-none"
+                                className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded px-3 py-2 text-[var(--color-foreground)] text-sm h-24 resize-none placeholder:text-secondary/50"
                                 placeholder="Muhasebe notu..."
                             />
                         </div>
@@ -476,7 +476,7 @@ export default function BorcDekontu({ showToast }: BorcDekontuProps) {
                                 type="text"
                                 value={formData.aciklama}
                                 onChange={(e) => updateField("aciklama", e.target.value)}
-                                className="bg-[#0a1628] border border-white/10 rounded px-2 py-1 text-white text-xs w-48"
+                                className="bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded px-2 py-1 text-[var(--color-foreground)] text-xs w-48 placeholder:text-secondary/50"
                             />
                         </div>
                         <div className="space-y-0.5">
@@ -485,7 +485,7 @@ export default function BorcDekontu({ showToast }: BorcDekontuProps) {
                                 type="text"
                                 value={formData.muhAciklama}
                                 onChange={(e) => updateField("muhAciklama", e.target.value)}
-                                className="bg-[#0a1628] border border-white/10 rounded px-2 py-1 text-white text-xs w-48"
+                                className="bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded px-2 py-1 text-[var(--color-foreground)] text-xs w-48 placeholder:text-secondary/50"
                             />
                         </div>
                     </div>
