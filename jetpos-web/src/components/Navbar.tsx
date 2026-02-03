@@ -14,16 +14,17 @@ export default function Navbar() {
     }, []);
 
     const navLinks = [
-        { href: "#features", label: "Özellikler" },
+        { href: "#", label: "Anasayfa" },
         { href: "#pricing", label: "Fiyatlandırma" },
+        { href: "#contact", label: "İletişim" },
     ];
 
     return (
         <>
             <nav
                 className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
-                        ? "glass-ultra border-b border-white/10"
-                        : "bg-transparent"
+                    ? "glass-ultra border-b border-white/10"
+                    : "bg-transparent"
                     }`}
             >
                 <div className="container">

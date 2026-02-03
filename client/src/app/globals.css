@@ -18,8 +18,6 @@
   --color-input-border: rgba(255, 255, 255, 0.05);
 
   --font-inter: var(--font-inter);
-  --font-outfit: var(--font-outfit);
-  --font-jakarta: var(--font-jakarta);
 }
 
 :root:has(.theme-light),
@@ -67,12 +65,14 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-family: var(--font-outfit), sans-serif;
+    font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
-    -moz-osx-osx-font-smoothing: grayscale;
-    font-weight: 600;
+    -moz-osx-font-smoothing: grayscale;
+    font-weight: 400;
+    /* Lighter weight for cleaner look */
     line-height: 1.6;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.011em;
+    /* Geist's optimal tracking */
     overflow-x: hidden;
   }
 
@@ -82,25 +82,28 @@
   h4,
   h5,
   h6 {
-    font-family: var(--font-jakarta), sans-serif;
-    font-weight: 800;
-    letter-spacing: -0.03em;
+    font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+    font-weight: 600;
+    /* Reduced from 800 for minimal aesthetic */
+    letter-spacing: -0.025em;
+    /* Tighter tracking for headings */
+    line-height: 1.2;
   }
 
   table {
-    font-family: var(--font-outfit), sans-serif;
-    font-weight: 600;
+    font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+    font-weight: 400;
   }
 
   ::selection {
-    background-color: rgba(59, 130, 246, 0.3);
+    background-color: rgba(99, 102, 241, 0.2);
     color: white;
   }
 }
 
 @layer components {
 
-  /* Dynamic Background Glows */
+  /* Dynamic Background Glows - Subtle and minimal */
   .glow-container {
     position: fixed;
     inset: 0;
@@ -113,85 +116,87 @@
     position: absolute;
     top: -10%;
     left: -10%;
-    width: 40%;
-    height: 40%;
-    background: radial-gradient(circle, color-mix(in srgb, var(--color-primary), transparent 85%), transparent 70%);
-    filter: blur(80px);
+    width: 35%;
+    height: 35%;
+    background: radial-gradient(circle, color-mix(in srgb, var(--color-primary), transparent 90%), transparent 70%);
+    filter: blur(100px);
     border-radius: 100%;
-    animation: pulse 8s ease-in-out infinite alternate;
+    animation: pulse 10s ease-in-out infinite alternate;
   }
 
   .glow-bottom-right {
     position: absolute;
     bottom: -10%;
     right: -10%;
-    width: 40%;
-    height: 40%;
-    background: radial-gradient(circle, color-mix(in srgb, var(--color-primary), transparent 85%), transparent 70%);
-    filter: blur(80px);
+    width: 35%;
+    height: 35%;
+    background: radial-gradient(circle, color-mix(in srgb, var(--color-primary), transparent 90%), transparent 70%);
+    filter: blur(100px);
     border-radius: 100%;
-    animation: pulse 8s ease-in-out infinite alternate-reverse;
+    animation: pulse 10s ease-in-out infinite alternate-reverse;
   }
 
   @keyframes pulse {
     from {
       transform: scale(1);
-      opacity: 0.5;
+      opacity: 0.3;
     }
 
     to {
-      transform: scale(1.2);
-      opacity: 0.8;
+      transform: scale(1.1);
+      opacity: 0.5;
     }
   }
 
+  /* Glass card - Clean and minimal */
   .glass-card {
-    background: color-mix(in srgb, var(--color-card), transparent 20%);
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    background: color-mix(in srgb, var(--color-card), transparent 10%);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     color: var(--color-foreground);
     border: 1px solid var(--color-border);
-    border-radius: 2.5rem;
-    /* Increased for 'gentler' look */
-    padding: 2rem;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
 
   .theme-light .glass-card {
     background: #ffffff !important;
-    box-shadow: 0 20px 60px rgba(37, 99, 235, 0.06) !important;
-    border: 1px solid #f1f5f9 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+    border: 1px solid #e2e8f0 !important;
   }
 
   .glass-card:hover {
-    border-color: var(--color-primary);
-    transform: translateY(-4px);
-    box-shadow: 0 40px 80px rgba(0, 0, 0, 0.1);
+    border-color: color-mix(in srgb, var(--color-primary), transparent 70%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
   }
 
+  /* Premium sidebar - Clean minimal design */
   .premium-sidebar {
     background: var(--color-sidebar) !important;
     color: var(--color-sidebar-foreground) !important;
     border-right: 1px solid var(--color-border);
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
   }
 
   .sidebar-item {
     color: var(--color-sidebar-muted);
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 400;
   }
 
   .sidebar-item:hover {
     color: var(--color-sidebar-foreground);
-    background: color-mix(in srgb, var(--color-sidebar-foreground), transparent 92%);
+    background: color-mix(in srgb, var(--color-sidebar-foreground), transparent 95%);
   }
 
   .sidebar-item-active {
     background: linear-gradient(135deg, var(--color-primary), #4f46e5) !important;
     color: #ffffff !important;
-    box-shadow: 0 10px 20px color-mix(in srgb, var(--color-primary), transparent 85%);
-    font-weight: 700;
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary), transparent 80%);
+    font-weight: 500;
   }
 }
 

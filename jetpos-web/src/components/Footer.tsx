@@ -150,6 +150,9 @@ export default function Footer() {
                         </p>
                         <div className="flex items-center gap-6">
                             <a href="#" className="text-white/60 hover:text-white text-sm transition-colors">
+                                Kullanıcı Sözleşmesi
+                            </a>
+                            <a href="#" className="text-white/60 hover:text-white text-sm transition-colors">
                                 Gizlilik Politikası
                             </a>
                             <a href="#" className="text-white/60 hover:text-white text-sm transition-colors">

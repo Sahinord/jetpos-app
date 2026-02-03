@@ -1,42 +1,48 @@
 "use client";
 
-import { Suspense } from 'react';
-import dynamic from 'next/dynamic';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import LicenseGate from '@/components/LicenseGate';
 import { Toaster } from 'sonner';
 
-const BarcodeScanner = dynamic(
-  () => import('@/components/BarcodeScanner'),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-blue-500 mx-auto"></div>
+export default function Home() {
+  const [hasLicense, setHasLicense] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    // Check if license exists
+    const license = localStorage.getItem('licenseKey');
+    const tenantId = localStorage.getItem('tenantId');
+
+    if (license && tenantId) {
+      // License exists, redirect to dashboard
+      router.push('/dashboard');
+    } else {
+      setLoading(false);
+    }
+  }, [router]);
+
+  const handleLicenseSuccess = (tenantId: string, companyName: string) => {
+    // License validated successfully, redirect to dashboard
+    router.push('/dashboard');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
           <p className="text-white font-bold">Yükleniyor...</p>
         </div>
       </div>
-    )
+    );
   }
-);
 
-export default function Home() {
   return (
     <>
-      <Suspense fallback={<LoadingSpinner />}>
-        <BarcodeScanner />
-      </Suspense>
+      <LicenseGate onSuccess={handleLicenseSuccess} />
       <Toaster position="top-center" richColors />
     </>
-  );
-}
-
-function LoadingSpinner() {
-  return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      <div className="text-center space-y-4">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-blue-500 mx-auto"></div>
-        <p className="text-white font-bold">Scanner Hazırlanıyor...</p>
-      </div>
-    </div>
   );
 }

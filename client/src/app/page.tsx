@@ -551,7 +551,7 @@ export default function Home() {
       <main className="flex-1 overflow-y-auto max-h-screen relative flex flex-col">
         <TopBar activeTab={activeTab} />
 
-        <div className="p-8 lg:p-10 w-full flex-1 flex flex-col min-h-0">
+        <div className="p-2 lg:p-3 w-full flex-1 flex flex-col min-h-0">
           {activeTab === "home" && (
             <HomePage onNavigate={setActiveTab} />
           )}

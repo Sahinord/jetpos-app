@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "JetPOS - AI Destekli Akıllı İşletme Yönetim Sistemi",
-  description: "Yapay zeka destekli stok yönetimi, pazar yeri entegrasyonları, personel takibi ve e-fatura çözümleri. İşletmenizi bir üst seviyeye taşıyın.",
-  keywords: ["pos sistemi", "stok yönetimi", "ai analiz", "e-fatura", "trendyol", "işletme yönetimi", "yapay zeka"],
+  title: "JetPOS - Bulut Tabanlı Barkodlu Satış Sistemi",
+  description: "JetPOS ile hızlı, ekonomik ve kullanıcı dostu satış deneyimi yaşayın. Web tabanlı çözümümüz ile herhangi bir cihazdan barkod sistemine erişim sağlayabilirsiniz.",
+  keywords: ["pos sistemi", "stok yönetimi", "barkod sistemi", "e-fatura", "bulut tabanlı", "işletme yönetimi"],
   authors: [{ name: "JetPOS" }],
   openGraph: {
-    title: "JetPOS - AI Destekli İşletme Yönetimi",
-    description: "Yapay zeka ile işletme yönetiminde yeni çağ",
+    title: "JetPOS - Bulut Tabanlı Barkodlu Satış Sistemi",
+    description: "JetPOS ile hızlı, ekonomik ve kullanıcı dostu satış deneyimi yaşayın. Web tabanlı çözümümüz ile herhangi bir cihazdan barkod sistemine erişim sağlayabilirsiniz.",
     type: "website",
     locale: "tr_TR",
   },

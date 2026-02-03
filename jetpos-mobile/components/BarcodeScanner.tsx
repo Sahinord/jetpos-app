@@ -27,6 +27,18 @@ export default function BarcodeScanner() {
 
     const startScanner = async () => {
         try {
+            // HTTPS kontrolü
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                const isHttps = window.location.protocol === 'https:';
+                const errorMsg = !isHttps
+                    ? '🔒 Kamera erişimi için HTTPS gerekli!\n\nLütfen ngrok veya HTTPS ile erişin.'
+                    : '📱 Tarayıcınız kamera API\'sini desteklemiyor.';
+
+                toast.error(errorMsg);
+                setScanning(false);
+                return;
+            }
+
             readerRef.current = new BrowserMultiFormatReader();
 
             const constraints = {
@@ -66,8 +78,7 @@ export default function BarcodeScanner() {
             streamRef.current = null;
         }
         if (readerRef.current) {
-            readerRef.current.reset();
-            readerRef.current = null;
+            readerRef.current = null; // reset() yerine null yap
         }
     };
 
@@ -82,6 +93,12 @@ export default function BarcodeScanner() {
         setScanning(false);
 
         try {
+            const tenantId = localStorage.getItem('tenantId');
+            if (tenantId) {
+                // RLS context set et
+                await supabase.rpc('set_current_tenant', { tenant_id: tenantId });
+            }
+
             const { data, error } = await supabase
                 .from('products')
                 .select('*, categories(name)')
@@ -185,8 +202,8 @@ export default function BarcodeScanner() {
                                 <button
                                     onClick={toggleTorch}
                                     className={`p-4 rounded-2xl backdrop-blur-xl transition-all ${torchOn
-                                            ? 'bg-yellow-500/90 text-white'
-                                            : 'bg-white/10 text-white/80'
+                                        ? 'bg-yellow-500/90 text-white'
+                                        : 'bg-white/10 text-white/80'
                                         }`}
                                 >
                                     <Flashlight className="w-6 h-6" />
@@ -216,6 +233,22 @@ export default function BarcodeScanner() {
                         onScanAgain={() => {
                             setProduct(null);
                             setScanning(true);
+                        }}
+                        onProductUpdated={async () => {
+                            // Ürün güncellendiyse, barkodu tekrar sorgula
+                            const barcode = product.barcode;
+                            const tenantId = localStorage.getItem('tenantId');
+                            if (tenantId) {
+                                await supabase.rpc('set_current_tenant', { tenant_id: tenantId });
+                            }
+                            const { data } = await supabase
+                                .from('products')
+                                .select('*, categories(name)')
+                                .eq('barcode', barcode)
+                                .single();
+                            if (data) {
+                                setProduct(data);
+                            }
                         }}
                     />
                 )}

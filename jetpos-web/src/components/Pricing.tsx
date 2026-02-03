@@ -1,66 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Check, Zap, Rocket, Crown, Sparkles } from "lucide-react";
+import { Mail, Phone, MapPin, Send } from "lucide-react";
 
-const plans = [
-    {
-        name: "Başlangıç",
-        price: "₺299",
-        period: "/ay",
-        description: "Küçük işletmeler için ideal başlangıç paketi",
-        icon: Zap,
-        features: [
-            "5 Kullanıcı",
-            "1000 Ürün",
-            "Temel POS",
-            "Stok Yönetimi",
-            "E-Fatura",
-            "Email Destek"
-        ],
-        popular: false
-    },
-    {
-        name: "Profesyonel",
-        price: "₺599",
-        period: "/ay",
-        description: "Büyüyen işletmeler için güçlü çözüm",
-        icon: Rocket,
-        features: [
-            "20 Kullanıcı",
-            "Sınırsız Ürün",
-            "Gelişmiş POS",
-            "AI Analiz",
-            "Pazar Yeri Entegrasyonu",
-            "Personel Yönetimi",
-            "Öncelikli Destek",
-            "Özel Eğitim"
-        ],
-        popular: true
-    },
-    {
-        name: "Enterprise",
-        price: "Özel",
-        period: "fiyat",
-        description: "Kurumsal çözümler ve özel geliştirmeler",
-        icon: Crown,
-        features: [
-            "Sınırsız Kullanıcı",
-            "Sınırsız Ürün",
-            "Özel Modüller",
-            "Dedicated Server",
-            "API Erişimi",
-            "Özel Entegrasyonlar",
-            "7/24 Destek",
-            "Yerinde Kurulum"
-        ],
-        popular: false
-    }
-];
-
-export default function Pricing() {
+export default function Contact() {
     return (
-        <section className="section relative">
+        <section id="contact" className="section relative">
             <div className="container">
                 {/* Section Header */}
                 <motion.div
@@ -68,116 +13,125 @@ export default function Pricing() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.6 }}
-                    className="text-center mb-24"
+                    className="text-center mb-20"
                 >
-                    <div className="inline-flex items-center gap-2 px-5 py-3 glass-ultra rounded-full mb-8 border border-blue-500/30">
-                        <Sparkles className="w-4 h-4 text-blue-400" />
-                        <span className="text-sm font-semibold text-blue-300">
-                            Fiyatlandırma
-                        </span>
-                    </div>
                     <h2 className="text-white mb-6">
-                        Size Uygun Planı Seçin
+                        <span className="holographic-text">İletişime</span> Geçin
                     </h2>
                     <p className="text-lg text-white/70 max-w-3xl mx-auto">
-                        Her ölçekte işletme için esnek ve uygun fiyatlı çözümler
+                        Sorularınız mı var? Ekibimiz size yardımcı olmak için burada.
                     </p>
                 </motion.div>
 
-                {/* Pricing Cards - Much more spacing */}
-                <div className="grid md:grid-cols-3 gap-12 max-w-7xl mx-auto">
-                    {plans.map((plan, index) => (
-                        <motion.div
-                            key={index}
-                            initial={{ opacity: 0, y: 30 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.6, delay: index * 0.15 }}
-                            className="group relative"
-                        >
-                            {/* Popular Badge */}
-                            {plan.popular && (
-                                <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
-                                    <div className="glass-ultra px-6 py-2 rounded-full border border-blue-400/50">
-                                        <span className="text-sm font-semibold text-blue-300">
-                                            ⭐ Popüler
-                                        </span>
-                                    </div>
+                <div className="grid lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
+                    {/* Contact Form */}
+                    <motion.div
+                        initial={{ opacity: 0, x: -30 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.6 }}
+                    >
+                        <div className="glass-ultra p-10 rounded-2xl border border-blue-500/30">
+                            <h3 className="text-2xl font-bold text-white mb-6">Bize Ulaşın</h3>
+                            <form className="space-y-6">
+                                <div>
+                                    <label htmlFor="name" className="block text-white/80 mb-2 font-medium">
+                                        Ad Soyad
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="name"
+                                        className="w-full px-4 py-3 glass-dark rounded-lg border border-blue-500/20 text-white placeholder-white/40 focus:border-blue-400/50 focus:outline-none transition-all"
+                                        placeholder="Adınız ve soyadınız"
+                                    />
                                 </div>
-                            )}
-
-                            <div className={`glass-ultra p-10 rounded-2xl border h-full flex flex-col transition-all duration-300 ${plan.popular
-                                    ? 'border-blue-400/50 shadow-lg shadow-blue-500/20'
-                                    : 'border-blue-500/30 hover:border-blue-400/50'
-                                }`}>
-                                {/* Icon */}
-                                <div className="mb-8">
-                                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center">
-                                        <plan.icon className="w-7 h-7 text-white" />
-                                    </div>
+                                <div>
+                                    <label htmlFor="email" className="block text-white/80 mb-2 font-medium">
+                                        E-posta
+                                    </label>
+                                    <input
+                                        type="email"
+                                        id="email"
+                                        className="w-full px-4 py-3 glass-dark rounded-lg border border-blue-500/20 text-white placeholder-white/40 focus:border-blue-400/50 focus:outline-none transition-all"
+                                        placeholder="ornek@email.com"
+                                    />
                                 </div>
-
-                                {/* Plan Name */}
-                                <h3 className="text-2xl font-semibold text-white mb-3">
-                                    {plan.name}
-                                </h3>
-                                <p className="text-white/60 text-sm mb-8">
-                                    {plan.description}
-                                </p>
-
-                                {/* Price */}
-                                <div className="mb-10">
-                                    <div className="flex items-end gap-2">
-                                        <span className="text-4xl font-bold text-white">
-                                            {plan.price}
-                                        </span>
-                                        <span className="text-white/60 mb-1">
-                                            {plan.period}
-                                        </span>
-                                    </div>
+                                <div>
+                                    <label htmlFor="phone" className="block text-white/80 mb-2 font-medium">
+                                        Telefon
+                                    </label>
+                                    <input
+                                        type="tel"
+                                        id="phone"
+                                        className="w-full px-4 py-3 glass-dark rounded-lg border border-blue-500/20 text-white placeholder-white/40 focus:border-blue-400/50 focus:outline-none transition-all"
+                                        placeholder="+90 500 123 45 67"
+                                    />
                                 </div>
-
-                                {/* Features */}
-                                <div className="flex-1 space-y-5 mb-10">
-                                    {plan.features.map((feature, i) => (
-                                        <div key={i} className="flex items-start gap-3">
-                                            <div className="w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                                <Check className="w-3 h-3 text-blue-400" />
-                                            </div>
-                                            <span className="text-white/80">
-                                                {feature}
-                                            </span>
-                                        </div>
-                                    ))}
+                                <div>
+                                    <label htmlFor="message" className="block text-white/80 mb-2 font-medium">
+                                        Mesajınız
+                                    </label>
+                                    <textarea
+                                        id="message"
+                                        rows={5}
+                                        className="w-full px-4 py-3 glass-dark rounded-lg border border-blue-500/20 text-white placeholder-white/40 focus:border-blue-400/50 focus:outline-none transition-all resize-none"
+                                        placeholder="Mesajınızı buraya yazın..."
+                                    />
                                 </div>
-
-                                {/* CTA Button */}
-                                <button className={`w-full py-4 rounded-lg font-semibold text-white transition-all duration-300 ${plan.popular
-                                        ? 'btn-cyber'
-                                        : 'glass-ultra border border-blue-500/30 hover:border-blue-400/50 hover:bg-white/10'
-                                    }`}>
-                                    {plan.price === "Özel" ? "İletişime Geç" : "Hemen Başla"}
+                                <button type="submit" className="btn-cyber w-full flex items-center justify-center gap-3">
+                                    Gönder
+                                    <Send className="w-5 h-5" />
                                 </button>
-                            </div>
-                        </motion.div>
-                    ))}
-                </div>
+                            </form>
+                        </div>
+                    </motion.div>
 
-                {/* Bottom Note */}
-                <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.6, delay: 0.6 }}
-                    className="text-center mt-20"
-                >
-                    <div className="glass-ultra px-8 py-6 rounded-xl border border-blue-500/30 inline-block">
-                        <p className="text-white/80">
-                            <span className="text-blue-400 font-semibold">14 gün ücretsiz</span> deneme ile başlayın.
-                            Kredi kartı gerekmez! 🎉
-                        </p>
-                    </div>
-                </motion.div>
+                    {/* Contact Info */}
+                    <motion.div
+                        initial={{ opacity: 0, x: 30 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.6 }}
+                        className="space-y-8"
+                    >
+                        <div className="glass-ultra p-8 rounded-2xl border border-blue-500/30 hover:border-blue-400/50 transition-all">
+                            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center mb-6">
+                                <Mail className="w-7 h-7 text-white" />
+                            </div>
+                            <h4 className="text-xl font-bold text-white mb-2">E-posta</h4>
+                            <a
+                                href="mailto:info@jetpos.com"
+                                className="text-white/70 hover:text-blue-400 transition-colors text-lg"
+                            >
+                                info@jetpos.com
+                            </a>
+                        </div>
+
+                        <div className="glass-ultra p-8 rounded-2xl border border-blue-500/30 hover:border-blue-400/50 transition-all">
+                            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center mb-6">
+                                <Phone className="w-7 h-7 text-white" />
+                            </div>
+                            <h4 className="text-xl font-bold text-white mb-2">Telefon</h4>
+                            <a
+                                href="tel:+905001234567"
+                                className="text-white/70 hover:text-blue-400 transition-colors text-lg"
+                            >
+                                +90 500 123 45 67
+                            </a>
+                        </div>
+
+                        <div className="glass-ultra p-8 rounded-2xl border border-blue-500/30 hover:border-blue-400/50 transition-all">
+                            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center mb-6">
+                                <MapPin className="w-7 h-7 text-white" />
+                            </div>
+                            <h4 className="text-xl font-bold text-white mb-2">Adres</h4>
+                            <p className="text-white/70 text-lg leading-relaxed">
+                                Atatürk Mahallesi, Teknoloji Caddesi No: 123<br />
+                                Şişli / İstanbul
+                            </p>
+                        </div>
+                    </motion.div>
+                </div>
             </div>
         </section>
     );

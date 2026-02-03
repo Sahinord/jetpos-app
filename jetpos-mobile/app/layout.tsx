@@ -1,17 +1,18 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  themeColor: "#0f172a",
+};
 
 export const metadata: Metadata = {
   title: "JetPos Mobile Scanner",
   description: "Barkod okuyarak ürün yönetimi",
   manifest: "/manifest.json",
-  themeColor: "#0f172a",
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

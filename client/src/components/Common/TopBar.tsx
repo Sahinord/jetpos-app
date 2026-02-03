@@ -54,6 +54,7 @@ export default function TopBar({ activeTab }: { activeTab: string }) {
             // Finans
             "expenses": "Gider Yönetimi",
             "calculator": "Kâr Hesaplama",
+            "mali_takvim": "Mali Takvim",
 
             // Raporlar & Analiz
             "reports": "Satış Raporları",
