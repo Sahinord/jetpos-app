@@ -1,0 +1,6 @@
+{
+    "buildCommand": "cd jetpos-mobile && npm install && npm run build",
+    "outputDirectory": "jetpos-mobile/.next",
+    "framework": "nextjs",
+    "installCommand": "cd jetpos-mobile && npm install"
+}

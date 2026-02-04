@@ -28,11 +28,22 @@ export default function RootLayout({
   return (
     <html lang="tr">
       <head>
-        <link rel="icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" href="/icon-192.png" />
+        <link rel="icon" href="/logo.png" />
+        <link rel="apple-touch-icon" href="/logo.png" />
       </head>
       <body className="antialiased">
         {children}
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            if ('serviceWorker' in navigator) {
+              window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                  .then((reg) => console.log('✅ Service Worker registered'))
+                  .catch((err) => console.log('❌ SW registration failed:', err));
+              });
+            }
+          `
+        }} />
       </body>
     </html>
   );
