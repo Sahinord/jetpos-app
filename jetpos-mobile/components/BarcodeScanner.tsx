@@ -90,6 +90,12 @@ export default function BarcodeScanner() {
         }
 
         playBeep();
+
+        // Flash'ı otomatik kapat
+        if (torchOn) {
+            await toggleTorch();
+        }
+
         setScanning(false);
 
         try {
@@ -224,33 +230,46 @@ export default function BarcodeScanner() {
                 )}
 
                 {product && (
-                    <ProductCard
-                        product={product}
-                        onClose={() => {
-                            setProduct(null);
-                            setScanning(false);
-                        }}
-                        onScanAgain={() => {
-                            setProduct(null);
-                            setScanning(true);
-                        }}
-                        onProductUpdated={async () => {
-                            // Ürün güncellendiyse, barkodu tekrar sorgula
-                            const barcode = product.barcode;
-                            const tenantId = localStorage.getItem('tenantId');
-                            if (tenantId) {
-                                await supabase.rpc('set_current_tenant', { tenant_id: tenantId });
-                            }
-                            const { data } = await supabase
-                                .from('products')
-                                .select('*, categories(name)')
-                                .eq('barcode', barcode)
-                                .single();
-                            if (data) {
-                                setProduct(data);
-                            }
-                        }}
-                    />
+                    <div className="relative">
+                        {/* Close Button - Sağ Üstte */}
+                        <button
+                            onClick={() => {
+                                setProduct(null);
+                                setScanning(true); // Yeni okutma ekranına dön
+                            }}
+                            className="absolute -top-2 -right-2 z-50 p-3 bg-red-500 hover:bg-red-600 rounded-full shadow-lg transition-all active:scale-95"
+                        >
+                            <X className="w-6 h-6 text-white" />
+                        </button>
+
+                        <ProductCard
+                            product={product}
+                            onClose={() => {
+                                setProduct(null);
+                                setScanning(false);
+                            }}
+                            onScanAgain={() => {
+                                setProduct(null);
+                                setScanning(true);
+                            }}
+                            onProductUpdated={async () => {
+                                // Ürün güncellendiyse, barkodu tekrar sorgula
+                                const barcode = product.barcode;
+                                const tenantId = localStorage.getItem('tenantId');
+                                if (tenantId) {
+                                    await supabase.rpc('set_current_tenant', { tenant_id: tenantId });
+                                }
+                                const { data } = await supabase
+                                    .from('products')
+                                    .select('*, categories(name)')
+                                    .eq('barcode', barcode)
+                                    .single();
+                                if (data) {
+                                    setProduct(data);
+                                }
+                            }}
+                        />
+                    </div>
                 )}
             </div>
         </div>
