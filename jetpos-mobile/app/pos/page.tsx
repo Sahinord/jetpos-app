@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState, useMemo } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, setCurrentTenant } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Search, ShoppingCart, Trash2, Plus, Minus,
     CreditCard, Banknote, Wallet, Building2,
-    X, ChevronUp, ChevronDown, Package, CheckCircle
+    X, ChevronUp, ChevronDown, Package, CheckCircle,
+    Users, ChevronRight
 } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import { toast } from 'sonner';
@@ -31,6 +32,12 @@ interface Category {
     name: string;
 }
 
+interface Customer {
+    id: string;
+    name: string;
+    phone?: string;
+}
+
 const containerVariants = {
     hidden: { opacity: 0 },
     show: { opacity: 1, transition: { staggerChildren: 0.05 } }
@@ -45,15 +52,19 @@ export default function POSPage() {
     // Data State
     const [products, setProducts] = useState<Product[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
+    const [customers, setCustomers] = useState<Customer[]>([]);
     const [loading, setLoading] = useState(true);
 
     // UI State
     const [selectedCategory, setSelectedCategory] = useState<string>("all");
     const [search, setSearch] = useState("");
     const [showCart, setShowCart] = useState(false);
+    const [showCustomerModal, setShowCustomerModal] = useState(false);
+    const [customerSearch, setCustomerSearch] = useState("");
 
     // Cart State
     const [cart, setCart] = useState<CartItem[]>([]);
+    const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
     const [isCheckingOut, setIsCheckingOut] = useState(false);
 
     // Initial Fetch
@@ -65,15 +76,23 @@ export default function POSPage() {
         try {
             const tenantId = localStorage.getItem('tenantId');
             if (!tenantId) return;
-            await supabase.rpc('set_current_tenant', { tenant_id: tenantId });
+            await setCurrentTenant(tenantId);
 
-            const [prodRes, catRes] = await Promise.all([
+            const [prodRes, catRes, custRes] = await Promise.all([
                 supabase.from('products').select('*').eq('status', 'active'),
-                supabase.from('categories').select('*')
+                supabase.from('categories').select('*'),
+                supabase.from('cari_hesaplar').select('*').eq('hesap_tipi', 'musteri')
             ]);
 
             if (prodRes.data) setProducts(prodRes.data);
             if (catRes.data) setCategories(catRes.data);
+            if (custRes.data) {
+                setCustomers(custRes.data.map((c: any) => ({
+                    id: c.id,
+                    name: c.unvan,
+                    phone: c.telefon
+                })));
+            }
         } catch (error) {
             console.error('POS Data Error:', error);
             toast.error('Veriler yüklenirken hata oluştu');
@@ -137,53 +156,46 @@ export default function POSPage() {
 
         try {
             const tenantId = localStorage.getItem('tenantId');
-            if (tenantId) await supabase.rpc('set_current_tenant', { tenant_id: tenantId });
+            if (tenantId) {
+                console.log('Setting Tenant Context:', tenantId);
+                await setCurrentTenant(tenantId);
+            }
 
             const totalCost = cart.reduce((sum, item) => sum + (item.purchase_price * item.quantity), 0);
 
-            // 1. Create Sale
-            const { data: sale, error: saleError } = await supabase
-                .from('sales')
-                .insert([{
-                    total_amount: totalAmount,
-                    total_profit: totalAmount - totalCost,
-                    payment_method: method
-                }])
-                .select()
-                .single();
+            // Prepare Data for RPC
+            const invoiceData = {
+                invoice_number: `PER-${Date.now()}`,
+                invoice_type: 'retail',
+                invoice_date: new Date().toISOString().split('T')[0],
+                cari_id: selectedCustomer?.id || null,
+                cari_name: selectedCustomer?.name || 'Perakende Müşterisi',
+                grand_total: totalAmount,
+                subtotal: totalAmount / 1.2,
+                total_vat: totalAmount - (totalAmount / 1.2),
+                payment_status: 'paid',
+                status: 'approved',
+                notes: `Mobil POS Satışı - ${method}`
+            };
 
-            if (saleError) throw saleError;
-
-            // 2. Create Sale Items
-            const saleItems = cart.map(item => ({
-                sale_id: sale.id,
+            const itemsData = cart.map(item => ({
                 product_id: item.id,
+                item_name: item.name,
+                item_code: item.barcode,
                 quantity: item.quantity,
-                unit_price: item.sale_price
+                unit_price: item.sale_price,
+                line_total: item.sale_price * item.quantity,
+                vat_rate: 20
             }));
 
-            const { error: itemsError } = await supabase.from('sale_items').insert(saleItems);
-            if (itemsError) throw itemsError;
+            // Call the Transactional RPC
+            const { data, error } = await supabase.rpc('create_pos_invoice', {
+                p_tenant_id: tenantId,
+                p_invoice_data: invoiceData,
+                p_items_data: itemsData
+            });
 
-            // 3. Decrement Stock (Manual Update for Reliability)
-            for (const item of cart) {
-                const { data: currentProduct } = await supabase
-                    .from('products')
-                    .select('stock_quantity')
-                    .eq('id', item.id)
-                    .single();
-
-                if (currentProduct) {
-                    const newStock = currentProduct.stock_quantity - item.quantity;
-                    await supabase
-                        .from('products')
-                        .update({
-                            stock_quantity: newStock,
-                            status: newStock <= 0 ? 'passive' : 'active'
-                        })
-                        .eq('id', item.id);
-                }
-            }
+            if (error) throw error;
 
             toast.success(`Satış Başarılı! (${method})`);
             setCart([]);
@@ -366,6 +378,40 @@ export default function POSPage() {
                                 </button>
                             </div>
 
+                            {/* Customer Selection */}
+                            <div className="px-6 py-3 border-b border-white/5 bg-black/20">
+                                <button
+                                    onClick={() => setShowCustomerModal(true)}
+                                    className="w-full flex items-center justify-between p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-colors group"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${selectedCustomer ? 'bg-blue-500 text-white' : 'bg-white/10 text-secondary'}`}>
+                                            <Users size={20} />
+                                        </div>
+                                        <div className="text-left">
+                                            <p className="text-[10px] uppercase font-bold text-secondary tracking-wider">Müşteri (Cari)</p>
+                                            <p className={`font-bold ${selectedCustomer ? 'text-white' : 'text-white/50'}`}>
+                                                {selectedCustomer ? selectedCustomer.name : 'Müşteri Seçiniz'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="bg-white/10 p-1.5 rounded-lg">
+                                        {selectedCustomer ? (
+                                            <X
+                                                size={16}
+                                                className="text-white"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedCustomer(null);
+                                                }}
+                                            />
+                                        ) : (
+                                            <ChevronRight size={16} className="text-white" />
+                                        )}
+                                    </div>
+                                </button>
+                            </div>
+
                             {/* Cart Items */}
                             <div className="flex-1 overflow-y-auto p-4 space-y-3">
                                 {cart.map(item => (
@@ -450,6 +496,72 @@ export default function POSPage() {
                             </div>
                         </motion.div>
                     </>
+                )}
+            </AnimatePresence>
+
+            {/* Customer Selection Modal */}
+            <AnimatePresence>
+                {showCustomerModal && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        className="fixed inset-0 z-[60] bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
+                    >
+                        <div className="w-full max-w-sm bg-[#0f172a] rounded-3xl border border-white/10 overflow-hidden flex flex-col max-h-[80vh]">
+                            <div className="p-4 border-b border-white/10 flex items-center justify-between">
+                                <h3 className="text-lg font-black text-white">Müşteri Seç</h3>
+                                <button onClick={() => setShowCustomerModal(false)} className="p-2 bg-white/5 rounded-full hover:bg-white/10">
+                                    <X className="w-5 h-5 text-white" />
+                                </button>
+                            </div>
+
+                            <div className="p-4">
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-3 w-5 h-5 text-secondary" />
+                                    <input
+                                        type="text"
+                                        placeholder="Müşteri ara..."
+                                        className="w-full bg-black/20 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white focus:outline-none focus:border-blue-500/50"
+                                        value={customerSearch}
+                                        onChange={(e) => setCustomerSearch(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                                {customers
+                                    .filter(c => c.name.toLowerCase().includes(customerSearch.toLowerCase()))
+                                    .map(customer => (
+                                        <button
+                                            key={customer.id}
+                                            onClick={() => {
+                                                setSelectedCustomer(customer);
+                                                setShowCustomerModal(false);
+                                                toast.success(`Müşteri seçildi: ${customer.name}`);
+                                            }}
+                                            className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all ${selectedCustomer?.id === customer.id
+                                                ? 'bg-blue-600/20 border-blue-500/50'
+                                                : 'bg-white/5 border-white/5 hover:bg-white/10'
+                                                }`}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
+                                                    {customer.name.substring(0, 2).toUpperCase()}
+                                                </div>
+                                                <div className="text-left">
+                                                    <p className="font-bold text-white text-sm">{customer.name}</p>
+                                                    <p className="text-xs text-secondary">{customer.phone || 'Telefon yok'}</p>
+                                                </div>
+                                            </div>
+                                            {selectedCustomer?.id === customer.id && (
+                                                <CheckCircle className="w-5 h-5 text-blue-400" />
+                                            )}
+                                        </button>
+                                    ))}
+                            </div>
+                        </div>
+                    </motion.div>
                 )}
             </AnimatePresence>
 

@@ -7,5 +7,5 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Tenant context helper
 export const setCurrentTenant = async (tenantId: string) => {
-    await supabase.rpc('set_tenant_context', { tenant_id: tenantId });
+    await supabase.rpc('set_current_tenant', { tenant_id: tenantId });
 };
