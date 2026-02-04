@@ -91,9 +91,17 @@ export default function BarcodeScanner() {
 
         playBeep();
 
-        // Flash'ı otomatik kapat
-        if (torchOn) {
-            await toggleTorch();
+        // Flash'ı otomatik kapat (iOS uyumlu)
+        if (torchOn && streamRef.current) {
+            try {
+                const track = streamRef.current.getVideoTracks()[0];
+                await track.applyConstraints({
+                    advanced: [{ torch: false } as any]
+                });
+                setTorchOn(false);
+            } catch (error) {
+                console.log('Flash kapatılamadı:', error);
+            }
         }
 
         setScanning(false);
