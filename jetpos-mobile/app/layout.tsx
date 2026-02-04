@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import PWARegister from "@/components/PWARegister";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -32,18 +33,8 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/logo.png" />
       </head>
       <body className="antialiased">
+        <PWARegister />
         {children}
-        <script dangerouslySetInnerHTML={{
-          __html: `
-            if ('serviceWorker' in navigator) {
-              window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
-                  .then((reg) => console.log('✅ Service Worker registered'))
-                  .catch((err) => console.log('❌ SW registration failed:', err));
-              });
-            }
-          `
-        }} />
       </body>
     </html>
   );
