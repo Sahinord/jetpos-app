@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { AlertTriangle, Package } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Product {
     id: string;
@@ -14,6 +15,21 @@ interface Product {
     critical_stock_level: number;
 }
 
+const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.1
+        }
+    }
+};
+
+const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    show: { y: 0, opacity: 1 }
+};
+
 export default function LowStockPage() {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
@@ -21,15 +37,11 @@ export default function LowStockPage() {
     useEffect(() => {
         fetchLowStockProducts();
 
-        // Polling - Her 5 saniyede bir güncelle
         const interval = setInterval(() => {
-            console.log('🔄 Low stock güncelleniyor...');
             fetchLowStockProducts();
-        }, 5000);
+        }, 10000);
 
-        return () => {
-            clearInterval(interval);
-        };
+        return () => clearInterval(interval);
     }, []);
 
     const fetchLowStockProducts = async () => {
@@ -37,10 +49,9 @@ export default function LowStockPage() {
             const tenantId = localStorage.getItem('tenantId');
             if (!tenantId) return;
 
-            // RLS context set et
             await supabase.rpc('set_current_tenant', { tenant_id: tenantId });
 
-            const { data, error } = await supabase
+            const { data } = await supabase
                 .from('products')
                 .select('id, name, barcode, stock_quantity, sale_price, critical_stock_level')
                 .lte('stock_quantity', 10)
@@ -57,77 +68,128 @@ export default function LowStockPage() {
     };
 
     const getStockStatus = (quantity: number) => {
-        if (quantity === 0) return { label: 'Tükendi', color: 'bg-red-600' };
-        if (quantity <= 5) return { label: 'Kritik', color: 'bg-orange-600' };
-        return { label: 'Düşük', color: 'bg-yellow-600' };
+        if (quantity === 0) return { label: 'TÜKENDİ', color: 'rose', glow: 'rgba(244, 63, 94, 0.5)' };
+        if (quantity <= 5) return { label: 'KRİTİK', color: 'orange', glow: 'rgba(245, 158, 11, 0.5)' };
+        return { label: 'DÜŞÜK', color: 'amber', glow: 'rgba(217, 119, 6, 0.5)' };
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 pb-24">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-red-600 to-orange-600 p-6 pb-8">
-                <div className="flex items-center gap-3 mb-2">
-                    <AlertTriangle className="w-8 h-8 text-white" />
-                    <h1 className="text-2xl font-black text-white">Eksik Stok</h1>
-                </div>
-                <p className="text-white/80 text-sm">
-                    {loading ? '...' : `${products.length} ürünün stoğu düşük`}
-                </p>
+        <div className="relative min-h-screen bg-background overflow-x-hidden pb-40">
+            {/* Ambient Lights */}
+            <div className="fixed inset-0 pointer-events-none">
+                <div className="absolute top-[-5%] left-[-10%] w-[50%] h-[30%] bg-rose-500/10 rounded-full blur-[100px]" />
+                <div className="absolute bottom-[-5%] right-[-10%] w-[50%] h-[30%] bg-orange-500/10 rounded-full blur-[100px]" />
             </div>
 
-            {/* Products List */}
-            <div className="p-4 -mt-4 space-y-3">
-                {loading ? (
-                    <div className="text-center py-8">
-                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-red-500"></div>
-                        <p className="text-gray-400 mt-2">Yükleniyor...</p>
+            {/* Premium Header */}
+            <motion.div
+                initial={{ y: -50, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                className="sticky top-0 z-50 glass border-b border-white/5 p-6 backdrop-blur-2xl"
+            >
+                <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-rose-500 animate-pulse shadow-[0_0_8px_rgba(244,63,94,0.8)]" />
+                            <p className="text-[10px] font-black text-secondary uppercase tracking-[4px]">Stok Uyarıları</p>
+                        </div>
+                        <h1 className="text-2xl font-black text-white tracking-tight leading-none">Eksik Ürünler</h1>
                     </div>
-                ) : products.length === 0 ? (
-                    <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10 text-center">
-                        <Package className="w-16 h-16 text-green-600 mx-auto mb-4" />
-                        <h3 className="text-white font-bold text-lg mb-2">Harika!</h3>
-                        <p className="text-gray-400">Tüm ürünlerin stoğu yeterli seviyede</p>
+                    <div className="w-12 h-12 rounded-2xl glass-dark border border-white/10 flex items-center justify-center relative overflow-hidden group">
+                        <div className="absolute inset-0 bg-rose-500/10 group-hover:bg-rose-500/20 transition-colors" />
+                        <AlertTriangle className="w-6 h-6 text-rose-500 relative z-10" />
                     </div>
-                ) : (
-                    products.map((product) => {
-                        const status = getStockStatus(product.stock_quantity);
-                        return (
-                            <div
-                                key={product.id}
-                                className="bg-white/5 backdrop-blur-xl rounded-2xl p-4 border-l-4 border-red-600"
-                            >
-                                <div className="flex items-start justify-between mb-3">
-                                    <div className="flex-1">
-                                        <h3 className="text-white font-bold mb-1">{product.name}</h3>
-                                        <p className="text-xs text-gray-400 font-mono">{product.barcode}</p>
-                                    </div>
-                                    <div className={`px-3 py-1 rounded-full ${status.color}`}>
-                                        <span className="text-white text-xs font-bold">{status.label}</span>
-                                    </div>
-                                </div>
+                </div>
+            </motion.div>
 
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <p className="text-xs text-gray-400 mb-1">Mevcut Stok</p>
-                                        <p className="text-2xl font-black text-white">
-                                            {product.stock_quantity}
-                                        </p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-xs text-gray-400 mb-1">Satış Fiyatı</p>
-                                        <p className="text-lg font-bold text-blue-400">
-                                            ₺{product.sale_price.toFixed(2)}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <button className="w-full mt-3 py-2 bg-blue-600 text-white font-bold rounded-xl text-sm">
-                                    Sipariş Ver
-                                </button>
+            {/* Content Area */}
+            <div className="p-6 relative z-10">
+                <AnimatePresence mode="wait">
+                    {loading ? (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="flex flex-col items-center justify-center py-20 space-y-4"
+                        >
+                            <div className="w-12 h-12 border-2 border-rose-500/20 border-t-rose-500 rounded-full animate-spin" />
+                            <p className="text-[10px] font-black text-secondary uppercase tracking-[3px]">Veriler Alınıyor...</p>
+                        </motion.div>
+                    ) : products.length === 0 ? (
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="glass-dark border border-white/10 rounded-[2.5rem] p-12 text-center space-y-6"
+                        >
+                            <div className="w-24 h-24 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto border border-emerald-500/20 mb-2">
+                                <Package className="w-10 h-10 text-emerald-500" />
                             </div>
-                        );
-                    })
-                )}
+                            <div className="space-y-2">
+                                <h3 className="text-2xl font-black text-white tracking-tight">Harika Haber!</h3>
+                                <p className="text-sm text-secondary font-medium">Tüm ürünlerin stoğu şu an güvenli seviyede görünüyor.</p>
+                            </div>
+                        </motion.div>
+                    ) : (
+                        <motion.div
+                            variants={containerVariants}
+                            initial="hidden"
+                            animate="show"
+                            className="space-y-4"
+                        >
+                            <p className="text-[10px] font-black text-secondary uppercase tracking-[3px] ml-2 mb-6">
+                                Toplam {products.length} Kritik Kayıt
+                            </p>
+
+                            {products.map((product: Product) => {
+                                const status = getStockStatus(product.stock_quantity);
+                                return (
+                                    <motion.div
+                                        key={product.id}
+                                        variants={itemVariants}
+                                        whileTap={{ scale: 0.98 }}
+                                        className="relative overflow-hidden glass-dark border border-white/10 rounded-[2rem] p-5 group"
+                                    >
+                                        {/* Status Glow Overlay */}
+                                        <div className={`absolute top-0 right-0 w-32 h-32 bg-${status.color}-500/5 rounded-full blur-3xl -mr-16 -mt-16`} />
+
+                                        <div className="flex items-start justify-between mb-6">
+                                            <div className="space-y-1">
+                                                <h3 className="text-lg font-black text-white leading-tight tracking-tight uppercase group-hover:text-rose-400 transition-colors">
+                                                    {product.name}
+                                                </h3>
+                                                <p className="text-[10px] font-mono text-secondary tracking-widest">{product.barcode}</p>
+                                            </div>
+                                            <div className={`px-4 py-1.5 rounded-full bg-${status.color}-500/10 border border-${status.color}-500/20 shadow-lg shadow-${status.color}-500/5`}>
+                                                <span className={`text-[9px] font-black text-${status.color}-500 tracking-[2px]`}>{status.label}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="glass p-4 rounded-2xl border-white/5">
+                                                <p className="text-[10px] font-black text-secondary uppercase tracking-[2px] mb-1">Mevcut Stok</p>
+                                                <div className="flex items-baseline gap-2">
+                                                    <span className="text-3xl font-black text-white tabular-nums">{product.stock_quantity}</span>
+                                                    <span className="text-[10px] font-bold text-secondary uppercase tracking-widest">Adet</span>
+                                                </div>
+                                            </div>
+                                            <div className="glass p-4 rounded-2xl border-white/5">
+                                                <p className="text-[10px] font-black text-secondary uppercase tracking-[2px] mb-1">Satış Fiyatı</p>
+                                                <div className="flex items-baseline gap-1">
+                                                    <span className="text-xs font-bold text-blue-500/50">₺</span>
+                                                    <span className="text-2xl font-black text-white tabular-nums">{product.sale_price.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <button className="w-full mt-4 h-14 bg-blue-500 hover:bg-blue-600 rounded-2xl text-white font-black text-[10px] uppercase tracking-[3px] shadow-xl shadow-blue-500/20 transition-all active:scale-95 flex items-center justify-center gap-2 group-hover:bg-blue-600">
+                                            <span>Hızlı Sipariş Ver</span>
+                                        </button>
+                                    </motion.div>
+                                );
+                            })}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
 
             <BottomNav />

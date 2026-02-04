@@ -241,21 +241,14 @@ export default function InvoicePanel() {
 
     return (
         <div className="space-y-4 max-w-[1440px] mx-auto p-2">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
-                        <FileText className="w-6 h-6 text-primary" /> E-Fatura Merkezi
-                    </h1>
-                </div>
-                <div className="flex gap-2">
-                    <button onClick={() => openInvoice(null, 'manual')} className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg transition-all active:scale-95">
-                        <Plus className="w-4 h-4" /> YENİ FATURA OLUŞTUR
-                    </button>
-                    <button onClick={fetchData} className="glass-card p-2 text-secondary hover:text-primary transition-all">
-                        <Search className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                    </button>
-                </div>
+            {/* Header / Actions */}
+            <div className="flex items-center justify-end gap-2">
+                <button onClick={() => openInvoice(null, 'manual')} className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg transition-all active:scale-95">
+                    <Plus className="w-4 h-4" /> YENİ FATURA OLUŞTUR
+                </button>
+                <button onClick={fetchData} className="glass-card p-2 text-secondary hover:text-primary transition-all">
+                    <Search className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                </button>
             </div>
 
             {/* View Switcher */}

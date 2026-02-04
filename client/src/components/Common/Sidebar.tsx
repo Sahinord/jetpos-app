@@ -28,6 +28,7 @@ import {
     Palette,
     Store,
     CreditCard,
+    ShoppingBag,
     FileBarChart,
     Brain,
     Boxes,
@@ -82,6 +83,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
     const { currentTenant } = useTenant();
     const [openCategories, setOpenCategories] = useState<string[]>(["main", "sales", "products"]);
     const [, setFavoritesVersion] = useState(0); // Force re-render on favorites change
+    const [isBottomPanelOpen, setIsBottomPanelOpen] = useState(true); // Alt panel açık/kapalı
 
     // Listen for favorites changes
     useEffect(() => {
@@ -124,44 +126,6 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
             ]
         },
         {
-            id: "finance",
-            label: "Finans",
-            icon: Wallet,
-            items: [
-                { id: "mali_takvim", label: "Mali Takvim", icon: CalendarDays, feature: null, description: "Ödemelerinizi, tahsilatlarınızı ve vergi takviminizi yönetin." },
-                { id: "expenses", label: "Gider Yönetimi", icon: Receipt, feature: null, description: "İşletme giderlerinin kaydedilmesi ve takibi." },
-                { id: "calculator", label: "Kâr Hesaplama", icon: Calculator, feature: "profit_calculator", description: "Ürün bazlı veya genel kâr oranlarını hesaplama aracı." },
-            ]
-        },
-        {
-            id: "analytics",
-            label: "Raporlar & Analiz",
-            icon: BarChart3,
-            items: [
-                { id: "reports", label: "Satış Raporları", icon: FileBarChart, feature: "reports", description: "Geleneksel ve gelişmiş satış performans raporları." },
-                { id: "simulation", label: "Fiyat Simülasyonu", icon: TrendingUp, feature: "price_simulator", description: "Fiyat değişikliklerinin kârlılık üzerindeki etkilerini simüle etme aracı." },
-                { id: "ai_insights", label: "AI Öngörüleri", icon: Brain, feature: null, description: "Yapay zeka analizleri ile işletmenize özel büyüme önerileri." },
-            ]
-        },
-        {
-            id: "tools",
-            label: "Araçlar",
-            icon: Layers,
-            items: [
-                { id: "label_designer", label: "Ürün Etiketleri", icon: Tags, feature: null, description: "Barkodlu fiyat etiketleri tasarla ve yazdır." },
-            ]
-        },
-        {
-            id: "employees",
-            label: "Çalışan Yönetimi",
-            icon: Users,
-            feature: "employee_module",
-            items: [
-                { id: "employee_manager", label: "Çalışan Listesi", icon: Users, feature: null, description: "Personel bilgileri ve tanımlamalarını yönet." },
-                { id: "shift_manager", label: "Vardiya Takibi", icon: Clock, feature: null, description: "Çalışan giriş/çıkış ve vardiya performans takibi." },
-            ]
-        },
-        {
             id: "cari_hesap",
             label: "Cari Hesap Takibi",
             icon: Users,
@@ -194,7 +158,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
                     icon: PieChart,
                     items: [
                         { id: "cari_liste", label: "Cari Kartı Listesi", icon: ClipboardList, feature: null, description: "Tüm cari hesapların detaylı listesi." },
-                        { id: "cari_bakiye", label: "Bakiye Raporu", icon: Scale, feature: null, description: "Carilerin güncel borç/alacak bakiye durum raporu." },
+                        { id: "cari_bakiye", label: "Bakiye Raporu", icon: Scale, feature: null, description: "Bankalardaki güncel bakiye ve borç/alacak durumları." },
                         { id: "cari_hareket", label: "Hareket Raporu", icon: FileSearch, feature: null, description: "Cari hesap ekstreleri ve işlem geçmişi." },
                         { id: "cari_mutabakat", label: "Mutabakat Raporu", icon: FileText, feature: null, description: "Cari bakiyelerin doğrulanma ve mutabakat süreci." },
                         { id: "cari_gunluk", label: "Günlük Hareket", icon: CalendarDays, feature: null, description: "Günlük gerçekleşen tüm cari işlemler." },
@@ -277,6 +241,97 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
                         { id: "bank_history", label: "Banka Hareket Raporu", icon: FileSearch, feature: null, description: "Banka hesaplarına ait detaylı ekstre ve işlem geçmişi." },
                     ]
                 }
+            ]
+        },
+        {
+            id: "invoice_waybill_management",
+            label: "Fatura ve İrsaliye Yönetimi",
+            icon: FileText,
+            subCategories: [
+                {
+                    id: "irsaliye_sub",
+                    label: "İrsaliye İşlemleri",
+                    icon: Package,
+                    items: [
+                        { id: "alis_irsaliyesi", label: "Alış İrsaliyesi", icon: FileInput, description: "Mal alımında gelen irsaliyelerin kaydı." },
+                        { id: "satis_irsaliyesi", label: "Satış İrsaliyesi", icon: FileOutput, description: "Müşterilere sevkiyat öncesi kesilen sevk irsaliyesi." },
+                        { id: "satis_iade_irsaliyesi", label: "Satış İade İrsaliyesi", icon: ArrowDownLeft, description: "Müşteriden geri gelen mallar için kayıt." },
+                        { id: "alis_iade_irsaliyesi", label: "Alış İade İrsaliyesi", icon: ArrowUpRight, description: "Tedarikçiye geri gönderilen mallar için kayıt." },
+                        { id: "sevk_irsaliyesi", label: "Sipariş Sevk İrsaliyesi", icon: ArrowLeftRight, description: "Şubeler veya siparişler arası sevk irsaliyesi." },
+                    ]
+                },
+                {
+                    id: "fatura_sub",
+                    label: "Fatura İşlemleri",
+                    icon: FileText,
+                    items: [
+                        { id: "alis_faturasi", label: "Alış Faturası", icon: FilePlus, description: "Tedarikçilerden gelen mal ve stok faturaları." },
+                        { id: "satis_faturasi", label: "Satış Faturası", icon: FileText, description: "Toptan müşterilere kesilen kurumsal faturalar." },
+                        { id: "perakende_satis_faturasi", label: "Perakende Satış", icon: ShoppingBag, description: "Nihai tüketicilere kesilen perakende faturaları." },
+                        { id: "iade_faturasi", label: "İade Faturası", icon: History, description: "İade alınan veya iade edilen malların fatura takibi." },
+                        { id: "iade_fiyat_farki", label: "İade Fiyat Farkı", icon: Calculator, description: "Fiyat farkı kaynaklı dekont ve faturalar." },
+                        { id: "emsaliyet_fisleri", label: "Proforma Fatura", icon: ClipboardList, description: "Fatura öncesi hazırlanan emsaliyet belgeleri." },
+                    ]
+                },
+                {
+                    id: "hizmet_sub",
+                    label: "Hizmet İşlemleri",
+                    icon: Layers,
+                    items: [
+                        { id: "alinan_hizmet_faturasi", label: "Alınan Hizmet Fat.", icon: FileInput, description: "Dışarıdan alınan hizmetlerin (elektrik, kira vb.) kaydı." },
+                        { id: "yapilan_hizmet_faturasi", label: "Yapılan Hizmet Fat.", icon: FileOutput, description: "Müşteriye verilen hizmetlerin fatura kaydı." },
+                        { id: "yapilan_hizmet_iadesi", label: "Yapılan Hizmet İadesi", icon: ArrowDownLeft, description: "Hizmet iade giriş işlemleri." },
+                        { id: "alinan_hizmet_iadesi", label: "Alınan Hizmet İadesi", icon: ArrowUpRight, description: "Alınan hizmetlerin iade çıkış işlemleri." },
+                    ]
+                },
+                {
+                    id: "rapor_sub",
+                    label: "Raporlar / Analizler",
+                    icon: BarChart3,
+                    items: [
+                        { id: "fatura_listesi", label: "Fatura Listesi", icon: FileText, description: "Kesilen ve alınan tüm faturaların detaylı dökümü." },
+                        { id: "fatura_kdv_listesi", label: "KDV Listesi", icon: PieChart, description: "Faturalardaki KDV dökümleri ve toplamları." },
+                        { id: "kdv_analiz_raporu", label: "KDV Analiz Raporu", icon: Activity, description: "Özet ve detaylı KDV durum analizleri." },
+                    ]
+                },
+            ]
+        },
+        {
+            id: "finance",
+            label: "Finans",
+            icon: Wallet,
+            items: [
+                { id: "mali_takvim", label: "Mali Takvim", icon: CalendarDays, feature: null, description: "Ödemelerinizi, tahsilatlarınızı ve vergi takviminizi yönetin." },
+                { id: "expenses", label: "Gider Yönetimi", icon: Receipt, feature: null, description: "İşletme giderlerinin kaydedilmesi ve takibi." },
+                { id: "calculator", label: "Kâr Hesaplama", icon: Calculator, feature: "profit_calculator", description: "Ürün bazlı veya genel kâr oranlarını hesaplama aracı." },
+            ]
+        },
+        {
+            id: "employees",
+            label: "Çalışan Yönetimi",
+            icon: Users,
+            feature: "employee_module",
+            items: [
+                { id: "employee_manager", label: "Çalışan Listesi", icon: Users, feature: null, description: "Personel bilgileri ve tanımlamalarını yönet." },
+                { id: "shift_manager", label: "Vardiya Takibi", icon: Clock, feature: null, description: "Çalışan giriş/çıkış ve vardiya performans takibi." },
+            ]
+        },
+        {
+            id: "analytics",
+            label: "Raporlar & Analiz",
+            icon: BarChart3,
+            items: [
+                { id: "reports", label: "Satış Raporları", icon: FileBarChart, feature: "reports", description: "Geleneksel ve gelişmiş satış performans raporları." },
+                { id: "simulation", label: "Fiyat Simülasyonu", icon: TrendingUp, feature: "price_simulator", description: "Fiyat değişikliklerinin kärlılık üzerindeki etkilerini simüle etme aracı." },
+                { id: "ai_insights", label: "AI Öngörüleri", icon: Brain, feature: null, description: "Yapay zeka analizleri ile işletmenize özel büyüme önerileri." },
+            ]
+        },
+        {
+            id: "tools",
+            label: "Araçlar",
+            icon: Layers,
+            items: [
+                { id: "label_designer", label: "Ürün Etiketleri", icon: Tags, feature: null, description: "Barkodlu fiyat etiketleri tasarla ve yazdır." },
             ]
         },
     ];
@@ -457,7 +512,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
                                             transition={{ duration: 0.2 }}
                                             className="overflow-hidden group-hover/cat:overflow-visible"
                                         >
-                                            <div className="pl-4 mt-1 space-y-1 border-l-2 border-white/10 ml-6">
+                                            <div className="pl-4 mt-1 space-y-1 border-l-2 border-[var(--color-border)] ml-6">
                                                 {/* Render SubCategories if exists */}
                                                 {hasSubCategories && category.subCategories!.map((subCategory) => {
                                                     const subFilteredItems = getFilteredItems(subCategory.items);
@@ -496,7 +551,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
                                                                         transition={{ duration: 0.2 }}
                                                                         className="overflow-hidden group-hover/subcat:overflow-visible"
                                                                     >
-                                                                        <div className="pl-3 mt-1 space-y-0.5 border-l border-white/5 ml-4">
+                                                                        <div className="pl-3 mt-1 space-y-0.5 border-l border-[var(--color-border)] ml-4">
                                                                             {subFilteredItems.map((item) => {
                                                                                 const isItemFavorite = isFavorite(item.id);
 
@@ -519,9 +574,9 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
                                                                                             {showHelpIcons && item.description && (
                                                                                                 <div className="relative group/info">
                                                                                                     <HelpCircle className="w-3 h-3 text-secondary/30 hover:text-primary transition-colors cursor-help" />
-                                                                                                    <div className="absolute right-0 bottom-full mb-2 w-48 p-3 bg-[#0a1628]/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl opacity-0 group-hover/info:opacity-100 transition-all pointer-events-none z-[100] translate-y-1 group-hover/info:translate-y-0 text-center">
-                                                                                                        <div className="absolute right-2 top-full w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-white/10" />
-                                                                                                        <p className="text-[10px] text-white/90 leading-relaxed font-medium">
+                                                                                                    <div className="absolute right-0 bottom-full mb-2 w-48 p-3 bg-[var(--color-card)]/95 backdrop-blur-xl border border-[var(--color-border)] rounded-xl shadow-2xl opacity-0 group-hover/info:opacity-100 transition-all pointer-events-none z-[100] translate-y-1 group-hover/info:translate-y-0 text-center">
+                                                                                                        <div className="absolute right-2 top-full w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-[var(--color-border)]" />
+                                                                                                        <p className="text-[10px] text-[var(--color-foreground)]/90 leading-relaxed font-medium">
                                                                                                             {item.description}
                                                                                                         </p>
                                                                                                     </div>
@@ -648,78 +703,106 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
                 )}
             </div>
 
-            {/* Bottom Section - User & Settings */}
-            <div className="p-4 border-t border-border mt-auto bg-primary/5">
-                {/* User Info */}
-                <div className="flex items-center space-x-3 mb-3 px-2">
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-lg">
-                        <span className="text-white font-bold text-xs">
-                            {currentTenant?.company_name?.substring(0, 2).toUpperCase() || 'JP'}
-                        </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-[var(--color-sidebar-foreground)] truncate">
-                            {currentTenant?.company_name || 'JetPos'}
-                        </p>
-                        <p className="text-xs text-[var(--color-sidebar-muted)]">Admin</p>
-                    </div>
-                </div>
-
-                {/* Settings & Logout */}
-                <div className="space-y-1">
-                    <button
-                        onClick={() => handleTabChange('settings')}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm ${activeTab === 'settings'
-                            ? 'sidebar-item-active'
-                            : 'text-[var(--color-sidebar-muted)] hover:bg-primary/5 hover:text-[var(--color-sidebar-foreground)]'
-                            }`}
+            {/* Bottom Section - User & Settings (Collapsible) */}
+            <div className="border-t border-border mt-auto bg-primary/5 overflow-hidden">
+                {/* Toggle Button */}
+                <button
+                    onClick={() => setIsBottomPanelOpen(!isBottomPanelOpen)}
+                    className="w-full py-2 flex items-center justify-center hover:bg-primary/5 transition-colors group"
+                >
+                    <motion.div
+                        animate={{ rotate: isBottomPanelOpen ? 180 : 0 }}
+                        transition={{ duration: 0.3 }}
                     >
-                        <Settings className="w-4 h-4" />
-                        <span className="font-semibold">Ayarlar</span>
-                    </button>
+                        <ChevronDown className="w-4 h-4 text-secondary group-hover:text-foreground transition-colors" />
+                    </motion.div>
+                </button>
 
-                    <button
-                        onClick={() => handleTabChange('support')}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm ${activeTab === 'support'
-                            ? 'sidebar-item-active'
-                            : 'text-[var(--color-sidebar-muted)] hover:bg-primary/5 hover:text-[var(--color-sidebar-foreground)]'
-                            }`}
-                    >
-                        <LifeBuoy className="w-4 h-4" />
-                        <span className="font-semibold">Destek</span>
-                    </button>
+                {/* Collapsible Content */}
+                <AnimatePresence initial={false}>
+                    {isBottomPanelOpen && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.3, ease: "easeInOut" }}
+                            className="overflow-hidden"
+                        >
+                            <div className="p-4">
+                                {/* User Info */}
+                                <div className="flex items-center space-x-3 mb-3 px-2">
+                                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-lg">
+                                        <span className="text-white font-bold text-xs">
+                                            {currentTenant?.company_name?.substring(0, 2).toUpperCase() || 'JP'}
+                                        </span>
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-bold text-[var(--color-sidebar-foreground)] truncate">
+                                            {currentTenant?.company_name || 'JetPos'}
+                                        </p>
+                                        <p className="text-xs text-[var(--color-sidebar-muted)]">Admin</p>
+                                    </div>
+                                </div>
 
-                    <button
-                        onClick={() => handleTabChange('profile')}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm ${activeTab === 'profile'
-                            ? 'sidebar-item-active'
-                            : 'text-[var(--color-sidebar-muted)] hover:bg-primary/5 hover:text-[var(--color-sidebar-foreground)]'
-                            }`}
-                    >
-                        <User className="w-4 h-4" />
-                        <span className="font-semibold">Profil</span>
-                    </button>
+                                {/* Settings & Logout */}
+                                <div className="space-y-1">
+                                    <button
+                                        onClick={() => handleTabChange('settings')}
+                                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm ${activeTab === 'settings'
+                                            ? 'sidebar-item-active'
+                                            : 'text-[var(--color-sidebar-muted)] hover:bg-primary/5 hover:text-[var(--color-sidebar-foreground)]'
+                                            }`}
+                                    >
+                                        <Settings className="w-4 h-4" />
+                                        <span className="font-semibold">Ayarlar</span>
+                                    </button>
 
-                    <button
-                        onClick={() => {
-                            localStorage.clear();
-                            window.location.reload();
-                        }}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-rose-400 hover:bg-rose-500/10 transition-all text-sm"
-                    >
-                        <LogOut className="w-4 h-4" />
-                        <span className="font-semibold">Çıkış Yap</span>
-                    </button>
-                </div>
+                                    <button
+                                        onClick={() => handleTabChange('support')}
+                                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm ${activeTab === 'support'
+                                            ? 'sidebar-item-active'
+                                            : 'text-[var(--color-sidebar-muted)] hover:bg-primary/5 hover:text-[var(--color-sidebar-foreground)]'
+                                            }`}
+                                    >
+                                        <LifeBuoy className="w-4 h-4" />
+                                        <span className="font-semibold">Destek</span>
+                                    </button>
 
-                {/* Version Info */}
-                <div className="flex items-center justify-between text-xs text-secondary mt-3 pt-3 border-t border-border px-2">
-                    <span className="flex items-center gap-1">
-                        <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                        Çevrimiçi
-                    </span>
-                    <span className="font-mono">v{process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0'}</span>
-                </div>
+                                    <button
+                                        onClick={() => handleTabChange('profile')}
+                                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm ${activeTab === 'profile'
+                                            ? 'sidebar-item-active'
+                                            : 'text-[var(--color-sidebar-muted)] hover:bg-primary/5 hover:text-[var(--color-sidebar-foreground)]'
+                                            }`}
+                                    >
+                                        <User className="w-4 h-4" />
+                                        <span className="font-semibold">Profil</span>
+                                    </button>
+
+                                    <button
+                                        onClick={() => {
+                                            localStorage.clear();
+                                            window.location.reload();
+                                        }}
+                                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-rose-400 hover:bg-rose-500/10 transition-all text-sm"
+                                    >
+                                        <LogOut className="w-4 h-4" />
+                                        <span className="font-semibold">Çıkış Yap</span>
+                                    </button>
+                                </div>
+
+                                {/* Version Info */}
+                                <div className="flex items-center justify-between text-xs text-secondary mt-3 pt-3 border-t border-border px-2">
+                                    <span className="flex items-center gap-1">
+                                        <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                                        Çevrimiçi
+                                    </span>
+                                    <span className="font-mono">v{process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0'}</span>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
         </aside>
     );

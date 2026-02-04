@@ -46,10 +46,29 @@ export default function TopBar({ activeTab }: { activeTab: string }) {
             "pos": "Satış Terminali",
             "history": "Satış Geçmişi",
             "invoice": "E-Fatura",
+            "alis_irsaliyesi": "Alış İrsaliyesi",
+            "satis_irsaliyesi": "Satış İrsaliyesi",
+            "satis_iade_irsaliyesi": "Satış İade İrsaliyesi",
+            "alis_iade_irsaliyesi": "Alış İade İrsaliyesi",
+            "sevk_irsaliyesi": "Sipariş Sevk İrsaliyesi",
+            "alis_faturasi": "Alış Faturası",
+            "satis_faturasi": "Satış Faturası",
+            "perakende_satis_faturasi": "Perakende Satış Faturası",
+            "iade_faturasi": "İade Faturası",
+            "iade_fiyat_farki": "İade Fiyat Farkı",
+            "emsaliyet_fisleri": "Proforma Fatura",
+            "alinan_hizmet_faturasi": "Alınan Hizmet Faturası",
+            "yapilan_hizmet_faturasi": "Yapılan Hizmet Faturası",
+            "yapilan_hizmet_iadesi": "Yapılan Hizmet İadesi",
+            "alinan_hizmet_iadesi": "Alınan Hizmet İadesi",
+            "fatura_listesi": "Fatura Listesi",
+            "fatura_kdv_listesi": "KDV Listesi",
+            "kdv_analiz_raporu": "KDV Analiz Raporu",
 
             // Ürün Yönetimi
             "products": "Ürün Listesi",
             "alerts": "Stok Uyarıları",
+            "label_designer": "Ürün Etiket Tasarımı",
 
             // Finans
             "expenses": "Gider Yönetimi",
@@ -97,6 +116,10 @@ export default function TopBar({ activeTab }: { activeTab: string }) {
             "bank_list": "Banka Listesi",
             "bank_balance": "Hesap Bakiye Raporu",
             "bank_history": "Banka Hareket Raporu",
+
+            // İnsan Kaynakları
+            "employee_manager": "Çalışan Yönetimi",
+            "shift_manager": "Vardiya Takibi",
 
             // Diğer
             "settings": "Ayarlar",

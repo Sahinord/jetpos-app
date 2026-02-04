@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { TenantProvider } from "@/lib/tenant-context";
+import ContextMenu from "@/components/Common/ContextMenu";
 
-const inter = Inter({
+const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-jakarta",
+  weight: ["300", "400", "500", "600", "700", "800"],
   fallback: ["system-ui", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
 });
 
@@ -21,14 +23,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="tr">
-      <body className={`${inter.variable} font-sans antialiased bg-background text-foreground relative min-h-screen overflow-x-hidden`}>
-        {/* Global Premium Background Effects */}
-        <div className="glow-container">
-          <div className="glow-top-left" />
-          <div className="glow-bottom-right" />
-        </div>
-
+      <body className={`${jakarta.variable} font-sans antialiased bg-background text-foreground relative min-h-screen overflow-x-hidden`}>
         <TenantProvider>
+          <ContextMenu />
           {children}
         </TenantProvider>
       </body>

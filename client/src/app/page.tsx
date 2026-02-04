@@ -39,6 +39,7 @@ import EmployeeManager from '@/components/Employee/EmployeeManager';
 import ShiftManager from '@/components/Employee/ShiftManager';
 import ProductLabelDesigner from '@/components/Tools/ProductLabelDesigner';
 import FinancialCalendar from '@/components/Calendar/FinancialCalendar';
+import InvoiceWaybillPage from '@/components/Waybill/InvoiceWaybillPage';
 
 export default function Home() {
   const { currentTenant, loading: tenantLoading } = useTenant();
@@ -747,6 +748,42 @@ export default function Home() {
               <ProductLabelDesigner products={products} showToast={showToast} />
             </div>
           )}
+
+          {/* İrsaliye Yönetimi (Oda 1) */}
+          {activeTab.startsWith("iw_irsaliye") || [
+            'alis_irsaliyesi', 'satis_irsaliyesi', 'satis_iade_irsaliyesi', 'alis_iade_irsaliyesi', 'sevk_irsaliyesi'
+          ].includes(activeTab) && (
+              <div className="max-w-[1800px] mx-auto w-full">
+                <InvoiceWaybillPage category="irsaliye" initialView={activeTab as any} />
+              </div>
+            )}
+
+          {/* Fatura İşlemleri (Oda 2) */}
+          {activeTab.startsWith("iw_fatura") || [
+            'alis_faturasi', 'satis_faturasi', 'perakende_satis_faturasi', 'iade_faturasi', 'iade_fiyat_farki', 'emsaliyet_fisleri'
+          ].includes(activeTab) && (
+              <div className="max-w-[1800px] mx-auto w-full">
+                <InvoiceWaybillPage category="fatura" initialView={activeTab as any} />
+              </div>
+            )}
+
+          {/* Hizmet İşlemleri (Oda 3) */}
+          {activeTab.startsWith("iw_hizmet") || [
+            'alinan_hizmet_faturasi', 'yapilan_hizmet_faturasi', 'yapilan_hizmet_iadesi', 'alinan_hizmet_iadesi'
+          ].includes(activeTab) && (
+              <div className="max-w-[1800px] mx-auto w-full">
+                <InvoiceWaybillPage category="hizmet" initialView={activeTab as any} />
+              </div>
+            )}
+
+          {/* Fatura Raporları (Oda 4) */}
+          {activeTab.startsWith("iw_rapor") || [
+            'fatura_listesi', 'fatura_kdv_listesi', 'kdv_analiz_raporu'
+          ].includes(activeTab) && (
+              <div className="max-w-[1800px] mx-auto w-full">
+                <InvoiceWaybillPage category="raporlar" initialView={activeTab as any} />
+              </div>
+            )}
 
           {activeTab === "alerts" && (
             <div className="max-w-[1500px] mx-auto w-full space-y-6">

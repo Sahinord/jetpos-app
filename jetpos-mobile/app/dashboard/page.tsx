@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import { TrendingUp, Package, AlertTriangle, DollarSign, Plus, ClipboardList, FileText } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
@@ -12,6 +13,21 @@ interface DashboardStats {
     totalValue: number;
     todaySales: number;
 }
+
+const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.1
+        }
+    }
+};
+
+const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    show: { y: 0, opacity: 1 }
+};
 
 export default function DashboardPage() {
     const router = useRouter();
@@ -29,15 +45,11 @@ export default function DashboardPage() {
         setCompanyName(name);
         fetchDashboardData();
 
-        // Polling - Her 5 saniyede bir güncelle
         const interval = setInterval(() => {
-            console.log('🔄 Dashboard güncelleniyor...');
             fetchDashboardData();
-        }, 5000); // 5 saniye
+        }, 10000); // 10 saniye - batarya dostu
 
-        return () => {
-            clearInterval(interval);
-        };
+        return () => clearInterval(interval);
     }, []);
 
     const fetchDashboardData = async () => {
@@ -61,7 +73,7 @@ export default function DashboardPage() {
                 .select('stock_quantity, sale_price');
 
             const totalValue = products?.reduce(
-                (sum, p) => sum + (p.stock_quantity * p.sale_price),
+                (sum: number, p: any) => sum + (p.stock_quantity * p.sale_price),
                 0
             ) || 0;
 
@@ -80,91 +92,143 @@ export default function DashboardPage() {
 
     const statCards = [
         {
-            title: 'Toplam Ürün',
+            title: 'TOPLAM ÜRÜN',
             value: stats.totalProducts,
+            unit: 'Kalem',
             icon: Package,
-            color: 'from-blue-500 to-blue-600',
-            bgColor: 'bg-blue-500/20',
+            accent: 'blue',
+            glow: 'rgba(59, 130, 246, 0.5)',
         },
         {
-            title: 'Eksik Stok',
+            title: 'EKSİK STOK',
             value: stats.lowStockCount,
+            unit: 'Kritik',
             icon: AlertTriangle,
-            color: 'from-red-500 to-red-600',
-            bgColor: 'bg-red-500/20',
+            accent: 'rose',
+            glow: 'rgba(244, 63, 94, 0.5)',
         },
         {
-            title: 'Stok Değeri',
-            value: `₺${stats.totalValue.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}`,
+            title: 'STOK DEĞERİ',
+            value: stats.totalValue.toLocaleString('tr-TR', { maximumFractionDigits: 0 }),
+            prefix: '₺',
             icon: DollarSign,
-            color: 'from-green-500 to-green-600',
-            bgColor: 'bg-green-500/20',
+            accent: 'emerald',
+            glow: 'rgba(16, 185, 129, 0.5)',
         },
         {
-            title: 'Bugün Satış',
-            value: `₺${stats.todaySales.toLocaleString('tr-TR')}`,
+            title: 'BUGÜN SATIŞ',
+            value: stats.todaySales.toLocaleString('tr-TR'),
+            prefix: '₺',
             icon: TrendingUp,
-            color: 'from-blue-500 to-blue-600',
-            bgColor: 'bg-blue-500/20',
+            accent: 'amber',
+            glow: 'rgba(245, 158, 11, 0.5)',
         },
     ];
 
+
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 pb-24">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 pb-8">
-                <p className="text-blue-200 text-sm font-bold mb-1">Hoş Geldiniz</p>
-                <h1 className="text-2xl font-black text-white">{companyName}</h1>
+        <div className="relative min-h-screen bg-background overflow-x-hidden pb-32">
+            {/* Ambient Background */}
+            <div className="fixed inset-0 pointer-events-none">
+                <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[40%] bg-blue-500/10 rounded-full blur-[120px]" />
+                <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[40%] bg-accent/10 rounded-full blur-[120px]" />
             </div>
 
-            {/* Stats Grid */}
-            <div className="p-4 -mt-4">
-                <div className="grid grid-cols-2 gap-4">
-                    {statCards.map((card, index) => {
+            {/* Premium Header */}
+            <motion.div
+                initial={{ y: -50, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                className="sticky top-0 z-50 glass border-b border-white/5 p-6 space-y-1"
+            >
+                <div className="flex items-center justify-between">
+                    <div>
+                        <p className="text-[10px] font-black text-secondary uppercase tracking-[4px]">Sistem Durumu</p>
+                        <h1 className="text-2xl font-black text-white tracking-tight">{companyName}</h1>
+                    </div>
+                    <div className="w-12 h-12 rounded-2xl glass-dark border border-white/10 flex items-center justify-center">
+                        <TrendingUp className="w-6 h-6 text-blue-400" />
+                    </div>
+                </div>
+            </motion.div>
+
+            {/* Stats Section */}
+            <div className="p-6 space-y-8 relative z-10">
+                <motion.div
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="show"
+                    className="grid grid-cols-2 gap-4"
+                >
+                    {statCards.map((card, idx) => {
                         const Icon = card.icon;
                         return (
-                            <div
-                                key={index}
-                                className={`bg-gradient-to-br ${card.color} rounded-3xl p-4 shadow-2xl`}
+                            <motion.div
+                                key={idx}
+                                variants={itemVariants}
+                                whileTap={{ scale: 0.95 }}
+                                className="glass-dark border border-white/10 rounded-[2rem] p-5 relative overflow-hidden group"
                             >
-                                <div className={`inline-block p-3 ${card.bgColor} rounded-2xl mb-3`}>
-                                    <Icon className="w-6 h-6 text-white" />
+                                <div className={`absolute top-0 right-0 w-16 h-16 bg-${card.accent}-500/5 rounded-full blur-2xl -mr-8 -mt-8`} />
+
+                                <div className="space-y-4">
+                                    <div className={`w-10 h-10 rounded-xl bg-${card.accent}-500/10 border border-${card.accent}-500/20 flex items-center justify-center`}>
+                                        <Icon className={`w-5 h-5 text-${card.accent}-400`} />
+                                    </div>
+
+                                    <div>
+                                        <p className="text-[9px] font-black text-secondary uppercase tracking-widest">{card.title}</p>
+                                        <div className="flex items-baseline gap-1 mt-1">
+                                            {card.prefix && <span className="text-xs font-bold text-white/50">{card.prefix}</span>}
+                                            <span className="text-xl font-black text-white">
+                                                {loading ? '...' : card.value}
+                                            </span>
+                                            {card.unit && <span className="text-[9px] font-bold text-secondary">{card.unit}</span>}
+                                        </div>
+                                    </div>
                                 </div>
-                                <p className="text-white/80 text-xs font-bold mb-1">{card.title}</p>
-                                <p className="text-2xl font-black text-white">
-                                    {loading ? '...' : card.value}
-                                </p>
-                            </div>
+                            </motion.div>
                         );
                     })}
-                </div>
+                </motion.div>
 
-                {/* Quick Actions */}
-                <div className="mt-6">
-                    <h2 className="text-white font-bold mb-3 px-2">Hızlı İşlemler</h2>
-                    <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-4 border border-white/10 space-y-3">
-                        <button
-                            onClick={() => router.push('/products')}
-                            className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all"
-                        >
-                            <Plus className="w-5 h-5" />
-                            Ürünleri Görüntüle
-                        </button>
-                        <button
-                            onClick={() => router.push('/scanner')}
-                            className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all"
-                        >
-                            <ClipboardList className="w-5 h-5" />
-                            Barkod ile Sayım
-                        </button>
-                        <button
-                            onClick={() => router.push('/low-stock')}
-                            className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all"
-                        >
-                            <FileText className="w-5 h-5" />
-                            Eksik Ürünler
-                        </button>
+                {/* Quick Actions (Next-Gen Edition) */}
+                <div className="space-y-6">
+                    <div className="flex items-center gap-4 px-2">
+                        <span className="text-[10px] font-black text-secondary uppercase tracking-[4px]">Hızlı Erişim</span>
+                        <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
                     </div>
+
+                    <motion.div
+                        variants={containerVariants}
+                        initial="hidden"
+                        animate="show"
+                        className="space-y-4"
+                    >
+                        {[
+                            { label: 'Ürünleri Yönet', icon: Plus, path: '/products', desc: 'Stok ve fiyatları günveller' },
+                            { label: 'Barkod Okut / Sayım', icon: ClipboardList, path: '/scanner', desc: 'Otomatik barkod tarama' },
+                            { label: 'Kritik Stok Takibi', icon: FileText, path: '/low-stock', desc: 'Biten ürünleri kontrol et' }
+                        ].map((action, idx) => (
+                            <motion.button
+                                key={idx}
+                                variants={itemVariants}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={() => router.push(action.path)}
+                                className="w-full glass-dark border border-white/10 rounded-3xl p-5 flex items-center gap-5 group transition-all hover:border-blue-500/30 shadow-xl"
+                            >
+                                <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center group-hover:bg-blue-500/20 transition-colors">
+                                    <action.icon className="w-6 h-6 text-blue-400" />
+                                </div>
+                                <div className="text-left">
+                                    <h3 className="text-base font-black text-white tracking-tight">{action.label}</h3>
+                                    <p className="text-xs text-secondary font-medium">{action.desc}</p>
+                                </div>
+                                <div className="ml-auto w-8 h-8 rounded-lg glass flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Plus className="w-4 h-4 text-white rotate-45" />
+                                </div>
+                            </motion.button>
+                        ))}
+                    </motion.div>
                 </div>
             </div>
 
@@ -172,4 +236,3 @@ export default function DashboardPage() {
         </div>
     );
 }
-

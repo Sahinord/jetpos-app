@@ -25,93 +25,92 @@ export default function ProductCard({ product, onClose, onScanAgain, onProductUp
     return (
         <>
             <motion.div
-                initial={{ opacity: 0, scale: 0.9, y: 50 }}
+                initial={{ opacity: 0, scale: 0.9, y: 30 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 50 }}
-                className="bg-slate-800/50 backdrop-blur-xl border border-white/10 rounded-3xl p-6 space-y-6 shadow-2xl"
+                exit={{ opacity: 0, scale: 0.9, y: 30 }}
+                className="glass-dark border border-white/10 rounded-[2.5rem] p-8 space-y-8 shadow-3xl relative overflow-hidden"
             >
-                {/* Header */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl -mr-16 -mt-16" />
+
                 <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center">
-                            <CheckCircle className="w-6 h-6 text-white" />
+                    <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                            <CheckCircle className="w-8 h-8 text-white" />
                         </div>
                         <div>
-                            <p className="text-xs font-bold text-blue-400 uppercase">Ürün Bulundu</p>
-                            <p className="text-sm text-gray-400">{product.barcode}</p>
+                            <p className="text-[10px] font-black text-emerald-400 uppercase tracking-[3px]">Ürün Doğrulandı</p>
+                            <p className="text-xs font-mono text-secondary mt-0.5">{product.barcode}</p>
                         </div>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="p-2 rounded-xl hover:bg-white/5 transition-all"
-                    >
-                        <X className="w-5 h-5 text-gray-400" />
-                    </button>
                 </div>
 
-                {/* Product Name */}
-                <div>
-                    <h2 className="text-2xl font-black text-white mb-1">{product.name}</h2>
+                <div className="space-y-2">
+                    <h2 className="text-3xl font-black text-white leading-tight tracking-tight">
+                        {product.name}
+                    </h2>
                     {product.categories && (
-                        <p className="text-sm text-gray-400">📁 {product.categories.name}</p>
+                        <div className="inline-flex items-center gap-2 px-3 py-1 glass rounded-full border-white/5">
+                            <Package className="w-3 h-3 text-blue-400" />
+                            <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider">{product.categories.name}</span>
+                        </div>
                     )}
                 </div>
 
-                {/* Price Info */}
                 <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-                        <p className="text-xs text-gray-400 mb-1">Alış Fiyatı</p>
-                        <p className="text-xl font-black text-white">
-                            ₺{product.purchase_price?.toFixed(2)}
-                        </p>
+                    <div className="glass p-5 rounded-3xl border-white/5 relative overflow-hidden group">
+                        <div className="absolute inset-0 bg-blue-500/0 group-hover:bg-blue-500/5 transition-colors" />
+                        <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-3">ALIŞ FİYATI</p>
+                        <div className="flex items-baseline gap-1">
+                            <span className="text-xs font-bold text-white/50">₺</span>
+                            <span className="text-2xl font-black text-white">{product.purchase_price?.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</span>
+                        </div>
                     </div>
-                    <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-2xl p-4 border border-blue-500/20">
-                        <p className="text-xs text-blue-400 mb-1">Satış Fiyatı</p>
-                        <p className="text-xl font-black text-white">
-                            ₺{product.sale_price?.toFixed(2)}
-                        </p>
+                    <div className="bg-gradient-to-br from-blue-600/20 to-accent/20 p-5 rounded-3xl border border-blue-500/20 relative overflow-hidden group">
+                        <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-3">SATIŞ FİYATI</p>
+                        <div className="flex items-baseline gap-1">
+                            <span className="text-xs font-bold text-blue-400/50">₺</span>
+                            <span className="text-2xl font-black text-white">{product.sale_price?.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</span>
+                        </div>
                     </div>
                 </div>
 
-                {/* Stock Info */}
-                <div className={`rounded-2xl p-4 border ${isLowStock
-                    ? 'bg-red-500/10 border-red-500/20'
-                    : 'bg-white/5 border-white/10'
+                <div className={`p-6 rounded-[2rem] border relative overflow-hidden transition-all ${isLowStock ? 'bg-red-500/10 border-red-500/20' : 'glass border-white/5'
                     }`}>
-                    <div className="flex items-center justify-between mb-2">
-                        <p className="text-xs font-bold text-gray-400 uppercase">Stok Durumu</p>
-                        {isLowStock && <AlertCircle className="w-4 h-4 text-red-500" />}
+                    {isLowStock && <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(239,68,68,0.1)_0%,transparent_70%)] animate-pulse" />}
+
+                    <div className="flex items-center justify-between mb-4 relative z-10">
+                        <p className="text-[10px] font-black text-secondary uppercase tracking-[2px]">Mevcut Stok Durumu</p>
+                        {isLowStock && <AlertCircle className="w-5 h-5 text-red-500" />}
                     </div>
-                    <div className="flex items-baseline gap-2">
-                        <p className="text-3xl font-black text-white">{product.stock_quantity}</p>
-                        <p className="text-sm text-gray-400">{product.unit || 'Adet'}</p>
+
+                    <div className="flex items-end justify-between relative z-10">
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-5xl font-black text-white tabular-nums">{product.stock_quantity}</span>
+                            <span className="text-sm font-bold text-secondary uppercase tracking-widest">{product.unit || 'ADET'}</span>
+                        </div>
+                        {isLowStock ? (
+                            <span className="px-4 py-1.5 bg-red-500 text-white text-[9px] font-black uppercase tracking-widest rounded-full shadow-lg shadow-red-500/20">Kritik Seviye</span>
+                        ) : (
+                            <span className="px-4 py-1.5 bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-widest rounded-full border border-emerald-500/20">Stok Yeterli</span>
+                        )}
                     </div>
-                    {isLowStock && (
-                        <p className="text-xs text-red-400 mt-2">⚠️ Kritik Seviye!</p>
-                    )}
                 </div>
 
-                {/* Quick Actions */}
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-4 pt-4">
                     <button
                         onClick={() => setShowEditModal(true)}
-                        className="py-3 bg-blue-600 hover:bg-blue-700 rounded-2xl text-white font-bold transition-all active:scale-95 flex items-center justify-center gap-2"
+                        className="h-16 bg-blue-500 hover:bg-blue-600 rounded-3xl flex items-center justify-center gap-3 text-white transition-all active:scale-95 shadow-xl shadow-blue-500/20 group"
                     >
-                        <Edit className="w-4 h-4" />
-                        Düzenle
+                        <Edit className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                        <span className="text-xs font-black uppercase tracking-widest">Kayıt Düzenle</span>
                     </button>
                     <button
                         onClick={onScanAgain}
-                        className="py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-white font-bold transition-all active:scale-95 flex items-center justify-center gap-2"
+                        className="h-16 glass hover:bg-white/10 rounded-3xl flex items-center justify-center gap-3 text-white transition-all active:scale-95 border-white/10 group"
                     >
-                        <RefreshCw className="w-4 h-4" />
-                        Tekrar
-                    </button>
-                    <button
-                        onClick={onClose}
-                        className="py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-white font-bold transition-all active:scale-95"
-                    >
-                        Kapat
+                        <RefreshCw className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
+                        <span className="text-xs font-black uppercase tracking-widest">Yeniden Tara</span>
                     </button>
                 </div>
             </motion.div>

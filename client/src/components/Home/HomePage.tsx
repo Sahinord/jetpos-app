@@ -154,14 +154,14 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                         <motion.h1
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="text-2xl font-black text-foreground"
+                            className="text-3xl font-extrabold text-white tracking-tight"
                         >
-                            Merhaba, <span className="text-primary">{currentTenant?.company_name || "JetPos"}</span>! 👋
+                            Merhaba, <span className="text-primary">{currentTenant?.company_name || "JetPos"}</span> 👋
                         </motion.h1>
                         <motion.p
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            className="text-secondary text-sm"
+                            className="text-secondary/60 text-xs font-light tracking-[0.05em] uppercase mt-1"
                         >
                             {formattedDate}
                         </motion.p>
@@ -196,7 +196,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                         <div className="glass-card p-5 flex-1">
                             <div className="flex items-center gap-2 mb-4">
                                 <Star className="w-4 h-4 text-yellow-500" />
-                                <h2 className="text-base font-bold text-foreground">Hızlı Erişim</h2>
+                                <h2 className="text-sm font-bold text-white uppercase tracking-widest">Hızlı Erişim</h2>
                                 {favoritePages.length === 0 && (
                                     <span className="text-xs text-secondary ml-2">(Yıldıza tıklayarak ekle)</span>
                                 )}
@@ -257,8 +257,8 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                                     <Zap className="w-5 h-5 text-white" />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-foreground font-bold text-sm truncate">Yeni Satış</p>
-                                    <p className="text-secondary text-xs">POS'u aç</p>
+                                    <p className="text-white font-bold text-sm truncate">Yeni Satış</p>
+                                    <p className="text-secondary/50 text-[10px] font-light uppercase tracking-wider">POS'u aç</p>
                                 </div>
                                 <ChevronRight className="w-4 h-4 text-secondary group-hover:text-primary" />
                             </motion.div>
@@ -273,8 +273,8 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                                     <Package className="w-5 h-5 text-white" />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-foreground font-bold text-sm truncate">Ürünler</p>
-                                    <p className="text-secondary text-xs">Stok yönet</p>
+                                    <p className="text-white font-bold text-sm truncate">Ürünler</p>
+                                    <p className="text-secondary/50 text-[10px] font-light uppercase tracking-wider">Stok yönet</p>
                                 </div>
                                 <ChevronRight className="w-4 h-4 text-secondary group-hover:text-primary" />
                             </motion.div>
@@ -289,8 +289,8 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                                     <BarChart3 className="w-5 h-5 text-white" />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-foreground font-bold text-sm truncate">Raporlar</p>
-                                    <p className="text-secondary text-xs">Analiz et</p>
+                                    <p className="text-white font-bold text-sm truncate">Raporlar</p>
+                                    <p className="text-secondary/50 text-[10px] font-light uppercase tracking-wider">Analiz et</p>
                                 </div>
                                 <ChevronRight className="w-4 h-4 text-secondary group-hover:text-primary" />
                             </motion.div>
@@ -303,7 +303,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                         <div className="glass-card p-5">
                             <div className="flex items-center gap-2 mb-4">
                                 <Activity className="w-4 h-4 text-primary" />
-                                <h2 className="text-base font-bold text-foreground">Bugünkü Özet</h2>
+                                <h2 className="text-xs font-bold text-primary uppercase tracking-[0.2em]">Bugünkü Özet</h2>
                             </div>
 
                             <div className="space-y-3">
@@ -350,7 +350,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                         <div className="glass-card p-5 flex-1">
                             <div className="flex items-center gap-2 mb-4">
                                 <Clock className="w-4 h-4 text-amber-500" />
-                                <h2 className="text-base font-bold text-foreground">Son Aktivite</h2>
+                                <h2 className="text-xs font-bold text-amber-500 uppercase tracking-[0.2em]">Son Aktivite</h2>
                             </div>
 
                             <div className="flex flex-col items-center justify-center h-32 text-center">

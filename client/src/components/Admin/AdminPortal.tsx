@@ -14,7 +14,9 @@ import {
     Unlock,
     Activity,
     Calendar,
-    ArrowRight
+    ArrowRight,
+    Sparkles,
+    Edit3
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
@@ -28,8 +30,11 @@ export default function AdminPortal({ showToast }: any) {
     const [newLicense, setNewLicense] = useState({
         client_name: "",
         license_key: `KARDESLER-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${new Date().getFullYear()}`,
-        expires_in_days: 365
+        expires_in_days: 365,
+        gemini_api_key: "",
+        gemini_quota_limit: 1500
     });
+    const [editingLicense, setEditingLicense] = useState<any>(null);
 
     const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD; // Configured in .env.local
 
@@ -70,7 +75,9 @@ export default function AdminPortal({ showToast }: any) {
                 client_name: newLicense.client_name,
                 license_key: newLicense.license_key.trim().toUpperCase(),
                 expires_at: expires_at.toISOString(),
-                is_active: true
+                is_active: true,
+                gemini_api_key: newLicense.gemini_api_key,
+                gemini_quota_limit: newLicense.gemini_quota_limit
             }]);
 
             if (error) throw error;
@@ -80,7 +87,9 @@ export default function AdminPortal({ showToast }: any) {
             setNewLicense({
                 client_name: "",
                 license_key: `KARDESLER-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${new Date().getFullYear()}`,
-                expires_in_days: 365
+                expires_in_days: 365,
+                gemini_api_key: "",
+                gemini_quota_limit: 1500
             });
             fetchLicenses();
         } catch (error: any) {
@@ -97,6 +106,27 @@ export default function AdminPortal({ showToast }: any) {
             if (error) throw error;
             fetchLicenses();
             showToast("Lisans durumu güncellendi", "success");
+        } catch (error: any) {
+            showToast(error.message, "error");
+        }
+    };
+
+    const handleUpdateGemini = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            const { error } = await supabase
+                .from('licenses')
+                .update({
+                    gemini_api_key: editingLicense.gemini_api_key,
+                    gemini_quota_limit: editingLicense.gemini_quota_limit
+                })
+                .eq('id', editingLicense.id);
+
+            if (error) throw error;
+
+            showToast("Gemini ayarları güncellendi", "success");
+            setEditingLicense(null);
+            fetchLicenses();
         } catch (error: any) {
             showToast(error.message, "error");
         }
@@ -210,6 +240,7 @@ export default function AdminPortal({ showToast }: any) {
                             <th className="px-8 py-5 text-[10px] font-bold text-secondary uppercase tracking-[2px]">Lisans Anahtarı</th>
                             <th className="px-8 py-5 text-[10px] font-bold text-secondary uppercase tracking-[2px]">Durum</th>
                             <th className="px-8 py-5 text-[10px] font-bold text-secondary uppercase tracking-[2px]">Bitiş Tarihi</th>
+                            <th className="px-8 py-5 text-[10px] font-bold text-secondary uppercase tracking-[2px]">Gemini AI</th>
                             <th className="px-8 py-5 text-[10px] font-bold text-secondary uppercase tracking-[2px] text-right">İşlemler</th>
                         </tr>
                     </thead>
@@ -235,17 +266,38 @@ export default function AdminPortal({ showToast }: any) {
                                 </td>
                                 <td className="px-8 py-5 text-sm text-secondary font-medium">
                                     <div className="flex items-center">
-                                        < Calendar className="w-4 h-4 mr-2 opacity-30" />
+                                        <Calendar className="w-4 h-4 mr-2 opacity-30" />
                                         {new Date(lic.expires_at).toLocaleDateString('tr-TR')}
                                     </div>
                                 </td>
+                                <td className="px-8 py-5">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`p-2 rounded-lg ${lic.gemini_api_key ? 'bg-emerald-500/10 text-emerald-400' : 'bg-white/5 text-secondary opacity-30'}`}>
+                                            <Sparkles className="w-4 h-4" />
+                                        </div>
+                                        {lic.gemini_api_key && (
+                                            <div className="text-[10px] font-bold">
+                                                <div className="text-secondary opacity-50 lowercase">{lic.gemini_quota_used}/{lic.gemini_quota_limit}</div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </td>
                                 <td className="px-8 py-5 text-right">
-                                    <button
-                                        onClick={() => toggleLicense(lic.id, lic.is_active)}
-                                        className={`p-3 rounded-xl transition-all active:scale-95 ${lic.is_active ? 'bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white' : 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white'}`}
-                                    >
-                                        {lic.is_active ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-                                    </button>
+                                    <div className="flex justify-end gap-2">
+                                        <button
+                                            onClick={() => setEditingLicense(lic)}
+                                            className="p-3 bg-white/5 hover:bg-white/10 text-secondary rounded-xl transition-all"
+                                            title="AI Ayarlarını Düzenle"
+                                        >
+                                            <Edit3 className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={() => toggleLicense(lic.id, lic.is_active)}
+                                            className={`p-3 rounded-xl transition-all active:scale-95 ${lic.is_active ? 'bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white' : 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white'}`}
+                                        >
+                                            {lic.is_active ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         ))}
@@ -328,6 +380,32 @@ export default function AdminPortal({ showToast }: any) {
                                     </select>
                                 </div>
 
+                                <div className="p-4 bg-emerald-500/5 rounded-2xl border border-emerald-500/10 space-y-4">
+                                    <div className="flex items-center gap-2 text-emerald-500 font-bold text-xs uppercase tracking-wider">
+                                        <Sparkles className="w-4 h-4" />
+                                        Gemini AI Ayarları
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-bold text-secondary uppercase tracking-[2px]">Gemini API Key</label>
+                                        <input
+                                            type="text"
+                                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all font-mono text-xs"
+                                            placeholder="AIza..."
+                                            value={newLicense.gemini_api_key}
+                                            onChange={(e) => setNewLicense({ ...newLicense, gemini_api_key: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-bold text-secondary uppercase tracking-[2px]">Günlük Kota</label>
+                                        <input
+                                            type="number"
+                                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all font-bold"
+                                            value={newLicense.gemini_quota_limit}
+                                            onChange={(e) => setNewLicense({ ...newLicense, gemini_quota_limit: parseInt(e.target.value) })}
+                                        />
+                                    </div>
+                                </div>
+
                                 <button
                                     type="submit"
                                     className="w-full bg-primary hover:bg-primary/90 text-white py-5 rounded-2xl font-bold text-lg shadow-xl shadow-primary/30 transition-all active:scale-[0.98] mt-4"
@@ -339,7 +417,72 @@ export default function AdminPortal({ showToast }: any) {
                     </div>
                 )}
             </AnimatePresence>
+
+            {/* Edit Gemini Settings Modal */}
+            <AnimatePresence>
+                {editingLicense && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setEditingLicense(null)}
+                            className="absolute inset-0 bg-black/80 backdrop-blur-md"
+                        />
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                            className="relative w-full max-w-lg glass-card !p-10 shadow-3xl border-white/10"
+                        >
+                            <div className="flex justify-between items-center mb-8">
+                                <div>
+                                    <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-widest mb-1">
+                                        <Sparkles className="w-4 h-4" />
+                                        AI AYARLARI
+                                    </div>
+                                    <h3 className="text-3xl font-bold tracking-tight">{editingLicense.client_name}</h3>
+                                </div>
+                                <button onClick={() => setEditingLicense(null)} className="p-3 hover:bg-white/10 rounded-2xl text-secondary transition-all">
+                                    <X className="w-6 h-6" />
+                                </button>
+                            </div>
+
+                            <form onSubmit={handleUpdateGemini} className="space-y-6">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold text-secondary uppercase tracking-[2px]">Gemini API Key</label>
+                                    <input
+                                        type="text"
+                                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-primary/50 transition-all font-mono text-xs"
+                                        placeholder="AIza..."
+                                        value={editingLicense.gemini_api_key || ""}
+                                        onChange={(e) => setEditingLicense({ ...editingLicense, gemini_api_key: e.target.value })}
+                                    />
+                                    <p className="text-[10px] text-secondary opacity-50 px-2">Bu lisansın AI fatura analizi yapabilmesi için gerekli olan Google Gemini API anahtarı.</p>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold text-secondary uppercase tracking-[2px]">Günlük İstek Kotası</label>
+                                    <input
+                                        type="number"
+                                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-primary/50 transition-all font-bold"
+                                        value={editingLicense.gemini_quota_limit || 1500}
+                                        onChange={(e) => setEditingLicense({ ...editingLicense, gemini_quota_limit: parseInt(e.target.value) })}
+                                    />
+                                    <p className="text-[10px] text-secondary opacity-50 px-2 text-right">Şu anki kullanım: {editingLicense.gemini_quota_used || 0} / {editingLicense.gemini_quota_limit || 1500}</p>
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    className="w-full bg-primary hover:bg-primary/90 text-white py-5 rounded-2xl font-bold text-lg shadow-xl shadow-primary/30 transition-all mt-4"
+                                >
+                                    AYARLARI GÜNCELLE
+                                </button>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
-

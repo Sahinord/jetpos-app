@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { X, Save, Loader } from 'lucide-react';
+import { X, Save, Loader, Package } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 
 interface ProductEditModalProps {
@@ -118,167 +119,149 @@ export default function ProductEditModal({ product, onClose, onSaved }: ProductE
     };
 
     return (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-            <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-6 w-full max-w-md border border-white/10 my-8">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-black text-white">Ürün Düzenle</h2>
-                    <button
-                        onClick={onClose}
-                        className="p-2 rounded-xl hover:bg-white/5 transition-all"
-                    >
-                        <X className="w-5 h-5 text-gray-400" />
-                    </button>
-                </div>
+        <AnimatePresence>
+            <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
+                {/* Backdrop */}
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={onClose}
+                    className="absolute inset-0 bg-background/60 backdrop-blur-md"
+                />
 
-                {/* Product Info */}
-                <div className="mb-6 p-4 bg-white/5 rounded-2xl border border-white/10">
-                    <h3 className="text-white font-bold mb-1">{product.name}</h3>
-                    <p className="text-xs text-gray-400 font-mono">{product.barcode}</p>
-                </div>
+                {/* Modal Content */}
+                <motion.div
+                    initial={{ y: "100%" }}
+                    animate={{ y: 0 }}
+                    exit={{ y: "100%" }}
+                    transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                    className="relative w-full max-w-lg glass-dark border-t sm:border border-white/10 rounded-t-[3rem] sm:rounded-[3rem] p-8 pb-12 sm:pb-8 shadow-3xl overflow-hidden"
+                >
+                    {/* Glow Effect */}
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-1 bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
 
-                {/* Form */}
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* Kategori */}
-                    <div>
-                        <label className="block text-sm font-bold text-gray-300 mb-2">
-                            Kategori
-                        </label>
-                        <select
-                            value={formData.category_id}
-                            onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-8">
+                        <div>
+                            <h2 className="text-2xl font-black text-white tracking-tight">Kayıt Düzenle</h2>
+                            <p className="text-[10px] font-bold text-secondary uppercase tracking-[3px] mt-1">Stok & Fiyat Yönetimi</p>
+                        </div>
+                        <button
+                            onClick={onClose}
+                            className="w-12 h-12 glass rounded-2xl flex items-center justify-center text-secondary hover:text-white transition-colors"
                         >
-                            <option value="" className="bg-slate-800">Kategori Seçin</option>
-                            {categories.map((cat) => (
-                                <option key={cat.id} value={cat.id} className="bg-slate-800">
-                                    {cat.name}
-                                </option>
-                            ))}
-                        </select>
+                            <X className="w-6 h-6" />
+                        </button>
                     </div>
 
-                    {/* Stok */}
-                    <div>
-                        <label className="block text-sm font-bold text-gray-300 mb-2">
-                            Stok Miktarı
-                        </label>
-                        <input
-                            type="number"
-                            value={formData.stock_quantity || 0}
-                            onChange={(e) => {
-                                const val = e.target.value === '' ? 0 : parseFloat(e.target.value);
-                                setFormData({ ...formData, stock_quantity: val });
-                            }}
-                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            min="0"
-                        />
-                    </div>
-
-                    {/* Alış Fiyatı */}
-                    <div>
-                        <label className="block text-sm font-bold text-gray-300 mb-2">
-                            Alış Fiyatı (₺)
-                        </label>
-                        <input
-                            type="number"
-                            step="0.01"
-                            value={formData.purchase_price || 0}
-                            onChange={(e) => {
-                                const val = e.target.value === '' ? 0 : parseFloat(e.target.value);
-                                setFormData({ ...formData, purchase_price: val });
-                            }}
-                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            min="0"
-                        />
-                    </div>
-
-                    {/* Satış Fiyatı */}
-                    <div>
-                        <label className="block text-sm font-bold text-gray-300 mb-2">
-                            Satış Fiyatı (₺)
-                        </label>
-                        <input
-                            type="number"
-                            step="0.01"
-                            value={formData.sale_price || 0}
-                            onChange={(e) => {
-                                const val = e.target.value === '' ? 0 : parseFloat(e.target.value);
-                                setFormData({ ...formData, sale_price: val });
-                            }}
-                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            min="0"
-                        />
-                    </div>
-
-                    {/* Ürün Durumu */}
-                    <div>
-                        <label className="block text-sm font-bold text-gray-300 mb-2">
-                            Ürün Durumu (Tıkla Değiştir)
-                        </label>
-                        <div className="grid grid-cols-3 gap-2">
-                            <button
-                                type="button"
-                                onClick={() => setFormData({ ...formData, status: 'active' })}
-                                className={`py-3 rounded-xl font-bold transition-all ${formData.status === 'active'
-                                        ? 'bg-green-600 text-white scale-105'
-                                        : 'bg-white/5 text-gray-400 border border-white/10'
-                                    }`}
-                            >
-                                AKTİF
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setFormData({ ...formData, status: 'pending' })}
-                                className={`py-3 rounded-xl font-bold transition-all ${formData.status === 'pending'
-                                        ? 'bg-yellow-600 text-white scale-105'
-                                        : 'bg-white/5 text-gray-400 border border-white/10'
-                                    }`}
-                            >
-                                BEKLEMEDE
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setFormData({ ...formData, status: 'inactive' })}
-                                className={`py-3 rounded-xl font-bold transition-all ${formData.status === 'inactive'
-                                        ? 'bg-red-600 text-white scale-105'
-                                        : 'bg-white/5 text-gray-400 border border-white/10'
-                                    }`}
-                            >
-                                PASİF
-                            </button>
+                    {/* Product Summary */}
+                    <div className="glass p-4 rounded-2xl border-white/5 mb-8 flex items-center gap-4">
+                        <div className="w-12 h-12 glass-dark rounded-xl flex items-center justify-center">
+                            <Package className="w-6 h-6 text-blue-400" />
+                        </div>
+                        <div className="overflow-hidden">
+                            <h3 className="text-white font-bold truncate">{product.name}</h3>
+                            <p className="text-[10px] font-mono text-secondary">{product.barcode}</p>
                         </div>
                     </div>
 
-                    {/* Buttons */}
-                    <div className="grid grid-cols-2 gap-3 mt-6">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white font-bold transition-all"
-                        >
-                            İptal
-                        </button>
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        {/* Kategori Selector */}
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-secondary uppercase tracking-widest ml-1">Kategori</label>
+                            <div className="relative">
+                                <select
+                                    value={formData.category_id}
+                                    onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
+                                    className="w-full h-14 glass-dark border-white/10 rounded-2xl px-5 text-white appearance-none outline-none focus:border-blue-500/50 transition-all font-bold text-sm"
+                                >
+                                    <option value="" className="bg-slate-900">Kategori Yok</option>
+                                    {categories.map((cat) => (
+                                        <option key={cat.id} value={cat.id} className="bg-slate-900">
+                                            {cat.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-secondary">
+                                    <X className="w-4 h-4 rotate-45" />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Inventory & Price Grid */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-secondary uppercase tracking-widest ml-1">Stok Miktarı</label>
+                                <input
+                                    type="number"
+                                    value={formData.stock_quantity}
+                                    onChange={(e) => setFormData({ ...formData, stock_quantity: Number(e.target.value) })}
+                                    className="w-full h-14 glass-dark border-white/10 rounded-2xl px-5 text-white outline-none focus:border-blue-500/50 transition-all font-mono font-bold"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-secondary uppercase tracking-widest ml-1">Durum</label>
+                                <div className="flex h-14 glass-dark border-white/10 rounded-2xl p-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, status: formData.status === 'active' ? 'inactive' : 'active' })}
+                                        className={`flex-1 rounded-xl font-black text-[10px] uppercase tracking-tighter transition-all ${formData.status === 'active' ? 'bg-emerald-500 text-white shadow-lg' : 'text-secondary'
+                                            }`}
+                                    >
+                                        {formData.status === 'active' ? 'Aktif' : 'Pasif'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-secondary uppercase tracking-widest ml-1">Alış Fiyatı</label>
+                                <div className="relative">
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        value={formData.purchase_price}
+                                        onChange={(e) => setFormData({ ...formData, purchase_price: Number(e.target.value) })}
+                                        className="w-full h-14 glass-dark border-white/10 rounded-2xl pl-10 pr-5 text-white outline-none focus:border-blue-500/50 transition-all font-mono font-bold"
+                                    />
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-secondary font-bold text-xs">₺</span>
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-blue-400 uppercase tracking-widest ml-1">Satış Fiyatı</label>
+                                <div className="relative">
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        value={formData.sale_price}
+                                        onChange={(e) => setFormData({ ...formData, sale_price: Number(e.target.value) })}
+                                        className="w-full h-14 glass-dark border border-blue-500/20 rounded-2xl pl-10 pr-5 text-white outline-none focus:border-blue-500/50 transition-all font-mono font-bold shadow-[0_0_15px_rgba(59,130,246,0.1)]"
+                                    />
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-400 font-bold text-xs">₺</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Final Action */}
                         <button
                             type="submit"
                             disabled={loading}
-                            className="py-3 bg-blue-600 hover:bg-blue-700 rounded-xl text-white font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                            className="w-full h-16 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 rounded-3xl text-white font-black text-xs uppercase tracking-[4px] shadow-2xl shadow-blue-500/30 transition-all active:scale-[0.98] flex items-center justify-center gap-3 mt-4"
                         >
                             {loading ? (
-                                <>
-                                    <Loader className="w-5 h-5 animate-spin" />
-                                    Kaydediliyor...
-                                </>
+                                <Loader className="w-5 h-5 animate-spin" />
                             ) : (
                                 <>
                                     <Save className="w-5 h-5" />
-                                    Kaydet
+                                    <span>Değişiklikleri Kaydet</span>
                                 </>
                             )}
                         </button>
-                    </div>
-                </form>
+                    </form>
+                </motion.div>
             </div>
-        </div>
+        </AnimatePresence>
     );
 }

@@ -146,15 +146,7 @@ export default function SmartReports({ products }: any) {
     return (
         <div className="space-y-10 pb-20">
             <div className="flex items-center justify-between bg-card/20 p-6 rounded-2xl border border-border">
-                <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shadow-inner">
-                        <Sparkles className="w-6 h-6" />
-                    </div>
-                    <div>
-                        <p className="text-[10px] font-bold text-primary uppercase tracking-[3px]">Z-Raporu & Analiz</p>
-                        <p className="text-sm text-secondary font-medium">Günün performansı ve veritabanı analizleri.</p>
-                    </div>
-                </div>
+                <div />
 
                 <div className="flex items-center gap-4">
                     <button
