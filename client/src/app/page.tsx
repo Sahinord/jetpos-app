@@ -119,7 +119,7 @@ export default function Home() {
       const [cd, si] = await Promise.all([
         supabase.from('categories')
           .select('*')
-          .eq('tenant_id', currentTenant.id)
+          // Cross-tenant access enabled via RLS
           .order('name'),
         supabase.from('sale_items')
           .select('*')
@@ -146,7 +146,7 @@ export default function Home() {
         const { data, error } = await supabase
           .from('products')
           .select('*, categories(name)')
-          .eq('tenant_id', currentTenant.id) // 🔥 Explicit Filter for Security
+          // Cross-tenant access enabled via RLS policy - tenant_permissions table
           .order('id', { ascending: true })
           .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
