@@ -1,16 +1,17 @@
 "use client";
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { supabase, setCurrentTenant } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Search, ShoppingCart, Trash2, Plus, Minus,
-    CreditCard, Banknote, Wallet, Building2,
+    Banknote, Wallet, Building2,
     X, ChevronUp, ChevronDown, Package, CheckCircle,
-    Users, ChevronRight
+    Users, ChevronRight, Camera, Mic, Loader2, AlertCircle, Bell
 } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import { toast } from 'sonner';
+import { BrowserMultiFormatReader } from '@zxing/browser';
 
 interface Product {
     id: string;
@@ -62,10 +63,37 @@ export default function POSPage() {
     const [showCustomerModal, setShowCustomerModal] = useState(false);
     const [customerSearch, setCustomerSearch] = useState("");
 
+    // Optimization & Sort State
+    const [visibleCount, setVisibleCount] = useState(50);
+    const [sortBy, setSortBy] = useState<'name' | 'stock-asc' | 'stock-desc'>('name');
+
     // Cart State
     const [cart, setCart] = useState<CartItem[]>([]);
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
     const [isCheckingOut, setIsCheckingOut] = useState(false);
+
+    // AI & Notification State
+    const [isListening, setIsListening] = useState(false);
+    const [isProcessingAI, setIsProcessingAI] = useState(false);
+    const [openRouterKey, setOpenRouterKey] = useState<string | null>(null);
+    const [showLowStockModal, setShowLowStockModal] = useState(false);
+    const [isAlertDismissed, setIsAlertDismissed] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return sessionStorage.getItem('jetpos_low_stock_dismissed') === 'true';
+        }
+        return false;
+    });
+
+    const lowStockAlerts = useMemo(() => {
+        return products.filter(p => (p.stock_quantity || 0) < 5);
+    }, [products]);
+
+    // Scanner State
+    const [isScannerOpen, setIsScannerOpen] = useState(false);
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const readerRef = useRef<BrowserMultiFormatReader | null>(null);
+    const streamRef = useRef<MediaStream | null>(null);
+    const recognitionRef = useRef<any>(null);
 
     // Initial Fetch
     useEffect(() => {
@@ -78,13 +106,12 @@ export default function POSPage() {
             if (!tenantId) return;
             await setCurrentTenant(tenantId);
 
-            const [prodRes, catRes, custRes] = await Promise.all([
-                supabase.from('products').select('*').eq('status', 'active'),
+            // Fetch Categories and Customers first
+            const [catRes, custRes] = await Promise.all([
                 supabase.from('categories').select('*'),
                 supabase.from('cari_hesaplar').select('*').eq('hesap_tipi', 'musteri')
             ]);
 
-            if (prodRes.data) setProducts(prodRes.data);
             if (catRes.data) setCategories(catRes.data);
             if (custRes.data) {
                 setCustomers(custRes.data.map((c: any) => ({
@@ -93,32 +120,275 @@ export default function POSPage() {
                     phone: c.telefon
                 })));
             }
-        } catch (error) {
+
+            // Progressive Product Fetching
+            let allProducts: Product[] = [];
+            let page = 0;
+            const PAGE_SIZE = 1000;
+            let hasMore = true;
+
+            while (hasMore) {
+                const { data, error } = await supabase
+                    .from('products')
+                    .select('*')
+                    .eq('status', 'active')
+                    .order('name', { ascending: true })
+                    .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+
+                if (error) throw error;
+
+                if (data && data.length > 0) {
+                    allProducts = [...allProducts, ...data];
+                    setProducts([...allProducts]);
+
+                    if (page === 0) setLoading(false);
+
+                    if (data.length < PAGE_SIZE) {
+                        hasMore = false;
+                    }
+                } else {
+                    hasMore = false;
+                    if (page === 0) setLoading(false);
+                }
+                page++;
+            }
+
+            // Fetch License for AI Key
+            const { data: licenseData } = await supabase
+                .from('licenses')
+                .select('openrouter_api_key')
+                .limit(1)
+                .single();
+
+            if (licenseData?.openrouter_api_key) {
+                setOpenRouterKey(licenseData.openrouter_api_key);
+            }
+
+        } catch (error: any) {
             console.error('POS Data Error:', error);
-            toast.error('Veriler yüklenirken hata oluştu');
+            toast.error('Hata: ' + error.message);
         } finally {
             setLoading(false);
         }
     };
 
-    // Filter Logic
-    const filteredProducts = useMemo(() => {
-        let result = products;
+    // Barcode Map for O(1) Lookups
+    const barcodeMap = useMemo(() => {
+        const map = new Map();
+        products.forEach(p => {
+            if (p.barcode) map.set(p.barcode.toLowerCase(), p);
+        });
+        return map;
+    }, [products]);
 
+    // Optimized Filter & Sort Logic
+    const filteredProducts = useMemo(() => {
+        let result = [...products];
+
+        // 1. Category Filter
         if (selectedCategory !== "all") {
             result = result.filter(p => p.category_id === selectedCategory);
         }
 
+        // 2. Search Filter
         if (search) {
             const lower = search.toLowerCase();
+            const exactMatch = barcodeMap.get(lower);
+            if (exactMatch) return [exactMatch];
+
             result = result.filter(p =>
                 p.name.toLowerCase().includes(lower) ||
                 p.barcode?.includes(lower)
             );
         }
 
+        // 3. Sorting
+        result.sort((a, b) => {
+            const nameA = a.name || "";
+            const nameB = b.name || "";
+
+            if (sortBy === 'name') {
+                return nameA.localeCompare(nameB, 'tr');
+            } else if (sortBy === 'stock-asc') {
+                return (a.stock_quantity || 0) - (b.stock_quantity || 0);
+            } else if (sortBy === 'stock-desc') {
+                return (b.stock_quantity || 0) - (a.stock_quantity || 0);
+            }
+            return 0;
+        });
+
         return result;
-    }, [products, selectedCategory, search]);
+    }, [products, barcodeMap, selectedCategory, search, sortBy]);
+
+    // Visible slice for performance
+    const displayedProducts = useMemo(() => {
+        const slice = filteredProducts.slice(0, visibleCount);
+        console.log('Displayed Products Count:', slice.length, 'Total Filtered:', filteredProducts.length);
+        return slice;
+    }, [filteredProducts, visibleCount]);
+
+    // Low Stock Alert Auto-Trigger
+    useEffect(() => {
+        // Only auto-show if not already dismissed in this session
+        if (lowStockAlerts.length > 0 && !isAlertDismissed && !showLowStockModal) {
+            setShowLowStockModal(true);
+        }
+    }, [lowStockAlerts.length, isAlertDismissed]);
+
+
+
+    // Voice Recognition Logic
+    const startListening = () => {
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            toast.error("Tarayıcınız ses tanımayı desteklemiyor");
+            return;
+        }
+
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'tr-TR';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        recognition.onstart = () => setIsListening(true);
+        recognition.onend = () => setIsListening(false);
+        recognition.onerror = () => setIsListening(false);
+        recognition.onresult = (event: any) => {
+            const text = event.results[0][0].transcript;
+            processAICommand(text);
+        };
+
+        recognition.start();
+        recognitionRef.current = recognition;
+    };
+
+    const processAICommand = async (text: string) => {
+        if (!openRouterKey) {
+            toast.error("AI özelliği henüz yapılandırılmamış (API Key eksik)");
+            return;
+        }
+
+        setIsProcessingAI(true);
+        try {
+            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${openRouterKey}`,
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": window.location.origin,
+                },
+                body: JSON.stringify({
+                    model: "google/gemini-2.0-flash-exp:free",
+                    messages: [
+                        {
+                            role: "system",
+                            content: `Müşteri şu ürünleri istiyor: "${text}". 
+                            Aşağıdaki ürün listesinden en yakın eşleşmeleri bul ve şu formatta JSON döndür: 
+                            [{"id": "urun_id", "quantity": sayi}]. 
+                            Sadece JSON döndür. 
+                            Ürün Listesi: ${JSON.stringify(products.slice(0, 500).map(p => ({ id: p.id, name: p.name })))}`
+                        }
+                    ],
+                    response_format: { type: "json_object" }
+                })
+            });
+
+            const data = await response.json();
+            const resultText = data.choices[0].message.content;
+            const matches = JSON.parse(resultText);
+
+            if (matches && Array.isArray(matches)) {
+                let addedCount = 0;
+                matches.forEach((match: any) => {
+                    const product = products.find(p => p.id === match.id);
+                    if (product) {
+                        for (let i = 0; i < (match.quantity || 1); i++) {
+                            addToCart(product);
+                        }
+                        addedCount++;
+                    }
+                });
+                if (addedCount > 0) toast.success(`${addedCount} farklı ürün eklendi`);
+                else toast.error("Ürünler bulunamadı");
+            }
+        } catch (error) {
+            console.error("AI Error:", error);
+            toast.error("AI işlemi sırasında hata oluştu");
+        } finally {
+            setIsProcessingAI(false);
+        }
+    };
+
+    // Scanner Logic
+    useEffect(() => {
+        if (isScannerOpen) {
+            startScanner();
+        } else {
+            stopScanner();
+        }
+        return () => stopScanner();
+    }, [isScannerOpen]);
+
+    const startScanner = async () => {
+        try {
+            readerRef.current = new BrowserMultiFormatReader();
+            const constraints = {
+                video: { facingMode: 'environment' }
+            };
+
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            streamRef.current = stream;
+
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream;
+                readerRef.current.decodeFromVideoDevice(
+                    undefined,
+                    videoRef.current,
+                    (result) => {
+                        if (result) {
+                            const barcode = result.getText().toLowerCase();
+                            const product = barcodeMap.get(barcode);
+                            if (product) {
+                                addToCart(product);
+                                setIsScannerOpen(false);
+                                playBeep();
+                            }
+                        }
+                    }
+                );
+            }
+        } catch (error) {
+            console.error('Kamera hatası:', error);
+            toast.error('Kamera açılamadı');
+            setIsScannerOpen(false);
+        }
+    };
+
+    const stopScanner = () => {
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
+            streamRef.current = null;
+        }
+        if (readerRef.current) {
+            readerRef.current = null;
+        }
+    };
+
+    const playBeep = () => {
+        try {
+            const context = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const osc = context.createOscillator();
+            const gain = context.createGain();
+            osc.connect(gain);
+            gain.connect(context.destination);
+            osc.frequency.setValueAtTime(800, context.currentTime);
+            gain.gain.setValueAtTime(0, context.currentTime);
+            gain.gain.linearRampToValueAtTime(0.2, context.currentTime + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.1);
+            osc.start();
+            osc.stop(context.currentTime + 0.12);
+        } catch (e) { }
+    };
 
     // Cart Actions
     const addToCart = (product: Product) => {
@@ -219,17 +489,39 @@ export default function POSPage() {
 
             {/* Header */}
             <div className="sticky top-0 z-40 glass border-b border-white/5 p-4 space-y-4">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-                        <ShoppingCart className="w-5 h-5 text-blue-500" />
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+                            <ShoppingCart className="w-5 h-5 text-blue-500" />
+                        </div>
+                        <div>
+                            <h1 className="text-xl font-black text-white leading-none">Hızlı Satış</h1>
+                            <p className="text-[10px] text-secondary font-bold tracking-widest uppercase mt-1">Mobil POS Terminali</p>
+                        </div>
                     </div>
-                    <div>
-                        <h1 className="text-xl font-black text-white leading-none">Hızlı Satış</h1>
-                        <p className="text-[10px] text-secondary font-bold tracking-widest uppercase mt-1">Mobil POS Terminali</p>
-                    </div>
+
+                    {lowStockAlerts.length > 0 && (
+                        <div className="relative">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    console.log('Opening Low Stock Modal');
+                                    setShowLowStockModal(true);
+                                }}
+                                className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center active:scale-95 transition-all shadow-lg"
+                            >
+                                <Bell className="w-6 h-6 text-rose-500 animate-tada" />
+                            </button>
+                            <div className="absolute -top-1 -right-1 min-w-[22px] h-5 rounded-full bg-rose-600 border-2 border-[#020617] flex items-center justify-center pointer-events-none shadow-[0_0_15px_rgba(225,29,72,0.6)]">
+                                <span className="text-[10px] font-black text-white leading-none px-1.5">
+                                    {lowStockAlerts.length > 99 ? '99+' : lowStockAlerts.length}
+                                </span>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
-                {/* Search & Filter */}
+                {/* Search & AI */}
                 <div className="flex gap-2">
                     <div className="relative flex-1">
                         <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
@@ -237,31 +529,78 @@ export default function POSPage() {
                         </div>
                         <input
                             type="text"
-                            placeholder="Ürün ara..."
+                            placeholder="Ürün ara veya barkod..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500/50 focus:bg-white/10 transition-all placeholder:text-secondary/50"
+                            className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-24 py-3 text-sm text-white focus:outline-none focus:border-blue-500/50 focus:bg-white/10 transition-all placeholder:text-secondary/50"
                         />
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-4">
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    startListening();
+                                }}
+                                disabled={isProcessingAI}
+                                className={`p-2 rounded-xl border transition-all ${isListening ? 'bg-red-500 text-white animate-pulse border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'bg-white/5 text-secondary border-white/10 hover:bg-white/10'}`}
+                            >
+                                {isProcessingAI ? <Loader2 size={20} className="animate-spin" /> : <Mic size={20} />}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setIsScannerOpen(true);
+                                }}
+                                className="p-2 bg-blue-500/20 text-blue-400 rounded-xl border border-blue-500/30 active:scale-90 transition-all shadow-md"
+                            >
+                                <Camera size={20} />
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                {/* Categories */}
-                <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-                    <button
-                        onClick={() => setSelectedCategory("all")}
-                        className={`px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all border ${selectedCategory === "all" ? 'bg-blue-500 text-white border-blue-500' : 'bg-white/5 text-secondary border-white/10'}`}
-                    >
-                        TÜMÜ
-                    </button>
-                    {categories.map(cat => (
+                {/* Categories & Sorting */}
+                <div className="space-y-3">
+                    <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
                         <button
-                            key={cat.id}
-                            onClick={() => setSelectedCategory(cat.id)}
-                            className={`px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all border ${selectedCategory === cat.id ? 'bg-blue-500 text-white border-blue-500' : 'bg-white/5 text-secondary border-white/10'}`}
+                            onClick={() => setSelectedCategory("all")}
+                            className={`px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all border ${selectedCategory === "all" ? 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/20' : 'bg-white/5 text-secondary border-white/10'}`}
                         >
-                            {cat.name}
+                            TÜMÜ
                         </button>
-                    ))}
+                        {categories.map(cat => (
+                            <button
+                                key={cat.id}
+                                onClick={() => setSelectedCategory(cat.id)}
+                                className={`px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all border ${selectedCategory === cat.id ? 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/20' : 'bg-white/5 text-secondary border-white/10'}`}
+                            >
+                                {cat.name}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+                        <span className="text-[10px] font-black text-secondary/40 uppercase tracking-widest flex-shrink-0">Sırala:</span>
+                        <button
+                            onClick={() => setSortBy('name')}
+                            className={`px-3 py-1.5 rounded-md text-[10px] font-bold whitespace-nowrap border transition-all ${sortBy === 'name' ? 'bg-white/10 text-white border-white/20' : 'text-secondary border-transparent'}`}
+                        >
+                            İSİM (A-Z)
+                        </button>
+                        <button
+                            onClick={() => setSortBy('stock-asc')}
+                            className={`px-3 py-1.5 rounded-md text-[10px] font-bold whitespace-nowrap border transition-all ${sortBy === 'stock-asc' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'text-secondary border-transparent'}`}
+                        >
+                            DÜŞÜK STOK
+                        </button>
+                        <button
+                            onClick={() => setSortBy('stock-desc')}
+                            className={`px-3 py-1.5 rounded-md text-[10px] font-bold whitespace-nowrap border transition-all ${sortBy === 'stock-desc' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'text-secondary border-transparent'}`}
+                        >
+                            YÜKSEK STOK
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -272,19 +611,12 @@ export default function POSPage() {
                         <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
                     </div>
                 ) : (
-                    <motion.div
-                        variants={containerVariants}
-                        initial="hidden"
-                        animate="show"
-                        className="grid grid-cols-2 gap-3"
-                    >
-                        {filteredProducts.map(product => (
-                            <motion.button
+                    <div className="grid grid-cols-2 gap-3">
+                        {displayedProducts.map(product => (
+                            <button
                                 key={product.id}
-                                variants={itemVariants}
-                                whileTap={{ scale: 0.98 }}
                                 onClick={() => addToCart(product)}
-                                className="relative group text-left h-48 flex flex-col justify-between glass-dark border border-white/5 rounded-2xl p-3 overflow-hidden"
+                                className="relative group text-left h-48 flex flex-col justify-between bg-white/5 border border-white/5 rounded-2xl p-3 overflow-hidden active:scale-95 transition-all"
                             >
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-10" />
 
@@ -298,21 +630,36 @@ export default function POSPage() {
 
                                 <div className="relative z-20 flex-1">
                                     <div className="bg-black/30 backdrop-blur-md self-start inline-block px-2 py-1 rounded-lg border border-white/10">
-                                        <p className="text-[10px] font-mono text-secondary">{product.stock_quantity} Adet</p>
+                                        <p className="text-[10px] font-mono text-secondary">{product.stock_quantity || 0} Adet</p>
                                     </div>
                                 </div>
 
                                 <div className="relative z-20 space-y-1">
                                     <h3 className="text-sm font-bold text-white leading-tight line-clamp-2">{product.name}</h3>
-                                    <p className="text-lg font-black text-blue-400">₺{product.sale_price.toFixed(2)}</p>
+                                    <p className="text-lg font-black text-blue-400">₺{(product.sale_price || 0).toFixed(2)}</p>
                                 </div>
 
                                 <div className="absolute top-2 right-2 z-20 w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
                                     <Plus className="w-5 h-5 text-white" />
                                 </div>
-                            </motion.button>
+                            </button>
                         ))}
-                    </motion.div>
+
+                        {/* Pagination - Load More */}
+                        {filteredProducts.length > visibleCount && (
+                            <div className="col-span-2 py-10 flex flex-col items-center gap-4">
+                                <p className="text-[10px] font-bold text-secondary uppercase tracking-[3px]">
+                                    {filteredProducts.length} üründen {visibleCount} tanesi gösteriliyor
+                                </p>
+                                <button
+                                    onClick={() => setVisibleCount(prev => prev + 50)}
+                                    className="px-10 py-4 bg-blue-500 hover:bg-blue-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl shadow-blue-500/20 active:scale-95 transition-all"
+                                >
+                                    Daha Fazla Ürün Yükle
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 )}
             </div>
 
@@ -469,7 +816,7 @@ export default function POSPage() {
                                         disabled={isCheckingOut}
                                         className="py-4 bg-blue-600 hover:bg-blue-500 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 shadow-lg shadow-blue-600/20"
                                     >
-                                        <CreditCard className="w-6 h-6 text-white" />
+                                        <Wallet className="w-6 h-6 text-white" />
                                         <span className="text-xs font-black text-white uppercase tracking-wider">KART</span>
                                     </button>
 
@@ -561,6 +908,185 @@ export default function POSPage() {
                                     ))}
                             </div>
                         </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Premium Scanner Modal */}
+            <AnimatePresence>
+                {isScannerOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] bg-black flex flex-col"
+                    >
+                        {/* Scanner Header with Blur */}
+                        <div className="absolute top-0 left-0 right-0 z-[110] p-6 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent">
+                            <div className="flex items-center gap-3">
+                                <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_10px_rgba(59,130,246,0.8)]" />
+                                <h3 className="text-lg font-black text-white tracking-widest uppercase">AKILLI TARAYICI</h3>
+                            </div>
+                            <button
+                                onClick={() => setIsScannerOpen(false)}
+                                className="w-12 h-12 flex items-center justify-center bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 text-white hover:bg-white/20 transition-all active:scale-95"
+                            >
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="relative flex-1 bg-black overflow-hidden flex items-center justify-center">
+                            <video
+                                ref={videoRef}
+                                autoPlay
+                                playsInline
+                                muted
+                                className="w-full h-full object-cover opacity-80"
+                            />
+
+                            {/* Modern Scanning Overlay - Rectangular for Barcodes */}
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                {/* Visual Frame - Adjusted to Rectangular Shape */}
+                                <div className="relative w-[85vw] h-48 max-w-md">
+                                    {/* Corner Accents - Futuristic Style */}
+                                    <div className="absolute -top-2 -left-2 w-10 h-10 border-t-4 border-l-4 border-blue-500 rounded-tl-xl shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
+                                    <div className="absolute -top-2 -right-2 w-10 h-10 border-t-4 border-r-4 border-blue-500 rounded-tr-xl shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
+                                    <div className="absolute -bottom-2 -left-2 w-10 h-10 border-b-4 border-l-4 border-blue-500 rounded-bl-xl shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
+                                    <div className="absolute -bottom-2 -right-2 w-10 h-10 border-b-4 border-r-4 border-blue-500 rounded-br-xl shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
+
+                                    {/* Laser Line */}
+                                    <motion.div
+                                        animate={{ top: ['10%', '90%'] }}
+                                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                                        className="absolute left-4 right-4 h-1 bg-gradient-to-r from-transparent via-blue-400 to-transparent shadow-[0_0_20px_rgba(59,130,246,0.8)] z-20"
+                                    />
+
+                                    {/* Scanner Pulse Background */}
+                                    <div className="absolute inset-0 bg-blue-500/5 backdrop-blur-[1px] rounded-xl border border-white/5" />
+                                </div>
+                            </div>
+
+                            {/* Blackout mask around the frame - Updated to Rectangle */}
+                            <div className="absolute inset-0 pointer-events-none">
+                                <div className="absolute inset-0 bg-black/40" />
+                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[85vw] h-48 max-w-md bg-transparent ring-[1000px] ring-black/60 rounded-xl" />
+                            </div>
+                        </div>
+
+                        <div className="absolute bottom-12 left-0 right-0 z-[110] px-10 text-center">
+                            <div className="inline-block px-6 py-3 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10">
+                                <p className="text-secondary text-[10px] font-black uppercase tracking-[3px] animate-pulse">
+                                    Barkodu Çerçeveye Hizalayın
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Ambient Bottom Glow */}
+                        <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-blue-500/10 to-transparent pointer-events-none" />
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Low Stock Popup */}
+            <AnimatePresence mode="wait">
+                {showLowStockModal && (
+                    <div className="fixed inset-0 z-[9995] flex items-center justify-center">
+                        <motion.div
+                            key="stock-backdrop"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowLowStockModal(false)}
+                            className="absolute inset-0 bg-black/80 backdrop-blur-md"
+                        />
+                        <motion.div
+                            key="stock-modal"
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="relative w-[calc(100%-2rem)] max-w-sm mx-auto z-[9999]"
+                        >
+                            <div className="bg-[#0f172a] border border-rose-500/30 rounded-[2.5rem] p-7 shadow-[0_0_80px_rgba(0,0,0,0.9)] relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-transparent via-rose-500 to-transparent animate-pulse" />
+
+                                <div className="flex items-start justify-between mb-6">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-14 h-14 rounded-2xl bg-rose-500/20 flex items-center justify-center shrink-0 shadow-inner">
+                                            <AlertCircle className="w-8 h-8 text-rose-400" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-2xl font-black text-white leading-none tracking-tight">Kritik Stok!</h3>
+                                            <p className="text-[11px] text-rose-300/40 font-black uppercase tracking-[3px] mt-2">Envanter Uyarısı</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => setShowLowStockModal(false)}
+                                        className="p-3 bg-white/5 rounded-2xl text-rose-300/30 hover:bg-white/10 transition-colors"
+                                    >
+                                        <X size={24} />
+                                    </button>
+                                </div>
+
+                                <div className="space-y-3 mb-8">
+                                    {lowStockAlerts.slice(0, 3).map(p => (
+                                        <div key={p.id} className="flex items-center justify-between p-4 bg-white/5 rounded-[1.5rem] border border-white/5 backdrop-blur-md">
+                                            <span className="text-sm font-bold text-white truncate max-w-[180px]">{p.name}</span>
+                                            <span className="text-xs font-black text-rose-400 bg-rose-500/10 px-3 py-1.5 rounded-xl border border-rose-500/20">
+                                                {p.stock_quantity ?? 0} Adet
+                                            </span>
+                                        </div>
+                                    ))}
+                                    {lowStockAlerts.length > 3 && (
+                                        <div className="text-center py-2">
+                                            <span className="text-[10px] text-rose-300/30 uppercase font-black tracking-widest bg-white/5 px-4 py-1.5 rounded-full">
+                                                +{lowStockAlerts.length - 3} DİĞER ÜRÜN
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="flex flex-col gap-4">
+                                    <button
+                                        onClick={() => setShowLowStockModal(false)}
+                                        className="w-full py-5 bg-rose-500 hover:bg-rose-600 text-white text-base font-black rounded-[1.5rem] transition-all shadow-2xl shadow-rose-500/30 active:scale-95"
+                                    >
+                                        ANLADIM, KAPAT
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setIsAlertDismissed(true);
+                                            sessionStorage.setItem('jetpos_low_stock_dismissed', 'true');
+                                            setShowLowStockModal(false);
+                                        }}
+                                        className="w-full py-2 text-[10px] font-black text-rose-300/20 hover:text-rose-300/50 transition-colors uppercase tracking-[4px]"
+                                    >
+                                        Oturum Boyunca Gizle
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Voice Listening Overlay */}
+            <AnimatePresence>
+                {isListening && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[150] bg-blue-600/20 backdrop-blur-md flex flex-col items-center justify-center"
+                    >
+                        <div className="relative">
+                            <div className="w-32 h-32 rounded-full bg-blue-500/20 animate-ping absolute inset-0" />
+                            <div className="w-32 h-32 rounded-full bg-blue-500/40 animate-pulse absolute inset-0" />
+                            <div className="w-32 h-32 rounded-full border-2 border-white/20 flex items-center justify-center">
+                                <Mic size={48} className="text-white animate-bounce" />
+                            </div>
+                        </div>
+                        <p className="mt-8 text-xl font-black text-white tracking-widest uppercase animate-pulse">Sizi Dinliyorum...</p>
+                        <p className="mt-2 text-blue-200 text-sm font-medium">"2 ekmek, 1 süt alabilir miyim?"</p>
                     </motion.div>
                 )}
             </AnimatePresence>

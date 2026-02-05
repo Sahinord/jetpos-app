@@ -32,7 +32,8 @@ export default function AdminPortal({ showToast }: any) {
         license_key: `KARDESLER-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${new Date().getFullYear()}`,
         expires_in_days: 365,
         gemini_api_key: "",
-        gemini_quota_limit: 1500
+        gemini_quota_limit: 1500,
+        openrouter_api_key: ""
     });
     const [editingLicense, setEditingLicense] = useState<any>(null);
 
@@ -77,7 +78,8 @@ export default function AdminPortal({ showToast }: any) {
                 expires_at: expires_at.toISOString(),
                 is_active: true,
                 gemini_api_key: newLicense.gemini_api_key,
-                gemini_quota_limit: newLicense.gemini_quota_limit
+                gemini_quota_limit: newLicense.gemini_quota_limit,
+                openrouter_api_key: newLicense.openrouter_api_key
             }]);
 
             if (error) throw error;
@@ -89,7 +91,8 @@ export default function AdminPortal({ showToast }: any) {
                 license_key: `KARDESLER-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${new Date().getFullYear()}`,
                 expires_in_days: 365,
                 gemini_api_key: "",
-                gemini_quota_limit: 1500
+                gemini_quota_limit: 1500,
+                openrouter_api_key: ""
             });
             fetchLicenses();
         } catch (error: any) {
@@ -118,7 +121,8 @@ export default function AdminPortal({ showToast }: any) {
                 .from('licenses')
                 .update({
                     gemini_api_key: editingLicense.gemini_api_key,
-                    gemini_quota_limit: editingLicense.gemini_quota_limit
+                    gemini_quota_limit: editingLicense.gemini_quota_limit,
+                    openrouter_api_key: editingLicense.openrouter_api_key
                 })
                 .eq('id', editingLicense.id);
 
@@ -383,7 +387,7 @@ export default function AdminPortal({ showToast }: any) {
                                 <div className="p-4 bg-emerald-500/5 rounded-2xl border border-emerald-500/10 space-y-4">
                                     <div className="flex items-center gap-2 text-emerald-500 font-bold text-xs uppercase tracking-wider">
                                         <Sparkles className="w-4 h-4" />
-                                        Gemini AI Ayarları
+                                        AI Ayarları
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-bold text-secondary uppercase tracking-[2px]">Gemini API Key</label>
@@ -393,6 +397,16 @@ export default function AdminPortal({ showToast }: any) {
                                             placeholder="AIza..."
                                             value={newLicense.gemini_api_key}
                                             onChange={(e) => setNewLicense({ ...newLicense, gemini_api_key: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-bold text-secondary uppercase tracking-[2px]">OpenRouter API Key (Voice AI)</label>
+                                        <input
+                                            type="text"
+                                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all font-mono text-xs"
+                                            placeholder="sk-or-v1..."
+                                            value={newLicense.openrouter_api_key}
+                                            onChange={(e) => setNewLicense({ ...newLicense, openrouter_api_key: e.target.value })}
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -458,7 +472,17 @@ export default function AdminPortal({ showToast }: any) {
                                         value={editingLicense.gemini_api_key || ""}
                                         onChange={(e) => setEditingLicense({ ...editingLicense, gemini_api_key: e.target.value })}
                                     />
-                                    <p className="text-[10px] text-secondary opacity-50 px-2">Bu lisansın AI fatura analizi yapabilmesi için gerekli olan Google Gemini API anahtarı.</p>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold text-secondary uppercase tracking-[2px]">OpenRouter API Key (Voice AI)</label>
+                                    <input
+                                        type="text"
+                                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-primary/50 transition-all font-mono text-xs"
+                                        placeholder="sk-or-v1..."
+                                        value={editingLicense.openrouter_api_key || ""}
+                                        onChange={(e) => setEditingLicense({ ...editingLicense, openrouter_api_key: e.target.value })}
+                                    />
                                 </div>
 
                                 <div className="space-y-2">

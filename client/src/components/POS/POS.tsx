@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, useRef, useMemo, useEffect } from "react";
+import { useState, useRef, useMemo, useEffect, useDeferredValue } from "react";
 import {
     Search, ShoppingCart, Trash2, CreditCard, Banknote,
     Plus, Minus, Printer, Pause, Play, Delete,
     ChevronLeft, ChevronRight, Hash, BadgePercent,
     Calculator, MousePointer2, User, Clock, Monitor, X,
-    Wallet, Building2, Sparkles, TrendingUp
+    Wallet, Building2, Sparkles, TrendingUp, Camera
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PrintReceiptButton } from "./Receipt";
+import { Html5QrcodeScanner } from "html5-qrcode";
 
 export default function POS({
     products = [],
@@ -72,6 +73,9 @@ export default function POS({
     const [isPriceCheckMode, setIsPriceCheckMode] = useState(false);
     const [priceCheckProduct, setPriceCheckProduct] = useState<any>(null);
 
+    const [isScannerOpen, setIsScannerOpen] = useState(false);
+    const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+
     // Performance Optimization: Visible products limit
     const [displayLimit, setDisplayLimit] = useState(24);
     const sentinelRef = useRef<HTMLDivElement>(null);
@@ -96,11 +100,91 @@ export default function POS({
         return () => observer.disconnect();
     }, [search, selectedCategory]);
 
-    // Barcode scanner simply filters - User clicks + to add
-    // Existing filteredProducts logic handles the barcode search automatically
+    // Barcode Map for O(1) Lookups
+    const barcodeMap = useMemo(() => {
+        const map = new Map();
+        products.forEach(p => {
+            if (p.barcode) map.set(p.barcode.toLowerCase(), p);
+        });
+        return map;
+    }, [products]);
 
+    // Defer search to keep UI snappy
+    const deferredSearch = useDeferredValue(search);
 
+    // Filtered Products - Optimized with Map and Deferred Value
+    const filteredProducts = useMemo(() => {
+        if (deferredSearch) {
+            const lowSearch = deferredSearch.toLowerCase();
 
+            // 1. Exact Barcode Match (Best Case) - O(1)
+            const exactMatch = barcodeMap.get(lowSearch);
+            if (exactMatch) return [exactMatch];
+
+            // 2. Filter by Name Includes OR Barcode Includes
+            const matches = products.filter((p: any) => {
+                const nameMatch = p.name?.toLowerCase().includes(lowSearch);
+                const barcodeMatch = p.barcode?.toLowerCase().includes(lowSearch);
+                return nameMatch || barcodeMatch;
+            });
+
+            // 3. Sort by Relevance
+            return matches.sort((a: any, b: any) => {
+                const aName = a.name?.toLowerCase() || "";
+                const bName = b.name?.toLowerCase() || "";
+                const aStarts = aName.startsWith(lowSearch);
+                const bStarts = bName.startsWith(lowSearch);
+                if (aStarts && !bStarts) return -1;
+                if (!aStarts && bStarts) return 1;
+                return aName.localeCompare(bName);
+            });
+        }
+
+        if (selectedCategory !== "all") {
+            return products.filter((p: any) => p.category_id === selectedCategory);
+        }
+
+        return products;
+    }, [products, barcodeMap, selectedCategory, deferredSearch]);
+
+    // Scanner Logic
+    useEffect(() => {
+        if (isScannerOpen) {
+            const scanner = new Html5QrcodeScanner(
+                "reader",
+                {
+                    fps: 10,
+                    qrbox: { width: 250, height: 250 },
+                    aspectRatio: 1.0
+                },
+                false
+            );
+
+            const onScanSuccess = (decodedText: string) => {
+                const product = barcodeMap.get(decodedText.toLowerCase());
+                if (product) {
+                    addToCart(product);
+                    showToast(`${product.name} sepete eklendi`, "success");
+                    setIsScannerOpen(false);
+                    scanner.clear();
+                } else {
+                    showToast("Ürün bulunamadı: " + decodedText, "error");
+                }
+            };
+
+            scanner.render(onScanSuccess, (err) => {
+                // Errors ignored for scan loop
+            });
+
+            scannerRef.current = scanner;
+
+            return () => {
+                if (scannerRef.current) {
+                    scannerRef.current.clear().catch(e => console.error("Scanner clear error", e));
+                }
+            };
+        }
+    }, [isScannerOpen, barcodeMap]);
 
     // Theme styles mapping
     const themeStyles: any = {
@@ -122,7 +206,6 @@ export default function POS({
             paymentNakit: 'bg-emerald-600 hover:bg-emerald-700',
             paymentKart: 'bg-blue-600 hover:bg-blue-700'
         },
-
         wood: {
             bg: 'bg-[#4a3728]',
             card: 'bg-[#d2b48c] border-[#8b4513] shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]',
@@ -150,46 +233,6 @@ export default function POS({
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
         return () => clearInterval(timer);
     }, []);
-
-    // Filtered Products - Improved search and category handling
-    const filteredProducts = useMemo(() => {
-        if (search) {
-            const lowSearch = search.toLocaleLowerCase('tr-TR');
-
-            // 1. Exact Barcode Match (Best Case)
-            // 1. Exact Barcode Match (Best Case)
-            const exactMatch = products.find((p: any) => p.barcode?.toLocaleLowerCase('tr-TR') === lowSearch);
-            if (exactMatch) return [exactMatch];
-
-            // 2. Filter by Name Includes OR Barcode Includes
-            const matches = products.filter((p: any) => {
-                const nameMatch = p.name?.toLocaleLowerCase('tr-TR').includes(lowSearch);
-                const barcodeMatch = p.barcode?.toLocaleLowerCase('tr-TR').includes(lowSearch);
-                return nameMatch || barcodeMatch;
-            });
-
-            // 3. Sort by Relevance
-            return matches.sort((a: any, b: any) => {
-                const aName = a.name?.toLocaleLowerCase('tr-TR') || "";
-                const bName = b.name?.toLocaleLowerCase('tr-TR') || "";
-
-                // Priority: Starts with > Layout inside
-                const aStarts = aName.startsWith(lowSearch);
-                const bStarts = bName.startsWith(lowSearch);
-
-                if (aStarts && !bStarts) return -1;
-                if (!aStarts && bStarts) return 1;
-
-                return aName.localeCompare(bName);
-            });
-        }
-
-        if (selectedCategory !== "all") {
-            return products.filter((p: any) => p.category_id === selectedCategory);
-        }
-
-        return products;
-    }, [products, selectedCategory, search]);
 
     // Cart Calculations
     const subtotal = cart.reduce((sum, item) => sum + (item.sale_price * item.quantity), 0);
@@ -538,19 +581,28 @@ export default function POS({
                             <input
                                 type="text"
                                 placeholder="Ürün ara veya barkod okut..."
-                                className="relative w-full bg-card/50 border border-border/60 focus:border-primary/40 rounded-xl py-4 pl-12 pr-4 outline-none font-medium placeholder:text-secondary/40 transition-all focus:shadow-lg focus:shadow-primary/5 backdrop-blur-sm"
+                                className="relative w-full bg-card/50 border border-border/60 focus:border-primary/40 rounded-xl py-4 pl-12 pr-12 outline-none font-medium placeholder:text-secondary/40 transition-all focus:shadow-lg focus:shadow-primary/5 backdrop-blur-sm"
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 autoFocus
                             />
-                            {search && (
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
                                 <button
-                                    onClick={() => setSearch("")}
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-white/10 rounded-lg transition-all"
+                                    onClick={() => setIsScannerOpen(true)}
+                                    className="p-1.5 hover:bg-white/10 rounded-lg transition-all text-primary"
+                                    title="Barkod Tara"
                                 >
-                                    <X size={16} className="text-secondary hover:text-rose-500" />
+                                    <Camera size={20} />
                                 </button>
-                            )}
+                                {search && (
+                                    <button
+                                        onClick={() => setSearch("")}
+                                        className="p-1.5 hover:bg-white/10 rounded-lg transition-all"
+                                    >
+                                        <X size={18} className="text-secondary hover:text-rose-500" />
+                                    </button>
+                                )}
+                            </div>
                         </div>
 
                         {/* Category Pills - Premium Style */}
@@ -672,6 +724,9 @@ export default function POS({
                                     <button onClick={() => { setIsPriceCheckMode(!isPriceCheckMode); }} className={`aspect-square rounded-xl flex items-center justify-center transition-all border ${isPriceCheckMode ? 'bg-primary text-white border-primary' : 'bg-primary/5 border-border text-secondary hover:bg-primary/10'}`} title="Fiyat Gör">
                                         <Search size={18} />
                                     </button>
+                                    <button onClick={() => setIsScannerOpen(true)} className="aspect-square rounded-xl bg-primary/5 border border-border text-primary flex items-center justify-center hover:bg-primary/10 transition-all shadow-sm" title="Barkod Tara">
+                                        <Camera size={18} />
+                                    </button>
                                     <button onClick={() => setCart(cart.slice(0, -1))} className="aspect-square rounded-xl bg-primary/5 border border-border text-rose-500 flex items-center justify-center hover:bg-rose-500/10 transition-all shadow-sm" title="Son Satırı Sil">
                                         <Delete size={18} />
                                     </button>
@@ -768,6 +823,39 @@ export default function POS({
             </div>
 
             {/* Appearance Settings Modal removed - Moved to global settings */}
+
+            {/* Barcode Scanner Modal */}
+            <AnimatePresence>
+                {isScannerOpen && (
+                    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-background/95 backdrop-blur-xl">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="glass-card w-full max-w-lg !p-0 overflow-hidden shadow-2xl border-primary/20"
+                        >
+                            <div className="p-6 border-b border-border bg-primary/10 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <Camera className="text-primary" />
+                                    <h3 className="font-black uppercase tracking-widest">BARKOD TARA</h3>
+                                </div>
+                                <button
+                                    onClick={() => setIsScannerOpen(false)}
+                                    className="p-2 hover:bg-white/5 rounded-xl transition-all"
+                                >
+                                    <X />
+                                </button>
+                            </div>
+                            <div className="p-6">
+                                <div id="reader" className="w-full overflow-hidden rounded-2xl border-2 border-primary/20 bg-black/40 aspect-square"></div>
+                                <p className="mt-4 text-center text-xs text-secondary font-bold tracking-widest uppercase">
+                                    Ürün barkodunu kameraya yaklaştırın
+                                </p>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
 
             {/* Suspended Sales Modal */}
             <AnimatePresence>

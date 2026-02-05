@@ -138,7 +138,7 @@ export default function Home() {
       // 2. Fetch ALL Products using Pagination with Explicit Tenant Filter
       let allProducts: any[] = [];
       let page = 0;
-      const PAGE_SIZE = 500;
+      const PAGE_SIZE = 1000;
       let hasMore = true;
 
       while (hasMore) {
@@ -158,6 +158,8 @@ export default function Home() {
 
         if (data && data.length > 0) {
           allProducts = [...allProducts, ...data];
+          setProducts([...allProducts]); // Update state progressively
+
           if (data.length < PAGE_SIZE) {
             hasMore = false;
           }
@@ -168,8 +170,6 @@ export default function Home() {
       }
 
       console.log(`Final Success! Total: ${allProducts.length}`);
-      setProducts(allProducts);
-
     } catch (error: any) {
       showToast(error.message, "error");
     } finally {

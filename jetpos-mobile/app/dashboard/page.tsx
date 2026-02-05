@@ -73,7 +73,21 @@ export default function DashboardPage() {
                 .select('stock_quantity, sale_price');
 
             const totalValue = products?.reduce(
-                (sum: number, p: any) => sum + (p.stock_quantity * p.sale_price),
+                (sum: number, p: any) => sum + ((p.stock_quantity || 0) * (p.sale_price || 0)),
+                0
+            ) || 0;
+
+            // Calculate Today's Sales
+            const startOfDay = new Date();
+            startOfDay.setHours(0, 0, 0, 0);
+
+            const { data: todayInvoices } = await supabase
+                .from('invoices')
+                .select('grand_total')
+                .gte('created_at', startOfDay.toISOString());
+
+            const todaySales = todayInvoices?.reduce(
+                (sum: number, inv: any) => sum + (inv.grand_total || 0),
                 0
             ) || 0;
 
@@ -81,7 +95,7 @@ export default function DashboardPage() {
                 totalProducts: productCount || 0,
                 lowStockCount: lowStockCount || 0,
                 totalValue,
-                todaySales: 0,
+                todaySales,
             });
         } catch (error) {
             console.error('Dashboard data fetch error:', error);

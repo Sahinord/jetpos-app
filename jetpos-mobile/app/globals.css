@@ -65,6 +65,38 @@ body {
   animation: float 6s ease-in-out infinite;
 }
 
+@keyframes tada {
+  0% {
+    transform: scale(1);
+  }
+
+  10%,
+  20% {
+    transform: scale(0.9) rotate(-3deg);
+  }
+
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: scale(1.1) rotate(3deg);
+  }
+
+  40%,
+  60%,
+  80% {
+    transform: scale(1.1) rotate(-3deg);
+  }
+
+  100% {
+    transform: scale(1) rotate(0);
+  }
+}
+
+.animate-tada {
+  animation: tada 1s ease-in-out infinite;
+}
+
 @keyframes glow {
 
   0%,
@@ -78,7 +110,20 @@ body {
 }
 
 .neon-glow {
-  filter: drop-shadow(0 0 8px var(--primary));
+  filter: drop-shadow(0 0 12px var(--primary));
+}
+
+.neon-glow-rose {
+  filter: drop-shadow(0 0 12px #f43f5e);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* Custom Scrollbar */

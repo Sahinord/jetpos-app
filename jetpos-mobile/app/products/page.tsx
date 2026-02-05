@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Search, Package } from 'lucide-react';
@@ -21,35 +21,55 @@ interface Product {
 export default function ProductsPage() {
     const router = useRouter();
     const [products, setProducts] = useState<Product[]>([]);
-    const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
+    const [visibleCount, setVisibleCount] = useState(20);
+    const observerTarget = useRef(null);
 
     useEffect(() => {
         fetchProducts();
 
-        // Polling - Her 3 saniyede bir veriyi kontrol et
+        // Polling'i 30 saniyeye çıkarıyoruz (Optimizasyon)
         const interval = setInterval(() => {
-            console.log('🔄 Polling - veri güncelleniyor...');
             fetchProducts();
-        }, 3000); // 3 saniye
+        }, 30000);
 
-        return () => {
-            clearInterval(interval);
-        };
+        return () => clearInterval(interval);
     }, []);
 
-    useEffect(() => {
+    const filteredProducts = useMemo(() => {
+        let result = products;
         if (searchTerm) {
-            const filtered = products.filter(p =>
-                p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                p.barcode.includes(searchTerm)
+            const lower = searchTerm.toLowerCase();
+            result = result.filter(p =>
+                p.name.toLowerCase().includes(lower) ||
+                p.barcode?.includes(lower)
             );
-            setFilteredProducts(filtered);
-        } else {
-            setFilteredProducts(products);
         }
-    }, [searchTerm, products]);
+        return result;
+    }, [products, searchTerm]);
+
+    const displayedProducts = useMemo(() => {
+        return filteredProducts.slice(0, visibleCount);
+    }, [filteredProducts, visibleCount]);
+
+    // Infinite Scroll Logic
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && visibleCount < filteredProducts.length) {
+                    setVisibleCount(prev => prev + 20);
+                }
+            },
+            { threshold: 1.0 }
+        );
+
+        if (observerTarget.current) {
+            observer.observe(observerTarget.current);
+        }
+
+        return () => observer.disconnect();
+    }, [visibleCount, filteredProducts.length]);
 
     const fetchProducts = async () => {
         try {
@@ -59,20 +79,42 @@ export default function ProductsPage() {
             // RLS context set et
             await supabase.rpc('set_current_tenant', { tenant_id: tenantId });
 
-            const { data, error } = await supabase
-                .from('products')
-                .select('id, name, barcode, stock_quantity, sale_price, purchase_price, status, category_id')
-                .order('name', { ascending: true });
+            let allProducts: Product[] = [];
+            let page = 0;
+            const PAGE_SIZE = 1000;
+            let hasMore = true;
 
-            if (data) {
-                console.log('✅ Ürünler yüklendi:', data.length);
-                setProducts(data);
-                setFilteredProducts(data);
-            }
+            while (hasMore) {
+                const { data, error } = await supabase
+                    .from('products')
+                    .select('id, name, barcode, stock_quantity, sale_price, purchase_price, status, category_id')
+                    .eq('status', 'active')
+                    .order('name', { ascending: true })
+                    .order('id', { ascending: true }) // Stable sorting for reliable pagination
+                    .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
-            if (error) {
-                console.error('❌ Ürün yükleme hatası:', error);
+                if (error) {
+                    console.warn('❌ Ürün çekme batch hatası:', error);
+                    hasMore = false;
+                    break;
+                }
+
+                if (data && data.length > 0) {
+                    allProducts = [...allProducts, ...data];
+                    setProducts([...allProducts]); // Update UI progressively
+                    console.log(`📦 Ürünler Yükleniyor: ${allProducts.length} adet çekildi...`);
+
+                    if (data.length < PAGE_SIZE) {
+                        hasMore = false;
+                    }
+                } else {
+                    hasMore = false;
+                }
+                page++;
+
+                if (page === 1) setLoading(false);
             }
+            console.log(`✅ Toplam ${allProducts.length} ürün başarıyla yüklendi.`);
         } catch (error) {
             console.error('Products fetch error:', error);
         } finally {
@@ -100,25 +142,42 @@ export default function ProductsPage() {
             </div>
 
             {/* Products List */}
-            <div className="p-4 space-y-3">
-                {loading ? (
-                    <div className="text-center py-8">
-                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                        <p className="text-gray-400 mt-2">Yükleniyor...</p>
+            <div className="p-4 space-y-4">
+                {loading && products.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20">
+                        <div className="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-4" />
+                        <p className="text-secondary font-bold animate-pulse uppercase tracking-widest text-xs">Ürünler Hazırlanıyor...</p>
                     </div>
-                ) : filteredProducts.length === 0 ? (
-                    <div className="text-center py-8">
-                        <Package className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                        <p className="text-gray-400">Ürün bulunamadı</p>
+                ) : displayedProducts.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 opacity-40">
+                        <Package className="w-20 h-20 text-secondary mb-4" />
+                        <p className="text-secondary font-black uppercase tracking-widest text-xs">Sonuç Bulunamadı</p>
                     </div>
                 ) : (
-                    filteredProducts.map((product) => (
-                        <ProductItemCard
-                            key={product.id}
-                            product={product}
-                            onUpdate={fetchProducts}
-                        />
-                    ))
+                    <>
+                        <div className="grid grid-cols-1 gap-4">
+                            {displayedProducts.map((product) => (
+                                <ProductItemCard
+                                    key={product.id}
+                                    product={product}
+                                    onUpdate={fetchProducts}
+                                />
+                            ))}
+                        </div>
+
+                        {/* Scroll Trigger */}
+                        {visibleCount < filteredProducts.length && (
+                            <div ref={observerTarget} className="h-20 flex items-center justify-center">
+                                <div className="w-6 h-6 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
+                            </div>
+                        )}
+
+                        <div className="text-center py-6 opacity-30">
+                            <p className="text-[10px] font-black uppercase tracking-[3px]">
+                                {filteredProducts.length} Ürün Listelendi
+                            </p>
+                        </div>
+                    </>
                 )}
             </div>
 
@@ -133,54 +192,64 @@ function ProductItemCard({ product, onUpdate }: { product: Product; onUpdate: ()
 
     return (
         <>
-            <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-white/10">
-                <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                            <h3 className="text-white font-bold">{product.name}</h3>
-                            {product.status === 'inactive' && (
-                                <span className="px-2 py-0.5 bg-red-500/20 text-red-400 text-xs font-bold rounded-full">
-                                    Pasif
-                                </span>
-                            )}
-                            {product.status === 'pending' && (
-                                <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 text-xs font-bold rounded-full">
-                                    Beklemede
-                                </span>
-                            )}
+            <div className="bg-white/5 backdrop-blur-xl rounded-[2rem] p-5 border border-white/5 shadow-2xl relative overflow-hidden group active:scale-[0.98] transition-all">
+                {/* Background Decor */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-blue-500/10 transition-colors" />
+
+                <div className="flex items-start justify-between relative z-10">
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                            <h3 className="text-white font-black text-lg leading-tight truncate">{product.name}</h3>
+                            <div className="flex gap-1">
+                                {product.status === 'inactive' && (
+                                    <span className="px-2 py-0.5 bg-rose-500/10 text-rose-400 text-[9px] font-black rounded-lg border border-rose-500/20 tracking-tighter uppercase">
+                                        Pasif
+                                    </span>
+                                )}
+                                {(product.stock_quantity || 0) < 5 && (
+                                    <span className="px-2 py-0.5 bg-rose-500 text-white text-[9px] font-black rounded-lg shadow-lg shadow-rose-500/20 animate-pulse tracking-tighter uppercase">
+                                        Kritik Stok
+                                    </span>
+                                )}
+                            </div>
                         </div>
-                        <p className="text-xs text-gray-400 font-mono">{product.barcode}</p>
+                        <div className="flex items-center gap-2">
+                            <span className="bg-white/5 px-2 py-0.5 rounded text-[10px] font-mono text-secondary border border-white/5">
+                                {product.barcode}
+                            </span>
+                        </div>
                     </div>
-                    <div className={`px-3 py-1 rounded-full text-xs font-bold ${product.stock_quantity <= 10
-                        ? 'bg-red-600/20 text-red-400'
-                        : product.stock_quantity <= 50
-                            ? 'bg-yellow-600/20 text-yellow-400'
-                            : 'bg-green-600/20 text-green-400'
+
+                    <div className={`shrink-0 ml-4 px-3 py-1.5 rounded-2xl flex flex-col items-end justify-center border ${(product.stock_quantity || 0) < 10
+                        ? 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+                        : (product.stock_quantity || 0) < 50
+                            ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+                            : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
                         }`}>
-                        {product.stock_quantity} adet
+                        <span className="text-base font-black leading-none">{product.stock_quantity}</span>
+                        <span className="text-[9px] font-bold uppercase opacity-60 tracking-wider">Adet</span>
                     </div>
                 </div>
 
-                <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/10">
-                    <div className="flex gap-4">
-                        <div>
-                            <p className="text-xs text-gray-400">Alış</p>
-                            <p className="text-sm font-bold text-gray-300">
-                                ₺{product.purchase_price?.toFixed(2)}
-                            </p>
+                <div className="flex items-center justify-between mt-5 pt-5 border-t border-white/5 relative z-10">
+                    <div className="flex gap-6">
+                        <div className="flex flex-col">
+                            <span className="text-[10px] font-black text-secondary tracking-widest uppercase mb-1">Maliyet</span>
+                            <span className="text-sm font-bold text-white/50">₺{product.purchase_price?.toFixed(2)}</span>
                         </div>
-                        <div>
-                            <p className="text-xs text-gray-400">Satış</p>
-                            <p className="text-lg font-black text-blue-400">
-                                ₺{product.sale_price?.toFixed(2)}
-                            </p>
+                        <div className="flex flex-col">
+                            <span className="text-[10px] font-black text-blue-400/60 tracking-widest uppercase mb-1">Satış Fiyatı</span>
+                            <div className="flex items-baseline gap-1">
+                                <span className="text-2xl font-black text-white leading-none">₺{product.sale_price?.toFixed(2)}</span>
+                            </div>
                         </div>
                     </div>
+
                     <button
                         onClick={() => setShowEditModal(true)}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-all active:scale-95"
+                        className="w-12 h-12 bg-white/5 hover:bg-blue-600 text-white rounded-2xl flex items-center justify-center border border-white/10 hover:border-blue-500 transition-all active:scale-90 shadow-xl"
                     >
-                        Düzenle
+                        <Search className="w-5 h-5 opacity-60" />
                     </button>
                 </div>
             </div>
