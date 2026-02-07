@@ -17,8 +17,10 @@ import {
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { generateZReportPDF, exportZReportExcel } from "@/lib/reports";
+import { useTenant } from "@/lib/tenant-context";
 
 export default function SmartReports({ products }: any) {
+    const { currentTenant } = useTenant();
     const [stats, setStats] = useState({
         totalSales: 0,
         totalProfit: 0,
@@ -39,10 +41,13 @@ export default function SmartReports({ products }: any) {
             const today = new Date();
             today.setHours(0, 0, 0, 0);
 
+            if (!currentTenant) return;
+
             // 1. Fetch Today's Sales
             const { data: sales, error: salesError } = await supabase
                 .from('sales')
                 .select('*')
+                .eq('tenant_id', currentTenant.id)
                 .gte('created_at', today.toISOString());
 
             if (salesError) throw salesError;
@@ -51,6 +56,7 @@ export default function SmartReports({ products }: any) {
             const { data: saleItems, error: itemsError } = await supabase
                 .from('sale_items')
                 .select('*, products(*)')
+                .eq('tenant_id', currentTenant.id)
                 .gte('created_at', today.toISOString());
 
             if (itemsError) throw itemsError;

@@ -208,7 +208,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                     const increaseAmount = newPrice - oldPrice;
 
                     // Update single product price
-                    const { error } = await supabase.from('products').update({ sale_price: newPrice }).eq('id', productId);
+                    const { error } = await supabase.from('products').update({ sale_price: newPrice }).eq('id', productId).eq('tenant_id', savedTenantId);
 
                     if (error) {
                         console.error(`Error updating product ${productId}:`, error.message);
@@ -223,6 +223,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                             increase_rate: rate,
                             increase_amount: increaseAmount,
                             changed_by: 'admin',
+                            tenant_id: savedTenantId
                         });
                     }
                 }
@@ -282,7 +283,8 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                     .update({
                         status: status
                     })
-                    .in('id', batchIds);
+                    .in('id', batchIds)
+                    .eq('tenant_id', savedTenantId);
                 // .select() removed explicitly as it caused "0 updated" on RLS hidden rows
 
                 if (error) {
@@ -340,7 +342,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
 
                 // No .select()
                 // Removed non-existent 'is_active' column
-                const { error } = await sb.from('products').update({ status: 'passive' }).in('id', batchIds);
+                const { error } = await sb.from('products').update({ status: 'passive' }).in('id', batchIds).eq('tenant_id', savedTenantId);
 
                 if (error) {
                     console.error("Batch auto passive error:", error.message);
@@ -388,7 +390,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                     setProcessing(prev => ({ ...prev, current: i + 1 }));
 
                     const finalStock = Math.floor(Math.random() * 100) + 1;
-                    const { error } = await sb.from('products').update({ stock_quantity: finalStock }).eq('id', id);
+                    const { error } = await sb.from('products').update({ stock_quantity: finalStock }).eq('id', id).eq('tenant_id', savedTenantId);
                     if (error) {
                         console.error(`Error updating product ${id}:`, error.message);
                         throw new Error(error.message);
@@ -405,7 +407,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                     const batchIds = selectedProducts.slice(i, i + BATCH_SIZE);
                     setProcessing(prev => ({ ...prev, current: Math.min(i + BATCH_SIZE, total) }));
 
-                    const { error } = await sb.from('products').update({ stock_quantity: value }).in('id', batchIds);
+                    const { error } = await sb.from('products').update({ stock_quantity: value }).in('id', batchIds).eq('tenant_id', savedTenantId);
 
                     if (error) {
                         console.error("Batch stock error:", error.message);
@@ -677,16 +679,16 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                                     <Package className="w-5 h-5" />
                                                 </div>
                                                 <div className="flex flex-col">
-                                                    <span className="font-bold text-foreground text-sm flex items-center gap-2">
+                                                    <span className="font-bold text-foreground text-[15px] tracking-tight flex items-center gap-2">
                                                         {product.name}
                                                         {product.is_campaign && (
-                                                            <span className="px-1.5 py-0.5 rounded-md text-[9px] bg-amber-500 text-black font-black">KAMPANYA</span>
+                                                            <span className="px-2 py-0.5 rounded-md text-[9px] bg-amber-500 text-black font-black shadow-sm">KAMPANYA</span>
                                                         )}
                                                         {(product.status === 'passive' || product.is_active === false) && (
-                                                            <span className="px-1.5 py-0.5 rounded-md text-[9px] bg-slate-700 text-slate-300 font-black">PASİF</span>
+                                                            <span className="px-2 py-0.5 rounded-md text-[9px] bg-slate-700 text-slate-300 font-black shadow-sm">PASİF</span>
                                                         )}
                                                     </span>
-                                                    <span className="text-xs text-secondary/60 flex items-center mt-0.5 font-medium font-mono">
+                                                    <span className="text-[11px] text-secondary/40 flex items-center mt-0.5 font-bold font-mono tracking-widest">
                                                         {product.barcode || "---"}
                                                     </span>
                                                 </div>
@@ -697,10 +699,10 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                                 {(product.categories?.name || product.category?.name || "GENEL").toUpperCase().slice(0, 12)}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-center">
+                                        <td className="px-6 py-4 text-center border-x border-border/10">
                                             <div className="flex flex-col items-center">
-                                                <span className="text-secondary text-[10px] font-bold line-through opacity-50">₺{product.purchase_price.toFixed(2)}</span>
-                                                <span className="text-foreground font-bold text-base">₺{product.sale_price.toFixed(2)}</span>
+                                                <span className="text-secondary/40 text-[10px] font-bold line-through">₺{product.purchase_price.toFixed(2)}</span>
+                                                <span className="text-primary font-black text-lg tracking-tight">₺{product.sale_price.toFixed(2)}</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-center">
@@ -713,10 +715,10 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <div className="flex flex-col items-center">
-                                                <span className={`text-sm font-bold ${product.stock_quantity <= 2 ? 'text-rose-500 animate-pulse' : 'text-foreground'}`}>
+                                                <span className={`text-base font-black tracking-tight ${product.stock_quantity <= 2 ? 'text-rose-500 animate-pulse' : 'text-foreground'}`}>
                                                     {product.unit?.toLowerCase() === 'kg'
                                                         ? (product.stock_quantity >= 1
-                                                            ? `${product.stock_quantity.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 3 })}`
+                                                            ? `${product.stock_quantity.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
                                                             : `${(product.stock_quantity * 1000).toFixed(0)} gr`)
                                                         : product.stock_quantity
                                                     }

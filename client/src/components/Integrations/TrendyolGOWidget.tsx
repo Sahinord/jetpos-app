@@ -23,7 +23,7 @@ import {
     Lock,
     Globe
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { supabase, setCurrentTenant } from "@/lib/supabase";
 import { useTenant } from "@/lib/tenant-context";
 import { TrendyolGoClient } from "@/lib/trendyol-go-client";
 
@@ -41,7 +41,7 @@ export default function TrendyolGOWidget() {
         apiKey: "",
         apiSecret: "",
         agentName: "JetPos_Entegrasyon",
-        isStage: true
+        isStage: false
     });
 
     const [stats, setStats] = useState({
@@ -52,11 +52,37 @@ export default function TrendyolGOWidget() {
         status: "idle" // "idle" | "success" | "error"
     });
 
+    const [orders, setOrders] = useState<any[]>([]);
+
     useEffect(() => {
         if (currentTenant) {
             fetchSettings();
+            fetchOrders();
         }
     }, [currentTenant]);
+
+    const fetchOrders = async () => {
+        if (!currentTenant) return;
+        try {
+            const { data, error } = await supabase
+                .from('trendyol_go_orders')
+                .select('*')
+                .eq('tenant_id', currentTenant.id)
+                .order('created_at', { ascending: false })
+                .limit(20);
+
+            if (data) {
+                setOrders(data);
+                setStats(prev => ({
+                    ...prev,
+                    totalOrders: data.length,
+                    pendingOrders: data.filter(o => o.status === 'CREATED').length
+                }));
+            }
+        } catch (err) {
+            console.error("Error fetching orders:", err);
+        }
+    };
 
     const fetchSettings = async () => {
         setLoading(true);
@@ -82,6 +108,11 @@ export default function TrendyolGOWidget() {
     const handleSaveSettings = async () => {
         setLoading(true);
         try {
+            // RLS için tenant set et
+            if (currentTenant?.id) {
+                await setCurrentTenant(currentTenant.id);
+            }
+
             const { error } = await supabase.rpc('upsert_integration_settings', {
                 p_tenant_id: currentTenant?.id,
                 p_type: 'trendyol_go',
@@ -100,24 +131,106 @@ export default function TrendyolGOWidget() {
         }
     };
 
-    const handleSyncOrders = async () => {
-        if (!isConfigured) return;
+    const [syncDays, setSyncDays] = useState(1);
+
+    const handleSyncOrders = async (days: number = 1) => {
+        if (!isConfigured || !currentTenant?.id) return;
         setSyncing(true);
         try {
+            // RLS için tenant'ı database session'ına bildir
+            await setCurrentTenant(currentTenant.id);
+
             const client = new TrendyolGoClient(settings);
 
-            // Son 24 saatteki siparişleri çek
+            // Belirlenen gün aralığındaki siparişleri çek
             const endDate = new Date();
-            const startDate = new Date(endDate.getTime() - 24 * 60 * 60 * 1000);
+            const startDate = new Date(endDate.getTime() - days * 24 * 60 * 60 * 1000);
 
-            const orders = await client.getOrders(startDate, endDate);
+            console.log(`🔎 Trendyol GO: ${days} günlük tarama başlatıldı...`);
 
-            if (orders && orders.length > 0) {
-                // Supabase'e kaydet (upsert by orderNumber)
+            // Tüm durumdaki siparişleri çekmek için statüleri sırayla tara (UPPERCASE zorunlu olabilir)
+            const statuses = [undefined, 'CREATED', 'PICKED', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'ACCEPTED', 'PICKING'];
+            let allOrders: any[] = [];
+
+            console.log("🚀 Agresif tarama başlatılıyor...");
+
+            for (const status of statuses) {
+                try {
+                    // 1. Alternatif: Mağaza ID'si ile dene
+                    const statusOrders = await client.getOrders(startDate, endDate, status, true);
+                    if (statusOrders && statusOrders.length > 0) {
+                        console.log(`✅ [${status || 'ALL'}] durumu için ${statusOrders.length} sipariş bulundu (Mağaza Bazlı).`);
+                        allOrders = [...allOrders, ...statusOrders];
+                    }
+
+                    // 2. Alternatif: Mağaza ID'si olmadan dene (Mağaza bazlı gelmediyse)
+                    if (settings.storeId) {
+                        const globalOrders = await client.getOrders(startDate, endDate, status, false);
+                        if (globalOrders && globalOrders.length > 0) {
+                            console.log(`✅ [${status || 'ALL'}] durumu için ${globalOrders.length} sipariş bulundu (Global Bazlı).`);
+                            allOrders = [...allOrders, ...globalOrders];
+                        }
+                    }
+                } catch (statusErr: any) {
+                    console.warn(`⚠️ [${status}] sorgusu başarısız:`, statusErr.message);
+                }
+            }
+
+            // Mükerrer kayıtları temizle (orderNumber bazında)
+            const uniqueOrders = Array.from(new Map(allOrders.map(o => [o.orderNumber, o])).values());
+
+            if (uniqueOrders.length > 0) {
+                // 1. Mevcut sipariş numaralarını çek (hangileri yeni görelim)
+                const { data: existingOrders } = await supabase
+                    .from('trendyol_go_orders')
+                    .select('order_number')
+                    .eq('tenant_id', currentTenant.id)
+                    .in('order_number', uniqueOrders.map(o => o.orderNumber));
+
+                const existingOrderNumbers = new Set(existingOrders?.map(o => o.order_number) || []);
+                const newOrders = uniqueOrders.filter(o => !existingOrderNumbers.has(o.orderNumber));
+
+                let stockUpdatesCount = 0;
+
+                // 2. Sadece YENİ siparişler için stok düş
+                if (newOrders.length > 0) {
+                    console.log(`📦 ${newOrders.length} adet yeni sipariş için stok düşümü başlatılıyor...`);
+
+                    for (const order of newOrders) {
+                        for (const item of order.lines) {
+                            const barcode = item.barcode;
+                            if (!barcode) continue;
+
+                            // Ürünü barkoddan bul
+                            const { data: product } = await supabase
+                                .from('products')
+                                .select('id, name, stock_quantity')
+                                .eq('tenant_id', currentTenant.id)
+                                .eq('barcode', barcode)
+                                .single();
+
+                            if (product) {
+                                // Stoğu düşür
+                                const qty = item.amount || item.quantity || 1;
+                                const { error: stockErr } = await supabase.rpc('decrement_stock', {
+                                    product_id: product.id,
+                                    qty: qty
+                                });
+
+                                if (!stockErr) {
+                                    stockUpdatesCount++;
+                                    console.log(`✅ Stoktan düşüldü: ${product.name} (-${qty})`);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 3. Veritabanına kaydet
                 const { error } = await supabase
                     .from('trendyol_go_orders')
                     .upsert(
-                        orders.map(order => ({
+                        uniqueOrders.map(order => ({
                             tenant_id: currentTenant?.id,
                             order_number: order.orderNumber,
                             customer_name: `${order.customer.firstName} ${order.customer.lastName}`,
@@ -134,22 +247,28 @@ export default function TrendyolGOWidget() {
                 // Stats güncelle
                 setStats(prev => ({
                     ...prev,
-                    totalOrders: prev.totalOrders + orders.length,
-                    pendingOrders: orders.filter(o => o.packageStatus === 'Created').length,
+                    totalOrders: prev.totalOrders + newOrders.length,
+                    pendingOrders: uniqueOrders.filter(o => o.packageStatus === 'CREATED').length,
+                    stockUpdates: prev.stockUpdates + stockUpdatesCount,
                     lastSync: new Date().toISOString() as any,
                     status: "success"
                 }));
 
-                // integration_settings tablosundaki last_sync_at'i güncelle
                 await supabase
                     .from('integration_settings')
                     .update({ last_sync_at: new Date().toISOString() })
                     .eq('tenant_id', currentTenant?.id)
                     .eq('type', 'trendyol_go');
 
-                alert(`✅ ${orders.length} sipariş başarıyla senkronize edildi.`);
+                await fetchOrders();
+
+                if (newOrders.length > 0) {
+                    alert(`✅ ${newOrders.length} yeni sipariş alındı ve ${stockUpdatesCount} ürün stoktan düşüldü.`);
+                } else {
+                    alert(`ℹ️ Yeni sipariş bulunamadı, mevcut ${uniqueOrders.length} sipariş güncellendi.`);
+                }
             } else {
-                alert("ℹ️ Yeni sipariş bulunamadı.");
+                alert(`ℹ️ Son ${days} gün içinde herhangi bir sipariş (Yeni/Hazır/Teslim) bulunamadı.`);
             }
         } catch (err: any) {
             console.error("Sync Error:", err);
@@ -191,16 +310,16 @@ export default function TrendyolGOWidget() {
     }
 
     return (
-        <div className="glass-card p-6 space-y-6 border-l-4 border-l-orange-500 relative overflow-hidden">
+        <div className="glass-card !p-8 space-y-8 border-l-4 border-l-orange-500 relative overflow-hidden h-full">
             {/* Header */}
             <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center">
-                        <Package className="w-6 h-6 text-orange-500" />
+                <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-orange-500/10 rounded-2xl flex items-center justify-center border border-orange-500/20">
+                        <Package className="w-7 h-7 text-orange-500" />
                     </div>
                     <div>
-                        <h3 className="text-lg font-black text-white">Trendyol GO</h3>
-                        <p className="text-xs text-secondary">Hızlı Market Entegrasyonu</p>
+                        <h3 className="text-xl font-black text-white tracking-tight">Trendyol GO</h3>
+                        <p className="text-xs text-secondary/60 font-bold">Market Entegrasyonu</p>
                     </div>
                 </div>
 
@@ -275,6 +394,26 @@ export default function TrendyolGOWidget() {
                                     placeholder="••••••••"
                                 />
                             </div>
+                        </div>
+                        <div className="space-y-1 md:col-span-2">
+                            <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Entegrasyon Referans Kodu (Zorunlu)</label>
+                            <input
+                                type="text"
+                                value={settings.agentName}
+                                onChange={e => setSettings({ ...settings, agentName: e.target.value })}
+                                className="w-full bg-slate-950/50 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-white focus:border-orange-500/50 outline-none transition-all font-mono"
+                                placeholder="Trendyol panelindeki Referans Kodunu buraya yapıştırın"
+                            />
+                        </div>
+                        <div className="space-y-1 md:col-span-2">
+                            <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Token (Opsiyonel)</label>
+                            <input
+                                type="text"
+                                value={(settings as any).token || ""}
+                                onChange={e => setSettings({ ...settings, token: e.target.value } as any)}
+                                className="w-full bg-slate-950/50 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-white focus:border-orange-500/50 outline-none transition-all font-mono"
+                                placeholder="Trendyol panelindeki Token bilgisini buraya yapıştırın"
+                            />
                         </div>
                     </div>
 
@@ -351,23 +490,41 @@ export default function TrendyolGOWidget() {
                         </div>
                     )}
 
-                    <div className="flex gap-3">
-                        <button
-                            onClick={handleTestConnection}
-                            disabled={syncing || !isConfigured}
-                            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-orange-500 hover:bg-orange-600 rounded-xl text-white font-black transition-all disabled:opacity-30 shadow-lg ${isConfigured ? 'shadow-orange-500/20' : ''}`}
-                        >
-                            <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-                            {syncing ? 'Test Ediliyor...' : 'Bağlantıyı Test Et'}
-                        </button>
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between px-1">
+                            <span className="text-[10px] text-secondary font-black uppercase tracking-wider">Senkronizasyon Aralığı</span>
+                            <div className="flex gap-1.5 bg-white/5 p-1 rounded-lg border border-white/5">
+                                {[1, 7, 30].map(d => (
+                                    <button
+                                        key={d}
+                                        onClick={() => setSyncDays(d)}
+                                        className={`px-2 py-1 rounded-md text-[9px] font-black transition-all ${syncDays === d ? 'bg-orange-500 text-white shadow-sm' : 'text-secondary hover:text-white'}`}
+                                    >
+                                        {d === 1 ? '24S' : `${d} GÜN`}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
 
-                        <button
-                            className="p-3 bg-white/5 hover:bg-white/10 rounded-xl text-white transition-all border border-white/5"
-                            onClick={() => window.open('https://developers.tgoapps.com/docs/category/7-trendyol-go-by-uber-eats---market-entegrasyonu', '_blank')}
-                            title="Dokümantasyon"
-                        >
-                            <ExternalLink className="w-5 h-5" />
-                        </button>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => handleSyncOrders(syncDays)}
+                                disabled={syncing || !isConfigured}
+                                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-orange-500 hover:bg-orange-600 rounded-xl text-white font-black transition-all disabled:opacity-30 shadow-lg ${isConfigured ? 'shadow-orange-500/20' : ''}`}
+                            >
+                                <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+                                {syncing ? 'Senkronize Ediliyor...' : `${syncDays === 1 ? 'Siparişleri Çek' : `Son ${syncDays} Günü Çek`}`}
+                            </button>
+
+                            <button
+                                onClick={handleTestConnection}
+                                disabled={syncing || !isConfigured}
+                                className="p-3 bg-white/5 hover:bg-white/10 rounded-xl text-secondary hover:text-white transition-all border border-white/5"
+                                title="Bağlantıyı Test Et"
+                            >
+                                <CheckCircle className="w-5 h-5" />
+                            </button>
+                        </div>
                     </div>
 
                     <div className="flex items-center justify-between px-1">
@@ -382,6 +539,88 @@ export default function TrendyolGOWidget() {
                                 Son senkr: {new Date(stats.lastSync).toLocaleTimeString('tr-TR')}
                             </span>
                         )}
+                    </div>
+
+                    {/* Orders List Area */}
+                    <div className="space-y-4 pt-4 border-t border-white/5">
+                        <div className="flex items-center justify-between px-1">
+                            <h4 className="text-[11px] font-black text-white uppercase tracking-widest flex items-center gap-2">
+                                <TrendingUp className="w-3.5 h-3.5 text-orange-500" />
+                                Son Siparişler
+                            </h4>
+                            <span className="text-[10px] text-secondary font-bold bg-white/5 px-2 py-0.5 rounded-full">
+                                {orders.length} Kayıt
+                            </span>
+                        </div>
+
+                        <div className="space-y-2.5 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
+                            {orders.length > 0 ? (
+                                orders.map((order) => (
+                                    <div
+                                        key={order.id}
+                                        className="bg-white/5 hover:bg-white/[0.08] border border-white/5 rounded-xl p-3 transition-all group cursor-pointer"
+                                    >
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-[10px] font-black text-orange-500 bg-orange-500/10 px-2 py-0.5 rounded-md">
+                                                #{order.order_number}
+                                            </span>
+                                            <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md ${order.status === 'DELIVERED' ? 'bg-emerald-500/10 text-emerald-500' :
+                                                order.status === 'CANCELLED' ? 'bg-rose-500/10 text-rose-500' :
+                                                    'bg-amber-500/10 text-amber-500'
+                                                }`}>
+                                                {order.status}
+                                            </span>
+                                        </div>
+
+                                        <div className="flex items-end justify-between">
+                                            <div className="flex-1">
+                                                <p className="text-xs font-bold text-white group-hover:text-orange-400 transition-colors uppercase mb-1">
+                                                    {order.customer_name}
+                                                </p>
+
+                                                {/* Ürün Listesi */}
+                                                <div className="space-y-1 mb-2">
+                                                    {order.items && Array.isArray(order.items) && order.items.map((item: any, idx: number) => (
+                                                        <div key={idx} className="flex items-center gap-1.5 text-[10px]">
+                                                            <span className="bg-white/10 px-1.5 py-0.5 rounded text-orange-400 font-bold shrink-0">
+                                                                {item.quantity || item.amount}x
+                                                            </span>
+                                                            <span className="text-secondary/80 font-medium truncate">
+                                                                {item.productName || item.name}
+                                                            </span>
+                                                            <span className="text-slate-600 ml-auto font-bold line-clamp-1">
+                                                                {item.price?.unitPrice || item.unitPrice} TL
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+
+                                                <p className="text-[10px] text-secondary/60 font-medium">
+                                                    {new Date(order.created_at).toLocaleString('tr-TR', {
+                                                        day: '2-digit',
+                                                        month: 'short',
+                                                        hour: '2-digit',
+                                                        minute: '2-digit'
+                                                    })}
+                                                </p>
+                                            </div>
+                                            <div className="text-right ml-4">
+                                                <p className="text-sm font-black text-white whitespace-nowrap">
+                                                    {order.total_price} <span className="text-[10px] font-bold text-secondary">TL</span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="py-12 flex flex-col items-center justify-center text-center opacity-40">
+                                    <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center mb-3">
+                                        <Package className="w-6 h-6" />
+                                    </div>
+                                    <p className="text-xs font-bold text-secondary">Henüz sipariş senkronize edilmedi</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </>
             )}

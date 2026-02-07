@@ -30,6 +30,7 @@ import TenantProfile from "@/components/Tenant/TenantProfile";
 import SupportTicketModal from "@/components/Support/SupportTicketModal";
 
 import AISalesInsights from '@/components/AI/AISalesInsights';
+import AIAssistantChat from '@/components/AI/AIAssistantChat';
 import InvoicePanel from '@/components/Invoice/InvoicePanel';
 import HomePage from '@/components/Home/HomePage';
 import CariPage from '@/components/Cari/CariPage';
@@ -120,7 +121,7 @@ export default function Home() {
       const [cd, si] = await Promise.all([
         supabase.from('categories')
           .select('*')
-          // Cross-tenant access enabled via RLS
+          .eq('tenant_id', currentTenant.id)
           .order('name'),
         supabase.from('sale_items')
           .select('*')
@@ -147,7 +148,7 @@ export default function Home() {
         const { data, error } = await supabase
           .from('products')
           .select('*, categories(name)')
-          // Cross-tenant access enabled via RLS policy - tenant_permissions table
+          .eq('tenant_id', currentTenant.id)
           .order('id', { ascending: true })
           .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
@@ -178,6 +179,7 @@ export default function Home() {
   };
 
   const handleSave = async (formData: any) => {
+    if (!currentTenant) return;
     setIsSaving(true);
     try {
       // Duplicate Barcode Check
@@ -207,8 +209,10 @@ export default function Home() {
             status: formData.status,
             is_campaign: formData.is_campaign,
             image_url: formData.image_url,
+            tenant_id: currentTenant.id
           })
-          .eq('id', (editingProduct as any).id);
+          .eq('id', (editingProduct as any).id)
+          .eq('tenant_id', currentTenant.id);
 
         if (error) throw error;
         showToast("Ürün güncellendi");
@@ -227,6 +231,7 @@ export default function Home() {
             status: formData.status,
             is_campaign: formData.is_campaign,
             image_url: formData.image_url,
+            tenant_id: currentTenant.id
           }]);
 
         if (error) throw error;
@@ -242,6 +247,7 @@ export default function Home() {
   };
 
   const handleDelete = async (id: string) => {
+    if (!currentTenant) return;
     if (!confirm("Silmek istediğinize emin misiniz?")) return;
 
     try {
@@ -249,7 +255,10 @@ export default function Home() {
       const { error: itemsError } = await supabase.from('sale_items').delete().eq('product_id', id);
       if (itemsError) throw itemsError;
 
-      const { error } = await supabase.from('products').delete().eq('id', id);
+      const { error } = await supabase.from('products')
+        .delete()
+        .eq('id', id)
+        .eq('tenant_id', currentTenant.id);
       if (error) throw error;
 
       showToast("Ürün ve geçmiş verileri silindi", "info");
@@ -260,6 +269,7 @@ export default function Home() {
   };
 
   const handleToggleAllCampaign = async (status: boolean, rate?: number) => {
+    if (!currentTenant) return;
     try {
       setLoading(true);
 
@@ -271,7 +281,7 @@ export default function Home() {
       const { error } = await supabase
         .from('products')
         .update({ is_campaign: status })
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // Update all
+        .eq('tenant_id', currentTenant.id);
 
       if (error) throw error;
       showToast(status ? `Tüm ürünlere %${rate} kampanya uygulandı` : "Tüm ürünlerden kampanya kaldırıldı");
@@ -284,16 +294,22 @@ export default function Home() {
   };
 
   const handleClearAllProducts = async () => {
+    if (!currentTenant) return;
     if (!confirm("TÜM ÜRÜNLERİ SİLMEK İSTEDİĞİNİZE EMİN MİSİNİZ? Bu işlem geri alınamaz ve tüm satış geçmişi ile ilişkili veriler silinecektir!")) return;
     if (!confirm("SON UYARI: Gerçekten tüm veritabanını sıfırlamak istiyor musunuz?")) return;
 
     try {
       setLoading(true);
       // Delete sale items first due to foreign key constraints
-      const { error: itemsError } = await supabase.from('sale_items').delete().neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+      const { error: itemsError } = await supabase.from('sale_items').delete().eq('tenant_id', currentTenant.id);
       if (itemsError) throw itemsError;
 
-      const { error: productsError } = await supabase.from('products').delete().neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+      const { error: salesError } = await supabase.from('sales').delete().eq('tenant_id', currentTenant.id);
+      if (salesError) throw salesError;
+
+      const { error: productsError } = await supabase.from('products')
+        .delete()
+        .eq('tenant_id', currentTenant.id);
       if (productsError) throw productsError;
 
       showToast("Tüm ürünler temizlendi", "info");
@@ -306,6 +322,7 @@ export default function Home() {
   };
 
   const handleBulkImport = async (data: any[]) => {
+    if (!currentTenant) return;
     try {
       setLoading(true);
 
@@ -403,8 +420,9 @@ export default function Home() {
   };
 
   const handleAddCategory = async (name: string) => {
+    if (!currentTenant) return;
     try {
-      const { error } = await supabase.from('categories').insert([{ name }]);
+      const { error } = await supabase.from('categories').insert([{ name, tenant_id: currentTenant.id }]);
       if (error) throw error;
       showToast("Kategori eklendi");
       fetchData();
@@ -414,8 +432,9 @@ export default function Home() {
   };
 
   const handleDeleteCategory = async (id: string) => {
+    if (!currentTenant) return;
     try {
-      const { error } = await supabase.from('categories').delete().eq('id', id);
+      const { error } = await supabase.from('categories').delete().eq('id', id).eq('tenant_id', currentTenant.id);
       if (error) throw error;
       showToast("Kategori silindi", "info");
       fetchData();
@@ -425,6 +444,7 @@ export default function Home() {
   };
 
   const handleCheckout = async (cartItems: any[], paymentMethod: string) => {
+    if (!currentTenant) return;
     try {
       const totalAmount = cartItems.reduce((sum, item) => sum + (item.sale_price * item.quantity), 0);
       const totalCost = cartItems.reduce((sum, item) => sum + (item.purchase_price * item.quantity), 0);
@@ -434,7 +454,8 @@ export default function Home() {
         .insert([{
           total_amount: totalAmount,
           total_profit: totalAmount - totalCost,
-          payment_method: paymentMethod
+          payment_method: paymentMethod,
+          tenant_id: currentTenant!.id
         }])
         .select()
         .single();
@@ -445,7 +466,8 @@ export default function Home() {
         sale_id: sale.id,
         product_id: item.id,
         quantity: item.quantity,
-        unit_price: item.sale_price
+        unit_price: item.sale_price,
+        tenant_id: currentTenant!.id
       }));
 
       const { error: itemsError } = await supabase.from('sale_items').insert(saleItems);
@@ -694,6 +716,11 @@ export default function Home() {
           {activeTab === "ai_insights" && (
             <div className="max-w-[1500px] mx-auto w-full">
               <AISalesInsights />
+            </div>
+          )}
+          {activeTab === "ai_assistant" && (
+            <div className="max-w-[1500px] mx-auto w-full">
+              <AIAssistantChat />
             </div>
           )}
           {activeTab === "invoice" && (

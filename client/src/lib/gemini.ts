@@ -1,6 +1,6 @@
 /**
- * JetPos AI - Sales Forecasting & Insights
- * Powered by Google Gemini 1.5 Flash (Free Tier)
+ * JetPos AI - OpenRouter Integration
+ * OpenAI Compatible API Client
  */
 
 export interface SalesDataPoint {
@@ -10,25 +10,17 @@ export interface SalesDataPoint {
     total_amount: number;
 }
 
-export interface AIInsight {
-    trend: string;
-    prediction: string;
-    recommendations: string[];
-}
-
-export class GeminiAIClient {
+export class AIClient {
     private apiKey: string;
-    private baseUrl: string = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+    private baseUrl: string = "https://openrouter.ai/api/v1/chat/completions";
+    private defaultModel: string = "google/gemini-2.0-flash-exp:free";
 
-    constructor(apiKey: string) {
-        this.apiKey = apiKey;
+    constructor(apiKey?: string) {
+        // Eğer özel bir key gelmezse sistem genelindeki key'i kullan (Admin Panel gibi)
+        this.apiKey = apiKey || process.env.NEXT_PUBLIC_OPENROUTER_API_KEY || "";
     }
 
     async getSalesInsights(salesData: SalesDataPoint[]): Promise<string> {
-        if (!this.apiKey) {
-            throw new Error("Gemini API Key eksik!");
-        }
-
         const prompt = `
             Sen JetPos POS sisteminin akıllı analiz asistanısın. Aşağıdaki son satış verilerini analiz et.
             
@@ -43,29 +35,54 @@ export class GeminiAIClient {
             Cevabı samimi, profesyonel bir esnaf danışmanı gibi ve Türkçe ver.
         `;
 
+        return this.getChatResponse(prompt, [], "Sen akıllı bir satış analiz asistanısın.");
+    }
+
+    async getChatResponse(message: string, history: { role: 'user' | 'assistant' | 'system', content: string }[], systemContext: string = ""): Promise<string> {
+        if (!this.apiKey) {
+            throw new Error("AI API Key eksik!");
+        }
+
+        const messages = [];
+
+        if (systemContext) {
+            messages.push({ role: "system", content: systemContext });
+        }
+
+        // Add history
+        history.forEach(h => {
+            messages.push({ role: h.role, content: h.content });
+        });
+
+        // Add current message
+        messages.push({ role: "user", content: message });
+
         try {
-            const response = await fetch(`${this.baseUrl}?key=${this.apiKey}`, {
+            const response = await fetch(this.baseUrl, {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${this.apiKey}`,
+                    "HTTP-Referer": "https://jetpos.app",
+                    "X-Title": "JetPos AI"
                 },
                 body: JSON.stringify({
-                    contents: [{
-                        parts: [{ text: prompt }]
-                    }]
+                    model: this.defaultModel,
+                    messages: messages,
+                    temperature: 0.7,
                 })
             });
 
             if (!response.ok) {
                 const error = await response.json();
-                throw new Error(error.error?.message || "Gemini API hatası");
+                throw new Error(error.error?.message || "OpenRouter API hatası");
             }
 
             const result = await response.json();
-            return result.candidates[0].content.parts[0].text;
+            return result.choices[0].message.content;
 
         } catch (error: any) {
-            console.error("Gemini AI Error:", error);
+            console.error("OpenRouter AI Error:", error);
             throw error;
         }
     }

@@ -112,22 +112,22 @@ export default function SalesChart({ sales = [] }: { sales: any[] }) {
     const growth = totalThisWeek > 0 ? "+100%" : "0%";
 
     return (
-        <div className="glass-card h-[400px]">
-            <div className="flex items-center justify-between mb-8">
+        <div className="glass-card h-full !p-6 border border-emerald-500/10">
+            <div className="flex items-center justify-between mb-6">
                 <div>
-                    <div className="flex items-center space-x-2 text-emerald-600 font-semibold text-[10px] mb-2">
-                        <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                    <div className="flex items-center space-x-2 text-emerald-400 font-black text-[9px] mb-2">
+                        <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
                         <span className="tracking-[2px] uppercase">Canlı Performans</span>
                     </div>
-                    <h3 className="text-xl font-bold tracking-tight">Haftalık Satış Grafiği</h3>
-                    <p className="text-sm text-secondary opacity-70">Son 7 günlük işletme hacmi</p>
+                    <h3 className="text-xl font-black tracking-tight text-foreground">Haftalık Satış Grafiği</h3>
+                    <p className="text-[13px] text-secondary/60 font-bold">Haftalık hacim analizi</p>
                 </div>
-                <div className="text-right">
-                    <span className="text-2xl font-bold text-foreground block">₺{totalThisWeek.toLocaleString('tr-TR')}</span>
-                    <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">TOPLAM CİRO</span>
+                <div className="text-right bg-emerald-500/5 p-3 rounded-xl border border-emerald-500/10">
+                    <span className="text-2xl font-black text-foreground block tracking-tight">₺{totalThisWeek.toLocaleString('tr-TR')}</span>
+                    <span className="text-[9px] font-black text-emerald-500 uppercase tracking-[1.5px]">TOPLAM CİRO</span>
                 </div>
             </div>
-            <div className="h-[260px]">
+            <div className="h-[250px]">
                 <Line options={options} data={data} />
             </div>
         </div>

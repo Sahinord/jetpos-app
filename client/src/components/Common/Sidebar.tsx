@@ -49,6 +49,7 @@ import {
     LifeBuoy,
     HelpCircle,
     Landmark,
+    MessageSquare,
     type LucideIcon
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -324,6 +325,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
                 { id: "reports", label: "Satış Raporları", icon: FileBarChart, feature: "reports", description: "Geleneksel ve gelişmiş satış performans raporları." },
                 { id: "simulation", label: "Fiyat Simülasyonu", icon: TrendingUp, feature: "price_simulator", description: "Fiyat değişikliklerinin kärlılık üzerindeki etkilerini simüle etme aracı." },
                 { id: "ai_insights", label: "AI Öngörüleri", icon: Brain, feature: null, description: "Yapay zeka analizleri ile işletmenize özel büyüme önerileri." },
+                { id: "ai_assistant", label: "AI Asistan", icon: MessageSquare, feature: null, description: "JetPos AI ile işletmeniz hakkında sohbet edin." },
             ]
         },
         {

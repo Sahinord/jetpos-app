@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
     FileText, Save, Search, Plus, Trash2, Calculator,
     Layers, ArrowDownLeft, ArrowUpRight, ClipboardList
@@ -72,6 +72,17 @@ export default function HizmetFaturasi({ type }: Props) {
     const [cariList, setCariList] = useState<any[]>([]);
     const [showCariSearch, setShowCariSearch] = useState(false);
     const [cariSearchTerm, setCariSearchTerm] = useState('');
+    const cariSearchRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (cariSearchRef.current && !cariSearchRef.current.contains(event.target as Node)) {
+                setShowCariSearch(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     const [fatura, setFatura] = useState<HizmetFaturasiData>({
         fatura_date: new Date().toISOString().split('T')[0],
@@ -291,9 +302,9 @@ export default function HizmetFaturasi({ type }: Props) {
                                 <Search className="w-3 h-3" />
                                 {config.cari_type} Seçimi *
                             </label>
-                            <div className="relative">
+                            <div className="relative" ref={cariSearchRef}>
                                 <button
-                                    onClick={() => setShowCariSearch(true)}
+                                    onClick={() => setShowCariSearch(!showCariSearch)}
                                     className={`w-full bg-background border-2 border-${config.color}-500/20 rounded-xl px-4 py-3 text-left text-sm font-bold text-foreground hover:border-${config.color}-500 transition-all flex items-center justify-between shadow-inner`}
                                 >
                                     <span>{fatura.cari_name || `— ${config.cari_type} Seçin —`}</span>
@@ -301,7 +312,7 @@ export default function HizmetFaturasi({ type }: Props) {
                                 </button>
 
                                 {showCariSearch && (
-                                    <div className="absolute z-50 top-full mt-2 w-full bg-card/95 backdrop-blur-xl border border-border rounded-2xl shadow-2xl overflow-hidden max-h-80 flex flex-col">
+                                    <div className="absolute z-50 top-full mt-2 w-full bg-card/95 backdrop-blur-xl border border-border rounded-2xl shadow-2xl overflow-hidden max-h-80 flex flex-col animate-in fade-in slide-in-from-top-2">
                                         <div className="p-3 border-b border-border bg-white/5">
                                             <input
                                                 type="text"

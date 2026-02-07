@@ -803,19 +803,19 @@ export default function SuperAdmin() {
                                     <Sparkles className="w-6 h-6 text-purple-500" />
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-black text-white">AI API Anahtarı</h3>
+                                    <h3 className="text-xl font-black text-white">OpenRouter API Anahtarı</h3>
                                     <p className="text-xs text-slate-500 mt-1">{aiModal.tenantName}</p>
                                 </div>
                             </div>
                         </div>
                         <div className="p-8 space-y-6">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Gemini API Key</label>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">OpenRouter API Key (sk-or-...)</label>
                                 <input
                                     type="password"
                                     value={tenantAiKey}
                                     onChange={(e) => setTenantAiKey(e.target.value)}
-                                    placeholder="AIza..."
+                                    placeholder="sk-or-v1-..."
                                     className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl text-white outline-none focus:border-purple-500/50 transition-all font-mono"
                                     autoFocus
                                 />

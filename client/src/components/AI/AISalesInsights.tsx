@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Sparkles, BarChart3, TrendingUp, Lightbulb, RefreshCw, AlertTriangle, Key } from "lucide-react";
 import { motion } from "framer-motion";
-import { GeminiAIClient } from "@/lib/gemini";
+import { AIClient } from "@/lib/gemini";
 import { supabase } from "@/lib/supabase";
 import { useTenant } from "@/lib/tenant-context";
 import ReactMarkdown from "react-markdown";
@@ -103,7 +103,7 @@ export default function AISalesInsights() {
                 total_amount: s.quantity * s.unit_price
             }));
 
-            const client = new GeminiAIClient(apiKey);
+            const client = new AIClient(apiKey);
             const report = await client.getSalesInsights(formattedSales);
             setInsight(report);
 
@@ -139,8 +139,8 @@ export default function AISalesInsights() {
                             <Key className="w-5 h-5 text-purple-400" />
                         </div>
                         <div className="flex-1 space-y-1">
-                            <h3 className="font-bold text-[var(--color-foreground)]">Gemini API Key Gerekli</h3>
-                            <p className="text-xs text-slate-500">Ücretsiz AI servisi için aistudio.google.com üzerinden bir anahtar almanız gerekiyor.</p>
+                            <h3 className="font-bold text-[var(--color-foreground)]">OpenRouter API Key Gerekli</h3>
+                            <p className="text-xs text-slate-500">Ücretsiz AI servisi (Gemini 2.0 Flash) için openrouter.ai üzerinden bir anahtar almanız gerekiyor.</p>
                         </div>
                     </div>
                     <div className="flex gap-3">
