@@ -12,6 +12,7 @@ interface Tenant {
     logo_url: string | null;
     status: string;
     features: any;
+    openrouter_api_key?: string;
 }
 
 interface TenantContextType {

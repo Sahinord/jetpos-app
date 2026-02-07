@@ -12,6 +12,7 @@ interface Tenant {
     status: string;
     contact_email: string | null;
     features: any;
+    openrouter_api_key?: string;
     created_at: string;
 }
 
@@ -162,6 +163,7 @@ export default function SuperAdmin() {
                     contact_email: editingTenant.contact_email,
                     logo_url: editingTenant.logo_url,
                     features: editingTenant.features,
+                    openrouter_api_key: editingTenant.openrouter_api_key,
                     status: editingTenant.status
                 })
                 .eq('id', editingTenant.id);
@@ -227,6 +229,7 @@ export default function SuperAdmin() {
                     logo_url: editingTenant.logo_url,
                     contact_email: editingTenant.contact_email,
                     features: editingTenant.features,
+                    openrouter_api_key: editingTenant.openrouter_api_key,
                     status: editingTenant.status
                 }]);
 
@@ -322,18 +325,28 @@ export default function SuperAdmin() {
 
         setSaving(true);
         try {
-            const { error } = await supabase.rpc('upsert_integration_settings', {
+            // 1. Integration Settings'e kaydet (Cache)
+            const { error: rpcError } = await supabase.rpc('upsert_integration_settings', {
                 p_tenant_id: aiModal.tenantId,
                 p_type: 'gemini_ai',
                 p_settings: { apiKey: tenantAiKey },
                 p_is_active: true
             });
 
-            if (error) throw error;
+            if (rpcError) throw rpcError;
 
-            alert(`✅ ${aiModal.tenantName} için AI Anahtarı güncellendi!`);
+            // 2. Tenants tablosuna doğrudan kaydet (Lisansa özel kolon)
+            const { error: updateError } = await supabase
+                .from('tenants')
+                .update({ openrouter_api_key: tenantAiKey })
+                .eq('id', aiModal.tenantId);
+
+            if (updateError) throw updateError;
+
+            alert(`✅ ${aiModal.tenantName} için AI Anahtarı hem entegrasyonlara hem de lisansa kaydedildi!`);
             setAiModal(null);
             setTenantAiKey('');
+            await fetchTenants();
         } catch (err: any) {
             alert('❌ Hata: ' + err.message);
         } finally {
@@ -716,6 +729,19 @@ export default function SuperAdmin() {
                                         <option value="suspended">Askıda</option>
                                         <option value="expired">Süresi Dolmuş</option>
                                     </select>
+                                </div>
+                                <div className="space-y-2 md:col-span-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 flex items-center gap-2">
+                                        <Sparkles className="w-3 h-3 text-purple-400" />
+                                        DeepSeek API Key (Lisansa Özel)
+                                    </label>
+                                    <input
+                                        type="password"
+                                        value={editingTenant.openrouter_api_key || ''}
+                                        onChange={(e) => setEditingTenant({ ...editingTenant, openrouter_api_key: e.target.value })}
+                                        className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl text-white focus:border-purple-500/50 outline-none font-mono text-xs"
+                                        placeholder="sk-..."
+                                    />
                                 </div>
                             </div>
 

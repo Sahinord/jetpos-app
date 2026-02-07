@@ -6,6 +6,7 @@ interface TrendyolGoSettings {
     apiKey: string;
     apiSecret: string;
     agentName: string;
+    token?: string;
     isStage: boolean;
 }
 
@@ -41,6 +42,7 @@ export default function TrendyolGOWidget() {
         apiKey: "",
         apiSecret: "",
         agentName: "JetPos_Entegrasyon",
+        token: "",
         isStage: false
     });
 
@@ -56,13 +58,30 @@ export default function TrendyolGOWidget() {
 
     useEffect(() => {
         if (currentTenant) {
-            fetchSettings();
-            fetchOrders();
+            initWidget();
         }
     }, [currentTenant]);
 
+    const initWidget = async () => {
+        if (!currentTenant?.id) return;
+        setLoading(true);
+        try {
+            // RLS için tenant set et
+            await setCurrentTenant(currentTenant.id);
+
+            await Promise.all([
+                fetchSettings(),
+                fetchOrders()
+            ]);
+        } catch (err) {
+            console.error("Widget init error:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const fetchOrders = async () => {
-        if (!currentTenant) return;
+        if (!currentTenant?.id) return;
         try {
             const { data, error } = await supabase
                 .from('trendyol_go_orders')
@@ -85,23 +104,25 @@ export default function TrendyolGOWidget() {
     };
 
     const fetchSettings = async () => {
-        setLoading(true);
+        if (!currentTenant?.id) return;
         try {
             const { data, error } = await supabase
                 .from('integration_settings')
                 .select('*')
+                .eq('tenant_id', currentTenant.id)
                 .eq('type', 'trendyol_go')
                 .single();
 
             if (data) {
-                setSettings(data.settings);
+                setSettings({
+                    ...data.settings,
+                    token: data.settings.token || "" // Token varsa doldur
+                });
                 setIsConfigured(data.is_active);
                 setStats(prev => ({ ...prev, lastSync: data.last_sync_at }));
             }
         } catch (err) {
             console.log("No settings found or error fetching settings");
-        } finally {
-            setLoading(false);
         }
     };
 

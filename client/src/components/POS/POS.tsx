@@ -103,7 +103,7 @@ export default function POS({
     // Barcode Map for O(1) Lookups
     const barcodeMap = useMemo(() => {
         const map = new Map();
-        products.forEach(p => {
+        products.forEach((p: any) => {
             if (p.barcode) map.set(p.barcode.toLowerCase(), p);
         });
         return map;

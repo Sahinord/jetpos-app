@@ -23,14 +23,23 @@ export default function AISalesInsights() {
         if (!currentTenant) return;
         setLoading(true);
         try {
-            const { data, error } = await supabase
+            // 1. Önce lisansa (tenant) ait doğrudan key'e bak (Admin panelden girilen)
+            if (currentTenant.openrouter_api_key && currentTenant.openrouter_api_key !== 'undefined') {
+                setApiKey(currentTenant.openrouter_api_key);
+                setShowKeyInput(false);
+                setLoading(false);
+                return;
+            }
+
+            // 2. Yoksa entegrasyon ayarlarından bak (Cache/Eski yöntem)
+            const { data } = await supabase
                 .from('integration_settings')
                 .select('settings')
                 .eq('tenant_id', currentTenant.id)
                 .eq('type', 'gemini_ai')
                 .single();
 
-            if (data && data.settings.apiKey) {
+            if (data && data.settings.apiKey && data.settings.apiKey !== 'undefined') {
                 setApiKey(data.settings.apiKey);
                 setShowKeyInput(false);
             } else {
@@ -127,7 +136,6 @@ export default function AISalesInsights() {
                 </button>
             </div>
 
-            {/* API Key Input */}
             {showKeyInput && (
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
@@ -139,8 +147,8 @@ export default function AISalesInsights() {
                             <Key className="w-5 h-5 text-purple-400" />
                         </div>
                         <div className="flex-1 space-y-1">
-                            <h3 className="font-bold text-[var(--color-foreground)]">OpenRouter API Key Gerekli</h3>
-                            <p className="text-xs text-slate-500">Ücretsiz AI servisi (Gemini 2.0 Flash) için openrouter.ai üzerinden bir anahtar almanız gerekiyor.</p>
+                            <h3 className="font-bold text-[var(--color-foreground)]">DeepSeek API Key Gerekli</h3>
+                            <p className="text-xs text-slate-500">Daha hızlı ve akıllı AI deneyimi için DeepSeek API anahtarınızı buraya girin.</p>
                         </div>
                     </div>
                     <div className="flex gap-3">
@@ -148,7 +156,7 @@ export default function AISalesInsights() {
                             type="password"
                             value={apiKey}
                             onChange={(e) => setApiKey(e.target.value)}
-                            placeholder="AI API Key buraya yapıştırın..."
+                            placeholder="DeepSeek API Key buraya yapıştırın..."
                             className="flex-1 bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded-xl px-4 py-3 text-sm text-[var(--color-foreground)] focus:border-purple-500/50 outline-none transition-all"
                         />
                         <button

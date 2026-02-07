@@ -41,6 +41,14 @@ export default function AIAssistantChat() {
     const fetchGeminiSettings = async () => {
         if (!currentTenant) return;
         try {
+            // 1. Önce lisansa (tenant) ait doğrudan key'e bak (Admin panelden girilen)
+            if (currentTenant.openrouter_api_key && currentTenant.openrouter_api_key !== 'undefined') {
+                setApiKey(currentTenant.openrouter_api_key);
+                setupGreeting();
+                setShowKeyInput(false);
+                return;
+            }
+
             const { data } = await supabase
                 .from('integration_settings')
                 .select('settings')
@@ -48,14 +56,14 @@ export default function AIAssistantChat() {
                 .eq('type', 'gemini_ai')
                 .single();
 
-            // 1. Önce tenant'ın kendi key'ine bak
-            if (data && data.settings.apiKey) {
+            // 2. Entegrasyon ayarlarından bak
+            if (data && data.settings.apiKey && data.settings.apiKey !== 'undefined' && data.settings.apiKey !== '') {
                 setApiKey(data.settings.apiKey);
                 setupGreeting();
                 setShowKeyInput(false);
             }
-            // 2. Yoksa sistem genelindeki (Admin panel/ENV) key'ine bak
-            else if (process.env.NEXT_PUBLIC_OPENROUTER_API_KEY) {
+            // 3. ENV'den bak
+            else if (process.env.NEXT_PUBLIC_OPENROUTER_API_KEY && process.env.NEXT_PUBLIC_OPENROUTER_API_KEY !== 'undefined') {
                 setApiKey(process.env.NEXT_PUBLIC_OPENROUTER_API_KEY);
                 setupGreeting();
                 setShowKeyInput(false);
@@ -64,8 +72,7 @@ export default function AIAssistantChat() {
                 setShowKeyInput(true);
             }
         } catch (err) {
-            // Hata olsa bile ENV kontrolü yapalım
-            if (process.env.NEXT_PUBLIC_OPENROUTER_API_KEY) {
+            if (process.env.NEXT_PUBLIC_OPENROUTER_API_KEY && process.env.NEXT_PUBLIC_OPENROUTER_API_KEY !== 'undefined') {
                 setApiKey(process.env.NEXT_PUBLIC_OPENROUTER_API_KEY);
                 setupGreeting();
                 setShowKeyInput(false);
@@ -146,9 +153,17 @@ export default function AIAssistantChat() {
 
             setMessages(prev => [...prev, aiMessage]);
         } catch (error: any) {
+            console.error("AI Assistant Error:", error);
+
+            let displayError = error.message;
+            if (displayError.includes("insufficient_balance") || displayError.includes("invalid_api_key") || displayError.includes("API Key eksik")) {
+                displayError = "⚠️ DeepSeek API Anahtarı eksik, hatalı veya bakiye yetersiz. Lütfen sağ üstteki anahtar ikonuna tıklayarak geçerli bir DeepSeek API Key girin.";
+                setShowKeyInput(true);
+            }
+
             setMessages(prev => [...prev, {
                 role: 'model',
-                text: "Üzgünüm, bir hata oluştu: " + error.message,
+                text: displayError,
                 timestamp: new Date()
             }]);
         } finally {
@@ -204,7 +219,7 @@ export default function AIAssistantChat() {
                             type="password"
                             value={apiKey}
                             onChange={(e) => setApiKey(e.target.value)}
-                            placeholder="OpenRouter API Key (sk-or-...)"
+                            placeholder="DeepSeek API Key (sk-...)"
                             className="flex-1 bg-black/30 border border-purple-500/30 rounded-xl px-4 py-2 text-sm text-white focus:border-purple-500 outline-none transition-all"
                         />
                         <button
