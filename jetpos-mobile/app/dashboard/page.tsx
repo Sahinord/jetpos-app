@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
-import { TrendingUp, Package, AlertTriangle, DollarSign, Plus, ClipboardList, FileText } from 'lucide-react';
+import { TrendingUp, Package, AlertTriangle, DollarSign, Plus, ClipboardList, FileText, LogOut } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 
 interface DashboardStats {
@@ -39,6 +39,13 @@ export default function DashboardPage() {
     });
     const [loading, setLoading] = useState(true);
     const [companyName, setCompanyName] = useState('');
+
+    const handleLogout = () => {
+        if (confirm('Oturumu kapatmak istediğinize emin misiniz?')) {
+            localStorage.clear();
+            window.location.href = '/';
+        }
+    };
 
     useEffect(() => {
         const name = localStorage.getItem('companyName') || 'İşletmem';
@@ -158,14 +165,23 @@ export default function DashboardPage() {
                 animate={{ y: 0, opacity: 1 }}
                 className="sticky top-0 z-50 glass border-b border-white/5 p-6 space-y-1"
             >
-                <div className="flex items-center justify-between">
-                    <div>
-                        <p className="text-[10px] font-black text-secondary uppercase tracking-[4px]">Sistem Durumu</p>
-                        <h1 className="text-2xl font-black text-white tracking-tight">{companyName}</h1>
+                <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4 flex-1">
+                        <div className="w-12 h-12 rounded-2xl glass-dark border border-white/10 flex items-center justify-center shrink-0">
+                            <TrendingUp className="w-6 h-6 text-blue-400" />
+                        </div>
+                        <div className="overflow-hidden">
+                            <p className="text-[10px] font-black text-secondary uppercase tracking-[4px]">Sistem Durumu</p>
+                            <h1 className="text-xl font-black text-white tracking-tight leading-none truncate">{companyName}</h1>
+                        </div>
                     </div>
-                    <div className="w-12 h-12 rounded-2xl glass-dark border border-white/10 flex items-center justify-center">
-                        <TrendingUp className="w-6 h-6 text-blue-400" />
-                    </div>
+
+                    <button
+                        onClick={handleLogout}
+                        className="w-11 h-11 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 active:scale-95 transition-all shrink-0"
+                    >
+                        <LogOut size={20} />
+                    </button>
                 </div>
             </motion.div>
 

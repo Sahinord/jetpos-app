@@ -214,13 +214,24 @@ export default function BarcodeScanner() {
             <motion.div
                 initial={{ y: -20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                className="sticky top-0 z-50 glass border-b border-white/5 px-6 py-4 flex items-center justify-between"
+                className="sticky top-0 z-[60] glass border-b border-white/5 px-6 py-4 flex items-center justify-between"
             >
-                <div>
-                    <h1 className="text-xl font-black bg-gradient-to-r from-blue-400 to-accent bg-clip-text text-transparent tracking-tight">
-                        JETPOS <span className="text-foreground">MOBILE</span>
-                    </h1>
-                    <p className="text-[10px] font-bold text-secondary uppercase tracking-[3px]">Next-Gen Scanner</p>
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => {
+                            if (scanning) stopScanner();
+                            window.history.back();
+                        }}
+                        className="w-10 h-10 rounded-xl glass-dark border border-white/10 flex items-center justify-center active:scale-90 transition-all"
+                    >
+                        <X size={20} className="text-secondary" />
+                    </button>
+                    <div>
+                        <h1 className="text-xl font-black bg-gradient-to-r from-blue-400 to-accent bg-clip-text text-transparent tracking-tight">
+                            JETPOS <span className="text-foreground">MOBILE</span>
+                        </h1>
+                        <p className="text-[10px] font-bold text-secondary uppercase tracking-[3px]">Next-Gen Scanner</p>
+                    </div>
                 </div>
                 <div className="w-10 h-10 rounded-xl glass-dark flex items-center justify-center border border-white/10">
                     <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
