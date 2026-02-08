@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
-import { TrendingUp, Package, AlertTriangle, DollarSign, Plus, ClipboardList, FileText, LogOut } from 'lucide-react';
+import { TrendingUp, Package, AlertTriangle, DollarSign, Plus, ClipboardList, FileText, LogOut, Filter, ChevronDown } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 
 interface DashboardStats {
@@ -39,6 +39,7 @@ export default function DashboardPage() {
     });
     const [loading, setLoading] = useState(true);
     const [companyName, setCompanyName] = useState('');
+    const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('active');
 
     const handleLogout = () => {
         if (confirm('Oturumu kapatmak istediğinize emin misiniz?')) {
@@ -70,41 +71,48 @@ export default function DashboardPage() {
                 console.warn('Tenant context set error:', err);
             }
 
-            const { count: productCount } = await supabase
+            // Fetch products with essential fields
+            const { data: products, error: pError } = await supabase
                 .from('products')
-                .select('*', { count: 'exact', head: true });
+                .select('stock_quantity, sale_price, status');
 
-            const { count: lowStockCount } = await supabase
-                .from('products')
-                .select('*', { count: 'exact', head: true })
-                .lte('stock_quantity', 10);
+            if (pError) throw pError;
 
-            const { data: products } = await supabase
-                .from('products')
-                .select('stock_quantity, sale_price');
+            const filteredProducts = products?.filter(p => {
+                const status = p.status || 'active'; // Varsayılan olarak aktif kabul et
+                if (statusFilter === 'all') return true;
+                return status === statusFilter;
+            }) || [];
 
-            const totalValue = products?.reduce(
+            const productCount = filteredProducts.length;
+            const lowStockCount = filteredProducts.filter(p => (p.stock_quantity || 0) <= 10).length;
+            const totalValue = filteredProducts.reduce(
                 (sum: number, p: any) => sum + ((p.stock_quantity || 0) * (p.sale_price || 0)),
                 0
-            ) || 0;
+            );
 
-            // Calculate Today's Sales
+            // Calculate Today's Sales (Only Sales and Retail Invoices)
             const startOfDay = new Date();
             startOfDay.setHours(0, 0, 0, 0);
 
-            const { data: todayInvoices } = await supabase
+            const { data: todayInvoices, error: iError } = await supabase
                 .from('invoices')
-                .select('grand_total')
+                .select('grand_total, invoice_type')
+                .in('invoice_type', ['sales', 'retail'])
                 .gte('created_at', startOfDay.toISOString());
 
+            if (iError) {
+                console.warn('Sales fetch error:', iError);
+            }
+
             const todaySales = todayInvoices?.reduce(
-                (sum: number, inv: any) => sum + (inv.grand_total || 0),
+                (sum: number, inv: any) => sum + (Number(inv.grand_total) || 0),
                 0
             ) || 0;
 
             setStats({
-                totalProducts: productCount || 0,
-                lowStockCount: lowStockCount || 0,
+                totalProducts: productCount,
+                lowStockCount,
                 totalValue,
                 todaySales,
             });
@@ -114,6 +122,10 @@ export default function DashboardPage() {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        fetchDashboardData();
+    }, [statusFilter]);
 
     const statCards = [
         {
@@ -176,12 +188,25 @@ export default function DashboardPage() {
                         </div>
                     </div>
 
-                    <button
-                        onClick={handleLogout}
-                        className="w-11 h-11 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 active:scale-95 transition-all shrink-0"
-                    >
-                        <LogOut size={20} />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value as any)}
+                            className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-[10px] font-black text-white uppercase tracking-wider focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all appearance-none pr-8 relative"
+                            style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'white\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center', backgroundSize: '12px' }}
+                        >
+                            <option value="active" className="bg-slate-900 text-white">Aktif</option>
+                            <option value="inactive" className="bg-slate-900 text-white">Pasif</option>
+                            <option value="all" className="bg-slate-900 text-white">Tümü</option>
+                        </select>
+
+                        <button
+                            onClick={handleLogout}
+                            className="w-11 h-11 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 active:scale-95 transition-all shrink-0"
+                        >
+                            <LogOut size={20} />
+                        </button>
+                    </div>
                 </div>
             </motion.div>
 
