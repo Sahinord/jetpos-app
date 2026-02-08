@@ -19,8 +19,11 @@ export default function BarcodeScanner() {
     const readerRef = useRef<BrowserMultiFormatReader | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
 
+    const isProcessing = useRef(false);
+
     useEffect(() => {
         if (scanning) {
+            isProcessing.current = false; // Reset lock when scanning starts
             startScanner();
         } else {
             stopScanner();
@@ -30,7 +33,6 @@ export default function BarcodeScanner() {
 
     const startScanner = async () => {
         try {
-            // HTTPS kontrolü
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                 const isHttps = window.location.protocol === 'https:';
                 const errorMsg = !isHttps
@@ -62,7 +64,7 @@ export default function BarcodeScanner() {
                     undefined,
                     videoRef.current,
                     (result, error) => {
-                        if (result) {
+                        if (result && !isProcessing.current) {
                             handleBarcodeDetected(result.getText());
                         }
                     }
@@ -77,24 +79,29 @@ export default function BarcodeScanner() {
 
     const stopScanner = () => {
         if (streamRef.current) {
-            streamRef.current.getTracks().forEach(track => track.stop());
+            streamRef.current.getTracks().forEach(track => {
+                try { track.stop(); } catch (e) { }
+            });
             streamRef.current = null;
         }
         if (readerRef.current) {
-            readerRef.current = null; // reset() yerine null yap
+            readerRef.current = null;
         }
     };
 
     const handleBarcodeDetected = async (barcode: string) => {
+        if (isProcessing.current) return;
+        isProcessing.current = true; // Lock immediately
+
         console.log('Barkod okundu:', barcode);
 
         if (navigator.vibrate) {
-            navigator.vibrate([50, 30, 50]);
+            try { navigator.vibrate([50, 30, 50]); } catch (e) { }
         }
 
         playBeep();
 
-        // Flash'ı otomatik kapat (iOS uyumlu)
+        // Flash'ı kapat
         if (torchOn && streamRef.current) {
             try {
                 const track = streamRef.current.getVideoTracks()[0];
@@ -107,13 +114,14 @@ export default function BarcodeScanner() {
             }
         }
 
+        // Scanner'ı durdur
+        stopScanner();
         setScanning(false);
 
         try {
             setFetching(true);
             const tenantId = localStorage.getItem('tenantId');
             if (tenantId) {
-                // RLS context set et
                 await supabase.rpc('set_current_tenant', { tenant_id: tenantId });
             }
 
@@ -125,10 +133,13 @@ export default function BarcodeScanner() {
 
             if (data) {
                 setProduct(data);
-                toast.success('Ürün bulundu!');
+                toast.success('Ürün bulundu!', { id: 'scan-success' }); // Unique ID prevents multiple toasts
                 setManualBarcode('');
             } else {
-                toast.error('Ürün bulunamadı');
+                toast.error('Ürün bulunamadı: ' + barcode, { id: 'scan-error' });
+                // Ürün bulunamadıysa tekrar taramaya hazır olabilmesi için
+                // isProcessing.current burada veya bir süre sonra false yapılabilir
+                // Ama şimdilik setScanning(false) yapıldığı için UI'dan tekrar açılması gerekecek.
             }
         } catch (error) {
             console.error('Ürün sorgulanırken hata:', error);
@@ -164,19 +175,31 @@ export default function BarcodeScanner() {
     };
 
     const playBeep = () => {
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
+        try {
+            const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
+            if (!AudioContextClass) return;
 
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
+            const audioContext = new AudioContextClass();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
 
-        oscillator.frequency.value = 800;
-        oscillator.type = 'sine';
-        gainNode.gain.value = 0.3;
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
 
-        oscillator.start();
-        setTimeout(() => oscillator.stop(), 100);
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+            gainNode.gain.value = 0.3;
+
+            oscillator.start();
+            setTimeout(() => {
+                try {
+                    oscillator.stop();
+                    audioContext.close();
+                } catch (e) { }
+            }, 100);
+        } catch (error) {
+            console.error('Ses çalınamadı:', error);
+        }
     };
 
     return (

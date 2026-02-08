@@ -57,7 +57,11 @@ export default function DashboardPage() {
             const tenantId = localStorage.getItem('tenantId');
             if (!tenantId) return;
 
-            await supabase.rpc('set_current_tenant', { tenant_id: tenantId });
+            try {
+                await supabase.rpc('set_current_tenant', { tenant_id: tenantId });
+            } catch (err) {
+                console.warn('Tenant context set error:', err);
+            }
 
             const { count: productCount } = await supabase
                 .from('products')
