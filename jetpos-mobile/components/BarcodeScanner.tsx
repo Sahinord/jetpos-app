@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { BrowserMultiFormatReader } from '@zxing/browser';
 import { Camera, X, Flashlight, ScanLine } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -18,12 +18,17 @@ export default function BarcodeScanner() {
     const videoRef = useRef<HTMLVideoElement>(null);
     const readerRef = useRef<BrowserMultiFormatReader | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
+    const controlsRef = useRef<any>(null); // Store decode controls for proper cleanup
 
     const isProcessing = useRef(false);
+    const lastScannedBarcode = useRef<string>('');
+    const lastScanTime = useRef<number>(0);
 
     useEffect(() => {
         if (scanning) {
-            isProcessing.current = false; // Reset lock when scanning starts
+            isProcessing.current = false;
+            lastScannedBarcode.current = '';
+            lastScanTime.current = 0;
             startScanner();
         } else {
             stopScanner();
@@ -33,18 +38,22 @@ export default function BarcodeScanner() {
 
     const startScanner = async () => {
         try {
+            // First clean up any previous instance
+            stopScanner();
+
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                 const isHttps = window.location.protocol === 'https:';
                 const errorMsg = !isHttps
                     ? '🔒 Kamera erişimi için HTTPS gerekli!\n\nLütfen ngrok veya HTTPS ile erişin.'
                     : '📱 Tarayıcınız kamera API\'sini desteklemiyor.';
 
-                toast.error(errorMsg);
+                toast.error(errorMsg, { id: 'camera-error' });
                 setScanning(false);
                 return;
             }
 
-            readerRef.current = new BrowserMultiFormatReader();
+            const reader = new BrowserMultiFormatReader();
+            readerRef.current = reader;
 
             const constraints = {
                 video: {
@@ -60,30 +69,56 @@ export default function BarcodeScanner() {
             if (videoRef.current) {
                 videoRef.current.srcObject = stream;
 
-                readerRef.current.decodeFromVideoDevice(
+                // Store controls so we can properly stop decoding later
+                const controls = await reader.decodeFromVideoDevice(
                     undefined,
                     videoRef.current,
                     (result, error) => {
                         if (result && !isProcessing.current) {
-                            handleBarcodeDetected(result.getText());
+                            const barcode = result.getText();
+                            const now = Date.now();
+
+                            // Debounce: Ignore same barcode within 3 seconds
+                            if (barcode === lastScannedBarcode.current && (now - lastScanTime.current) < 3000) {
+                                return;
+                            }
+
+                            lastScannedBarcode.current = barcode;
+                            lastScanTime.current = now;
+                            handleBarcodeDetected(barcode);
                         }
                     }
                 );
+                controlsRef.current = controls;
             }
         } catch (error) {
             console.error('Kamera erişim hatası:', error);
-            toast.error('Kamera açılamadı. Lütfen izin verin.');
+            toast.error('Kamera açılamadı. Lütfen izin verin.', { id: 'camera-error' });
             setScanning(false);
         }
     };
 
     const stopScanner = () => {
+        // 1. Stop decode controls first (this is the key fix for camera re-open)
+        if (controlsRef.current) {
+            try { controlsRef.current.stop(); } catch (e) { }
+            controlsRef.current = null;
+        }
+
+        // 2. Stop all media tracks
         if (streamRef.current) {
             streamRef.current.getTracks().forEach(track => {
                 try { track.stop(); } catch (e) { }
             });
             streamRef.current = null;
         }
+
+        // 3. Clear video source
+        if (videoRef.current) {
+            videoRef.current.srcObject = null;
+        }
+
+        // 4. Clear reader reference
         if (readerRef.current) {
             readerRef.current = null;
         }
@@ -91,17 +126,18 @@ export default function BarcodeScanner() {
 
     const handleBarcodeDetected = async (barcode: string) => {
         if (isProcessing.current) return;
-        isProcessing.current = true; // Lock immediately
+        isProcessing.current = true;
 
         console.log('Barkod okundu:', barcode);
 
+        // Haptic feedback
         if (navigator.vibrate) {
             try { navigator.vibrate([50, 30, 50]); } catch (e) { }
         }
 
         playBeep();
 
-        // Flash'ı kapat
+        // Turn off flash
         if (torchOn && streamRef.current) {
             try {
                 const track = streamRef.current.getVideoTracks()[0];
@@ -109,12 +145,10 @@ export default function BarcodeScanner() {
                     advanced: [{ torch: false } as any]
                 });
                 setTorchOn(false);
-            } catch (error) {
-                console.log('Flash kapatılamadı:', error);
-            }
+            } catch (error) { }
         }
 
-        // Scanner'ı durdur
+        // Stop scanner
         stopScanner();
         setScanning(false);
 
@@ -133,19 +167,20 @@ export default function BarcodeScanner() {
 
             if (data) {
                 setProduct(data);
-                toast.success('Ürün bulundu!', { id: 'scan-success' }); // Unique ID prevents multiple toasts
+                toast.success('Ürün bulundu!', { id: 'scan-result' });
                 setManualBarcode('');
             } else {
-                toast.error('Ürün bulunamadı: ' + barcode, { id: 'scan-error' });
-                // Ürün bulunamadıysa tekrar taramaya hazır olabilmesi için
-                // isProcessing.current burada veya bir süre sonra false yapılabilir
-                // Ama şimdilik setScanning(false) yapıldığı için UI'dan tekrar açılması gerekecek.
+                toast.error('Ürün bulunamadı: ' + barcode, { id: 'scan-result' });
             }
         } catch (error) {
             console.error('Ürün sorgulanırken hata:', error);
-            toast.error('Bir hata oluştu');
+            toast.error('Bir hata oluştu', { id: 'scan-result' });
         } finally {
             setFetching(false);
+            // Reset processing lock after a short delay to prevent ghost triggers
+            setTimeout(() => {
+                isProcessing.current = false;
+            }, 500);
         }
     };
 
@@ -154,7 +189,7 @@ export default function BarcodeScanner() {
         if (manualBarcode.trim()) {
             handleBarcodeDetected(manualBarcode.trim());
         } else {
-            toast.error('Lütfen bir barkod girin');
+            toast.error('Lütfen bir barkod girin', { id: 'manual-error' });
         }
     };
 
@@ -169,7 +204,7 @@ export default function BarcodeScanner() {
                 });
                 setTorchOn(!torchOn);
             } else {
-                toast.error('Flaş desteklenmiyor');
+                toast.error('Flaş desteklenmiyor', { id: 'torch-error' });
             }
         }
     };
@@ -197,10 +232,26 @@ export default function BarcodeScanner() {
                     audioContext.close();
                 } catch (e) { }
             }, 100);
-        } catch (error) {
-            console.error('Ses çalınamadı:', error);
-        }
+        } catch (error) { }
     };
+
+    // Handler for "Scan Again" - properly resets state
+    const handleScanAgain = useCallback(() => {
+        setProduct(null);
+        isProcessing.current = false;
+        lastScannedBarcode.current = '';
+        lastScanTime.current = 0;
+        // Small delay to let React state settle before opening camera
+        setTimeout(() => {
+            setScanning(true);
+        }, 100);
+    }, []);
+
+    const handleClose = useCallback(() => {
+        setProduct(null);
+        setScanning(false);
+        isProcessing.current = false;
+    }, []);
 
     return (
         <div className="relative min-h-screen bg-background overflow-x-hidden">
@@ -234,7 +285,7 @@ export default function BarcodeScanner() {
                     </div>
                 </div>
                 <div className="w-10 h-10 rounded-xl glass-dark flex items-center justify-center border border-white/10">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <div className={`w-2 h-2 rounded-full ${scanning ? 'bg-blue-500' : 'bg-emerald-500'} animate-pulse`} />
                 </div>
             </motion.div>
 
@@ -268,19 +319,18 @@ export default function BarcodeScanner() {
                                         <p className="text-secondary text-sm font-medium mt-1">Barkodları otomatik tara</p>
                                     </div>
 
-                                    {/* Decorative Scan Line */}
                                     <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-blue-500/50 to-transparent -translate-y-full group-hover:animate-[scan_2s_infinite]" />
                                 </motion.button>
                             </div>
 
-                            {/* Divider with Style */}
+                            {/* Divider */}
                             <div className="flex items-center gap-6 px-4">
                                 <div className="h-px flex-1 bg-gradient-to-l from-white/10 to-transparent" />
                                 <span className="text-[10px] font-black text-secondary uppercase tracking-[4px]">Manuel</span>
                                 <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
                             </div>
 
-                            {/* Manual Form Redesign */}
+                            {/* Manual Form */}
                             <motion.form
                                 onSubmit={handleManualSubmit}
                                 initial={{ y: 20, opacity: 0 }}
@@ -320,7 +370,7 @@ export default function BarcodeScanner() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="relative min-h-[70vh] flex flex-col pt-10"
+                            className="relative flex flex-col"
                         >
                             <div className="relative aspect-[3/4] rounded-[3rem] overflow-hidden glass-dark border-2 border-white/10 shadow-3xl">
                                 <video
@@ -364,7 +414,7 @@ export default function BarcodeScanner() {
                                 </div>
                             </div>
 
-                            <div className="mt-10 text-center">
+                            <div className="mt-6 text-center">
                                 <motion.div
                                     animate={{ opacity: [0.4, 1, 0.4] }}
                                     transition={{ duration: 2, repeat: Infinity }}
@@ -384,14 +434,8 @@ export default function BarcodeScanner() {
                         >
                             <ProductCard
                                 product={product}
-                                onClose={() => {
-                                    setProduct(null);
-                                    setScanning(false);
-                                }}
-                                onScanAgain={() => {
-                                    setProduct(null);
-                                    setScanning(true);
-                                }}
+                                onClose={handleClose}
+                                onScanAgain={handleScanAgain}
                                 onProductUpdated={async () => {
                                     const barcode = product.barcode;
                                     const tenantId = localStorage.getItem('tenantId');
