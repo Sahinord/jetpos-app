@@ -36,7 +36,7 @@ export default function BarcodeScanner() {
 
     const startScanner = async () => {
         try {
-            // First clean up any previous instance
+            // First clean up any previous instance completely
             stopScanner();
 
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -50,44 +50,42 @@ export default function BarcodeScanner() {
                 return;
             }
 
+            if (!videoRef.current) {
+                console.warn('Video element not ready yet');
+                return;
+            }
+
             const reader = new BrowserMultiFormatReader();
             readerRef.current = reader;
 
-            const constraints = {
-                video: {
-                    facingMode: 'environment',
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 }
+            // Let decodeFromVideoDevice handle stream creation entirely
+            // Pass undefined as deviceId to use the default back camera
+            const controls = await reader.decodeFromVideoDevice(
+                undefined,
+                videoRef.current,
+                (result, error) => {
+                    // Master kill switch - once a barcode is detected, block ALL further callbacks
+                    if (!scannerActive.current || isProcessing.current) return;
+                    if (!result) return;
+
+                    const barcode = result.getText();
+                    if (!barcode || barcode.length < 3) return; // Ignore noise
+
+                    // IMMEDIATELY lock - no more callbacks after this point
+                    isProcessing.current = true;
+                    scannerActive.current = false;
+
+                    handleBarcodeDetected(barcode);
                 }
-            };
+            );
+            controlsRef.current = controls;
 
-            const stream = await navigator.mediaDevices.getUserMedia(constraints);
-            streamRef.current = stream;
-
-            if (videoRef.current) {
-                videoRef.current.srcObject = stream;
-
-                // Store controls so we can properly stop decoding later
-                const controls = await reader.decodeFromVideoDevice(
-                    undefined,
-                    videoRef.current,
-                    (result, error) => {
-                        // Master kill switch - once a barcode is detected, block ALL further callbacks
-                        if (!scannerActive.current || isProcessing.current) return;
-                        if (!result) return;
-
-                        const barcode = result.getText();
-                        if (!barcode || barcode.length < 3) return; // Ignore noise
-
-                        // IMMEDIATELY lock - no more callbacks after this point
-                        isProcessing.current = true;
-                        scannerActive.current = false;
-
-                        handleBarcodeDetected(barcode);
-                    }
-                );
-                controlsRef.current = controls;
+            // Extract the stream reference from the video element (for torch control)
+            if (videoRef.current.srcObject) {
+                streamRef.current = videoRef.current.srcObject as MediaStream;
             }
+
+            console.log('✅ Scanner started successfully');
         } catch (error) {
             console.error('Kamera erişim hatası:', error);
             toast.error('Kamera açılamadı. Lütfen izin verin.', { id: 'camera-error' });
@@ -96,13 +94,16 @@ export default function BarcodeScanner() {
     };
 
     const stopScanner = () => {
-        // 1. Stop decode controls first (this is the key fix for camera re-open)
+        // 1. Kill scannerActive immediately to prevent any remaining callbacks
+        scannerActive.current = false;
+
+        // 2. Stop decode controls first
         if (controlsRef.current) {
             try { controlsRef.current.stop(); } catch (e) { }
             controlsRef.current = null;
         }
 
-        // 2. Stop all media tracks
+        // 3. Stop all media tracks
         if (streamRef.current) {
             streamRef.current.getTracks().forEach(track => {
                 try { track.stop(); } catch (e) { }
@@ -110,12 +111,16 @@ export default function BarcodeScanner() {
             streamRef.current = null;
         }
 
-        // 3. Clear video source
-        if (videoRef.current) {
+        // 4. Also stop tracks from video element directly (belt and suspenders)
+        if (videoRef.current && videoRef.current.srcObject) {
+            const mediaStream = videoRef.current.srcObject as MediaStream;
+            mediaStream.getTracks().forEach(track => {
+                try { track.stop(); } catch (e) { }
+            });
             videoRef.current.srcObject = null;
         }
 
-        // 4. Clear reader reference
+        // 5. Clear reader reference
         if (readerRef.current) {
             readerRef.current = null;
         }
@@ -237,10 +242,10 @@ export default function BarcodeScanner() {
         setProduct(null);
         isProcessing.current = false;
         scannerActive.current = false;
-        // Small delay to let React state settle before opening camera
+        // Delay to let React unmount old view and remount video element
         setTimeout(() => {
             setScanning(true);
-        }, 100);
+        }, 300);
     }, []);
 
     const handleClose = useCallback(() => {
