@@ -74,10 +74,23 @@ export default function ProductsPage() {
     const fetchProducts = async () => {
         try {
             const tenantId = localStorage.getItem('tenantId');
-            if (!tenantId) return;
+            if (!tenantId) {
+                console.error('❌ tenantId bulunamadı localStorage\'da!');
+                return;
+            }
+
+            console.log('🔑 Mobil tenantId:', tenantId);
 
             // RLS context set et
             await supabase.rpc('set_current_tenant', { tenant_id: tenantId });
+
+            // Önce toplam ürün sayısını kontrol et
+            const { count: totalCount } = await supabase
+                .from('products')
+                .select('*', { count: 'exact', head: true })
+                .eq('tenant_id', tenantId);
+
+            console.log(`📊 Bu tenant'a ait toplam ürün sayısı: ${totalCount}`);
 
             let allProducts: Product[] = [];
             let page = 0;
@@ -89,7 +102,6 @@ export default function ProductsPage() {
                     .from('products')
                     .select('id, name, barcode, stock_quantity, sale_price, purchase_price, status, category_id')
                     .eq('tenant_id', tenantId)
-                    .or('status.eq.active,status.is.null')
                     .order('name', { ascending: true })
                     .order('id', { ascending: true })
                     .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
@@ -102,13 +114,14 @@ export default function ProductsPage() {
 
                 if (data && data.length > 0) {
                     allProducts = [...allProducts, ...data];
-                    setProducts([...allProducts]); // Update UI progressively
-                    console.log(`📦 Ürünler Yükleniyor: ${allProducts.length} adet çekildi...`);
+                    setProducts([...allProducts]);
+                    console.log(`📦 Sayfa ${page}: ${data.length} ürün çekildi | Toplam: ${allProducts.length}`);
 
                     if (data.length < PAGE_SIZE) {
                         hasMore = false;
                     }
                 } else {
+                    console.log(`📦 Sayfa ${page}: 0 ürün - Durduruldu`);
                     hasMore = false;
                 }
                 page++;
