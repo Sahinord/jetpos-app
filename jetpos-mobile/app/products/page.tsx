@@ -88,9 +88,10 @@ export default function ProductsPage() {
                 const { data, error } = await supabase
                     .from('products')
                     .select('id, name, barcode, stock_quantity, sale_price, purchase_price, status, category_id')
-                    .eq('status', 'active')
+                    .eq('tenant_id', tenantId)
+                    .or('status.eq.active,status.is.null')
                     .order('name', { ascending: true })
-                    .order('id', { ascending: true }) // Stable sorting for reliable pagination
+                    .order('id', { ascending: true })
                     .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
                 if (error) {

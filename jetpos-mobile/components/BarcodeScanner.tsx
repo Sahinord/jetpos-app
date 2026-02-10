@@ -18,17 +18,15 @@ export default function BarcodeScanner() {
     const videoRef = useRef<HTMLVideoElement>(null);
     const readerRef = useRef<BrowserMultiFormatReader | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
-    const controlsRef = useRef<any>(null); // Store decode controls for proper cleanup
+    const controlsRef = useRef<any>(null);
 
     const isProcessing = useRef(false);
-    const lastScannedBarcode = useRef<string>('');
-    const lastScanTime = useRef<number>(0);
+    const scannerActive = useRef(false); // Master kill switch for callbacks
 
     useEffect(() => {
         if (scanning) {
             isProcessing.current = false;
-            lastScannedBarcode.current = '';
-            lastScanTime.current = 0;
+            scannerActive.current = true;
             startScanner();
         } else {
             stopScanner();
@@ -74,19 +72,18 @@ export default function BarcodeScanner() {
                     undefined,
                     videoRef.current,
                     (result, error) => {
-                        if (result && !isProcessing.current) {
-                            const barcode = result.getText();
-                            const now = Date.now();
+                        // Master kill switch - once a barcode is detected, block ALL further callbacks
+                        if (!scannerActive.current || isProcessing.current) return;
+                        if (!result) return;
 
-                            // Debounce: Ignore same barcode within 3 seconds
-                            if (barcode === lastScannedBarcode.current && (now - lastScanTime.current) < 3000) {
-                                return;
-                            }
+                        const barcode = result.getText();
+                        if (!barcode || barcode.length < 3) return; // Ignore noise
 
-                            lastScannedBarcode.current = barcode;
-                            lastScanTime.current = now;
-                            handleBarcodeDetected(barcode);
-                        }
+                        // IMMEDIATELY lock - no more callbacks after this point
+                        isProcessing.current = true;
+                        scannerActive.current = false;
+
+                        handleBarcodeDetected(barcode);
                     }
                 );
                 controlsRef.current = controls;
@@ -125,8 +122,9 @@ export default function BarcodeScanner() {
     };
 
     const handleBarcodeDetected = async (barcode: string) => {
-        if (isProcessing.current) return;
+        // Lock is already set in the callback, but double-check
         isProcessing.current = true;
+        scannerActive.current = false;
 
         console.log('Barkod okundu:', barcode);
 
@@ -177,10 +175,8 @@ export default function BarcodeScanner() {
             toast.error('Bir hata oluştu', { id: 'scan-result' });
         } finally {
             setFetching(false);
-            // Reset processing lock after a short delay to prevent ghost triggers
-            setTimeout(() => {
-                isProcessing.current = false;
-            }, 500);
+            // Do NOT auto-reset isProcessing here.
+            // It stays locked until user explicitly taps "Scan Again" or opens camera.
         }
     };
 
@@ -239,8 +235,7 @@ export default function BarcodeScanner() {
     const handleScanAgain = useCallback(() => {
         setProduct(null);
         isProcessing.current = false;
-        lastScannedBarcode.current = '';
-        lastScanTime.current = 0;
+        scannerActive.current = false;
         // Small delay to let React state settle before opening camera
         setTimeout(() => {
             setScanning(true);
@@ -251,6 +246,7 @@ export default function BarcodeScanner() {
         setProduct(null);
         setScanning(false);
         isProcessing.current = false;
+        scannerActive.current = false;
     }, []);
 
     return (
@@ -372,46 +368,47 @@ export default function BarcodeScanner() {
                             exit={{ opacity: 0 }}
                             className="relative flex flex-col"
                         >
-                            <div className="relative aspect-[3/4] rounded-[3rem] overflow-hidden glass-dark border-2 border-white/10 shadow-3xl">
+                            <div className="relative aspect-[4/5] max-h-[55vh] rounded-[2rem] overflow-hidden glass-dark border-2 border-white/10 shadow-3xl">
                                 <video
                                     ref={videoRef}
                                     autoPlay
                                     playsInline
                                     muted
-                                    className="w-full h-full object-cover scale-[1.01]"
+                                    className="w-full h-full object-cover"
                                 />
 
                                 {/* Scanning Overlay */}
                                 <div className="absolute inset-0 pointer-events-none">
-                                    <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-60" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-background/30" />
 
-                                    {/* Corner Accents */}
-                                    <div className="absolute top-10 left-10 w-12 h-12 border-t-4 border-l-4 border-blue-500 rounded-tl-2xl" />
-                                    <div className="absolute top-10 right-10 w-12 h-12 border-t-4 border-r-4 border-blue-500 rounded-tr-2xl" />
-                                    <div className="absolute bottom-10 left-10 w-12 h-12 border-b-4 border-l-4 border-blue-500 rounded-bl-2xl" />
-                                    <div className="absolute bottom-10 right-10 w-12 h-12 border-b-4 border-r-4 border-blue-500 rounded-br-2xl" />
+                                    {/* Centered Scan Zone - smaller box in the middle */}
+                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[65%] aspect-square">
+                                        <div className="absolute top-0 left-0 w-8 h-8 border-t-[3px] border-l-[3px] border-blue-400 rounded-tl-xl" />
+                                        <div className="absolute top-0 right-0 w-8 h-8 border-t-[3px] border-r-[3px] border-blue-400 rounded-tr-xl" />
+                                        <div className="absolute bottom-0 left-0 w-8 h-8 border-b-[3px] border-l-[3px] border-blue-400 rounded-bl-xl" />
+                                        <div className="absolute bottom-0 right-0 w-8 h-8 border-b-[3px] border-r-[3px] border-blue-400 rounded-br-xl" />
+                                    </div>
 
-                                    {/* Scanning Beam */}
-                                    <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500 blur-sm animate-[scan_3s_infinite]" />
-                                    <div className="absolute top-0 left-10 right-10 h-0.5 bg-blue-400 opacity-50 shadow-[0_0_15px_rgba(59,130,246,0.8)] animate-[scan_3s_infinite]" />
+                                    {/* Scanning Beam - only within scan zone */}
+                                    <div className="absolute left-[17.5%] right-[17.5%] top-0 h-0.5 bg-blue-400 shadow-[0_0_12px_rgba(59,130,246,0.8)] animate-[scan_3s_infinite]" />
                                 </div>
+                            </div>
 
-                                {/* Scanner Controls */}
-                                <div className="absolute bottom-10 left-0 right-0 flex justify-center gap-6 px-10">
-                                    <button
-                                        onClick={toggleTorch}
-                                        className={`w-16 h-16 rounded-3xl glass backdrop-blur-2xl flex items-center justify-center transition-all ${torchOn ? 'bg-amber-500/90 text-white shadow-[0_0_20px_rgba(245,158,11,0.4)]' : 'text-white'
-                                            }`}
-                                    >
-                                        <Flashlight className="w-7 h-7" />
-                                    </button>
-                                    <button
-                                        onClick={() => setScanning(false)}
-                                        className="flex-1 h-16 bg-red-500/90 backdrop-blur-2xl rounded-3xl text-white font-black text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-transform"
-                                    >
-                                        Okumayı Durdur
-                                    </button>
-                                </div>
+                            {/* Controls - OUTSIDE the camera box */}
+                            <div className="flex justify-center gap-4 mt-4 px-4">
+                                <button
+                                    onClick={toggleTorch}
+                                    className={`w-14 h-14 rounded-2xl glass backdrop-blur-2xl flex items-center justify-center transition-all border border-white/10 ${torchOn ? 'bg-amber-500/90 text-white shadow-[0_0_20px_rgba(245,158,11,0.4)]' : 'text-white'
+                                        }`}
+                                >
+                                    <Flashlight className="w-6 h-6" />
+                                </button>
+                                <button
+                                    onClick={() => setScanning(false)}
+                                    className="flex-1 h-14 bg-red-500/90 backdrop-blur-2xl rounded-2xl text-white font-black text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-transform"
+                                >
+                                    Okumayı Durdur
+                                </button>
                             </div>
 
                             <div className="mt-6 text-center">
