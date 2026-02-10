@@ -161,6 +161,7 @@ export default function BarcodeScanner() {
                 .from('products')
                 .select('*, categories(name)')
                 .eq('barcode', barcode)
+                .eq('tenant_id', tenantId)
                 .single();
 
             if (data) {
