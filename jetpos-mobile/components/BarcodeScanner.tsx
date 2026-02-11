@@ -36,8 +36,29 @@ export default function BarcodeScanner() {
 
     const startScanner = async () => {
         try {
-            // First clean up any previous instance completely
-            stopScanner();
+            // Clean up previous instance WITHOUT resetting scannerActive
+            if (controlsRef.current) {
+                try { controlsRef.current.stop(); } catch (e) { }
+                controlsRef.current = null;
+            }
+            if (streamRef.current) {
+                streamRef.current.getTracks().forEach(track => {
+                    try { track.stop(); } catch (e) { }
+                });
+                streamRef.current = null;
+            }
+            if (videoRef.current && videoRef.current.srcObject) {
+                const ms = videoRef.current.srcObject as MediaStream;
+                ms.getTracks().forEach(track => { try { track.stop(); } catch (e) { } });
+                videoRef.current.srcObject = null;
+            }
+            if (readerRef.current) {
+                readerRef.current = null;
+            }
+
+            // Re-ensure scannerActive is true after cleanup
+            scannerActive.current = true;
+            isProcessing.current = false;
 
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                 const isHttps = window.location.protocol === 'https:';
@@ -50,18 +71,28 @@ export default function BarcodeScanner() {
                 return;
             }
 
+            // Wait for video element to be mounted in DOM
+            await new Promise(resolve => setTimeout(resolve, 300));
+
             if (!videoRef.current) {
                 console.warn('Video element not ready yet');
+                setScanning(false);
                 return;
             }
 
             const reader = new BrowserMultiFormatReader();
             readerRef.current = reader;
 
-            // Let decodeFromVideoDevice handle stream creation entirely
-            // Pass undefined as deviceId to use the default back camera
-            const controls = await reader.decodeFromVideoDevice(
-                undefined,
+            // Use decodeFromConstraints with explicit facingMode for reliable back camera
+            const controls = await reader.decodeFromConstraints(
+                {
+                    video: {
+                        facingMode: { ideal: 'environment' },
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
+                    audio: false
+                },
                 videoRef.current,
                 (result, error) => {
                     // Master kill switch - once a barcode is detected, block ALL further callbacks

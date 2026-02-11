@@ -352,10 +352,16 @@ export default function POSPage() {
             const reader = new BrowserMultiFormatReader();
             readerRef.current = reader;
 
-            // Let decodeFromVideoDevice handle the camera stream entirely
-            // Pass undefined as deviceId to use the default back camera
-            const controls = await reader.decodeFromVideoDevice(
-                undefined,
+            // Use decodeFromConstraints with explicit facingMode for reliable back camera
+            const controls = await reader.decodeFromConstraints(
+                {
+                    video: {
+                        facingMode: { ideal: 'environment' },
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
+                    audio: false
+                },
                 videoRef.current,
                 (result) => {
                     if (result) {
