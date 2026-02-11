@@ -93,7 +93,6 @@ export default function POSPage() {
     const videoRef = useRef<HTMLVideoElement>(null);
     const readerRef = useRef<BrowserMultiFormatReader | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
-    const controlsRef = useRef<any>(null);
     const recognitionRef = useRef<any>(null);
 
     // Initial Fetch
@@ -330,109 +329,46 @@ export default function POSPage() {
         return () => stopScanner();
     }, [isScannerOpen]);
 
-    // Wait for video element to appear in DOM
-    const waitForVideoElement = async (maxWait = 2000): Promise<HTMLVideoElement | null> => {
-        const start = Date.now();
-        while (Date.now() - start < maxWait) {
-            if (videoRef.current) return videoRef.current;
-            await new Promise(resolve => setTimeout(resolve, 100));
-        }
-        return null;
-    };
-
     const startScanner = async () => {
         try {
-            // Clean up any previous instance
-            stopScanner();
+            readerRef.current = new BrowserMultiFormatReader();
+            const constraints = {
+                video: { facingMode: 'environment' }
+            };
 
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                toast.error('Kamera erişimi desteklenmiyor. HTTPS gerekli olabilir.');
-                setIsScannerOpen(false);
-                return;
-            }
-
-            // Step 1: Wait for video element
-            const videoEl = await waitForVideoElement();
-            if (!videoEl) {
-                console.warn('Video element not ready after 2s');
-                setIsScannerOpen(false);
-                return;
-            }
-
-            // Step 2: Open camera manually
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: {
-                    facingMode: { ideal: 'environment' },
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 }
-                },
-                audio: false
-            });
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
             streamRef.current = stream;
 
-            // Step 3: Attach stream to video and play
-            videoEl.srcObject = stream;
-            videoEl.muted = true;
-            await videoEl.play().catch(() => {
-                return new Promise(resolve => setTimeout(resolve, 200)).then(() => videoEl.play());
-            });
-
-            console.log('✅ POS Camera stream is playing');
-
-            // Step 4: Use decodeFromStream for barcode detection
-            const reader = new BrowserMultiFormatReader();
-            readerRef.current = reader;
-
-            const controls = await reader.decodeFromStream(
-                stream,
-                videoEl,
-                (result) => {
-                    if (result) {
-                        const barcode = result.getText().toLowerCase();
-                        const product = barcodeMap.get(barcode);
-                        if (product) {
-                            addToCart(product);
-                            setIsScannerOpen(false);
-                            playBeep();
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream;
+                readerRef.current.decodeFromVideoDevice(
+                    undefined,
+                    videoRef.current,
+                    (result) => {
+                        if (result) {
+                            const barcode = result.getText().toLowerCase();
+                            const product = barcodeMap.get(barcode);
+                            if (product) {
+                                addToCart(product);
+                                setIsScannerOpen(false);
+                                playBeep();
+                            }
                         }
                     }
-                }
-            );
-            controlsRef.current = controls;
-
-            console.log('✅ POS Barcode scanner started');
-        } catch (error: any) {
+                );
+            }
+        } catch (error) {
             console.error('Kamera hatası:', error);
-            toast.error('Kamera açılamadı: ' + (error?.message || 'Bilinmeyen hata'));
+            toast.error('Kamera açılamadı');
             setIsScannerOpen(false);
         }
     };
 
     const stopScanner = () => {
-        // 1. Stop decode controls first
-        if (controlsRef.current) {
-            try { controlsRef.current.stop(); } catch (e) { }
-            controlsRef.current = null;
-        }
-
-        // 2. Stop all media tracks
         if (streamRef.current) {
-            streamRef.current.getTracks().forEach(track => {
-                try { track.stop(); } catch (e) { }
-            });
+            streamRef.current.getTracks().forEach(track => track.stop());
             streamRef.current = null;
         }
-
-        // 3. Also stop tracks from video element directly (belt and suspenders)
-        if (videoRef.current && videoRef.current.srcObject) {
-            const mediaStream = videoRef.current.srcObject as MediaStream;
-            mediaStream.getTracks().forEach(track => {
-                try { track.stop(); } catch (e) { }
-            });
-            videoRef.current.srcObject = null;
-        }
-
-        // 4. Clear reader reference
         if (readerRef.current) {
             readerRef.current = null;
         }

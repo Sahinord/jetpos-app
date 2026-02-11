@@ -34,41 +34,10 @@ export default function BarcodeScanner() {
         return () => stopScanner();
     }, [scanning]);
 
-    // Wait for video element to appear in DOM (handles AnimatePresence delays)
-    const waitForVideoElement = async (maxWait = 2000): Promise<HTMLVideoElement | null> => {
-        const start = Date.now();
-        while (Date.now() - start < maxWait) {
-            if (videoRef.current) return videoRef.current;
-            await new Promise(resolve => setTimeout(resolve, 100));
-        }
-        return null;
-    };
-
     const startScanner = async () => {
         try {
-            // Clean up previous instance WITHOUT resetting scannerActive
-            if (controlsRef.current) {
-                try { controlsRef.current.stop(); } catch (e) { }
-                controlsRef.current = null;
-            }
-            if (streamRef.current) {
-                streamRef.current.getTracks().forEach(track => {
-                    try { track.stop(); } catch (e) { }
-                });
-                streamRef.current = null;
-            }
-            if (videoRef.current && videoRef.current.srcObject) {
-                const ms = videoRef.current.srcObject as MediaStream;
-                ms.getTracks().forEach(track => { try { track.stop(); } catch (e) { } });
-                videoRef.current.srcObject = null;
-            }
-            if (readerRef.current) {
-                readerRef.current = null;
-            }
-
-            // Re-ensure scannerActive is true after cleanup
-            scannerActive.current = true;
-            isProcessing.current = false;
+            // First clean up any previous instance completely
+            stopScanner();
 
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                 const isHttps = window.location.protocol === 'https:';
@@ -81,47 +50,19 @@ export default function BarcodeScanner() {
                 return;
             }
 
-            // Step 1: Wait for video element to appear in DOM
-            const videoEl = await waitForVideoElement();
-            if (!videoEl) {
-                console.warn('Video element not ready after 2s');
-                toast.error('Video elementi yüklenemedi', { id: 'camera-error' });
-                setScanning(false);
+            if (!videoRef.current) {
+                console.warn('Video element not ready yet');
                 return;
             }
 
-            // Step 2: Open camera manually with getUserMedia
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: {
-                    facingMode: { ideal: 'environment' },
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 }
-                },
-                audio: false
-            });
-            streamRef.current = stream;
-
-            // Step 3: Attach stream to video element and play
-            videoEl.srcObject = stream;
-            videoEl.setAttribute('autoplay', 'true');
-            videoEl.setAttribute('playsinline', 'true');
-            videoEl.setAttribute('muted', 'true');
-            videoEl.muted = true;
-
-            await videoEl.play().catch(() => {
-                // iOS sometimes needs a retry
-                return new Promise(resolve => setTimeout(resolve, 200)).then(() => videoEl.play());
-            });
-
-            console.log('✅ Camera stream is playing');
-
-            // Step 4: Use decodeFromStream for barcode decoding on the already-playing stream
             const reader = new BrowserMultiFormatReader();
             readerRef.current = reader;
 
-            const controls = await reader.decodeFromStream(
-                stream,
-                videoEl,
+            // Let decodeFromVideoDevice handle stream creation entirely
+            // Pass undefined as deviceId to use the default back camera
+            const controls = await reader.decodeFromVideoDevice(
+                undefined,
+                videoRef.current,
                 (result, error) => {
                     // Master kill switch - once a barcode is detected, block ALL further callbacks
                     if (!scannerActive.current || isProcessing.current) return;
@@ -139,15 +80,15 @@ export default function BarcodeScanner() {
             );
             controlsRef.current = controls;
 
-            console.log('✅ Barcode scanner started successfully');
-        } catch (error: any) {
+            // Extract the stream reference from the video element (for torch control)
+            if (videoRef.current.srcObject) {
+                streamRef.current = videoRef.current.srcObject as MediaStream;
+            }
+
+            console.log('✅ Scanner started successfully');
+        } catch (error) {
             console.error('Kamera erişim hatası:', error);
-            const msg = error?.name === 'NotAllowedError'
-                ? 'Kamera izni reddedildi. Lütfen tarayıcı ayarlarından izin verin.'
-                : error?.name === 'NotFoundError'
-                    ? 'Kamera bulunamadı.'
-                    : 'Kamera açılamadı: ' + (error?.message || 'Bilinmeyen hata');
-            toast.error(msg, { id: 'camera-error' });
+            toast.error('Kamera açılamadı. Lütfen izin verin.', { id: 'camera-error' });
             setScanning(false);
         }
     };
