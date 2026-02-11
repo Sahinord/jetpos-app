@@ -36,8 +36,30 @@ export default function BarcodeScanner() {
 
     const startScanner = async () => {
         try {
-            // First clean up any previous instance completely
-            stopScanner();
+            // Clean up previous instance WITHOUT calling stopScanner
+            // (stopScanner resets scannerActive which breaks callbacks)
+            if (controlsRef.current) {
+                try { controlsRef.current.stop(); } catch (e) { }
+                controlsRef.current = null;
+            }
+            if (streamRef.current) {
+                streamRef.current.getTracks().forEach(track => {
+                    try { track.stop(); } catch (e) { }
+                });
+                streamRef.current = null;
+            }
+            if (videoRef.current && videoRef.current.srcObject) {
+                const ms = videoRef.current.srcObject as MediaStream;
+                ms.getTracks().forEach(track => { try { track.stop(); } catch (e) { } });
+                videoRef.current.srcObject = null;
+            }
+            if (readerRef.current) {
+                readerRef.current = null;
+            }
+
+            // Ensure flags are correct after cleanup
+            scannerActive.current = true;
+            isProcessing.current = false;
 
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                 const isHttps = window.location.protocol === 'https:';
@@ -50,28 +72,35 @@ export default function BarcodeScanner() {
                 return;
             }
 
-            if (!videoRef.current) {
-                console.warn('Video element not ready yet');
+            // Poll for video element (AnimatePresence may delay mounting up to 2s)
+            let videoEl = videoRef.current;
+            if (!videoEl) {
+                for (let i = 0; i < 20; i++) {
+                    await new Promise(r => setTimeout(r, 100));
+                    videoEl = videoRef.current;
+                    if (videoEl) break;
+                }
+            }
+            if (!videoEl) {
+                console.warn('Video element not ready after 2s');
+                toast.error('Kamera başlatılamadı, tekrar deneyin.', { id: 'camera-error' });
+                setScanning(false);
                 return;
             }
 
             const reader = new BrowserMultiFormatReader();
             readerRef.current = reader;
 
-            // Let decodeFromVideoDevice handle stream creation entirely
-            // Pass undefined as deviceId to use the default back camera
             const controls = await reader.decodeFromVideoDevice(
                 undefined,
-                videoRef.current,
+                videoEl,
                 (result, error) => {
-                    // Master kill switch - once a barcode is detected, block ALL further callbacks
                     if (!scannerActive.current || isProcessing.current) return;
                     if (!result) return;
 
                     const barcode = result.getText();
-                    if (!barcode || barcode.length < 3) return; // Ignore noise
+                    if (!barcode || barcode.length < 3) return;
 
-                    // IMMEDIATELY lock - no more callbacks after this point
                     isProcessing.current = true;
                     scannerActive.current = false;
 
@@ -80,15 +109,15 @@ export default function BarcodeScanner() {
             );
             controlsRef.current = controls;
 
-            // Extract the stream reference from the video element (for torch control)
-            if (videoRef.current.srcObject) {
-                streamRef.current = videoRef.current.srcObject as MediaStream;
+            // Extract stream reference for torch control
+            if (videoEl.srcObject) {
+                streamRef.current = videoEl.srcObject as MediaStream;
             }
 
             console.log('✅ Scanner started successfully');
         } catch (error) {
             console.error('Kamera erişim hatası:', error);
-            toast.error('Kamera açılamadı. Lütfen izin verin.', { id: 'camera-error' });
+            toast.error('Kamera açılamadı. Lütfen kamera iznini verin.', { id: 'camera-error' });
             setScanning(false);
         }
     };
