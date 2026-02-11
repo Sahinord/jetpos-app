@@ -93,6 +93,7 @@ export default function POSPage() {
     const videoRef = useRef<HTMLVideoElement>(null);
     const readerRef = useRef<BrowserMultiFormatReader | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
+    const controlsRef = useRef<any>(null);
     const recognitionRef = useRef<any>(null);
 
     // Initial Fetch
@@ -331,44 +332,83 @@ export default function POSPage() {
 
     const startScanner = async () => {
         try {
-            readerRef.current = new BrowserMultiFormatReader();
-            const constraints = {
-                video: { facingMode: 'environment' }
-            };
+            // Clean up any previous instance first
+            stopScanner();
 
-            const stream = await navigator.mediaDevices.getUserMedia(constraints);
-            streamRef.current = stream;
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                toast.error('Kamera erişimi desteklenmiyor. HTTPS gerekli olabilir.');
+                setIsScannerOpen(false);
+                return;
+            }
 
-            if (videoRef.current) {
-                videoRef.current.srcObject = stream;
-                readerRef.current.decodeFromVideoDevice(
-                    undefined,
-                    videoRef.current,
-                    (result) => {
-                        if (result) {
-                            const barcode = result.getText().toLowerCase();
-                            const product = barcodeMap.get(barcode);
-                            if (product) {
-                                addToCart(product);
-                                setIsScannerOpen(false);
-                                playBeep();
-                            }
+            // Wait for video element to be mounted
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            if (!videoRef.current) {
+                console.warn('Video element not ready');
+                return;
+            }
+
+            const reader = new BrowserMultiFormatReader();
+            readerRef.current = reader;
+
+            // Let decodeFromVideoDevice handle the camera stream entirely
+            // Pass undefined as deviceId to use the default back camera
+            const controls = await reader.decodeFromVideoDevice(
+                undefined,
+                videoRef.current,
+                (result) => {
+                    if (result) {
+                        const barcode = result.getText().toLowerCase();
+                        const product = barcodeMap.get(barcode);
+                        if (product) {
+                            addToCart(product);
+                            setIsScannerOpen(false);
+                            playBeep();
                         }
                     }
-                );
+                }
+            );
+            controlsRef.current = controls;
+
+            // Extract stream reference from video element for cleanup
+            if (videoRef.current.srcObject) {
+                streamRef.current = videoRef.current.srcObject as MediaStream;
             }
+
+            console.log('✅ POS Scanner started successfully');
         } catch (error) {
             console.error('Kamera hatası:', error);
-            toast.error('Kamera açılamadı');
+            toast.error('Kamera açılamadı. Lütfen kamera iznini kontrol edin.');
             setIsScannerOpen(false);
         }
     };
 
     const stopScanner = () => {
+        // 1. Stop decode controls first
+        if (controlsRef.current) {
+            try { controlsRef.current.stop(); } catch (e) { }
+            controlsRef.current = null;
+        }
+
+        // 2. Stop all media tracks
         if (streamRef.current) {
-            streamRef.current.getTracks().forEach(track => track.stop());
+            streamRef.current.getTracks().forEach(track => {
+                try { track.stop(); } catch (e) { }
+            });
             streamRef.current = null;
         }
+
+        // 3. Also stop tracks from video element directly (belt and suspenders)
+        if (videoRef.current && videoRef.current.srcObject) {
+            const mediaStream = videoRef.current.srcObject as MediaStream;
+            mediaStream.getTracks().forEach(track => {
+                try { track.stop(); } catch (e) { }
+            });
+            videoRef.current.srcObject = null;
+        }
+
+        // 4. Clear reader reference
         if (readerRef.current) {
             readerRef.current = null;
         }
