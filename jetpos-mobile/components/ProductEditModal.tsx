@@ -189,13 +189,8 @@ export default function ProductEditModal({ product, onClose, onSaved }: ProductE
                     animate={{ y: 0 }}
                     exit={{ y: "100%" }}
                     transition={{ type: "spring", damping: 25, stiffness: 200 }}
-<<<<<<< HEAD
                     className="relative w-full max-w-lg glass-dark border-t border-white/10 rounded-t-[1.5rem] shadow-3xl overflow-hidden flex flex-col"
                     style={{ maxHeight: '90vh' }}
-=======
-                    className="relative w-full max-w-lg glass-dark border-t border-white/10 rounded-t-[3rem] shadow-3xl flex flex-col overflow-hidden"
-                    style={{ maxHeight: '80vh', paddingBottom: 'env(safe-area-inset-bottom)' }}
->>>>>>> defbedb51ff1ca68df1120905dac238cf8406634
                 >
                     {/* Glow Effect */}
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-[2px] bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
@@ -206,11 +201,7 @@ export default function ProductEditModal({ product, onClose, onSaved }: ProductE
                     </div>
 
                     {/* Scrollable Content */}
-<<<<<<< HEAD
                     <div className="overflow-y-auto flex-1 px-4 pb-4 pt-2">
-=======
-                    <div className="overflow-y-auto flex-1 px-6 pt-4 pb-4">
->>>>>>> defbedb51ff1ca68df1120905dac238cf8406634
                         {/* Header */}
                         <div className="flex items-center justify-between mb-4">
                             <div>
@@ -288,19 +279,10 @@ export default function ProductEditModal({ product, onClose, onSaved }: ProductE
                             )}
                         </div>
 
-<<<<<<< HEAD
                         <form onSubmit={handleSubmit} className="space-y-4">
                             {/* Category Selector */}
                             <div className="space-y-1.5">
                                 <label className="text-[9px] font-bold text-secondary uppercase tracking-widest ml-1">Kategori</label>
-=======
-                        <form id="edit-product-form" onSubmit={handleSubmit} className="space-y-5">
-                            {/* Kategori Selector */}
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-secondary uppercase tracking-widest ml-1">
-                                    Kategori {categories.length > 0 && <span className="text-blue-400">({categories.length})</span>}
-                                </label>
->>>>>>> defbedb51ff1ca68df1120905dac238cf8406634
                                 <div className="relative">
                                     <select
                                         value={formData.category_id}
@@ -454,7 +436,6 @@ export default function ProductEditModal({ product, onClose, onSaved }: ProductE
                                     </div>
                                 </div>
                             </div>
-<<<<<<< HEAD
                             {/* Save Button - inside scroll area */}
                             <div className="pt-4 pb-24">
                                 <button
@@ -473,28 +454,7 @@ export default function ProductEditModal({ product, onClose, onSaved }: ProductE
                                     )}
                                 </button>
                             </div>
-=======
->>>>>>> defbedb51ff1ca68df1120905dac238cf8406634
                         </form>
-                    </div>
-
-                    {/* Submit Button Container */}
-                    <div className="flex-shrink-0 px-6 pt-4 pb-12 border-t border-white/10 bg-[#0a0f1a]/95 backdrop-blur-xl relative z-10">
-                        <button
-                            type="submit"
-                            form="edit-product-form"
-                            disabled={loading}
-                            className="w-full h-16 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 rounded-3xl text-white font-black text-xs uppercase tracking-[4px] shadow-2xl shadow-blue-500/30 transition-all active:scale-[0.98] flex items-center justify-center gap-3"
-                        >
-                            {loading ? (
-                                <Loader className="w-5 h-5 animate-spin" />
-                            ) : (
-                                <>
-                                    <Save className="w-5 h-5" />
-                                    <span>Değişiklikleri Kaydet</span>
-                                </>
-                            )}
-                        </button>
                     </div>
                 </motion.div>
             </div>
