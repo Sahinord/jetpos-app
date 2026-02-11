@@ -39,15 +39,6 @@ interface Customer {
     phone?: string;
 }
 
-const containerVariants = {
-    hidden: { opacity: 0 },
-    show: { opacity: 1, transition: { staggerChildren: 0.05 } }
-};
-
-const itemVariants = {
-    hidden: { y: 10, opacity: 0 },
-    show: { y: 0, opacity: 1 }
-};
 
 export default function POSPage() {
     // Data State
@@ -64,7 +55,7 @@ export default function POSPage() {
     const [customerSearch, setCustomerSearch] = useState("");
 
     // Optimization & Sort State
-    const [visibleCount, setVisibleCount] = useState(50);
+    const [visibleCount, setVisibleCount] = useState(30);
     const [sortBy, setSortBy] = useState<'name' | 'stock-asc' | 'stock-desc'>('name');
 
     // Cart State
@@ -108,10 +99,11 @@ export default function POSPage() {
 
             // Fetch Categories and Customers first
             const [catRes, custRes] = await Promise.all([
-                supabase.from('categories').select('*'),
-                supabase.from('cari_hesaplar').select('*').eq('hesap_tipi', 'musteri')
+                supabase.from('categories').select('*').eq('tenant_id', tenantId),
+                supabase.from('cari_hesaplar').select('*').eq('hesap_tipi', 'musteri').eq('tenant_id', tenantId)
             ]);
 
+            console.log('📂 POS Categories:', catRes.data?.length || 0, catRes.error?.message || '');
             if (catRes.data) setCategories(catRes.data);
             if (custRes.data) {
                 setCustomers(custRes.data.map((c: any) => ({
@@ -131,6 +123,7 @@ export default function POSPage() {
                 const { data, error } = await supabase
                     .from('products')
                     .select('*')
+                    .eq('tenant_id', tenantId)
                     .eq('status', 'active')
                     .order('name', { ascending: true })
                     .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
@@ -222,9 +215,7 @@ export default function POSPage() {
 
     // Visible slice for performance
     const displayedProducts = useMemo(() => {
-        const slice = filteredProducts.slice(0, visibleCount);
-        console.log('Displayed Products Count:', slice.length, 'Total Filtered:', filteredProducts.length);
-        return slice;
+        return filteredProducts.slice(0, visibleCount);
     }, [filteredProducts, visibleCount]);
 
     // Low Stock Alert Auto-Trigger
@@ -796,7 +787,7 @@ export default function POSPage() {
                             </div>
 
                             {/* Totals & Checkout */}
-                            <div className="p-6 bg-black/40 border-t border-white/10 space-y-4 flex-shrink-0 pb-12">
+                            <div className="p-6 bg-black/40 border-t border-white/10 space-y-4 flex-shrink-0 pb-24">
                                 <div className="flex items-center justify-between">
                                     <span className="text-secondary font-bold">Toplam Tutar</span>
                                     <span className="text-3xl font-black text-white">₺{totalAmount.toFixed(2)}</span>

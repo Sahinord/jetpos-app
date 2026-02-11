@@ -35,16 +35,22 @@ export default function ProductEditModal({ product, onClose, onSaved }: ProductE
     const fetchCategories = async () => {
         try {
             const tenantId = localStorage.getItem('tenantId');
-            if (tenantId) {
-                await supabase.rpc('set_current_tenant', { tenant_id: tenantId });
+            if (!tenantId) {
+                console.warn('⚠️ Categories: tenantId yok!');
+                return;
             }
 
-            const { data } = await supabase
+            await supabase.rpc('set_current_tenant', { tenant_id: tenantId });
+
+            const { data, error } = await supabase
                 .from('categories')
                 .select('id, name')
+                .eq('tenant_id', tenantId)
                 .order('name');
 
-            if (data) {
+            console.log('📂 Categories fetched:', data?.length || 0, error?.message || '');
+
+            if (data && data.length > 0) {
                 setCategories(data);
             }
         } catch (error) {
@@ -105,25 +111,25 @@ export default function ProductEditModal({ product, onClose, onSaved }: ProductE
                     className="absolute inset-0 bg-background/60 backdrop-blur-md"
                 />
 
-                {/* Modal Content - Full height scrollable on mobile */}
+                {/* Modal Content */}
                 <motion.div
                     initial={{ y: "100%" }}
                     animate={{ y: 0 }}
                     exit={{ y: "100%" }}
                     transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                    className="relative w-full max-w-lg glass-dark border-t border-white/10 rounded-t-[3rem] shadow-3xl overflow-hidden flex flex-col"
+                    className="relative w-full max-w-lg glass-dark border-t border-white/10 rounded-t-[3rem] shadow-3xl flex flex-col"
                     style={{ maxHeight: '92vh' }}
                 >
                     {/* Glow Effect */}
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-1 bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
 
                     {/* Drag Handle */}
-                    <div className="flex justify-center pt-3 pb-1">
+                    <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
                         <div className="w-10 h-1 rounded-full bg-white/20" />
                     </div>
 
                     {/* Scrollable Content */}
-                    <div className="overflow-y-auto flex-1 px-6 pb-8 pt-4">
+                    <div className="overflow-y-auto flex-1 px-6 pt-4 pb-4">
                         {/* Header */}
                         <div className="flex items-center justify-between mb-6">
                             <div>
@@ -149,10 +155,12 @@ export default function ProductEditModal({ product, onClose, onSaved }: ProductE
                             </div>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="space-y-5">
+                        <form id="edit-product-form" onSubmit={handleSubmit} className="space-y-5">
                             {/* Kategori Selector */}
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-secondary uppercase tracking-widest ml-1">Kategori</label>
+                                <label className="text-[10px] font-black text-secondary uppercase tracking-widest ml-1">
+                                    Kategori {categories.length > 0 && <span className="text-blue-400">({categories.length})</span>}
+                                </label>
                                 <div className="relative">
                                     <select
                                         value={formData.category_id}
@@ -227,23 +235,26 @@ export default function ProductEditModal({ product, onClose, onSaved }: ProductE
                                     </div>
                                 </div>
                             </div>
-
-                            {/* Submit Button - Always visible */}
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="w-full h-16 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 rounded-3xl text-white font-black text-xs uppercase tracking-[4px] shadow-2xl shadow-blue-500/30 transition-all active:scale-[0.98] flex items-center justify-center gap-3 sticky bottom-0"
-                            >
-                                {loading ? (
-                                    <Loader className="w-5 h-5 animate-spin" />
-                                ) : (
-                                    <>
-                                        <Save className="w-5 h-5" />
-                                        <span>Değişiklikleri Kaydet</span>
-                                    </>
-                                )}
-                            </button>
                         </form>
+                    </div>
+
+                    {/* Submit Button - FIXED at bottom, never hidden */}
+                    <div className="flex-shrink-0 px-6 pt-3 pb-6 border-t border-white/10 bg-[#0a0f1a]/95 backdrop-blur-xl">
+                        <button
+                            type="submit"
+                            form="edit-product-form"
+                            disabled={loading}
+                            className="w-full h-16 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 rounded-3xl text-white font-black text-xs uppercase tracking-[4px] shadow-2xl shadow-blue-500/30 transition-all active:scale-[0.98] flex items-center justify-center gap-3"
+                        >
+                            {loading ? (
+                                <Loader className="w-5 h-5 animate-spin" />
+                            ) : (
+                                <>
+                                    <Save className="w-5 h-5" />
+                                    <span>Değişiklikleri Kaydet</span>
+                                </>
+                            )}
+                        </button>
                     </div>
                 </motion.div>
             </div>
