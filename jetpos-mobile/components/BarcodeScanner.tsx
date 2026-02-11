@@ -440,18 +440,28 @@ export default function BarcodeScanner() {
                                 onClose={handleClose}
                                 onScanAgain={handleScanAgain}
                                 onProductUpdated={async () => {
-                                    const barcode = product.barcode;
-                                    const tenantId = localStorage.getItem('tenantId');
-                                    if (tenantId) {
-                                        await supabase.rpc('set_current_tenant', { tenant_id: tenantId });
-                                    }
-                                    const { data } = await supabase
-                                        .from('products')
-                                        .select('*, categories(name)')
-                                        .eq('barcode', barcode)
-                                        .single();
-                                    if (data) {
-                                        setProduct(data);
+                                    try {
+                                        const tenantId = localStorage.getItem('tenantId');
+                                        if (tenantId) {
+                                            await supabase.rpc('set_current_tenant', { tenant_id: tenantId });
+                                        }
+                                        const { data, error } = await supabase
+                                            .from('products')
+                                            .select('*, categories(name)')
+                                            .eq('id', product.id)
+                                            .eq('tenant_id', tenantId)
+                                            .single();
+
+                                        if (error) {
+                                            console.error('Product refresh error:', error);
+                                            return;
+                                        }
+                                        if (data) {
+                                            console.log('Product refreshed:', data.stock_quantity);
+                                            setProduct(data);
+                                        }
+                                    } catch (err) {
+                                        console.error('Product refresh failed:', err);
                                     }
                                 }}
                             />

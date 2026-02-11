@@ -9,22 +9,25 @@ interface ProductCardProps {
     product: any;
     onClose: () => void;
     onScanAgain: () => void;
-    onProductUpdated?: () => void;
+    onProductUpdated?: () => Promise<void> | void;
 }
 
 export default function ProductCard({ product, onClose, onScanAgain, onProductUpdated }: ProductCardProps) {
     const [showEditModal, setShowEditModal] = useState(false);
     const isLowStock = product.stock_quantity < 10;
 
-    const handleSaved = () => {
+    const handleSaved = async () => {
+        setShowEditModal(false);
+        // Refresh product data from DB after modal closes
         if (onProductUpdated) {
-            onProductUpdated();
+            await onProductUpdated();
         }
     };
 
     return (
         <>
             <motion.div
+                key={`product-card-${product.stock_quantity}-${product.sale_price}`}
                 initial={{ opacity: 0, scale: 0.9, y: 30 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: 30 }}
@@ -125,3 +128,4 @@ export default function ProductCard({ product, onClose, onScanAgain, onProductUp
         </>
     );
 }
+
