@@ -17,11 +17,11 @@ import {
     MoreHorizontal,
     Package,
     X,
-    Eye, // Added Eye
+    Eye,
     EyeOff,
     RefreshCw,
     Hash,
-    History
+    History as HistoryIcon
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { exportToExcel, importFromExcel } from "@/lib/excel";
@@ -571,17 +571,15 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                 <FolderTree className="w-4 h-4 text-primary" />
                                 <span>KATEGORİLER</span>
                             </button>
-
                             {onViewChangeLogs && (
                                 <button
                                     onClick={onViewChangeLogs}
                                     className="flex items-center space-x-2 bg-blue-500/5 hover:bg-blue-500/10 border border-blue-500/20 px-4 py-2.5 rounded-xl text-xs font-bold text-blue-400 transition-all"
                                 >
-                                    <History className="w-4 h-4" />
+                                    <HistoryIcon className="w-4 h-4" />
                                     <span>DEĞİŞİKLİK KAYITLARI</span>
                                 </button>
                             )}
-
                             <div className="h-6 w-[1px] bg-border mx-2" />
 
                             <div className="flex items-center gap-2">

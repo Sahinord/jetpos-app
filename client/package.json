@@ -7,11 +7,11 @@
   "private": true,
   "main": "main.js",
   "scripts": {
-    "dev": "set TURBOPACK=0&& next dev",
+    "dev": "set TURBOPACK=0&& next dev -p 3005",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "electron-dev": "concurrently \"npm run dev\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron-dev": "concurrently \"npm run dev\" \"wait-on http://localhost:3005 && electron .\"",
     "electron-build": "next build && electron-builder"
   },
   "build": {
