@@ -330,9 +330,19 @@ export default function POSPage() {
         return () => stopScanner();
     }, [isScannerOpen]);
 
+    // Wait for video element to appear in DOM
+    const waitForVideoElement = async (maxWait = 2000): Promise<HTMLVideoElement | null> => {
+        const start = Date.now();
+        while (Date.now() - start < maxWait) {
+            if (videoRef.current) return videoRef.current;
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        return null;
+    };
+
     const startScanner = async () => {
         try {
-            // Clean up any previous instance first
+            // Clean up any previous instance
             stopScanner();
 
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -341,28 +351,41 @@ export default function POSPage() {
                 return;
             }
 
-            // Wait for video element to be mounted
-            await new Promise(resolve => setTimeout(resolve, 300));
-
-            if (!videoRef.current) {
-                console.warn('Video element not ready');
+            // Step 1: Wait for video element
+            const videoEl = await waitForVideoElement();
+            if (!videoEl) {
+                console.warn('Video element not ready after 2s');
+                setIsScannerOpen(false);
                 return;
             }
 
+            // Step 2: Open camera manually
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: { ideal: 'environment' },
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                },
+                audio: false
+            });
+            streamRef.current = stream;
+
+            // Step 3: Attach stream to video and play
+            videoEl.srcObject = stream;
+            videoEl.muted = true;
+            await videoEl.play().catch(() => {
+                return new Promise(resolve => setTimeout(resolve, 200)).then(() => videoEl.play());
+            });
+
+            console.log('✅ POS Camera stream is playing');
+
+            // Step 4: Use decodeFromStream for barcode detection
             const reader = new BrowserMultiFormatReader();
             readerRef.current = reader;
 
-            // Use decodeFromConstraints with explicit facingMode for reliable back camera
-            const controls = await reader.decodeFromConstraints(
-                {
-                    video: {
-                        facingMode: { ideal: 'environment' },
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
-                    },
-                    audio: false
-                },
-                videoRef.current,
+            const controls = await reader.decodeFromStream(
+                stream,
+                videoEl,
                 (result) => {
                     if (result) {
                         const barcode = result.getText().toLowerCase();
@@ -377,15 +400,10 @@ export default function POSPage() {
             );
             controlsRef.current = controls;
 
-            // Extract stream reference from video element for cleanup
-            if (videoRef.current.srcObject) {
-                streamRef.current = videoRef.current.srcObject as MediaStream;
-            }
-
-            console.log('✅ POS Scanner started successfully');
-        } catch (error) {
+            console.log('✅ POS Barcode scanner started');
+        } catch (error: any) {
             console.error('Kamera hatası:', error);
-            toast.error('Kamera açılamadı. Lütfen kamera iznini kontrol edin.');
+            toast.error('Kamera açılamadı: ' + (error?.message || 'Bilinmeyen hata'));
             setIsScannerOpen(false);
         }
     };
