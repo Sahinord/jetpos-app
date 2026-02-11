@@ -79,18 +79,8 @@ export default function ProductsPage() {
                 return;
             }
 
-            console.log('🔑 Mobil tenantId:', tenantId);
-
             // RLS context set et
             await supabase.rpc('set_current_tenant', { tenant_id: tenantId });
-
-            // Önce toplam ürün sayısını kontrol et
-            const { count: totalCount } = await supabase
-                .from('products')
-                .select('*', { count: 'exact', head: true })
-                .eq('tenant_id', tenantId);
-
-            console.log(`📊 Bu tenant'a ait toplam ürün sayısı: ${totalCount}`);
 
             let allProducts: Product[] = [];
             let page = 0;
@@ -115,20 +105,17 @@ export default function ProductsPage() {
                 if (data && data.length > 0) {
                     allProducts = [...allProducts, ...data];
                     setProducts([...allProducts]);
-                    console.log(`📦 Sayfa ${page}: ${data.length} ürün çekildi | Toplam: ${allProducts.length}`);
 
                     if (data.length < PAGE_SIZE) {
                         hasMore = false;
                     }
                 } else {
-                    console.log(`📦 Sayfa ${page}: 0 ürün - Durduruldu`);
                     hasMore = false;
                 }
                 page++;
 
                 if (page === 1) setLoading(false);
             }
-            console.log(`✅ Toplam ${allProducts.length} ürün başarıyla yüklendi.`);
         } catch (error) {
             console.error('Products fetch error:', error);
         } finally {

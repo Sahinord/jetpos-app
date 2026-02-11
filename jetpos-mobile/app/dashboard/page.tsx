@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import { TrendingUp, Package, AlertTriangle, DollarSign, Plus, ClipboardList, FileText, LogOut, SlidersHorizontal } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
@@ -21,19 +20,6 @@ interface DashboardStats {
     salesWeek: number;
     salesMonth: number;
 }
-
-const containerVariants = {
-    hidden: { opacity: 0 },
-    show: {
-        opacity: 1,
-        transition: { staggerChildren: 0.1 }
-    }
-};
-
-const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    show: { y: 0, opacity: 1 }
-};
 
 export default function DashboardPage() {
     const router = useRouter();
@@ -75,87 +61,49 @@ export default function DashboardPage() {
             const tenantId = localStorage.getItem('tenantId');
             if (!tenantId || tenantId === 'undefined') return;
 
-            // Step 0: Ensure session context
             await supabase.rpc('set_current_tenant', { tenant_id: tenantId });
 
-            // 1. Fetch General Product Counts
-            const { count: allCount } = await supabase
-                .from('products')
-                .select('*', { count: 'exact', head: true })
-                .eq('tenant_id', tenantId);
+            // Parallel batch 1: All count queries at once
+            const [allCountRes, activeCountRes, inactiveCountRes, allLowStockRes, activeLowStockRes, inactiveLowStockRes] = await Promise.all([
+                supabase.from('products').select('*', { count: 'exact', head: true }).eq('tenant_id', tenantId),
+                supabase.from('products').select('*', { count: 'exact', head: true }).eq('tenant_id', tenantId).or('status.eq.active,status.is.null'),
+                supabase.from('products').select('*', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('status', 'inactive'),
+                supabase.from('products').select('*', { count: 'exact', head: true }).eq('tenant_id', tenantId).lte('stock_quantity', 10),
+                supabase.from('products').select('*', { count: 'exact', head: true }).eq('tenant_id', tenantId).or('status.eq.active,status.is.null').lte('stock_quantity', 10),
+                supabase.from('products').select('*', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('status', 'inactive').lte('stock_quantity', 10),
+            ]);
 
-            const { count: activeCount } = await supabase
-                .from('products')
-                .select('*', { count: 'exact', head: true })
-                .eq('tenant_id', tenantId)
-                .or('status.eq.active,status.is.null');
+            // Parallel batch 2: Data queries
+            const [productsRes, invoicesRes] = await Promise.all([
+                supabase.from('products').select('stock_quantity, sale_price, status').eq('tenant_id', tenantId).limit(10000),
+                supabase.from('invoices').select('grand_total, created_at, invoice_type').eq('tenant_id', tenantId).in('invoice_type', ['sales', 'retail']),
+            ]);
 
-            const { count: inactiveCount } = await supabase
-                .from('products')
-                .select('*', { count: 'exact', head: true })
-                .eq('tenant_id', tenantId)
-                .eq('status', 'inactive');
-
-            // 2. Fetch Low Stock Counts Directly (Bypasses 1000 limit)
-            const { count: allLowStockCount } = await supabase
-                .from('products')
-                .select('*', { count: 'exact', head: true })
-                .eq('tenant_id', tenantId)
-                .lte('stock_quantity', 10);
-
-            const { count: activeLowStockCount } = await supabase
-                .from('products')
-                .select('*', { count: 'exact', head: true })
-                .eq('tenant_id', tenantId)
-                .or('status.eq.active,status.is.null')
-                .lte('stock_quantity', 10);
-
-            const { count: inactiveLowStockCount } = await supabase
-                .from('products')
-                .select('*', { count: 'exact', head: true })
-                .eq('tenant_id', tenantId)
-                .eq('status', 'inactive')
-                .lte('stock_quantity', 10);
-
-            // 3. Fetch Data for Value (Requires actual data fetching)
-            const { data: productsData } = await supabase
-                .from('products')
-                .select('stock_quantity, sale_price, status')
-                .eq('tenant_id', tenantId)
-                .limit(10000);
-
-            const products = productsData || [];
+            const products = productsRes.data || [];
             const activeOnes = products.filter(p => (p.status || 'active') === 'active');
             const inactiveOnes = products.filter(p => p.status === 'inactive');
 
             const calculateSum = (list: any[]) => list.reduce((sum, p) => sum + ((Number(p.stock_quantity) || 0) * (Number(p.sale_price) || 0)), 0);
 
-            // 4. Sales Data (Filtered by tenant)
             const startOfToday = new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
             const startOfWeek = new Date(new Date().setDate(new Date().getDate() - 7)).toISOString();
             const startOfMonth = new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString();
 
-            const { data: invoices } = await supabase
-                .from('invoices')
-                .select('grand_total, created_at, invoice_type')
-                .eq('tenant_id', tenantId)
-                .in('invoice_type', ['sales', 'retail']);
-
-            const sales = invoices || [];
+            const sales = invoicesRes.data || [];
             const salesToday = sales.filter(inv => inv.created_at >= startOfToday).reduce((s, i) => s + (Number(i.grand_total) || 0), 0);
             const salesWeek = sales.filter(inv => inv.created_at >= startOfWeek).reduce((s, i) => s + (Number(i.grand_total) || 0), 0);
             const salesMonth = sales.filter(inv => inv.created_at >= startOfMonth).reduce((s, i) => s + (Number(i.grand_total) || 0), 0);
 
             setStats({
-                activeProducts: activeCount || 0,
-                inactiveProducts: inactiveCount || 0,
-                allProducts: allCount || 0,
+                activeProducts: activeCountRes.count || 0,
+                inactiveProducts: inactiveCountRes.count || 0,
+                allProducts: allCountRes.count || 0,
                 activeValue: calculateSum(activeOnes),
                 inactiveValue: calculateSum(inactiveOnes),
                 allValue: calculateSum(products),
-                activeLowStock: activeLowStockCount || 0,
-                inactiveLowStock: inactiveLowStockCount || 0,
-                allLowStock: allLowStockCount || 0,
+                activeLowStock: activeLowStockRes.count || 0,
+                inactiveLowStock: inactiveLowStockRes.count || 0,
+                allLowStock: allLowStockRes.count || 0,
                 salesToday,
                 salesWeek,
                 salesMonth
@@ -226,9 +174,9 @@ export default function DashboardPage() {
             </header>
 
             <div className="p-6 space-y-8 relative z-10">
-                <motion.div variants={containerVariants} initial="hidden" animate="show" className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                     {statCards.map((card) => (
-                        <motion.div key={card.id} variants={itemVariants} className="glass-dark border border-white/10 rounded-[2rem] p-5 relative">
+                        <div key={card.id} className="glass-dark border border-white/10 rounded-[2rem] p-5 relative">
                             <div className="absolute top-4 right-4 z-40">
                                 <button
                                     onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === card.id ? null : card.id); }}
@@ -237,27 +185,22 @@ export default function DashboardPage() {
                                     <SlidersHorizontal size={14} />
                                 </button>
 
-                                <AnimatePresence>
-                                    {activeMenu === card.id && (
-                                        <motion.div
-                                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                                            className="absolute right-0 top-full mt-2 w-36 glass-dark border border-white/10 rounded-2xl overflow-hidden z-50 shadow-2xl p-1.5 space-y-1"
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
-                                            {card.options.map((opt) => (
-                                                <button
-                                                    key={opt.v}
-                                                    onClick={() => { card.setFilter(opt.v as any); setActiveMenu(null); }}
-                                                    className={`w-full text-left px-4 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${card.filter === opt.v ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:bg-white/5'}`}
-                                                >
-                                                    {opt.l}
-                                                </button>
-                                            ))}
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
+                                {activeMenu === card.id && (
+                                    <div
+                                        className="absolute right-0 top-full mt-2 w-36 glass-dark border border-white/10 rounded-2xl overflow-hidden z-50 shadow-2xl p-1.5 space-y-1"
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        {card.options.map((opt) => (
+                                            <button
+                                                key={opt.v}
+                                                onClick={() => { card.setFilter(opt.v as any); setActiveMenu(null); }}
+                                                className={`w-full text-left px-4 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${card.filter === opt.v ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:bg-white/5'}`}
+                                            >
+                                                {opt.l}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="space-y-4">
@@ -275,9 +218,9 @@ export default function DashboardPage() {
                                     </div>
                                 </div>
                             </div>
-                        </motion.div>
+                        </div>
                     ))}
-                </motion.div>
+                </div>
 
                 <div className="space-y-6">
                     <div className="flex items-center gap-4 px-2">
