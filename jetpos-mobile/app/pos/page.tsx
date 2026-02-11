@@ -352,6 +352,9 @@ export default function POSPage() {
                                 addToCart(product);
                                 setIsScannerOpen(false);
                                 playBeep();
+                            } else {
+                                // Product not found — show toast but keep scanning
+                                toast.error(`Ürün bulunamadı: ${result.getText()}`, { id: 'scan-not-found' });
                             }
                         }
                     }

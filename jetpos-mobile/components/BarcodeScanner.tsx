@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { BrowserMultiFormatReader } from '@zxing/browser';
-import { Camera, X, Flashlight, ScanLine } from 'lucide-react';
+import { Camera, X, Flashlight, ScanLine, Plus, Package, Save, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ProductCard from './ProductCard';
 import { supabase } from '@/lib/supabase';
@@ -15,13 +15,30 @@ export default function BarcodeScanner() {
     const [manualBarcode, setManualBarcode] = useState('');
     const [fetching, setFetching] = useState(false);
 
+    // New Product Creation state
+    const [showCreateForm, setShowCreateForm] = useState(false);
+    const [scannedBarcode, setScannedBarcode] = useState('');
+    const [categories, setCategories] = useState<any[]>([]);
+    const [saving, setSaving] = useState(false);
+    const [newProduct, setNewProduct] = useState({
+        name: '',
+        barcode: '',
+        purchase_price: 0,
+        sale_price: 0,
+        vat_rate: 20,
+        stock_quantity: 0,
+        category_id: '',
+        unit: 'Adet',
+        status: 'active',
+    });
+
     const videoRef = useRef<HTMLVideoElement>(null);
     const readerRef = useRef<BrowserMultiFormatReader | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
     const controlsRef = useRef<any>(null);
 
     const isProcessing = useRef(false);
-    const scannerActive = useRef(false); // Master kill switch for callbacks
+    const scannerActive = useRef(false);
 
     useEffect(() => {
         if (scanning) {
@@ -34,10 +51,22 @@ export default function BarcodeScanner() {
         return () => stopScanner();
     }, [scanning]);
 
+    // Fetch categories for the create form
+    useEffect(() => {
+        const fetchCategories = async () => {
+            const tenantId = localStorage.getItem('tenantId');
+            if (tenantId) {
+                await supabase.rpc('set_current_tenant', { tenant_id: tenantId });
+            }
+            const { data } = await supabase.from('categories').select('*');
+            if (data) setCategories(data);
+        };
+        fetchCategories();
+    }, []);
+
     const startScanner = async () => {
         try {
             // Clean up previous instance WITHOUT calling stopScanner
-            // (stopScanner resets scannerActive which breaks callbacks)
             if (controlsRef.current) {
                 try { controlsRef.current.stop(); } catch (e) { }
                 controlsRef.current = null;
@@ -57,7 +86,6 @@ export default function BarcodeScanner() {
                 readerRef.current = null;
             }
 
-            // Ensure flags are correct after cleanup
             scannerActive.current = true;
             isProcessing.current = false;
 
@@ -66,13 +94,12 @@ export default function BarcodeScanner() {
                 const errorMsg = !isHttps
                     ? '🔒 Kamera erişimi için HTTPS gerekli!\n\nLütfen ngrok veya HTTPS ile erişin.'
                     : '📱 Tarayıcınız kamera API\'sini desteklemiyor.';
-
                 toast.error(errorMsg, { id: 'camera-error' });
                 setScanning(false);
                 return;
             }
 
-            // Poll for video element (AnimatePresence may delay mounting up to 2s)
+            // Poll for video element (AnimatePresence may delay mounting)
             let videoEl = videoRef.current;
             if (!videoEl) {
                 for (let i = 0; i < 20; i++) {
@@ -82,7 +109,6 @@ export default function BarcodeScanner() {
                 }
             }
             if (!videoEl) {
-                console.warn('Video element not ready after 2s');
                 toast.error('Kamera başlatılamadı, tekrar deneyin.', { id: 'camera-error' });
                 setScanning(false);
                 return;
@@ -109,7 +135,6 @@ export default function BarcodeScanner() {
             );
             controlsRef.current = controls;
 
-            // Extract stream reference for torch control
             if (videoEl.srcObject) {
                 streamRef.current = videoEl.srcObject as MediaStream;
             }
@@ -123,16 +148,13 @@ export default function BarcodeScanner() {
     };
 
     const stopScanner = () => {
-        // 1. Kill scannerActive immediately to prevent any remaining callbacks
         scannerActive.current = false;
 
-        // 2. Stop decode controls first
         if (controlsRef.current) {
             try { controlsRef.current.stop(); } catch (e) { }
             controlsRef.current = null;
         }
 
-        // 3. Stop all media tracks
         if (streamRef.current) {
             streamRef.current.getTracks().forEach(track => {
                 try { track.stop(); } catch (e) { }
@@ -140,7 +162,6 @@ export default function BarcodeScanner() {
             streamRef.current = null;
         }
 
-        // 4. Also stop tracks from video element directly (belt and suspenders)
         if (videoRef.current && videoRef.current.srcObject) {
             const mediaStream = videoRef.current.srcObject as MediaStream;
             mediaStream.getTracks().forEach(track => {
@@ -149,27 +170,23 @@ export default function BarcodeScanner() {
             videoRef.current.srcObject = null;
         }
 
-        // 5. Clear reader reference
         if (readerRef.current) {
             readerRef.current = null;
         }
     };
 
     const handleBarcodeDetected = async (barcode: string) => {
-        // Lock is already set in the callback, but double-check
         isProcessing.current = true;
         scannerActive.current = false;
 
         console.log('Barkod okundu:', barcode);
 
-        // Haptic feedback
         if (navigator.vibrate) {
             try { navigator.vibrate([50, 30, 50]); } catch (e) { }
         }
 
         playBeep();
 
-        // Turn off flash
         if (torchOn && streamRef.current) {
             try {
                 const track = streamRef.current.getVideoTracks()[0];
@@ -180,7 +197,6 @@ export default function BarcodeScanner() {
             } catch (error) { }
         }
 
-        // Stop scanner
         stopScanner();
         setScanning(false);
 
@@ -203,15 +219,80 @@ export default function BarcodeScanner() {
                 toast.success('Ürün bulundu!', { id: 'scan-result' });
                 setManualBarcode('');
             } else {
-                toast.error('Ürün bulunamadı: ' + barcode, { id: 'scan-result' });
+                // Product not found → show create form with barcode pre-filled
+                setScannedBarcode(barcode);
+                setNewProduct({
+                    name: '',
+                    barcode: barcode,
+                    purchase_price: 0,
+                    sale_price: 0,
+                    vat_rate: 20,
+                    stock_quantity: 0,
+                    category_id: '',
+                    unit: 'Adet',
+                    status: 'active',
+                });
+                setShowCreateForm(true);
+                toast.info('Ürün bulunamadı — yeni ürün oluşturabilirsiniz', { id: 'scan-result' });
             }
         } catch (error) {
             console.error('Ürün sorgulanırken hata:', error);
-            toast.error('Bir hata oluştu', { id: 'scan-result' });
+            // Also show create form on error (product not found returns error with .single())
+            setScannedBarcode(barcode);
+            setNewProduct({
+                name: '',
+                barcode: barcode,
+                purchase_price: 0,
+                sale_price: 0,
+                vat_rate: 20,
+                stock_quantity: 0,
+                category_id: '',
+                unit: 'Adet',
+                status: 'active',
+            });
+            setShowCreateForm(true);
+            toast.info('Ürün bulunamadı — yeni ürün oluşturabilirsiniz', { id: 'scan-result' });
         } finally {
             setFetching(false);
-            // Do NOT auto-reset isProcessing here.
-            // It stays locked until user explicitly taps "Scan Again" or opens camera.
+        }
+    };
+
+    const handleCreateProduct = async () => {
+        if (!newProduct.name.trim()) {
+            toast.error('Ürün adı zorunludur', { id: 'create-error' });
+            return;
+        }
+        if (!newProduct.sale_price || newProduct.sale_price <= 0) {
+            toast.error('Satış fiyatı giriniz', { id: 'create-error' });
+            return;
+        }
+
+        setSaving(true);
+        try {
+            const tenantId = localStorage.getItem('tenantId');
+            if (tenantId) {
+                await supabase.rpc('set_current_tenant', { tenant_id: tenantId });
+            }
+
+            const { data, error } = await supabase
+                .from('products')
+                .insert({
+                    ...newProduct,
+                    tenant_id: tenantId,
+                })
+                .select('*, categories(name)')
+                .single();
+
+            if (error) throw error;
+
+            toast.success('✅ Ürün başarıyla oluşturuldu!', { id: 'create-success' });
+            setShowCreateForm(false);
+            setProduct(data);
+        } catch (error: any) {
+            console.error('Ürün oluşturma hatası:', error);
+            toast.error('Ürün oluşturulamadı: ' + (error?.message || 'Bilinmeyen hata'), { id: 'create-error' });
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -266,12 +347,11 @@ export default function BarcodeScanner() {
         } catch (error) { }
     };
 
-    // Handler for "Scan Again" - properly resets state
     const handleScanAgain = useCallback(() => {
         setProduct(null);
+        setShowCreateForm(false);
         isProcessing.current = false;
         scannerActive.current = false;
-        // Delay to let React unmount old view and remount video element
         setTimeout(() => {
             setScanning(true);
         }, 300);
@@ -279,10 +359,17 @@ export default function BarcodeScanner() {
 
     const handleClose = useCallback(() => {
         setProduct(null);
+        setShowCreateForm(false);
         setScanning(false);
         isProcessing.current = false;
         scannerActive.current = false;
     }, []);
+
+    // Calculate profit for create form
+    const netProfit = newProduct.sale_price - newProduct.purchase_price;
+    const profitPercentage = newProduct.purchase_price > 0
+        ? ((netProfit / newProduct.purchase_price) * 100).toFixed(0)
+        : '0';
 
     return (
         <div className="relative min-h-screen bg-background overflow-x-hidden">
@@ -323,7 +410,7 @@ export default function BarcodeScanner() {
             {/* Main Content */}
             <div className="p-6 relative z-10 space-y-8">
                 <AnimatePresence mode="wait">
-                    {!scanning && !product ? (
+                    {!scanning && !product && !showCreateForm ? (
                         <motion.div
                             key="initial"
                             initial={{ opacity: 0, scale: 0.95 }}
@@ -415,21 +502,17 @@ export default function BarcodeScanner() {
                                 {/* Scanning Overlay */}
                                 <div className="absolute inset-0 pointer-events-none">
                                     <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-background/30" />
-
-                                    {/* Centered Scan Zone - smaller box in the middle */}
                                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[65%] aspect-square">
                                         <div className="absolute top-0 left-0 w-8 h-8 border-t-[3px] border-l-[3px] border-blue-400 rounded-tl-xl" />
                                         <div className="absolute top-0 right-0 w-8 h-8 border-t-[3px] border-r-[3px] border-blue-400 rounded-tr-xl" />
                                         <div className="absolute bottom-0 left-0 w-8 h-8 border-b-[3px] border-l-[3px] border-blue-400 rounded-bl-xl" />
                                         <div className="absolute bottom-0 right-0 w-8 h-8 border-b-[3px] border-r-[3px] border-blue-400 rounded-br-xl" />
                                     </div>
-
-                                    {/* Scanning Beam - only within scan zone */}
                                     <div className="absolute left-[17.5%] right-[17.5%] top-0 h-0.5 bg-blue-400 shadow-[0_0_12px_rgba(59,130,246,0.8)] animate-[scan_3s_infinite]" />
                                 </div>
                             </div>
 
-                            {/* Controls - OUTSIDE the camera box */}
+                            {/* Controls */}
                             <div className="flex justify-center gap-4 mt-4 px-4">
                                 <button
                                     onClick={toggleTorch}
@@ -457,6 +540,222 @@ export default function BarcodeScanner() {
                                 </motion.div>
                             </div>
                         </motion.div>
+
+                    ) : showCreateForm ? (
+                        /* ===== NEW PRODUCT CREATION FORM ===== */
+                        <motion.div
+                            key="create-form"
+                            initial={{ y: 50, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            className="space-y-5"
+                        >
+                            {/* Header */}
+                            <div className="flex items-center gap-4">
+                                <button
+                                    onClick={handleClose}
+                                    className="w-10 h-10 rounded-xl glass-dark border border-white/10 flex items-center justify-center active:scale-90 transition-all"
+                                >
+                                    <ArrowLeft size={18} className="text-secondary" />
+                                </button>
+                                <div className="flex-1">
+                                    <h2 className="text-lg font-black text-white flex items-center gap-2">
+                                        <Plus size={20} className="text-emerald-400" />
+                                        Yeni Ürün Oluştur
+                                    </h2>
+                                    <p className="text-xs text-secondary mt-0.5">Barkod tarandı, ürün bulunamadı</p>
+                                </div>
+                            </div>
+
+                            {/* Barcode Badge */}
+                            <div className="glass-dark rounded-2xl p-4 border border-blue-500/20 flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                                    <ScanLine className="w-6 h-6 text-blue-400" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-[10px] font-bold text-secondary uppercase tracking-[2px]">Okunan Barkod</p>
+                                    <p className="text-lg font-mono font-bold text-blue-400 truncate">{scannedBarcode}</p>
+                                </div>
+                            </div>
+
+                            {/* Form Fields */}
+                            <div className="space-y-4">
+                                {/* Product Name */}
+                                <div>
+                                    <label className="block text-xs font-bold text-secondary uppercase tracking-wider mb-2">Ürün Adı *</label>
+                                    <input
+                                        type="text"
+                                        value={newProduct.name}
+                                        onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                                        placeholder="Örn: Dana Kuşbaşı"
+                                        className="w-full h-14 glass-dark rounded-xl px-4 text-white text-base outline-none focus:ring-2 focus:ring-blue-500/30 transition-all placeholder:text-white/20"
+                                        autoFocus
+                                    />
+                                </div>
+
+                                {/* Category */}
+                                <div>
+                                    <label className="block text-xs font-bold text-secondary uppercase tracking-wider mb-2">Kategori</label>
+                                    <select
+                                        value={newProduct.category_id}
+                                        onChange={(e) => setNewProduct({ ...newProduct, category_id: e.target.value })}
+                                        className="w-full h-14 glass-dark rounded-xl px-4 text-white text-base outline-none focus:ring-2 focus:ring-blue-500/30 transition-all appearance-none bg-transparent"
+                                    >
+                                        <option value="" className="bg-slate-900">Kategori Seçin</option>
+                                        {categories.map((cat: any) => (
+                                            <option key={cat.id} value={cat.id} className="bg-slate-900">{cat.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {/* Barcode (read-only) */}
+                                <div>
+                                    <label className="block text-xs font-bold text-secondary uppercase tracking-wider mb-2">Barkod Numarası</label>
+                                    <input
+                                        type="text"
+                                        value={newProduct.barcode}
+                                        readOnly
+                                        className="w-full h-14 glass-dark rounded-xl px-4 text-blue-400 font-mono text-base outline-none opacity-70 cursor-not-allowed"
+                                    />
+                                </div>
+
+                                {/* Price Row */}
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-xs font-bold text-secondary uppercase tracking-wider mb-2">Alış Fiyatı (₺)</label>
+                                        <input
+                                            type="number"
+                                            value={newProduct.purchase_price === 0 ? '' : newProduct.purchase_price}
+                                            onChange={(e) => setNewProduct({ ...newProduct, purchase_price: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
+                                            placeholder="0"
+                                            className="w-full h-14 glass-dark rounded-xl px-4 text-white text-base outline-none focus:ring-2 focus:ring-blue-500/30 transition-all placeholder:text-white/20"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-secondary uppercase tracking-wider mb-2">Satış Fiyatı (₺) *</label>
+                                        <input
+                                            type="number"
+                                            value={newProduct.sale_price === 0 ? '' : newProduct.sale_price}
+                                            onChange={(e) => setNewProduct({ ...newProduct, sale_price: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
+                                            placeholder="0"
+                                            className="w-full h-14 glass-dark rounded-xl px-4 text-white text-base outline-none focus:ring-2 focus:ring-emerald-500/30 transition-all placeholder:text-white/20"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Profit Analysis */}
+                                {(newProduct.purchase_price > 0 || newProduct.sale_price > 0) && (
+                                    <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: 'auto' }}
+                                        className="glass-dark rounded-xl p-4 border border-dashed border-white/10"
+                                    >
+                                        <p className="text-[10px] font-bold text-secondary uppercase tracking-wider mb-2">📊 Kar Analizi</p>
+                                        <div className="flex justify-between">
+                                            <div>
+                                                <p className="text-xs text-secondary">Net Kar</p>
+                                                <p className={`text-lg font-black ${netProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>₺{netProfit.toFixed(2)}</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-xs text-secondary">Kar Oranı</p>
+                                                <p className={`text-lg font-black ${netProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>%{profitPercentage}</p>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )}
+
+                                {/* KDV & Stock Row */}
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-xs font-bold text-secondary uppercase tracking-wider mb-2">KDV Oranı</label>
+                                        <select
+                                            value={newProduct.vat_rate}
+                                            onChange={(e) => setNewProduct({ ...newProduct, vat_rate: parseInt(e.target.value) })}
+                                            className="w-full h-14 glass-dark rounded-xl px-4 text-white text-base outline-none focus:ring-2 focus:ring-blue-500/30 transition-all appearance-none bg-transparent"
+                                        >
+                                            <option value={1} className="bg-slate-900">%1</option>
+                                            <option value={10} className="bg-slate-900">%10</option>
+                                            <option value={20} className="bg-slate-900">%20</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-secondary uppercase tracking-wider mb-2 flex items-center justify-between">
+                                            <span>Stok</span>
+                                            <div className="flex bg-white/5 rounded-lg p-0.5">
+                                                {['Adet', 'KG'].map((u) => (
+                                                    <button
+                                                        key={u}
+                                                        type="button"
+                                                        onClick={() => setNewProduct({ ...newProduct, unit: u })}
+                                                        className={`px-2 py-0.5 rounded text-[9px] font-bold transition-all ${newProduct.unit === u ? 'bg-blue-500 text-white' : 'text-secondary'}`}
+                                                    >
+                                                        {u}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </label>
+                                        <input
+                                            type="number"
+                                            value={newProduct.stock_quantity === 0 ? '' : newProduct.stock_quantity}
+                                            onChange={(e) => setNewProduct({ ...newProduct, stock_quantity: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
+                                            placeholder="0"
+                                            step="0.001"
+                                            className="w-full h-14 glass-dark rounded-xl px-4 text-white text-lg font-bold outline-none focus:ring-2 focus:ring-blue-500/30 transition-all placeholder:text-white/20"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Status */}
+                                <div>
+                                    <label className="block text-xs font-bold text-secondary uppercase tracking-wider mb-3">Ürün Durumu</label>
+                                    <div className="flex items-center gap-2">
+                                        {[
+                                            { id: 'active', label: 'AKTİF', color: 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10' },
+                                            { id: 'pending', label: 'BEKLEMEDE', color: 'border-amber-500/30 text-amber-400 bg-amber-500/10' },
+                                            { id: 'passive', label: 'PASİF', color: 'border-rose-500/30 text-rose-400 bg-rose-500/10' }
+                                        ].map((opt) => (
+                                            <button
+                                                key={opt.id}
+                                                type="button"
+                                                onClick={() => setNewProduct({ ...newProduct, status: opt.id })}
+                                                className={`flex-1 py-3 rounded-xl border-2 transition-all font-black text-[10px] uppercase tracking-widest ${newProduct.status === opt.id
+                                                    ? `${opt.color} scale-[1.02] shadow-lg`
+                                                    : 'border-white/5 text-secondary/30 bg-transparent'
+                                                    }`}
+                                            >
+                                                {opt.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex gap-3 pt-4">
+                                <button
+                                    onClick={handleScanAgain}
+                                    className="flex-1 h-14 glass-dark rounded-2xl text-secondary font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all border border-white/5"
+                                >
+                                    <Camera size={18} />
+                                    Tekrar Tara
+                                </button>
+                                <button
+                                    onClick={handleCreateProduct}
+                                    disabled={saving || !newProduct.name.trim() || !newProduct.sale_price}
+                                    className="flex-[2] h-14 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-2xl text-white font-black text-sm flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed"
+                                >
+                                    {saving ? (
+                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                    ) : (
+                                        <>
+                                            <Save size={18} />
+                                            Ürünü Kaydet
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </motion.div>
+
                     ) : product && (
                         <motion.div
                             key="product"
