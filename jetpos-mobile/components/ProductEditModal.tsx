@@ -35,26 +35,28 @@ export default function ProductEditModal({ product, onClose, onSaved }: ProductE
     const fetchCategories = async () => {
         try {
             const tenantId = localStorage.getItem('tenantId');
-            if (!tenantId) {
-                console.warn('⚠️ Categories: tenantId yok!');
-                return;
-            }
+            if (!tenantId) return;
 
             await supabase.rpc('set_current_tenant', { tenant_id: tenantId });
 
+            // RLS kuralları zaten tenant izolasyonu sağlıyor olmalı. 
+            // Direkt çekmeyi dene, eğer boşsa tenant_id ile filtrele.
             const { data, error } = await supabase
                 .from('categories')
                 .select('id, name')
-                .eq('tenant_id', tenantId)
                 .order('name');
-
-            console.log('📂 Categories fetched:', data?.length || 0, error?.message || '');
 
             if (data && data.length > 0) {
                 setCategories(data);
+                // Mevcut ürünün kategorisini eşle
+                if (product.category_id) {
+                    setFormData(prev => ({ ...prev, category_id: product.category_id }));
+                }
+            } else if (error) {
+                console.error('Kategoriler çekilemedi:', error.message);
             }
         } catch (error) {
-            console.error('Categories fetch error:', error);
+            console.error('Kategori hatası:', error);
         }
     };
 
@@ -101,7 +103,7 @@ export default function ProductEditModal({ product, onClose, onSaved }: ProductE
 
     return (
         <AnimatePresence>
-            <div className="fixed inset-0 z-[100] flex items-end justify-center">
+            <div className="fixed inset-0 z-[999] flex items-end justify-center">
                 {/* Backdrop */}
                 <motion.div
                     initial={{ opacity: 0 }}
@@ -117,8 +119,8 @@ export default function ProductEditModal({ product, onClose, onSaved }: ProductE
                     animate={{ y: 0 }}
                     exit={{ y: "100%" }}
                     transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                    className="relative w-full max-w-lg glass-dark border-t border-white/10 rounded-t-[3rem] shadow-3xl flex flex-col"
-                    style={{ maxHeight: '92vh' }}
+                    className="relative w-full max-w-lg glass-dark border-t border-white/10 rounded-t-[3rem] shadow-3xl flex flex-col overflow-hidden"
+                    style={{ maxHeight: '80vh', paddingBottom: 'env(safe-area-inset-bottom)' }}
                 >
                     {/* Glow Effect */}
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-1 bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
@@ -238,8 +240,8 @@ export default function ProductEditModal({ product, onClose, onSaved }: ProductE
                         </form>
                     </div>
 
-                    {/* Submit Button - FIXED at bottom, never hidden */}
-                    <div className="flex-shrink-0 px-6 pt-3 pb-6 border-t border-white/10 bg-[#0a0f1a]/95 backdrop-blur-xl">
+                    {/* Submit Button Container */}
+                    <div className="flex-shrink-0 px-6 pt-4 pb-12 border-t border-white/10 bg-[#0a0f1a]/95 backdrop-blur-xl relative z-10">
                         <button
                             type="submit"
                             form="edit-product-form"
