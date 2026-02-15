@@ -92,6 +92,22 @@ export class TrendyolGoClient {
     }
 
     private async request(url: string, method: string = 'GET', data?: any) {
+        // Server-side: Doğrudan İstek
+        if (typeof window === 'undefined') {
+            const response = await fetch(url, {
+                method,
+                headers: this.getHeaders() as any,
+                body: data ? JSON.stringify(data) : undefined
+            });
+
+            if (!response.ok) {
+                const error = await response.json().catch(() => ({ message: 'API Hatası' }));
+                throw new Error(error.message || `İşlem başarısız (${response.status}) - ${url}`);
+            }
+            return await response.json();
+        }
+
+        // Client-side: Proxy üzerinden istek (CORS bypass)
         const response = await fetch('/api/proxy', {
             method: 'POST',
             headers: {
@@ -111,9 +127,6 @@ export class TrendyolGoClient {
         }
 
         const result = await response.json();
-        // HAM VERİ LOGU - Neden boş dönüyor burada göreceğiz
-        console.log(`📦 [Trendyol Raw Response] Original:`, JSON.stringify(result).substring(0, 500));
-
         return result;
     }
 

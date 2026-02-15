@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useTenant } from '@/lib/tenant-context';
-import { QNBClient } from '@/lib/qnb';
 import { TURKEY_LOCATIONS } from '@/lib/turkey-locations';
 
 export default function InvoicePanel() {
@@ -210,31 +209,78 @@ export default function InvoicePanel() {
     };
 
     const handleSend = async () => {
-        if (!qnbConfig) return alert("Hata: SuperAdmin üzerinden QNB ayarlarını yapın.");
+        // if (!qnbConfig) return alert("Hata: QNB yapılandırması eksik (.env kontrol edin)."); 
+        // Backend .env'den okuyacak, o yüzden client-side config check'i esnetilebilir.
+
         setProcessing(editModal.id);
         try {
-            const client = new QNBClient({
-                ...qnbConfig,
-                customerVkn: editModal.vkn,
-                customerName: editModal.unvan || `${editModal.ad} ${editModal.soyad}`,
-                address: editModal.adres,
-                district: editModal.ilce,
-                city: editModal.sehir
+            // Fatura Tipi Belirleme (Basit Mantık)
+            // 10 hane = VKN (Şirket) -> Genelde e-Fatura (Mükellef ise)
+            // 11 hane = TCKN (Şahıs) -> Genelde e-Arşiv (Nihai Tüketici)
+            // TODO: İleride checkUser servisi ile mükellef kontrolü yapılmalı.
+            const vknLen = editModal.vkn?.length || 0;
+            const docType = vknLen === 10 ? 'EFATURA' : 'EARSIV';
+
+            // API'ye gönderilecek veri yapısı
+            const invoicePayload = {
+                invoiceNumber: editModal.isManual ? undefined : editModal.id.slice(0, 16), // Fatura No (yoksa taslak)
+                note: `Platform: ${editModal.platform}`,
+
+                supplier: {
+                    vkn: (currentTenant as any)?.tax_number || '1111111111',
+                    name: (currentTenant as any)?.company_name || 'Demo Şirket A.Ş.',
+                    city: (currentTenant as any)?.city || 'İstanbul'
+                },
+
+                customer: {
+                    vkn: editModal.vkn,
+                    name: editModal.unvan || `${editModal.ad} ${editModal.soyad}`,
+                    city: editModal.sehir || 'İstanbul',
+                    address: editModal.adres,
+                    district: editModal.ilce
+                },
+
+                lines: editModal.items.map((item: any) => ({
+                    name: item.name,
+                    quantity: Number(item.quantity),
+                    unit: item.unit || 'ADET',
+                    price: Number(item.price),
+                    vatRate: Number(item.vatRate)
+                })),
+
+                subtotal: editModal.totalLineAmount,
+                totalVat: editModal.totalVatAmount,
+                grandTotal: editModal.grandTotal,
+                docType // EFATURA veya EARSIV
+            };
+
+            const response = await fetch('/api/invoices/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(invoicePayload)
             });
 
-            const res = await client.sendInvoice(editModal);
-            if (res.success) {
+            const result = await response.json();
+
+            if (result.success) {
                 if (editModal.platform === 'JetPos') {
                     await supabase.from('sales').update({ status: 'invoiced' }).eq('id', editModal.id);
                 } else if (editModal.platform === 'Trendyol') {
                     await supabase.from('trendyol_go_orders').update({ status: 'Picking' }).eq('id', editModal.id);
                 }
-                alert("✅ E-Arşiv Fatura Başarıyla İletildi!");
+
+                alert(`✅ E-Arşiv Fatura Başarıyla İletildi!\nBelge OID: ${result.listId}`);
                 setEditModal(null);
                 fetchData();
+            } else {
+                throw new Error(result.error || 'Bilinmeyen hata');
             }
-        } catch (err: any) { alert("Banka Hatası: " + err.message); }
-        finally { setProcessing(null); }
+        } catch (err: any) {
+            console.error(err);
+            alert("Gönderim Hatası: " + err.message);
+        } finally {
+            setProcessing(null);
+        }
     };
 
     if (!mounted) return null;
