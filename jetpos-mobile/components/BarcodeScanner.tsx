@@ -274,12 +274,15 @@ export default function BarcodeScanner() {
                 await supabase.rpc('set_current_tenant', { tenant_id: tenantId });
             }
 
+            const productToInsert = {
+                ...newProduct,
+                tenant_id: tenantId,
+                category_id: newProduct.category_id || null, // Convert empty string to null for UUID field
+            };
+
             const { data, error } = await supabase
                 .from('products')
-                .insert({
-                    ...newProduct,
-                    tenant_id: tenantId,
-                })
+                .insert(productToInsert)
                 .select('*, categories(name)')
                 .single();
 
