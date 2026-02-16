@@ -125,16 +125,34 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
     const hasMore = paginatedProducts.length < sortedAndFilteredProducts.length;
 
     const handleExport = () => {
-        exportToExcel(products, "KardeslerKasap_UrunListesi");
+        const exportedData = products.map((p: any) => ({
+            "Ürün Adı": p.name || "",
+            "Barkod": p.barcode || "",
+            "Kategori": p.categories?.name || p.category?.name || "Genel",
+            "Birim": p.unit || "Adet",
+            "Alış Fiyatı": Number((p.purchase_price || 0).toFixed(2)),
+            "Satış Fiyatı": p.is_campaign
+                ? Number((p.sale_price * campaignRate).toFixed(2))
+                : Number((p.sale_price || 0).toFixed(2)),
+            "Stok": p.stock_quantity || 0,
+            "KDV": p.vat_rate || 1,
+            "Kampanya": p.is_campaign ? "EVET" : "HAYIR",
+            "Durum": (p.status === 'passive' || p.is_active === false) ? "PASİF" : "AKTİF"
+        }));
+        exportToExcel(exportedData, "KardeslerKasap_UrunListesi");
     };
 
     const handleCampaignExport = () => {
         const campaignProducts = products
             .filter((p: any) => p.is_campaign)
             .map((p: any) => ({
-                ...p,
-                original_price: p.sale_price,
-                campaign_price: parseFloat((p.sale_price * campaignRate).toFixed(2))
+                "Ürün Adı": p.name || "",
+                "Barkod": p.barcode || "",
+                "Kategori": p.categories?.name || p.category?.name || "Genel",
+                "Normal Fiyat": Number((p.sale_price || 0).toFixed(2)),
+                "Kampanyalı Fiyat": Number((p.sale_price * campaignRate).toFixed(2)),
+                "Stok": p.stock_quantity || 0,
+                "Birim": p.unit || "Adet"
             }));
         exportToExcel(campaignProducts, "KardeslerKasap_Kampanya_Listesi");
     };
