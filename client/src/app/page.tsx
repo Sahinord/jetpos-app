@@ -20,6 +20,7 @@ import SalesHistory from "@/components/Dashboard/SalesHistory";
 import AppSettings from "@/components/Settings/AppSettings";
 import SuperAdmin from "@/components/Admin/SuperAdmin";
 import PriceChangeHistory from "@/components/Products/PriceChangeHistory";
+import ProductChangeLogs from "@/components/Products/ProductChangeLogs";
 import TrendyolGOWidget from "@/components/Integrations/TrendyolGOWidget";
 import LicenseGate from "@/components/Auth/LicenseGate";
 import { useTenant } from "@/lib/tenant-context";
@@ -679,6 +680,7 @@ export default function Home() {
                 campaignRate={campaignRate}
                 onRefresh={fetchData}
                 showToast={showToast}
+                onViewChangeLogs={() => setActiveTab("product-logs")}
               />
             </div>
           )}
@@ -903,6 +905,12 @@ export default function Home() {
           {activeTab === "price-history" && (
             <div className="max-w-[1500px] mx-auto w-full">
               <PriceChangeHistory onBack={() => setActiveTab("products")} />
+            </div>
+          )}
+
+          {activeTab === "product-logs" && (
+            <div className="max-w-[1500px] mx-auto w-full">
+              <ProductChangeLogs onBack={() => setActiveTab("products")} />
             </div>
           )}
         </div>
