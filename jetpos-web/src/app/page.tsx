@@ -1,19 +1,26 @@
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import Features from "@/components/Features";
+import ConnectionAnimation from "@/components/ConnectionAnimation";
 import Integrations from "@/components/Integrations";
-import Contact from "@/components/Pricing";
+import Pricing from "@/components/Pricing";
+import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 
 export default function Home() {
   return (
-    <main className="min-h-screen relative overflow-x-hidden selection:bg-blue-600 selection:text-white">
-      <Navbar />
-      <Hero />
-      <Features />
-      <Integrations />
-      <Contact />
-      <Footer />
-    </main>
+    <>
+      <div className="site-bg" />
+      <main style={{ position: "relative", zIndex: 1, minHeight: "100vh", overflowX: "hidden" }}>
+        <Navbar />
+        <Hero />
+        <Features />
+        <ConnectionAnimation />
+        <Integrations />
+        <Pricing />
+        <Contact />
+        <Footer />
+      </main>
+    </>
   );
 }
