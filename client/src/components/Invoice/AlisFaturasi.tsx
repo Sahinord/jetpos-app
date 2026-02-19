@@ -327,44 +327,38 @@ export default function AlisFaturasi() {
             // Stok ve Fiyat Güncelleme
             for (const item of invoice.items) {
                 if (item.product_id) {
-                    // Update stock and prices
+                    // 1. Alış fiyatını ve (varsa) önerilen satış fiyatını güncelle
                     const updateData: any = {
                         purchase_price: item.unit_price
                     };
 
-                    // Eğer AI'dan gelen bir öneri varsa onu uygula
                     if (item.suggested_sale_price) {
                         updateData.sale_price = item.suggested_sale_price;
                     }
-
-                    // RPC call for atomic increment or manual update if RPC not ready
-                    // For now, let's use manual logic or a custom RPC if we want to be safe
-
-                    // Önce mevcut stoğu al
-                    const { data: currentProduct } = await supabase
-                        .from('products')
-                        .select('stock_count')
-                        .eq('id', item.product_id)
-                        .single();
-
-                    const newStock = (currentProduct?.stock_count || 0) + item.quantity;
-                    updateData.stock_count = newStock;
 
                     await supabase
                         .from('products')
                         .update(updateData)
                         .eq('id', item.product_id);
+
+                    // 2. Stoğu atomik olarak artır (RPC kullanarak)
+                    await supabase.rpc('increment_stock', {
+                        p_product_id: item.product_id,
+                        p_qty: item.quantity
+                    });
                 }
             }
 
             // Cari hesaba borç yaz
+            // Cari hesaba alacak yaz (Tedarikçi bizden alacaklı duruma geçer)
             await supabase.from('cari_hareketler').insert({
                 tenant_id: currentTenant?.id,
                 cari_id: invoice.cari_id,
                 hareket_tipi: 'borclandirma',
                 aciklama: `Alış Faturası: ${nextNumber}`,
-                tutar: invoice.grand_total,
-                islem_tarihi: invoice.invoice_date,
+                alacak: invoice.grand_total,
+                borc: 0,
+                tarih: invoice.invoice_date,
                 belge_no: nextNumber,
                 belge_tipi: 'Alış Faturası'
             });

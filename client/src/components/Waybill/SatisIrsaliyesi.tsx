@@ -219,14 +219,25 @@ export default function SatisIrsaliyesi() {
 
             await supabase.from('waybill_items').insert(itemsToInsert);
 
-            // Cari hesaba alacak yaz
+            // Stok Güncelleme (Satış irsaliyesi mal çıkışıdır)
+            for (const item of waybill.items) {
+                if (item.product_id) {
+                    await supabase.rpc('decrement_stock', {
+                        product_id: item.product_id,
+                        qty: item.quantity
+                    });
+                }
+            }
+
+            // Cari hesaba borç yaz (Müşteri bize borçlu duruma geçer)
             await supabase.from('cari_hareketler').insert({
                 tenant_id: currentTenant?.id,
                 cari_id: waybill.cari_id,
                 hareket_tipi: 'alacaklandirma',
                 aciklama: `Satış İrsaliyesi: ${nextNumber}`,
-                tutar: waybill.grand_total,
-                islem_tarihi: waybill.waybill_date,
+                borc: waybill.grand_total,
+                alacak: 0,
+                tarih: waybill.waybill_date,
                 belge_no: nextNumber,
                 belge_tipi: 'Satış İrsaliyesi'
             });

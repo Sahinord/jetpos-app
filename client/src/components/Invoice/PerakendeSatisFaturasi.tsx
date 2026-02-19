@@ -188,6 +188,16 @@ export default function PerakendeSatisFaturasi() {
             return;
         }
 
+        // Stok Güncelleme
+        for (const item of items) {
+            if (item.product_id) {
+                await supabase.rpc('decrement_stock', {
+                    product_id: item.product_id,
+                    qty: item.quantity
+                });
+            }
+        }
+
         // Cari hesap hareketi oluştur
         await supabase.from('cari_hareketler').insert({
             tenant_id: currentTenant?.id,

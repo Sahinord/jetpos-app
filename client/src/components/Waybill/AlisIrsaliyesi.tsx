@@ -243,6 +243,35 @@ export default function AlisIrsaliyesi() {
 
             if (itemsError) throw itemsError;
 
+            // Stok Güncelleme (İrsaliye girişi mal girişidir)
+            for (const item of waybill.items) {
+                if (item.product_id) {
+                    await supabase.rpc('increment_stock', {
+                        p_product_id: item.product_id,
+                        p_qty: item.quantity
+                    });
+
+                    // Alış fiyatını da güncelle
+                    await supabase
+                        .from('products')
+                        .update({ purchase_price: item.unit_price })
+                        .eq('id', item.product_id);
+                }
+            }
+
+            // Cari hesaba alacak yaz (Tedarikçi bizden alacaklı duruma geçer)
+            await supabase.from('cari_hareketler').insert({
+                tenant_id: currentTenant?.id,
+                cari_id: waybill.cari_id,
+                hareket_tipi: 'borclandirma',
+                aciklama: `Alış İrsaliyesi: ${nextNumber}`,
+                alacak: waybill.grand_total,
+                borc: 0,
+                tarih: waybill.waybill_date,
+                belge_no: nextNumber,
+                belge_tipi: 'Alış İrsaliyesi'
+            });
+
             alert('✅ Alış irsaliyesi başarıyla kaydedildi!');
 
             // Formu sıfırla
