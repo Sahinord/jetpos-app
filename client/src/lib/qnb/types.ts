@@ -20,6 +20,7 @@ export interface QNBDocumentStatus {
     durum: string;
     ettn: string;
     gonderimDurumu: string;
+    pdfUrl?: string;
 }
 
 export interface QNBDocumentRequest {

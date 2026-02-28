@@ -21,8 +21,12 @@ const AVAILABLE_FEATURES: Feature[] = [
     { id: 'cari_hesap', label: 'Cari Hesap Takibi', description: 'Müşteri ve tedarikçi cari hesap yönetimi' },
     { id: 'bank_management', label: 'Banka İşlemleri', description: 'Banka hesapları ve hareketleri yönetimi' },
     { id: 'cash_management', label: 'Kasa İşlemleri', description: 'Kasa hesapları ve hareketleri yönetimi' },
-    { id: 'trendyol_go', label: 'Trendyol GO', description: 'Trendyol GO entegrasyonu' },
-    { id: 'invoice', label: 'E-Fatura', description: 'Otomatik fatura kesme' },
+    { id: 'trendyol_go', label: 'Trendyol GO', description: 'Trendyol GO entegrasyonu ve sipariş yönetimi' },
+    { id: 'invoice', label: 'E-Fatura Entegrasyonu', description: 'QNB eFinans üzerinden otomatik fatura kesme' },
+    { id: 'invoice_management', label: 'Fatura ve İrsaliye Yönetimi', description: 'Alış/Satış faturaları ve irsaliye takibi' },
+    { id: 'ai_features', label: 'JetPos AI', description: 'Yapay zeka asistanı ve işletme öngörüleri' },
+    { id: 'employee_module', label: 'Çalışan Yönetimi', description: 'Personel ve vardiya takip sistemi' },
+    { id: 'label_designer', label: 'Etiket Tasarımı', description: 'Barkod ve fiyat etiketi tasarlama aracı' },
 ];
 
 export default function FeatureManager() {

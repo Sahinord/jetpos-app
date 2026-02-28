@@ -5,7 +5,7 @@ import {
     FileText, Send, Search, Check, AlertCircle, Loader2,
     Edit3, X, Save, Calculator, MapPin, User, Building,
     Plus, Trash2, Printer, ChevronDown, Globe, Phone, Mail,
-    ShoppingBag
+    ShoppingBag, RotateCw
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useTenant } from '@/lib/tenant-context';
@@ -15,11 +15,13 @@ export default function InvoicePanel() {
     const { currentTenant } = useTenant();
     const [sales, setSales] = useState<any[]>([]);
     const [trendyolOrders, setTrendyolOrders] = useState<any[]>([]);
-    const [view, setView] = useState<'sales' | 'trendyol'>('sales');
+    const [archive, setArchive] = useState<any[]>([]);
+    const [view, setView] = useState<'sales' | 'trendyol' | 'archive' | 'efatura' | 'irsaliye'>('sales');
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState<string | null>(null);
     const [qnbConfig, setQnbConfig] = useState<any>(null);
     const [mounted, setMounted] = useState(false);
+    const [successInvoice, setSuccessInvoice] = useState<any>(null);
 
     const [editModal, setEditModal] = useState<any>(null);
     const [zoom, setZoom] = useState(1);
@@ -102,18 +104,47 @@ export default function InvoicePanel() {
     }, [mounted, currentTenant]);
 
     const fetchData = async () => {
-        setLoading(true);
         try {
-            const [salesRes, trendyolRes, qnbRes] = await Promise.all([
-                supabase.from('sales').select('*').order('created_at', { ascending: false }).limit(50),
-                supabase.from('trendyol_go_orders').select('*').order('created_at', { ascending: false }).limit(50),
-                supabase.rpc('get_integration_settings', { p_tenant_id: currentTenant?.id, p_type: 'qnb_efinans' })
+            if (!currentTenant?.id) return;
+
+            // Eğer tenant değiştiyse veya veriler boşsa yükleme ekranını göster
+            const isFirstLoad = sales.length === 0 && trendyolOrders.length === 0 && archive.length === 0;
+
+            // Not: Tenant değişimi kontrolü için sales[0]?.tenant_id gibi bir kontrol eklenebilir 
+            // ama burada basitçe isFirstLoad yeterli olacaktır çünkü useEffect([]) ile ilk girişte de tetiklenir.
+            if (isFirstLoad) setLoading(true);
+
+            // Arka planda senkronizasyonu başlat (await etmiyoruz, arkada çalışsın)
+            const syncPromise = fetch(`/api/trendyol/sync-orders?tenantId=${currentTenant.id}&days=5`)
+                .catch(err => console.error('Sync Error:', err));
+
+            // Ana verileri hızlıca çek (Supabase ve Archive API)
+            const [salesRes, trendyolRes, qnbRes, archiveRes] = await Promise.all([
+                supabase.from('sales').select('*').eq('tenant_id', currentTenant.id).order('created_at', { ascending: false }).limit(50),
+                supabase.from('trendyol_go_orders').select('*').order('created_at', { ascending: false }).limit(200),
+                supabase.rpc('get_integration_settings', { p_tenant_id: currentTenant.id, p_type: 'qnb_efinans' }),
+                fetch(`/api/invoices/archive?tenantId=${currentTenant.id}`).then(r => r.json()).catch(() => ({ success: false, data: [] }))
             ]);
+
             setSales(salesRes.data || []);
             setTrendyolOrders(trendyolRes.data || []);
+            setArchive(archiveRes.data || []);
             if (qnbRes.data) setQnbConfig(qnbRes.data);
-        } catch (err) { console.error(err); }
-        finally { setLoading(false); }
+
+            // Veriler geldikten sonra yüklemeyi hemen kapat
+            setLoading(false);
+
+            // Trendyol senkronizasyonu bittiğinde listeyi sessizce bir kez daha güncelle
+            await syncPromise;
+            const updatedTrendyol = await supabase.from('trendyol_go_orders').select('*').order('created_at', { ascending: false }).limit(200);
+            if (updatedTrendyol.data && updatedTrendyol.data.length > 0) {
+                setTrendyolOrders(updatedTrendyol.data);
+            }
+        } catch (err) {
+            console.error('[FetchData Error]', err);
+        } finally {
+            setLoading(false);
+        }
     };
 
     // --- QNB PORTAL MATEMATİĞİ ---
@@ -160,13 +191,20 @@ export default function InvoicePanel() {
         // Trendyol'dan gelen ürünleri al - lines veya items
         let sourceItems = source.items || [];
         if (isTrendyol && source.raw_data?.lines && source.raw_data.lines.length > 0) {
-            sourceItems = source.raw_data.lines.map((line: any) => ({
-                name: line.product?.productSaleName || line.product?.name || 'Ürün',
-                quantity: line.amount || line.quantity || 1,
-                price: line.price || 0,
-                unit: line.product?.weight?.typeName === 'KG' ? 'KG' : 'ADET',
-                vatRate: null // otomatik belirlenecek
-            }));
+            sourceItems = source.raw_data.lines.map((line: any) => {
+                // Trendyol GO'da 'amount' genellikle toplam tutardır, miktar DEĞİLDİR.
+                // Miktar 'quantity' veya 'quantity' bazlı alanlardadır.
+                const qty = line.quantity || line.count || 1;
+                const price = line.price || (qty > 0 ? line.amount / qty : 0) || 0;
+
+                return {
+                    name: line.product?.productSaleName || line.product?.name || 'Ürün',
+                    quantity: qty,
+                    price: price,
+                    unit: line.product?.weight?.typeName === 'KG' ? 'KG' : 'ADET',
+                    vatRate: null // otomatik belirlenecek
+                };
+            });
         }
 
         const draft = {
@@ -192,7 +230,7 @@ export default function InvoicePanel() {
                 const autoVatRate = i.vatRate || getVatRateFromProductName(productName);
                 return {
                     name: productName,
-                    quantity: i.quantity || i.amount || 1,
+                    quantity: i.quantity || 1,
                     unit: i.unit || 'KG',
                     price: i.price || i.unit_price || 0,
                     vatRate: autoVatRate,
@@ -227,9 +265,11 @@ export default function InvoicePanel() {
                 note: `Platform: ${editModal.platform}`,
 
                 supplier: {
-                    vkn: (currentTenant as any)?.tax_number || '1111111111',
+                    vkn: process.env.NEXT_PUBLIC_QNB_TEST_VKN || (currentTenant as any)?.tax_number || '1111111111',
                     name: (currentTenant as any)?.company_name || 'Demo Şirket A.Ş.',
-                    city: (currentTenant as any)?.city || 'İstanbul'
+                    city: (currentTenant as any)?.city || 'İstanbul',
+                    district: (currentTenant as any)?.district || '',
+                    taxOffice: (currentTenant as any)?.tax_office || ''
                 },
 
                 customer: {
@@ -237,7 +277,8 @@ export default function InvoicePanel() {
                     name: editModal.unvan || `${editModal.ad} ${editModal.soyad}`,
                     city: editModal.sehir || 'İstanbul',
                     address: editModal.adres,
-                    district: editModal.ilce
+                    district: editModal.ilce,
+                    postalCode: editModal.postaKodu
                 },
 
                 lines: editModal.items.map((item: any) => ({
@@ -251,7 +292,9 @@ export default function InvoicePanel() {
                 subtotal: editModal.totalLineAmount,
                 totalVat: editModal.totalVatAmount,
                 grandTotal: editModal.grandTotal,
-                docType // EFATURA veya EARSIV
+                docType, // EFATURA veya EARSIV
+                tenantId: currentTenant?.id,
+                external_id: editModal.id // Trendyol sipariş numarası veya satış ID'si
             };
 
             const response = await fetch('/api/invoices/send', {
@@ -269,9 +312,14 @@ export default function InvoicePanel() {
                     await supabase.from('trendyol_go_orders').update({ status: 'Picking' }).eq('id', editModal.id);
                 }
 
-                alert(`✅ E-Arşiv Fatura Başarıyla İletildi!\nBelge OID: ${result.listId}`);
+                setSuccessInvoice({
+                    listId: result.listId,
+                    pdfUrl: result.pdfUrl
+                });
+
                 setEditModal(null);
                 fetchData();
+                setView('archive'); // Direk arşive geç
             } else {
                 throw new Error(result.error || 'Bilinmeyen hata');
             }
@@ -298,18 +346,36 @@ export default function InvoicePanel() {
             </div>
 
             {/* View Switcher */}
-            <div className="flex gap-2 bg-white/5 p-1 rounded-xl w-fit">
+            <div className="flex gap-2 bg-white/5 p-1 rounded-xl w-fit overflow-x-auto max-w-full">
                 <button
                     onClick={() => setView('sales')}
-                    className={`px-6 py-2 rounded-lg text-xs font-bold transition-all ${view === 'sales' ? 'bg-primary text-white shadow-lg' : 'text-secondary hover:text-foreground'}`}
+                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${view === 'sales' ? 'bg-primary text-white shadow-lg' : 'text-secondary hover:text-foreground'}`}
                 >
                     MAĞAZA SATIŞLARI
                 </button>
                 <button
                     onClick={() => setView('trendyol')}
-                    className={`px-6 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${view === 'trendyol' ? 'bg-orange-500 text-white shadow-lg' : 'text-secondary hover:text-foreground'}`}
+                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${view === 'trendyol' ? 'bg-orange-500 text-white shadow-lg' : 'text-secondary hover:text-foreground'}`}
                 >
-                    <ShoppingBag className="w-3.5 h-3.5" /> TRENDYOL SİPARİŞLERİ
+                    <ShoppingBag className="w-3.5 h-3.5" /> TRENDYOL
+                </button>
+                <button
+                    onClick={() => setView('efatura')}
+                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${view === 'efatura' ? 'bg-emerald-600 text-white shadow-lg' : 'text-secondary hover:text-foreground'}`}
+                >
+                    <Globe className="w-3.5 h-3.5" /> E-FATURA
+                </button>
+                <button
+                    onClick={() => setView('irsaliye')}
+                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${view === 'irsaliye' ? 'bg-amber-600 text-white shadow-lg' : 'text-secondary hover:text-foreground'}`}
+                >
+                    <Building className="w-3.5 h-3.5" /> E-İRSALİYE
+                </button>
+                <button
+                    onClick={() => setView('archive')}
+                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${view === 'archive' ? 'bg-indigo-500 text-white shadow-lg' : 'text-secondary hover:text-foreground'}`}
+                >
+                    <FileText className="w-3.5 h-3.5" /> ARŞİV
                 </button>
             </div>
 
@@ -327,36 +393,172 @@ export default function InvoicePanel() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-border/50">
-                        {(view === 'sales' ? sales : trendyolOrders).map(item => (
-                            <tr key={item.id} className="hover:bg-white/[0.02] transition-colors group">
-                                <td className="px-4 py-2.5 text-slate-400 font-mono italic">{formatDate(item.created_at)}</td>
-                                <td className="px-4 py-2.5">
-                                    <div className="flex items-center gap-2">
-                                        <span className="font-bold text-foreground">#{item.order_number || item.id.slice(0, 8)}</span>
-                                        {view === 'trendyol' && <span className="text-[8px] bg-orange-500/20 text-orange-500 px-1.5 py-0.5 rounded border border-orange-500/20 font-black">TRENDYOL</span>}
-                                        {view === 'sales' && <span className="text-[8px] bg-primary/20 text-primary px-1.5 py-0.5 rounded border border-primary/20 font-black">MAĞAZA</span>}
+                        {loading ? (
+                            <tr>
+                                <td colSpan={6} className="px-4 py-20 text-center">
+                                    <div className="flex flex-col items-center gap-4 text-primary">
+                                        <Loader2 className="w-8 h-8 animate-spin" />
+                                        <p className="font-bold text-xs tracking-widest uppercase opacity-80">Faturalar Yükleniyor...</p>
                                     </div>
                                 </td>
-                                <td className="px-4 py-2.5 font-bold text-foreground">{item.customer_name || 'Nihai Tüketici'}</td>
-                                <td className="px-4 py-2.5 font-black text-emerald-500 font-mono tracking-tighter">{formatCurrency(item.total_price)}</td>
-                                <td className="px-4 py-2.5">
-                                    <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold border ${item.status === 'invoiced' || item.status === 'Picking' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-slate-500/10 text-slate-500 border-slate-500/20'}`}>
-                                        {item.status === 'invoiced' || item.status === 'Picking' ? 'FATURALANDI' : 'BEKLEMEDE'}
-                                    </span>
-                                </td>
-                                <td className="px-4 py-2.5 text-right">
-                                    <button onClick={() => openInvoice(item, view === 'sales' ? 'sale' : 'trendyol')} className="bg-primary/5 hover:bg-primary text-secondary hover:text-white px-3 py-1 rounded-lg text-[10px] font-bold transition-all border border-border">DÜZENLE VE KES</button>
+                            </tr>
+                        ) : (view === 'efatura' || view === 'irsaliye') ? (
+                            <tr>
+                                <td colSpan={6} className="px-4 py-20 text-center text-secondary">
+                                    <div className="flex flex-col items-center gap-2 opacity-50">
+                                        <AlertCircle className="w-8 h-8 text-indigo-500/50" />
+                                        <p className="text-sm">Bu modül üzerinde çalışmalar devam etmektedir.</p>
+                                        <p className="text-[10px] font-mono uppercase tracking-widest">Çok Yakında JetPOS'ta!</p>
+                                    </div>
                                 </td>
                             </tr>
-                        ))}
+                        ) : view === 'archive' ? (
+                            archive.length === 0 ? (
+                                <tr>
+                                    <td colSpan={6} className="px-4 py-12 text-center text-secondary">
+                                        <div className="flex flex-col items-center gap-2 opacity-50">
+                                            <AlertCircle className="w-8 h-8 text-indigo-500/50" />
+                                            <p className="text-sm">Henüz kesilmiş fatura bulunamadı veya yetki kısıtı (RLS) var.</p>
+                                            <p className="text-[10px] font-mono">Dükkan ID: {currentTenant?.id}</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ) : (
+                                archive.map(item => (
+                                    <tr key={item.id} className="hover:bg-white/[0.02] transition-colors group">
+                                        <td className="px-4 py-2.5 text-slate-400 font-mono italic">{formatDate(item.created_at)}</td>
+                                        <td className="px-4 py-2.5">
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-bold text-indigo-400">{item.invoice_number}</span>
+                                                <span className="text-[8px] bg-indigo-500/20 text-indigo-500 px-1.5 py-0.5 rounded border border-indigo-500/20 font-black">
+                                                    {item.invoice_type === 'sales' ? 'E-FATURA' : 'E-ARŞİV'}
+                                                </span>
+                                            </div>
+                                            {item.external_id && <div className="text-[9px] text-orange-500 font-bold mt-0.5 flex items-center gap-1"> <ShoppingBag className="w-2.5 h-2.5" /> {item.external_id}</div>}
+                                        </td>
+                                        <td className="px-4 py-2.5">
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-foreground">{item.cari_name}</span>
+                                                <span className="text-[10px] text-secondary">{item.cari_vkn}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-2.5 font-black text-emerald-500 font-mono tracking-tighter">{formatCurrency(item.grand_total)}</td>
+                                        <td className="px-4 py-2.5">
+                                            <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold border ${item.status === 'sent' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
+                                                item.status === 'failed' ? 'bg-red-500/10 text-red-500 border-red-500/20' :
+                                                    'bg-slate-500/10 text-slate-500 border-slate-500/20'
+                                                }`}>
+                                                {item.status === 'sent' ? 'GÖNDERİLDİ' : item.status === 'failed' ? 'HATA' : 'BEKLEMEDE'}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-2.5 text-right">
+                                            <div className="flex justify-end gap-2">
+                                                {item.pdf_url && (
+                                                    <button onClick={() => {
+                                                        if (item.pdf_url.startsWith('data:application/pdf;base64,')) {
+                                                            const base64Data = item.pdf_url.split(',')[1];
+                                                            const byteCharacters = atob(base64Data);
+                                                            const byteNumbers = new Array(byteCharacters.length);
+                                                            for (let i = 0; i < byteCharacters.length; i++) {
+                                                                byteNumbers[i] = byteCharacters.charCodeAt(i);
+                                                            }
+                                                            const byteArray = new Uint8Array(byteNumbers);
+                                                            const file = new Blob([byteArray], { type: 'application/pdf;base64' });
+                                                            const fileURL = URL.createObjectURL(file);
+                                                            window.open(fileURL, '_blank');
+                                                        } else {
+                                                            window.open(item.pdf_url, '_blank');
+                                                        }
+                                                    }} className="bg-emerald-500/10 hover:bg-emerald-500 text-emerald-500 hover:text-white p-1.5 rounded-lg transition-all border border-emerald-500/20" title="Yazdır">
+                                                        <Printer className="w-3.5 h-3.5" />
+                                                    </button>
+                                                )}
+                                                <button
+                                                    onClick={async () => {
+                                                        try {
+                                                            const res = await fetch(`/api/invoices/status/${item.id}`);
+                                                            const data = await res.json();
+                                                            if (data.success) {
+                                                                fetchData();
+                                                            } else {
+                                                                alert('Hata: ' + data.error);
+                                                            }
+                                                        } catch (err) {
+                                                            console.error('Sync Error:', err);
+                                                        }
+                                                    }}
+                                                    className="bg-indigo-500/10 hover:bg-indigo-500 text-indigo-500 hover:text-white p-1.5 rounded-lg transition-all border border-indigo-500/20"
+                                                    title="Durum Güncelle"
+                                                >
+                                                    <RotateCw className="w-3.5 h-3.5" />
+                                                </button>
+                                                {item.pdf_url ? (
+                                                    <button
+                                                        onClick={() => {
+                                                            if (item.pdf_url.startsWith('data:application/pdf;base64,')) {
+                                                                const base64Data = item.pdf_url.split(',')[1];
+                                                                const byteCharacters = atob(base64Data);
+                                                                const byteNumbers = new Array(byteCharacters.length);
+                                                                for (let i = 0; i < byteCharacters.length; i++) {
+                                                                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                                                                }
+                                                                const byteArray = new Uint8Array(byteNumbers);
+                                                                const file = new Blob([byteArray], { type: 'application/pdf' });
+                                                                const fileURL = URL.createObjectURL(file);
+                                                                window.open(fileURL, '_blank');
+                                                            } else {
+                                                                window.open(item.pdf_url, '_blank');
+                                                            }
+                                                        }}
+                                                        className="bg-primary hover:bg-primary/90 text-white px-3 py-1 rounded-lg text-[10px] font-black transition-all shadow-lg active:scale-95 flex items-center justify-center min-w-[70px]"
+                                                    >
+                                                        İNCELE
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => alert('PDF linki henüz hazır değil veya faturanız henüz resmi makamlarca onaylanmadı.')}
+                                                        className="bg-slate-500/20 text-slate-500 px-3 py-1 rounded-lg text-[10px] font-black cursor-not-allowed border border-slate-500/20 min-w-[70px]"
+                                                    >
+                                                        İNCELE
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )
+                        ) : (
+                            (view === 'sales' ? sales : trendyolOrders).map(item => (
+                                <tr key={item.id} className="hover:bg-white/[0.02] transition-colors group">
+                                    <td className="px-4 py-2.5 text-slate-400 font-mono italic">{formatDate(item.created_at)}</td>
+                                    <td className="px-4 py-2.5">
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-bold text-foreground">#{item.order_number || item.id.slice(0, 8)}</span>
+                                            {view === 'trendyol' && <span className="text-[8px] bg-orange-500/20 text-orange-500 px-1.5 py-0.5 rounded border border-orange-500/20 font-black">TRENDYOL</span>}
+                                            {view === 'sales' && <span className="text-[8px] bg-primary/20 text-primary px-1.5 py-0.5 rounded border border-primary/20 font-black">MAĞAZA</span>}
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-2.5 font-bold text-foreground">{item.customer_name || 'Nihai Tüketici'}</td>
+                                    <td className="px-4 py-2.5 font-black text-emerald-500 font-mono tracking-tighter">{formatCurrency(item.total_price)}</td>
+                                    <td className="px-4 py-2.5">
+                                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold border ${item.status === 'invoiced' || item.status === 'Picking' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-slate-500/10 text-slate-500 border-slate-500/20'}`}>
+                                            {item.status === 'invoiced' || item.status === 'Picking' ? 'FATURALANDI' : 'BEKLEMEDE'}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-2.5 text-right">
+                                        <button onClick={() => openInvoice(item, view === 'sales' ? 'sale' : 'trendyol')} className="bg-primary/5 hover:bg-primary text-secondary hover:text-white px-3 py-1 rounded-lg text-[10px] font-bold transition-all border border-border">DÜZENLE VE KES</button>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
                     </tbody>
                 </table>
             </div>
 
             {/* ----- MODAL (Aynı Kalıyor) ----- */}
             {editModal && (
-                <div className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-md flex items-center justify-center overflow-y-auto p-4 md:p-10">
-                    <div className="glass-card w-full max-w-7xl h-[90vh] my-auto !bg-card shadow-2xl overflow-hidden flex flex-col border border-border animate-in fade-in zoom-in duration-200">
+                <div onClick={() => setEditModal(null)} className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-md flex items-center justify-center overflow-y-auto p-4 md:p-10 cursor-pointer">
+                    <div onClick={(e) => e.stopPropagation()} className="glass-card w-full max-w-7xl h-[90vh] my-auto !bg-card shadow-2xl overflow-hidden flex flex-col border border-border animate-in fade-in zoom-in duration-200 cursor-auto">
 
                         <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between bg-white/[0.02] shrink-0">
                             <h2 className="text-sm font-bold text-foreground flex items-center gap-2 uppercase tracking-tighter">
@@ -471,6 +673,36 @@ export default function InvoicePanel() {
                                 </button>
                             </div>
 
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Başarı Modalı */}
+            {successInvoice && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-background border border-border shadow-2xl rounded-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="p-6 text-center space-y-4">
+                            <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-2">
+                                <Check className="w-8 h-8 text-emerald-500" />
+                            </div>
+                            <h2 className="text-xl font-black text-foreground">Fatura Başarıyla Kesildi!</h2>
+                            <p className="text-xs text-secondary font-mono bg-white/5 p-2 rounded-lg border border-border">Belge OID: {successInvoice.listId}</p>
+
+                            <div className="flex gap-2 justify-center pt-4">
+                                {successInvoice.pdfUrl ? (
+                                    <a href={successInvoice.pdfUrl} target="_blank" rel="noopener noreferrer" className="bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-2.5 rounded-xl text-xs font-bold transition-all shadow-lg flex items-center gap-2">
+                                        <FileText className="w-4 h-4" /> FATURAYI GÖRÜNTÜLE
+                                    </a>
+                                ) : (
+                                    <button onClick={() => setView('archive')} className="bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-2.5 rounded-xl text-xs font-bold transition-all shadow-lg flex items-center gap-2">
+                                        <Globe className="w-4 h-4" /> ARŞİVE GİT
+                                    </button>
+                                )}
+                                <button onClick={() => setSuccessInvoice(null)} className="bg-white/5 hover:bg-white/10 text-secondary hover:text-white px-6 py-2.5 rounded-xl text-xs font-bold border border-white/10 transition-all">
+                                    KAPAT
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

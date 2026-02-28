@@ -79,16 +79,23 @@ export class TrendyolGoClient {
     private getHeaders(): HeadersInit {
         const apiKey = (this.config.apiKey || '').trim();
         const apiSecret = (this.config.apiSecret || '').trim();
-        const auth = Buffer.from(`${apiKey}:${apiSecret}`).toString('base64');
 
-        return {
-            'Authorization': `Basic ${auth}`,
+        const headers: any = {
             'x-agentname': this.config.agentName,
             'x-executor-user': this.config.sellerId.toString(),
             'User-Agent': `${this.config.sellerId} - ${this.config.agentName}`,
             'Content-Type': 'application/json',
-            ...(this.config.token && { 'x-token': this.config.token })
         };
+
+        // Eğer kullanıcı doğrudan token (base64) vermişse onu kullan, yoksa key:secret'tan oluştur.
+        if (this.config.token) {
+            headers['Authorization'] = `Basic ${this.config.token}`;
+        } else if (apiKey && apiSecret) {
+            const auth = Buffer.from(`${apiKey}:${apiSecret}`).toString('base64');
+            headers['Authorization'] = `Basic ${auth}`;
+        }
+
+        return headers;
     }
 
     private async request(url: string, method: string = 'GET', data?: any) {
@@ -101,8 +108,11 @@ export class TrendyolGoClient {
             });
 
             if (!response.ok) {
-                const error = await response.json().catch(() => ({ message: 'API Hatası' }));
-                throw new Error(error.message || `İşlem başarısız (${response.status}) - ${url}`);
+                const errorText = await response.text();
+                let errorData;
+                try { errorData = JSON.parse(errorText); } catch { errorData = { message: errorText }; }
+                console.error(`❌ Trendyol API Error (${response.status}) [${url}]:`, errorData);
+                throw new Error(errorData.message || `İşlem başarısız (${response.status})`);
             }
             return await response.json();
         }
@@ -283,15 +293,24 @@ export class TrendyolGoClient {
     }
 }
 
-export function createTrendyolGoClient(): TrendyolGoClient {
-    const sellerId = process.env.TRENDYOL_GO_SELLER_ID;
-    const storeId = process.env.TRENDYOL_GO_STORE_ID;
-    const apiKey = process.env.TRENDYOL_GO_API_KEY;
-    const apiSecret = process.env.TRENDYOL_GO_API_SECRET;
-    const agentName = process.env.TRENDYOL_GO_AGENT_NAME || 'Self Integration';
-    const isStage = process.env.TRENDYOL_GO_STAGE === 'true';
+export function createTrendyolGoClient(settings?: { trendyolGo?: any }): TrendyolGoClient {
+    const tGo = settings?.trendyolGo || {};
+
+    const sellerId = tGo.sellerId || process.env.TRENDYOL_GO_SELLER_ID;
+    const storeId = tGo.storeId || process.env.TRENDYOL_GO_STORE_ID;
+    const apiKey = tGo.apiKey || process.env.TRENDYOL_GO_API_KEY;
+    const apiSecret = tGo.apiSecret || process.env.TRENDYOL_GO_API_SECRET;
+    const agentName = tGo.agentName || process.env.TRENDYOL_GO_AGENT_NAME || 'Self Integration';
+    const token = tGo.token || process.env.TRENDYOL_GO_TOKEN;
+
+    // allow explicitly setting stage to false in db config, otherwise fallback to env
+    const stageVal = tGo.stage !== undefined ? String(tGo.stage) : process.env.TRENDYOL_GO_STAGE;
+    const isStage = stageVal === 'true';
+
+    console.log(`[Trendyol Client] Init - Stage: ${isStage} (Val: ${stageVal}), Seller: ${sellerId}, Store: ${storeId}`);
 
     if (!sellerId || !apiKey || !apiSecret) {
+        console.error('❌ Trendyol GO credentials eksik!', { sellerId, hasApiKey: !!apiKey, hasApiSecret: !!apiSecret });
         throw new Error('❌ Trendyol GO credentials eksik!');
     }
 
@@ -301,6 +320,7 @@ export function createTrendyolGoClient(): TrendyolGoClient {
         apiKey,
         apiSecret,
         agentName,
+        token,
         isStage
     });
 }

@@ -1,0 +1,15 @@
+﻿Checking status...
+[QNB Login] Step 1: Getting earsivtest session from https://portaltest.qnbesolutions.com.tr/earsiv/ws/EarsivWebService
+[QNB Login] earsivtest session: citrix_ns_id=AAI7RsKgaTvk5OsEAAAAADsAcCgU3aSWl5RrO69Txa2qtG0w3FHbTvsfxhe6-EiJOw==OsSgaQ==tgfO-V9at9C-gkDSbieCOAlwt40=
+[QNB Login] Step 2: Login at connectortest @ https://connectortest.qnbesolutions.com.tr/connector/ws/userService
+[QNB Login] Connector response: <?xml version='1.0' encoding='UTF-8'?><S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/"><S:Body><ns2:wsLoginResponse xmlns:ns2="http://service.csap.cs.com.tr/"/></S:Body></S:Envelope>
+[QNB Login] Connector session: userSessionLang=tr
+[QNB Login] Return val: null
+[QNB Login] JSESSIONID alias: JSESSIONID=tr
+[QNB Login] Final earsiv cookie: citrix_ns_id=AAI7RsKgaTvk5OsEAAAAADsAcCgU3aSWl5RrO69Txa2qtG0w3FHbTvsfxhe6-EiJOw==OsSgaQ==tgfO-V9at9C-gkDSbieCOAlwt40=; userSessionLang=tr; JSESSIONID=tr
+{
+  "belgeNo": "EP-2142485479",
+  "durum": "Web servis ├ğa─şr─▒s─▒ \"input\" alan─▒ndan gerekli bilgiler elde edilemedi. Eksik alanlar: null bu alan(lar)─▒n bo┼ş olmad─▒─ş─▒ndan emin olunuz!",
+  "ettn": "",
+  "gonderimDurumu": "<?xml version='1.0' encoding='UTF-8'?><S:Envelope xmlns:S=\"http://schemas.xmlsoap.org/soap/envelope/\"><S:Body><ns2:faturaSorgulaResponse xmlns:ns2=\"http://service.earsiv.uut.cs.com.tr/\"><return><resultCode>AE00067</resultCode><resultExtra/><resultText>Web servis ├ğa─şr─▒s─▒ \"input\" alan─▒ndan gerekli bilgiler elde edilemedi. Eksik alanlar: null bu alan(lar)─▒n bo┼ş olmad─▒─ş─▒ndan emin olunuz!</resultText></return></ns2:faturaSorgulaResponse></S:Body></S:Envelope>"
+}

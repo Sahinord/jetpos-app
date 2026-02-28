@@ -5,9 +5,9 @@ import { Phone, User, ArrowRight, Scan, CheckCircle, TrendingUp, ShoppingCart, C
 import Image from "next/image";
 
 const stats = [
-    { icon: TrendingUp, label: "Aylık Satış", value: "₺284,500", color: "#3b82f6", bg: "rgba(59,130,246,0.12)" },
-    { icon: ShoppingCart, label: "İşlem", value: "1,248", color: "#8b5cf6", bg: "rgba(139,92,246,0.12)" },
-    { icon: Clock, label: "Ortalama Süre", value: "1.2sn", color: "#10b981", bg: "rgba(16,185,129,0.12)" },
+    { icon: TrendingUp, label: "Ürün Çeşidi", value: "4.853", color: "#3b82f6", bg: "rgba(59,130,246,0.12)" },
+    { icon: ShoppingCart, label: "Stok Adedi", value: "135", color: "#8b5cf6", bg: "rgba(139,92,246,0.12)" },
+    { icon: Clock, label: "İşlem Hızı", value: "0.8sn", color: "#10b981", bg: "rgba(16,185,129,0.12)" },
 ];
 
 export default function Hero() {

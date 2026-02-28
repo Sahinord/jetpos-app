@@ -244,16 +244,16 @@ export class TrendyolClient {
     }
 }
 
-// Helper function: Environment variables'dan client oluştur
-export function createTrendyolClient(): TrendyolClient {
-    const apiKey = process.env.TRENDYOL_API_KEY;
-    const apiSecret = process.env.TRENDYOL_API_SECRET;
-    const supplierId = process.env.TRENDYOL_SUPPLIER_ID;
+// Helper function: Environment variables veya Tenant ayarlarından client oluştur
+export function createTrendyolClient(settings?: { trendyol?: any }): TrendyolClient {
+    const tSettings = settings?.trendyol || {};
+    const apiKey = tSettings.apiKey || process.env.TRENDYOL_API_KEY;
+    const apiSecret = tSettings.apiSecret || process.env.TRENDYOL_API_SECRET;
+    const supplierId = tSettings.supplierId || process.env.TRENDYOL_SUPPLIER_ID;
 
     if (!apiKey || !apiSecret || !supplierId) {
         throw new Error(
-            'Trendyol API credentials bulunamadı! .env.local dosyasını kontrol edin:\n' +
-            'TRENDYOL_API_KEY, TRENDYOL_API_SECRET, TRENDYOL_SUPPLIER_ID'
+            'Trendyol API credentials bulunamadı! .env.local veya Tenant ayarlarını kontrol edin.'
         );
     }
 

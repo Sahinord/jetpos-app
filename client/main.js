@@ -73,7 +73,7 @@ function createWindow() {
     // In production, we load the built static files via electron-serve
     // In development, we load the localhost:3000
     if (isDev) {
-        win.loadURL('http://localhost:3005');
+        win.loadURL('http://127.0.0.1:3005');
     } else {
         loadURL(win);
     }

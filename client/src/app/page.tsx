@@ -482,8 +482,8 @@ export default function Home() {
 
       for (const item of cartItems) {
         const { error: rpcError } = await sb.rpc('decrement_stock', {
-          product_id: item.id,
-          qty: item.quantity
+          p_product_id: item.id,
+          p_qty: item.quantity
         });
 
         if (rpcError) {

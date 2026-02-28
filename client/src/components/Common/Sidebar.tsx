@@ -115,6 +115,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
                 { id: "pos", label: "Hızlı Satış", icon: ShoppingCart, feature: "pos", description: "Hızlı nakit veya kartlı satış işlemlerini gerçekleştirebileceğiniz satış ekranı." },
                 { id: "history", label: "Satış Geçmişi", icon: History, feature: "sales_history", description: "Geçmişte yapılan tüm satışların detaylı dökümü ve yönetimi." },
                 { id: "invoice", label: "E-Fatura", icon: FileText, feature: "invoice", description: "E-Fatura gönderimi ve takibi için entegrasyon ekranı." },
+                { id: "trendyol_pos", label: "Trendyol Siparişleri", icon: ShoppingBag, feature: "trendyol_go", description: "Trendyol GO üzerinden gelen siparişlerin yönetimi ve faturalandırılması." },
             ]
         },
         {
@@ -123,7 +124,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
             icon: Package,
             items: [
                 { id: "products", label: "Ürün Listesi", icon: Boxes, feature: "products", description: "Stoktaki ürünlerin listelenmesi, yeni ürün ekleme ve düzenleme işlemleri." },
-                { id: "alerts", label: "Stok Uyarıları", icon: AlertTriangle, feature: null, description: "Kritik stok seviyesine düşen ürünler için otomatik uyarılar." },
+                { id: "alerts", label: "Stok Uyarıları", icon: AlertTriangle, feature: "products", description: "Kritik stok seviyesine düşen ürünler için otomatik uyarılar." },
             ]
         },
         {
@@ -248,6 +249,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
             id: "invoice_waybill_management",
             label: "Fatura ve İrsaliye Yönetimi",
             icon: FileText,
+            feature: "invoice_management",
             subCategories: [
                 {
                     id: "irsaliye_sub",
@@ -324,8 +326,8 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
             items: [
                 { id: "reports", label: "Satış Raporları", icon: FileBarChart, feature: "reports", description: "Geleneksel ve gelişmiş satış performans raporları." },
                 { id: "simulation", label: "Fiyat Simülasyonu", icon: TrendingUp, feature: "price_simulator", description: "Fiyat değişikliklerinin kärlılık üzerindeki etkilerini simüle etme aracı." },
-                { id: "ai_insights", label: "AI Öngörüleri", icon: Brain, feature: null, description: "Yapay zeka analizleri ile işletmenize özel büyüme önerileri." },
-                { id: "ai_assistant", label: "AI Asistan", icon: MessageSquare, feature: null, description: "JetPos AI ile işletmeniz hakkında sohbet edin." },
+                { id: "ai_insights", label: "AI Öngörüleri", icon: Brain, feature: "ai_features", description: "Yapay zeka analizleri ile işletmenize özel büyüme önerileri." },
+                { id: "ai_assistant", label: "AI Asistan", icon: MessageSquare, feature: "ai_features", description: "JetPos AI ile işletmeniz hakkında sohbet edin." },
             ]
         },
         {
@@ -333,7 +335,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
             label: "Araçlar",
             icon: Layers,
             items: [
-                { id: "label_designer", label: "Ürün Etiketleri", icon: Tags, feature: null, description: "Barkodlu fiyat etiketleri tasarla ve yazdır." },
+                { id: "label_designer", label: "Ürün Etiketleri", icon: Tags, feature: "label_designer", description: "Barkodlu fiyat etiketleri tasarla ve yazdır." },
             ]
         },
     ];

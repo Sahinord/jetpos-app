@@ -31,6 +31,7 @@ import { TrendyolGoClient } from "@/lib/trendyol-go-client";
 export default function TrendyolGOWidget() {
     const { currentTenant } = useTenant();
     const [isConfigured, setIsConfigured] = useState(false);
+    const [isSystemLevel, setIsSystemLevel] = useState(false);
     const [loading, setLoading] = useState(true);
     const [syncing, setSyncing] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
@@ -106,6 +107,7 @@ export default function TrendyolGOWidget() {
     const fetchSettings = async () => {
         if (!currentTenant?.id) return;
         try {
+            // 1. Önce Veritabanından çek
             const { data, error } = await supabase
                 .from('integration_settings')
                 .select('*')
@@ -116,10 +118,29 @@ export default function TrendyolGOWidget() {
             if (data) {
                 setSettings({
                     ...data.settings,
-                    token: data.settings.token || "" // Token varsa doldur
+                    token: data.settings.token || ""
                 });
                 setIsConfigured(data.is_active);
                 setStats(prev => ({ ...prev, lastSync: data.last_sync_at }));
+            } else {
+                // 2. Veritabanında yoksa Sistem Ayarlarını (.env.local) kontrol et
+                const res = await fetch('/api/trendyol/settings');
+                const sys = await res.json();
+
+                if (sys.isSystemConfigured) {
+                    setSettings(prev => ({
+                        ...prev,
+                        sellerId: sys.sellerId,
+                        storeId: sys.storeId,
+                        apiKey: sys.apiKey,
+                        apiSecret: sys.apiSecret,
+                        agentName: sys.agentName,
+                        token: sys.token,
+                        isStage: sys.isStage
+                    }));
+                    setIsConfigured(true);
+                    setIsSystemLevel(true);
+                }
             }
         } catch (err) {
             console.log("No settings found or error fetching settings");
@@ -152,144 +173,33 @@ export default function TrendyolGOWidget() {
         }
     };
 
-    const [syncDays, setSyncDays] = useState(1);
+    const [syncDays, setSyncDays] = useState(30);
 
-    const handleSyncOrders = async (days: number = 1) => {
+    const handleSyncOrders = async (days: number = 30) => {
         if (!isConfigured || !currentTenant?.id) return;
         setSyncing(true);
         try {
-            // RLS için tenant'ı database session'ına bildir
-            await setCurrentTenant(currentTenant.id);
+            // Arka planda API üzerinden senkronizasyon yap (RLS hatalarını önlemek için)
+            const response = await fetch(`/api/trendyol/sync-orders?tenantId=${currentTenant.id}&days=${days}`);
+            const result = await response.json();
 
-            const client = new TrendyolGoClient(settings);
-
-            // Belirlenen gün aralığındaki siparişleri çek
-            const endDate = new Date();
-            const startDate = new Date(endDate.getTime() - days * 24 * 60 * 60 * 1000);
-
-            console.log(`🔎 Trendyol GO: ${days} günlük tarama başlatıldı...`);
-
-            // Tüm durumdaki siparişleri çekmek için statüleri sırayla tara (UPPERCASE zorunlu olabilir)
-            const statuses = [undefined, 'CREATED', 'PICKED', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'ACCEPTED', 'PICKING'];
-            let allOrders: any[] = [];
-
-            console.log("🚀 Agresif tarama başlatılıyor...");
-
-            for (const status of statuses) {
-                try {
-                    // 1. Alternatif: Mağaza ID'si ile dene
-                    const statusOrders = await client.getOrders(startDate, endDate, status, true);
-                    if (statusOrders && statusOrders.length > 0) {
-                        console.log(`✅ [${status || 'ALL'}] durumu için ${statusOrders.length} sipariş bulundu (Mağaza Bazlı).`);
-                        allOrders = [...allOrders, ...statusOrders];
-                    }
-
-                    // 2. Alternatif: Mağaza ID'si olmadan dene (Mağaza bazlı gelmediyse)
-                    if (settings.storeId) {
-                        const globalOrders = await client.getOrders(startDate, endDate, status, false);
-                        if (globalOrders && globalOrders.length > 0) {
-                            console.log(`✅ [${status || 'ALL'}] durumu için ${globalOrders.length} sipariş bulundu (Global Bazlı).`);
-                            allOrders = [...allOrders, ...globalOrders];
-                        }
-                    }
-                } catch (statusErr: any) {
-                    console.warn(`⚠️ [${status}] sorgusu başarısız:`, statusErr.message);
-                }
-            }
-
-            // Mükerrer kayıtları temizle (orderNumber bazında)
-            const uniqueOrders = Array.from(new Map(allOrders.map(o => [o.orderNumber, o])).values());
-
-            if (uniqueOrders.length > 0) {
-                // 1. Mevcut sipariş numaralarını çek (hangileri yeni görelim)
-                const { data: existingOrders } = await supabase
-                    .from('trendyol_go_orders')
-                    .select('order_number')
-                    .eq('tenant_id', currentTenant.id)
-                    .in('order_number', uniqueOrders.map(o => o.orderNumber));
-
-                const existingOrderNumbers = new Set(existingOrders?.map(o => o.order_number) || []);
-                const newOrders = uniqueOrders.filter(o => !existingOrderNumbers.has(o.orderNumber));
-
-                let stockUpdatesCount = 0;
-
-                // 2. Sadece YENİ siparişler için stok düş
-                if (newOrders.length > 0) {
-                    console.log(`📦 ${newOrders.length} adet yeni sipariş için stok düşümü başlatılıyor...`);
-
-                    for (const order of newOrders) {
-                        for (const item of order.lines) {
-                            const barcode = item.barcode;
-                            if (!barcode) continue;
-
-                            // Ürünü barkoddan bul
-                            const { data: product } = await supabase
-                                .from('products')
-                                .select('id, name, stock_quantity')
-                                .eq('tenant_id', currentTenant.id)
-                                .eq('barcode', barcode)
-                                .single();
-
-                            if (product) {
-                                // Stoğu düşür
-                                const qty = item.amount || item.quantity || 1;
-                                const { error: stockErr } = await supabase.rpc('decrement_stock', {
-                                    product_id: product.id,
-                                    qty: qty
-                                });
-
-                                if (!stockErr) {
-                                    stockUpdatesCount++;
-                                    console.log(`✅ Stoktan düşüldü: ${product.name} (-${qty})`);
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // 3. Veritabanına kaydet
-                const { error } = await supabase
-                    .from('trendyol_go_orders')
-                    .upsert(
-                        uniqueOrders.map(order => ({
-                            tenant_id: currentTenant?.id,
-                            order_number: order.orderNumber,
-                            customer_name: `${order.customer.firstName} ${order.customer.lastName}`,
-                            total_price: order.totalPrice,
-                            status: order.packageStatus,
-                            items: order.lines,
-                            raw_data: order
-                        })),
-                        { onConflict: 'order_number' }
-                    );
-
-                if (error) throw error;
-
+            if (result.success) {
                 // Stats güncelle
                 setStats(prev => ({
                     ...prev,
-                    totalOrders: prev.totalOrders + newOrders.length,
-                    pendingOrders: uniqueOrders.filter(o => o.packageStatus === 'CREATED').length,
-                    stockUpdates: prev.stockUpdates + stockUpdatesCount,
                     lastSync: new Date().toISOString() as any,
                     status: "success"
                 }));
 
-                await supabase
-                    .from('integration_settings')
-                    .update({ last_sync_at: new Date().toISOString() })
-                    .eq('tenant_id', currentTenant?.id)
-                    .eq('type', 'trendyol_go');
-
                 await fetchOrders();
 
-                if (newOrders.length > 0) {
-                    alert(`✅ ${newOrders.length} yeni sipariş alındı ve ${stockUpdatesCount} ürün stoktan düşüldü.`);
+                if (result.count > 0) {
+                    alert(`✅ ${result.count} sipariş başarıyla çekildi ve güncellendi.`);
                 } else {
-                    alert(`ℹ️ Yeni sipariş bulunamadı, mevcut ${uniqueOrders.length} sipariş güncellendi.`);
+                    alert(`ℹ️ Belirtilen aralıkta yeni siparişe rastlanmadı.`);
                 }
             } else {
-                alert(`ℹ️ Son ${days} gün içinde herhangi bir sipariş (Yeni/Hazır/Teslim) bulunamadı.`);
+                throw new Error(result.error || 'Senkronizasyon başarısız.');
             }
         } catch (err: any) {
             console.error("Sync Error:", err);
@@ -348,7 +258,9 @@ export default function TrendyolGOWidget() {
                     {isConfigured ? (
                         <div className="px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center gap-2">
                             <CheckCircle className="w-4 h-4 text-emerald-500" />
-                            <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">Aktif</span>
+                            <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">
+                                {isSystemLevel ? 'Sistem Bazlı Aktif' : 'Aktif'}
+                            </span>
                         </div>
                     ) : (
                         <div className="px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-full flex items-center gap-2">
@@ -601,19 +513,38 @@ export default function TrendyolGOWidget() {
 
                                                 {/* Ürün Listesi */}
                                                 <div className="space-y-1 mb-2">
-                                                    {order.items && Array.isArray(order.items) && order.items.map((item: any, idx: number) => (
-                                                        <div key={idx} className="flex items-center gap-1.5 text-[10px]">
-                                                            <span className="bg-white/10 px-1.5 py-0.5 rounded text-orange-400 font-bold shrink-0">
-                                                                {item.quantity || item.amount}x
-                                                            </span>
-                                                            <span className="text-secondary/80 font-medium truncate">
-                                                                {item.productName || item.name}
-                                                            </span>
-                                                            <span className="text-slate-600 ml-auto font-bold line-clamp-1">
-                                                                {item.price?.unitPrice || item.unitPrice} TL
-                                                            </span>
-                                                        </div>
-                                                    ))}
+                                                    {order.items && Array.isArray(order.items) && order.items.map((item: any, idx: number) => {
+                                                        // Debug için konsola bas
+                                                        if (idx === 0) console.log('Trendyol Item Structure:', item);
+
+                                                        const name = item.product?.productSaleName ||
+                                                            item.product?.name ||
+                                                            item.productName ||
+                                                            item.name ||
+                                                            item.itemName ||
+                                                            item.label ||
+                                                            'İsimsiz Ürün';
+
+                                                        let qty = item.amount || item.quantity || item.count || 1;
+                                                        let price = item.price?.unitPrice || item.price || item.unitPrice || item.totalPrice || 0;
+
+                                                        // Hatalı eşleşme koruması (Fiyat miktar kısmına gelmişse)
+                                                        if (qty > 50 && price === 0) { price = qty; qty = 1; }
+
+                                                        return (
+                                                            <div key={idx} className="flex items-center gap-1.5 text-[10px]">
+                                                                <span className="bg-white/10 px-1.5 py-0.5 rounded text-orange-400 font-bold shrink-0">
+                                                                    {qty}x
+                                                                </span>
+                                                                <span className="text-secondary/80 font-medium truncate">
+                                                                    {name}
+                                                                </span>
+                                                                <span className="text-slate-600 ml-auto font-bold line-clamp-1">
+                                                                    {price} TL
+                                                                </span>
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
 
                                                 <p className="text-[10px] text-secondary/60 font-medium">

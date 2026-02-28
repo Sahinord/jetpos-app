@@ -12,6 +12,7 @@ interface Tenant {
     status: string;
     contact_email: string | null;
     features: any;
+    settings?: any;
     openrouter_api_key?: string;
     created_at: string;
 }
@@ -29,7 +30,9 @@ const AVAILABLE_FEATURES = [
     { id: 'employee_module', label: 'Çalışan Yönetimi & Vardiya' },
     { id: 'label_designer', label: 'Ürün Etiket Tasarımı' },
     { id: 'trendyol_go', label: 'Trendyol GO' },
-    { id: 'invoice', label: 'E-Fatura' },
+    { id: 'invoice', label: 'E-Fatura Entegrasyonu (QNB)' },
+    { id: 'invoice_management', label: 'Fatura ve İrsaliye Yönetimi' },
+    { id: 'ai_features', label: 'JetPos AI (Öngörüler & Asistan)' },
 ];
 
 export default function SuperAdmin() {
@@ -60,7 +63,12 @@ export default function SuperAdmin() {
 
     // QNB states
     const [qnbModal, setQnbModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
-    const [qnbSettings, setQnbSettings] = useState({ vkn: '', username: '', password: '', isTest: true });
+    const [qnbSettings, setQnbSettings] = useState({ vkn: '', username: '', password: '', erpCode: 'JET31270', isTest: true });
+
+    // Trendyol GO states
+    const [trendyolModal, setTrendyolModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
+    const [trendyolSettings, setTrendyolSettings] = useState({ sellerId: '', storeId: '', apiKey: '', apiSecret: '', token: '', stage: false });
+
 
     useEffect(() => {
         if (activeTab === 'tenants') fetchTenants();
@@ -336,9 +344,19 @@ export default function SuperAdmin() {
             if (rpcError) throw rpcError;
 
             // 2. Tenants tablosuna doğrudan kaydet (Lisansa özel kolon)
+            // settings içindeki gemini_ai da güncelleyelim.
+            const tenantObj = tenants.find(t => t.id === aiModal.tenantId);
+            const currentSettings = tenantObj?.settings || {};
+
             const { error: updateError } = await supabase
                 .from('tenants')
-                .update({ openrouter_api_key: tenantAiKey })
+                .update({
+                    openrouter_api_key: tenantAiKey,
+                    settings: {
+                        ...currentSettings,
+                        gemini_ai: { apiKey: tenantAiKey }
+                    }
+                })
                 .eq('id', aiModal.tenantId);
 
             if (updateError) throw updateError;
@@ -359,17 +377,68 @@ export default function SuperAdmin() {
 
         setSaving(true);
         try {
-            const { error } = await supabase.rpc('upsert_integration_settings', {
-                p_tenant_id: qnbModal.tenantId,
-                p_type: 'qnb_efinans',
-                p_settings: qnbSettings,
-                p_is_active: true
-            });
+            const tenantObj = tenants.find(t => t.id === qnbModal.tenantId);
+            const currentSettings = tenantObj?.settings || {};
+
+            // Veritabanına tenants -> settings olarak update işlemi gönder
+            const updatedSettings = {
+                ...currentSettings,
+                qnb: {
+                    testVkn: qnbSettings.vkn,
+                    earsivUsername: qnbSettings.username,
+                    testPassword: qnbSettings.password,
+                    erpCode: qnbSettings.erpCode,
+                    isTest: qnbSettings.isTest
+                }
+            };
+
+            const { error } = await supabase
+                .from('tenants')
+                .update({ settings: updatedSettings })
+                .eq('id', qnbModal.tenantId);
 
             if (error) throw error;
 
             alert(`✅ ${qnbModal.tenantName} için QNB Ayarları güncellendi!`);
             setQnbModal(null);
+            await fetchTenants(); // State yenilemesi için verileri tekrar çek
+        } catch (err: any) {
+            alert('❌ Hata: ' + err.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleSaveTrendyolSettings = async () => {
+        if (!trendyolModal) return;
+
+        setSaving(true);
+        try {
+            const tenantObj = tenants.find(t => t.id === trendyolModal.tenantId);
+            const currentSettings = tenantObj?.settings || {};
+
+            const updatedSettings = {
+                ...currentSettings,
+                trendyolGo: {
+                    sellerId: trendyolSettings.sellerId,
+                    storeId: trendyolSettings.storeId,
+                    apiKey: trendyolSettings.apiKey,
+                    apiSecret: trendyolSettings.apiSecret,
+                    token: trendyolSettings.token,
+                    stage: trendyolSettings.stage
+                }
+            };
+
+            const { error } = await supabase
+                .from('tenants')
+                .update({ settings: updatedSettings })
+                .eq('id', trendyolModal.tenantId);
+
+            if (error) throw error;
+
+            alert(`✅ ${trendyolModal.tenantName} için Trendyol GO Ayarları güncellendi!`);
+            setTrendyolModal(null);
+            await fetchTenants();
         } catch (err: any) {
             alert('❌ Hata: ' + err.message);
         } finally {
@@ -487,35 +556,45 @@ export default function SuperAdmin() {
                                             <Sparkles className="w-5 h-5" />
                                         </button>
                                         <button
-                                            onClick={async () => {
-                                                setLoading(true);
-                                                try {
-                                                    const { data } = await supabase
-                                                        .from('integration_settings')
-                                                        .select('settings')
-                                                        .eq('tenant_id', tenant.id)
-                                                        .eq('type', 'qnb_efinans')
-                                                        .single();
-
-                                                    setQnbModal({
-                                                        tenantId: tenant.id,
-                                                        tenantName: tenant.company_name || tenant.license_key
-                                                    });
-                                                    setQnbSettings(data?.settings || { vkn: '', username: '', password: '', isTest: true });
-                                                } catch (err) {
-                                                    setQnbModal({
-                                                        tenantId: tenant.id,
-                                                        tenantName: tenant.company_name || tenant.license_key
-                                                    });
-                                                    setQnbSettings({ vkn: '', username: '', password: '', isTest: true });
-                                                } finally {
-                                                    setLoading(false);
-                                                }
+                                            onClick={() => {
+                                                const currentQnb = tenant.settings?.qnb || {};
+                                                setQnbModal({
+                                                    tenantId: tenant.id,
+                                                    tenantName: tenant.company_name || tenant.license_key
+                                                });
+                                                setQnbSettings({
+                                                    vkn: currentQnb.testVkn || '',
+                                                    username: currentQnb.earsivUsername || '',
+                                                    password: currentQnb.testPassword || '',
+                                                    erpCode: currentQnb.erpCode || 'JET31270',
+                                                    isTest: currentQnb.isTest !== false
+                                                });
                                             }}
                                             className="p-3 bg-white/5 hover:bg-emerald-500/20 rounded-xl text-slate-400 hover:text-emerald-500 transition-all font-bold"
                                             title="QNB e-Fatura Ayarları"
                                         >
                                             <FileText className="w-5 h-5" />
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                const currentTg = tenant.settings?.trendyolGo || {};
+                                                setTrendyolModal({
+                                                    tenantId: tenant.id,
+                                                    tenantName: tenant.company_name || tenant.license_key
+                                                });
+                                                setTrendyolSettings({
+                                                    sellerId: currentTg.sellerId || '',
+                                                    storeId: currentTg.storeId || '',
+                                                    apiKey: currentTg.apiKey || '',
+                                                    apiSecret: currentTg.apiSecret || '',
+                                                    token: currentTg.token || '',
+                                                    stage: currentTg.stage === true
+                                                });
+                                            }}
+                                            className="p-3 bg-white/5 hover:bg-orange-500/20 rounded-xl text-slate-400 hover:text-orange-500 transition-all font-bold"
+                                            title="Trendyol GO Ayarları"
+                                        >
+                                            <span className="font-black text-xs">TY</span>
                                         </button>
                                         <button
                                             onClick={() => {
@@ -869,8 +948,8 @@ export default function SuperAdmin() {
             {/* QNB Modal */}
             {qnbModal && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-                    <div className="bg-slate-900 border border-white/10 rounded-[2.5rem] max-w-md w-full shadow-2xl">
-                        <div className="p-8 border-b border-white/10">
+                    <div className="bg-slate-900 border border-white/10 rounded-[2.5rem] max-w-md w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+                        <div className="p-8 border-b border-white/10 sticky top-0 bg-slate-900 z-10">
                             <div className="flex items-center gap-4 mb-2">
                                 <div className="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center">
                                     <FileText className="w-6 h-6 text-emerald-500" />
@@ -911,6 +990,16 @@ export default function SuperAdmin() {
                                     className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-emerald-500/50"
                                 />
                             </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">ERP Kodu</label>
+                                <input
+                                    type="text"
+                                    value={qnbSettings.erpCode}
+                                    onChange={(e) => setQnbSettings({ ...qnbSettings, erpCode: e.target.value })}
+                                    placeholder="JET31270"
+                                    className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-emerald-500/50"
+                                />
+                            </div>
                             <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
                                 <span className="text-sm font-bold text-white">Test Modu</span>
                                 <button
@@ -931,6 +1020,101 @@ export default function SuperAdmin() {
                                     onClick={handleSaveQnbSettings}
                                     disabled={saving}
                                     className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black shadow-lg shadow-emerald-500/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {saving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><Save className="w-4 h-4" /> Kaydet</>}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Trendyol GO Modal */}
+            {trendyolModal && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+                    <div className="bg-slate-900 border border-white/10 rounded-[2.5rem] max-w-md w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+                        <div className="p-8 border-b border-white/10 sticky top-0 bg-slate-900 z-10">
+                            <div className="flex items-center gap-4 mb-2">
+                                <div className="w-12 h-12 bg-orange-500/20 rounded-2xl flex items-center justify-center">
+                                    <span className="font-black text-xl text-orange-500">TY</span>
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black text-white">Trendyol GO Ayarları</h3>
+                                    <p className="text-xs text-slate-500 mt-1">{trendyolModal.tenantName}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-8 space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Satıcı / Seller ID</label>
+                                    <input
+                                        type="text"
+                                        value={trendyolSettings.sellerId}
+                                        onChange={(e) => setTrendyolSettings({ ...trendyolSettings, sellerId: e.target.value })}
+                                        className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-orange-500/50"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Mağaza / Store ID</label>
+                                    <input
+                                        type="text"
+                                        value={trendyolSettings.storeId}
+                                        onChange={(e) => setTrendyolSettings({ ...trendyolSettings, storeId: e.target.value })}
+                                        className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-orange-500/50"
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">API Key</label>
+                                <input
+                                    type="text"
+                                    value={trendyolSettings.apiKey}
+                                    onChange={(e) => setTrendyolSettings({ ...trendyolSettings, apiKey: e.target.value })}
+                                    className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-orange-500/50"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">API Secret</label>
+                                <input
+                                    type="password"
+                                    value={trendyolSettings.apiSecret}
+                                    onChange={(e) => setTrendyolSettings({ ...trendyolSettings, apiSecret: e.target.value })}
+                                    className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-orange-500/50"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Self Integration Token (Opsiyonel)</label>
+                                <input
+                                    type="password"
+                                    value={trendyolSettings.token}
+                                    onChange={(e) => setTrendyolSettings({ ...trendyolSettings, token: e.target.value })}
+                                    className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-orange-500/50"
+                                />
+                            </div>
+                            <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                                <div>
+                                    <span className="text-sm font-bold text-white block">Test Modu (Stage)</span>
+                                    <span className="text-[10px] text-slate-500">Gerçek sipariş/kurye kullanılmaz</span>
+                                </div>
+                                <button
+                                    onClick={() => setTrendyolSettings({ ...trendyolSettings, stage: !trendyolSettings.stage })}
+                                    className={`w-12 h-6 rounded-full transition-all relative ${trendyolSettings.stage ? 'bg-orange-500' : 'bg-slate-700'}`}
+                                >
+                                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${trendyolSettings.stage ? 'right-1' : 'left-1'}`} />
+                                </button>
+                            </div>
+                            <div className="flex gap-3 pt-4">
+                                <button
+                                    onClick={() => setTrendyolModal(null)}
+                                    className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold transition-all"
+                                >
+                                    İptal
+                                </button>
+                                <button
+                                    onClick={handleSaveTrendyolSettings}
+                                    disabled={saving}
+                                    className="flex-1 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-black shadow-lg shadow-orange-500/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                                 >
                                     {saving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><Save className="w-4 h-4" /> Kaydet</>}
                                 </button>
