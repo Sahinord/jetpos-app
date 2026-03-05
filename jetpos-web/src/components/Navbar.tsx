@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 const navLinks = [
     { href: "/", label: "Anasayfa" },
     { href: "/fiyatlandirma", label: "Fiyatlandırma" },
+    { href: "/demo", label: "Ücretsiz Demo" },
     { href: "/#contact", label: "İletişim" },
 ];
 
@@ -142,7 +143,7 @@ export default function Navbar() {
                             >
                                 Giriş Yap
                             </button>
-                            <button style={{
+                            <Link href="/demo" style={{
                                 padding: "0.5rem 1.125rem",
                                 borderRadius: "9999px",
                                 border: "none",
@@ -152,12 +153,14 @@ export default function Navbar() {
                                 cursor: "pointer", fontFamily: "inherit",
                                 transition: "all 0.2s",
                                 boxShadow: "0 2px 12px rgba(37,99,235,0.4)",
+                                textDecoration: "none",
+                                display: "inline-flex", alignItems: "center"
                             }}
-                                onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 4px 20px rgba(37,99,235,0.6)")}
-                                onMouseLeave={e => (e.currentTarget.style.boxShadow = "0 2px 12px rgba(37,99,235,0.4)")}
+                                onMouseEnter={(e: React.MouseEvent<HTMLAnchorElement>) => (e.currentTarget.style.boxShadow = "0 4px 20px rgba(37,99,235,0.6)")}
+                                onMouseLeave={(e: React.MouseEvent<HTMLAnchorElement>) => (e.currentTarget.style.boxShadow = "0 2px 12px rgba(37,99,235,0.4)")}
                             >
-                                Ücretsiz Başla →
-                            </button>
+                                Ücretsiz Demo →
+                            </Link>
                         </div>
 
                         {/* Mobile hamburger */}
@@ -211,9 +214,17 @@ export default function Navbar() {
                                 </Link>
                             ))}
                             <div style={{ height: "1px", background: "rgba(255,255,255,0.07)", margin: "0.25rem 0" }} />
-                            <button className="btn-primary" style={{ width: "100%", borderRadius: "0.75rem" }}>
-                                Ücretsiz Başla →
-                            </button>
+                            <Link href="/demo"
+                                style={{
+                                    display: "block", textAlign: "center",
+                                    padding: "0.875rem", borderRadius: "0.75rem",
+                                    background: "linear-gradient(135deg, #2563eb, #3b82f6)",
+                                    color: "white", fontWeight: 700, textDecoration: "none"
+                                }}
+                                onClick={() => setMobileMenuOpen(false)}
+                            >
+                                🚀 Ücretsiz Demo Talep Et
+                            </Link>
                         </div>
                     </div>
                 </div>

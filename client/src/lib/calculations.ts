@@ -89,3 +89,57 @@ export const calculateStockMetrics = (products: any[]) => {
     potentialProfit: parseFloat(result.potentialProfit.toFixed(2))
   };
 };
+
+/**
+ * Smart Stock Predictions and Velocity Analysis
+ */
+export const calculateStockPredictions = (products: any[], saleItems: any[]) => {
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  // 1. Calculate Daily Velocity per Product (Units Sold per Day)
+  const productVelocity: any = {};
+  saleItems.forEach((item: any) => {
+    const pId = item.product_id;
+    if (!productVelocity[pId]) productVelocity[pId] = 0;
+    productVelocity[pId] += Number(item.quantity) || 0;
+  });
+
+  // 2. Map Predictions (Projected Daily Consumption)
+  return products.map(product => {
+    const weeklySales = productVelocity[product.id] || 0;
+    const dailyVelocity = weeklySales / 7;
+    const stock = Number(product.stock_quantity) || 0;
+
+    // Days remaining projection
+    const daysRemaining = dailyVelocity > 0 ? (stock / dailyVelocity) : 999;
+
+    // Risk Scoring Logic (High/Medium/Low)
+    let riskLevel: 'high' | 'medium' | 'low' | 'none' = 'none';
+
+    if (stock <= 0) {
+      riskLevel = 'high';
+    } else if (dailyVelocity > 0 && daysRemaining <= 3) {
+      riskLevel = 'high';
+    } else if (dailyVelocity > 0 && daysRemaining <= 7) {
+      riskLevel = 'medium';
+    } else if (stock < (product.min_stock || 10)) {
+      riskLevel = 'low';
+    }
+
+    return {
+      ...product,
+      dailyVelocity: parseFloat(dailyVelocity.toFixed(2)),
+      daysRemaining: daysRemaining === 999 ? '∞' : Math.floor(daysRemaining),
+      riskScore: dailyVelocity > 0 ? (10 / daysRemaining) : 0, // Higher score = higher risk
+      riskLevel
+    };
+  }).filter(p => p.riskLevel !== 'none')
+    .sort((a, b) => {
+      // Sort by risk priority
+      const priority: Record<string, number> = { high: 3, medium: 2, low: 1, none: 0 };
+      return priority[b.riskLevel] - priority[a.riskLevel];
+    });
+};
+
+

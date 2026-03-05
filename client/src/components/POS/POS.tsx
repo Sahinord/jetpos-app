@@ -11,6 +11,9 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { PrintReceiptButton } from "./Receipt";
 import { Html5QrcodeScanner } from "html5-qrcode";
+import { useTenant } from "@/lib/tenant-context";
+import SmartScanner from "@/components/Tools/SmartScanner";
+
 
 export default function POS({
     products = [],
@@ -74,7 +77,10 @@ export default function POS({
     const [priceCheckProduct, setPriceCheckProduct] = useState<any>(null);
 
     const [isScannerOpen, setIsScannerOpen] = useState(false);
+    const [isSmartScannerOpen, setIsSmartScannerOpen] = useState(false);
     const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+    const { currentTenant } = useTenant();
+
 
     // Performance Optimization: Visible products limit
     const [displayLimit, setDisplayLimit] = useState(24);
@@ -588,12 +594,20 @@ export default function POS({
                             />
                             <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
                                 <button
+                                    onClick={() => setIsSmartScannerOpen(true)}
+                                    className="p-1.5 hover:bg-primary/10 rounded-lg transition-all text-primary group-hover:scale-110"
+                                    title="AI Akıllı Tara"
+                                >
+                                    <Sparkles size={20} className="animate-pulse" />
+                                </button>
+                                <button
                                     onClick={() => setIsScannerOpen(true)}
                                     className="p-1.5 hover:bg-white/10 rounded-lg transition-all text-primary"
                                     title="Barkod Tara"
                                 >
                                     <Camera size={20} />
                                 </button>
+
                                 {search && (
                                     <button
                                         onClick={() => setSearch("")}
@@ -1035,6 +1049,29 @@ export default function POS({
 
             {/* Hidden Printing Component */}
             <PrintReceiptButton data={lastTransaction} onAfterPrint={() => console.log('Yazdırıldı')} />
+            {/* Smart AI Scanner Modal */}
+            <SmartScanner
+                isOpen={isSmartScannerOpen}
+                onClose={() => setIsSmartScannerOpen(false)}
+                apiKey={currentTenant?.openrouter_api_key || ""}
+                onProductDetected={(aiProd) => {
+                    // Try to match AI result with existing products
+                    const matched = products.find((p: any) =>
+                        (p.barcode === aiProd.barcode) ||
+                        (p.name.toLowerCase().includes(aiProd.product_name.toLowerCase()))
+                    );
+
+                    if (matched) {
+                        addToCart(matched);
+                        showToast(`${matched.name} (AI Tarafından Eşleşti)`, "success");
+                    } else {
+                        // Create a temporary/adhoc product or show toast
+                        showToast(`Ürün sistemde bulunamadı: ${aiProd.product_name}. Ancak piyasa fiyatı ₺${aiProd.market_avg} civarında.`, "warning");
+                    }
+                    setIsSmartScannerOpen(false);
+                }}
+            />
         </div>
     );
 }
+

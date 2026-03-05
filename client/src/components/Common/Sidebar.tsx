@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
     LayoutDashboard,
     ShoppingCart,
@@ -50,6 +50,9 @@ import {
     HelpCircle,
     Landmark,
     MessageSquare,
+    Blocks,
+    Search,
+    X,
     type LucideIcon
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -85,6 +88,21 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
     const [openCategories, setOpenCategories] = useState<string[]>(["main", "sales", "products"]);
     const [, setFavoritesVersion] = useState(0); // Force re-render on favorites change
     const [isBottomPanelOpen, setIsBottomPanelOpen] = useState(true); // Alt panel açık/kapalı
+    const [searchQuery, setSearchQuery] = useState("");
+    const [isSearchFocused, setIsSearchFocused] = useState(false);
+    const searchInputRef = useRef<HTMLInputElement>(null);
+
+    // Keyboard shortcut for search (CTRL+K)
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                searchInputRef.current?.focus();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
     // Listen for favorites changes
     useEffect(() => {
@@ -300,6 +318,17 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
             ]
         },
         {
+            id: "integrations",
+            label: "Entegrasyonlar",
+            icon: Blocks,
+            items: [
+                { id: "trendyol_integration", label: "Trendyol Yemek", icon: ShoppingBag, feature: null, description: "Trendyol siparişleri, gelir ve net kar analizi." },
+                { id: "yemeksepeti_integration", label: "Yemeksepeti", icon: Store, feature: null, description: "Yemeksepeti siparişleri, gelir ve net kar analizi." },
+                { id: "getir_integration", label: "Getir", icon: Package, feature: null, description: "Getir siparişleri, gelir ve net kar analizi." },
+                { id: "migros_integration", label: "Migros Yemek", icon: ShoppingCart, feature: null, description: "Migros Yemek siparişleri, gelir ve net kar analizi." },
+            ]
+        },
+        {
             id: "finance",
             label: "Finans",
             icon: Wallet,
@@ -340,6 +369,33 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
         },
     ];
 
+    // Arama sonuçlarını hesapla
+    const getSearchResults = () => {
+        if (!searchQuery.trim()) return [];
+        const results: MenuItem[] = [];
+        const query = searchQuery.toLowerCase();
+
+        menuCategories.forEach(cat => {
+            // Ana itemlarda ara
+            cat.items?.forEach(item => {
+                if (item.label.toLowerCase().includes(query) || item.description?.toLowerCase().includes(query)) {
+                    results.push(item);
+                }
+            });
+            // Alt kategorilerde ara
+            cat.subCategories?.forEach(sub => {
+                sub.items?.forEach(item => {
+                    if (item.label.toLowerCase().includes(query) || item.description?.toLowerCase().includes(query)) {
+                        results.push(item);
+                    }
+                });
+            });
+        });
+        return results;
+    };
+
+    const searchResults = getSearchResults();
+
     // Feature kontrolü
     const isFeatureEnabled = (feature: string | null | undefined): boolean => {
         if (!feature) return true;
@@ -371,15 +427,6 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
         return getLockedItems(cat.items);
     });
 
-    // Kategori aç/kapa
-    const toggleCategory = (categoryId: string) => {
-        setOpenCategories(prev =>
-            prev.includes(categoryId)
-                ? prev.filter(id => id !== categoryId)
-                : [...prev, categoryId]
-        );
-    };
-
     // Bir kategori veya alt kategoride aktif item var mı kontrol et
     const hasActiveItemInCategory = (category: MenuCategory): boolean => {
         if (category.items?.some(item => item.id === activeTab)) {
@@ -389,6 +436,15 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
             return true;
         }
         return false;
+    };
+
+    // Kategori aç/kapa
+    const toggleCategory = (categoryId: string) => {
+        setOpenCategories(prev =>
+            prev.includes(categoryId)
+                ? prev.filter(id => id !== categoryId)
+                : [...prev, categoryId]
+        );
     };
 
     // Tab değişince ilgili kategoriyi aç
@@ -419,28 +475,6 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
         onTabChange(tabId);
     };
 
-    // Aktif sayfanın başlığını bul
-    const getPageTitle = (): string => {
-        for (const category of menuCategories) {
-            // Ana kategorideki itemlerde ara
-            const item = category.items?.find(i => i.id === activeTab);
-            if (item) return item.label;
-
-            // Alt kategorilerdeki itemlerde ara
-            if (category.subCategories) {
-                for (const sub of category.subCategories) {
-                    const subItem = sub.items?.find(i => i.id === activeTab);
-                    if (subItem) return subItem.label;
-                }
-            }
-        }
-
-        // Default
-        return 'Ana Ekran';
-    };
-
-    const pageTitle = getPageTitle();
-
     return (
         <aside className="w-72 premium-sidebar flex flex-col h-screen sticky top-0 overflow-hidden border-r">
             {/* Logo / Firma Header */}
@@ -468,8 +502,73 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
                 </div>
             </div>
 
+
             {/* Scrollable Menu Area */}
-            <div className="flex-1 overflow-y-auto py-4">
+            <div className="flex-1 overflow-y-auto py-2 custom-scrollbar">
+                {/* Search Bar (Inside scrollable for hide-on-scroll) */}
+                <div className="px-4 mt-4 mb-6 relative">
+                    <div className={`relative flex items-center transition-all duration-300 ${isSearchFocused ? 'scale-[1.02]' : ''}`}>
+                        <Search className={`absolute left-3 w-4 h-4 transition-colors ${isSearchFocused ? 'text-primary' : 'text-secondary/40'}`} />
+                        <input
+                            ref={searchInputRef}
+                            type="text"
+                            placeholder="Menüde ara... (CTRL+K)"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onFocus={() => setIsSearchFocused(true)}
+                            onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
+                            className="w-full bg-primary/5 border border-white/5 focus:border-primary/30 rounded-xl pl-10 pr-4 py-2.5 text-xs font-bold text-white placeholder:text-secondary/30 outline-none transition-all"
+                        />
+                        {searchQuery && (
+                            <button
+                                onClick={() => setSearchQuery("")}
+                                className="absolute right-3 p-1 hover:bg-white/10 rounded-lg text-secondary/40 hover:text-white transition-all"
+                            >
+                                <X className="w-3 h-3" />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Search Results Dropdown */}
+                    <AnimatePresence>
+                        {searchQuery && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                className="absolute left-4 right-4 mt-2 bg-card/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl z-[110] max-h-[300px] overflow-y-auto custom-scrollbar p-2 space-y-1"
+                            >
+                                {searchResults.length > 0 ? (
+                                    searchResults.map(item => (
+                                        <button
+                                            key={item.id}
+                                            onClick={() => {
+                                                handleTabChange(item.id);
+                                                setSearchQuery("");
+                                            }}
+                                            className="w-full flex items-center gap-3 p-2.5 hover:bg-white/5 rounded-xl transition-all group group-hover:translate-x-1"
+                                        >
+                                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20">
+                                                <item.icon className="w-4 h-4 text-primary" />
+                                            </div>
+                                            <div className="flex flex-col items-start min-w-0">
+                                                <span className="text-xs font-black text-white">{item.label}</span>
+                                                {item.description && (
+                                                    <span className="text-[10px] text-secondary/60 truncate w-full text-left">{item.description}</span>
+                                                )}
+                                            </div>
+                                        </button>
+                                    ))
+                                ) : (
+                                    <div className="p-8 text-center">
+                                        <p className="text-xs font-bold text-secondary/40 italic">Sonuç bulunamadı...</p>
+                                    </div>
+                                )}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+
                 <nav className="px-3 space-y-1">
                     {menuCategories.map((category) => {
                         const filteredItems = getFilteredItems(category.items);

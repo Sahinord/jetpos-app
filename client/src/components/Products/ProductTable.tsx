@@ -21,11 +21,15 @@ import {
     EyeOff,
     RefreshCw,
     Hash,
-    History as HistoryIcon
+    History as HistoryIcon,
+    Sparkles
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { exportToExcel, importFromExcel } from "@/lib/excel";
 import { supabase, setCurrentTenant } from "@/lib/supabase";
+import SmartScanner from "@/components/Tools/SmartScanner";
+import { useTenant } from "@/lib/tenant-context";
+
 
 export default function ProductTable({ products, onEdit, onDelete, onAdd, onManageCategories, onBulkImport, onClearAll, onToggleAllCampaign, campaignRate, hideFilters = false, limit, onRefresh, showToast, onViewChangeLogs }: any) {
     const [search, setSearch] = useState("");
@@ -45,7 +49,12 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
     const [bulkStockValue, setBulkStockValue] = useState("0");
     const [isRandomStock, setIsRandomStock] = useState(false);
 
+    // NEW: Smart AI Scanner States
+    const [isSmartScannerOpen, setIsSmartScannerOpen] = useState(false);
+    const { currentTenant } = useTenant();
+
     // NEW: Processing state for bulk actions
+
     const [processing, setProcessing] = useState<{ active: boolean; current: number; total: number; label: string }>({
         active: false, current: 0, total: 0, label: ""
     });
@@ -492,6 +501,13 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                         </div>
 
                         <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => setIsSmartScannerOpen(true)}
+                                className="flex items-center space-x-2 bg-primary/10 hover:bg-primary/20 border border-primary/30 text-primary px-6 py-3.5 rounded-2xl font-black transition-all active:scale-95 group"
+                            >
+                                <Sparkles className="w-5 h-5 animate-pulse" />
+                                <span>AI SMART SCAN</span>
+                            </button>
                             <button
                                 onClick={onAdd}
                                 className="flex items-center space-x-2 bg-primary hover:bg-primary/90 text-white px-8 py-3.5 rounded-2xl font-black transition-all shadow-xl shadow-primary/20 active:scale-95"
@@ -1048,6 +1064,36 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                     </div>
                 )}
             </AnimatePresence>
+            {/* Smart AI Scanner Modal */}
+            <SmartScanner
+                isOpen={isSmartScannerOpen}
+                onClose={() => setIsSmartScannerOpen(false)}
+                apiKey={currentTenant?.openrouter_api_key || ""}
+                onProductDetected={(aiProd) => {
+                    // Try to match AI result with existing products
+                    const matched = products.find((p: any) =>
+                        (p.barcode === aiProd.barcode) ||
+                        (p.name.toLowerCase().includes(aiProd.product_name.toLowerCase()))
+                    );
+
+                    if (matched) {
+                        onEdit(matched);
+                        showToast(`${matched.name} (Sistemde Bulundu)`, "info");
+                    } else {
+                        // Open new product modal with AI data
+                        onAdd({
+                            name: aiProd.product_name,
+                            barcode: aiProd.barcode,
+                            sale_price: aiProd.suggested_price,
+                            purchase_price: aiProd.market_avg * 0.7, // Tahmini alış %30 kar marjıyla
+                            status: 'active'
+                        });
+                        showToast(`Yeni ürün algılandı: ${aiProd.product_name}`, "success");
+                    }
+                    setIsSmartScannerOpen(false);
+                }}
+            />
         </div>
     );
 }
+

@@ -11,6 +11,8 @@ import Expenses from "@/components/Expenses/Expenses";
 import SalesChart from "@/components/Dashboard/SalesChart";
 import QuickStockAlerts from "@/components/Dashboard/QuickStockAlerts";
 import Toast, { ToastType } from "@/components/Common/Toast";
+import { motion, AnimatePresence } from "framer-motion";
+
 import CategoryManager from "@/components/Products/CategoryManager";
 import ProfitCalculator from "@/components/Tools/ProfitCalculator";
 import PriceSimulator from "@/components/Simulator/PriceSimulator";
@@ -22,11 +24,12 @@ import SuperAdmin from "@/components/Admin/SuperAdmin";
 import PriceChangeHistory from "@/components/Products/PriceChangeHistory";
 import ProductChangeLogs from "@/components/Products/ProductChangeLogs";
 import TrendyolGOWidget from "@/components/Integrations/TrendyolGOWidget";
+import IntegrationsDashboard from "@/components/Integrations/IntegrationsDashboard";
 import LicenseGate from "@/components/Auth/LicenseGate";
 import { useTenant } from "@/lib/tenant-context";
-import { calculateStockMetrics } from "@/lib/calculations";
+import { calculateStockMetrics, calculateStockPredictions } from "@/lib/calculations";
 import { supabase } from "@/lib/supabase";
-import { LayoutDashboard, ShoppingCart, Package, AlertTriangle, ArrowLeft } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Package, AlertTriangle, ArrowLeft, Sparkles, Clock } from "lucide-react";
 import TenantProfile from "@/components/Tenant/TenantProfile";
 import SupportTicketModal from "@/components/Support/SupportTicketModal";
 
@@ -598,8 +601,9 @@ export default function Home() {
                   }))} />
                 </div>
                 <div>
-                  <QuickStockAlerts products={products} onViewAll={() => setActiveTab('alerts')} />
+                  <QuickStockAlerts products={products} saleItems={saleItems} onViewAll={() => setActiveTab('alerts')} />
                 </div>
+
               </div>
 
               {/* Trendyol GO Integration */}
@@ -672,7 +676,7 @@ export default function Home() {
                 products={products}
                 onEdit={(p: any) => { setEditingProduct(p); setIsModalOpen(true); }}
                 onDelete={handleDelete}
-                onAdd={() => { setEditingProduct(null); setIsModalOpen(true); }}
+                onAdd={(data?: any) => { setEditingProduct(data || null); setIsModalOpen(true); }}
                 onManageCategories={() => setIsCatModalOpen(true)}
                 onBulkImport={handleBulkImport}
                 onClearAll={handleClearAllProducts}
@@ -824,75 +828,84 @@ export default function Home() {
                   >
                     <ArrowLeft className="w-6 h-6 text-secondary hover:text-white" />
                   </button>
-                  <div className="flex items-center space-x-2 text-amber-500">
-                    <AlertTriangle className="w-8 h-8" />
-                    <h1 className="text-2xl font-bold text-white">Kritik Stok Uyarıları</h1>
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
+                      <Sparkles className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h1 className="text-2xl font-black text-white uppercase tracking-tight">Akıllı Stok Analizi</h1>
+                      <p className="text-xs text-secondary/40 font-bold uppercase tracking-widest mt-1">AI Destekli Tahminleme ve Tedarik Planlama</p>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Optimization: Restock Summary Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="glass-card p-6 flex flex-col justify-between relative overflow-hidden group">
-                  <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <AlertTriangle className="w-16 h-16 text-rose-500" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-secondary font-medium">Acil Ürün Sayısı</p>
-                    <p className="text-4xl font-black text-rose-500 mt-2">
-                      {products.filter((p: any) => p.stock_quantity < 10).length}
-                    </p>
-                  </div>
-                  <p className="text-xs text-secondary/60 mt-4">Stok adedi 10'un altında olanlar</p>
-                </div>
+              {/* Smart Metrics */}
+              {(() => {
+                const smartAlerts = calculateStockPredictions(products, saleItems);
+                const highRisk = smartAlerts.filter(a => a.riskLevel === 'high');
+                const mediumRisk = smartAlerts.filter(a => a.riskLevel === 'medium');
+                const estimatedCost = smartAlerts.reduce((acc, p) => acc + ((p.min_stock || 10) - p.stock_quantity) * p.purchase_price, 0);
 
-                <div className="glass-card p-6 flex flex-col justify-between relative overflow-hidden group">
-                  <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <Package className="w-16 h-16 text-amber-500" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-secondary font-medium">Gerekli Ürün Adedi</p>
-                    <p className="text-4xl font-black text-amber-500 mt-2">
-                      {products
-                        .filter((p: any) => p.stock_quantity < 10)
-                        .reduce((acc: number, p: any) => acc + (10 - p.stock_quantity), 0)
-                        .toLocaleString('tr-TR')}
-                    </p>
-                  </div>
-                  <p className="text-xs text-secondary/60 mt-4">Güvenli seviyeye (10) tamamlamak için</p>
-                </div>
+                return (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-6 border-rose-500/10 bg-rose-500/[0.02] relative overflow-hidden group">
+                        <AlertTriangle className="absolute -right-4 -top-4 w-24 h-24 text-rose-500 opacity-[0.03] group-hover:rotate-12 transition-transform" />
+                        <p className="text-[10px] font-black text-rose-500/60 uppercase tracking-[0.2em] mb-4">KRİTİK RİSK (0-3 GÜN)</p>
+                        <p className="text-4xl font-black text-white tracking-tighter">{highRisk.length} <span className="text-sm font-bold text-secondary uppercase">ÜRÜN</span></p>
+                        <div className="w-full bg-rose-500/10 h-1.5 rounded-full mt-6 overflow-hidden">
+                          <div className="h-full bg-rose-500" style={{ width: `${(highRisk.length / (smartAlerts.length || 1)) * 100}%` }} />
+                        </div>
+                      </motion.div>
 
-                <div className="glass-card p-6 flex flex-col justify-between relative overflow-hidden group">
-                  <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <ShoppingCart className="w-16 h-16 text-emerald-500" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-secondary font-medium">Tahmini Maliyet</p>
-                    <p className="text-4xl font-black text-emerald-500 mt-2">
-                      ₺{products
-                        .filter((p: any) => p.stock_quantity < 10)
-                        .reduce((acc: number, p: any) => acc + ((10 - p.stock_quantity) * p.purchase_price), 0)
-                        .toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
-                    </p>
-                  </div>
-                  <p className="text-xs text-secondary/60 mt-4">Stokları tamamlamak için gereken bütçe</p>
-                </div>
-              </div>
+                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card p-6 border-amber-500/10 bg-amber-500/[0.02] relative overflow-hidden group">
+                        <Clock className="absolute -right-4 -top-4 w-24 h-24 text-amber-500 opacity-[0.03] group-hover:rotate-12 transition-transform" />
+                        <p className="text-[10px] font-black text-amber-500/60 uppercase tracking-[0.2em] mb-4">ORTA RİSK (3-7 GÜN)</p>
+                        <p className="text-4xl font-black text-white tracking-tighter">{mediumRisk.length} <span className="text-sm font-bold text-secondary uppercase">ÜRÜN</span></p>
+                        <div className="w-full bg-amber-500/10 h-1.5 rounded-full mt-6 overflow-hidden">
+                          <div className="h-full bg-amber-500" style={{ width: `${(mediumRisk.length / (smartAlerts.length || 1)) * 100}%` }} />
+                        </div>
+                      </motion.div>
 
-              <ProductTable
-                products={products.filter((p: any) => p.stock_quantity < 10)}
-                onEdit={(p: any) => { setEditingProduct(p); setIsModalOpen(true); }}
-                onDelete={handleDelete}
-                onAdd={() => { setEditingProduct(null); setIsModalOpen(true); }}
-                onManageCategories={() => setIsCatModalOpen(true)}
-                onBulkImport={handleBulkImport}
-                onClearAll={handleClearAllProducts}
-                onToggleAllCampaign={handleToggleAllCampaign}
-                campaignRate={campaignRate}
-                hideFilters={true}
-                onRefresh={fetchData}
-                showToast={showToast}
-              />
+                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card p-6 border-emerald-500/10 bg-emerald-500/[0.02] relative overflow-hidden group">
+                        <ShoppingCart className="absolute -right-4 -top-4 w-24 h-24 text-emerald-500 opacity-[0.03] group-hover:rotate-12 transition-transform" />
+                        <p className="text-[10px] font-black text-emerald-500/60 uppercase tracking-[0.2em] mb-4">TAHMİNİ TEDARİK MALİYETİ</p>
+                        <p className="text-4xl font-black text-white tracking-tighter">₺{estimatedCost.toLocaleString('tr-TR', { minimumFractionDigits: 0 })}</p>
+                        <p className="text-[10px] font-bold text-secondary/40 mt-4 uppercase tracking-widest italic">Güvenli stok seviyesi için gereken bütçe</p>
+                      </motion.div>
+                    </div>
+
+                    <div className="glass-card border-white/5 overflow-hidden shadow-2xl">
+                      <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.01]">
+                        <h2 className="text-sm font-black text-white uppercase tracking-widest">Analiz Edilen Ürün Listesi</h2>
+                        <span className="text-[10px] font-bold text-secondary/40 uppercase">Sıralama: En Yüksek Risk Önce</span>
+                      </div>
+                      <ProductTable
+                        products={smartAlerts}
+                        onEdit={(p: any) => { setEditingProduct(p); setIsModalOpen(true); }}
+                        onDelete={handleDelete}
+                        onAdd={() => { setEditingProduct(null); setIsModalOpen(true); }}
+                        onManageCategories={() => setIsCatModalOpen(true)}
+                        onBulkImport={handleBulkImport}
+                        onClearAll={handleClearAllProducts}
+                        onToggleAllCampaign={handleToggleAllCampaign}
+                        campaignRate={campaignRate}
+                        hideFilters={true}
+                        onRefresh={fetchData}
+                        showToast={showToast}
+                      />
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          )}
+
+
+          {activeTab.endsWith('_integration') && (
+            <div className="max-w-[1500px] mx-auto w-full">
+              <IntegrationsDashboard integrationType={activeTab} />
             </div>
           )}
 

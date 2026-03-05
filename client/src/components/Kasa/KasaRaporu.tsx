@@ -10,6 +10,10 @@ import {
     MoreHorizontal, ClipboardList
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+    ResponsiveContainer, PieChart, Pie, Cell, Legend, AreaChart, Area
+} from 'recharts';
 import { supabase } from "@/lib/supabase";
 import { useTenant } from "@/lib/tenant-context";
 
@@ -104,6 +108,32 @@ export default function KasaRaporu({ mode, showToast }: KasaRaporuProps) {
         alacak: filteredData.reduce((sum, item) => sum + (Number(item.alacak_tutari || item.alacak) || 0), 0),
     };
 
+    // Grafik verilerini hazırla
+    const getChartData = () => {
+        if (mode === "Bakiye") {
+            return filteredData.map(k => ({
+                name: k.kasa_adi,
+                bakiye: k.bakiye
+            }));
+        } else {
+            // Günlük bazda grupla
+            const grouped = filteredData.reduce((acc: any, item) => {
+                const date = new Date(item.kasa_fisleri?.fis_tarihi || item.created_at).toLocaleDateString('tr-TR');
+                if (!acc[date]) acc[date] = { date, giriş: 0, çıkış: 0 };
+                acc[date].giriş += Number(item.borc_tutari) || 0;
+                acc[date].çıkış += Number(item.alacak_tutari) || 0;
+                return acc;
+            }, {});
+            return Object.values(grouped).reverse();
+        }
+    };
+
+    const chartData = getChartData();
+    const pieData = [
+        { name: 'Giriş (Tahsilat)', value: totals.borc, color: '#10b981' },
+        { name: 'Çıkış (Tediye)', value: totals.alacak, color: '#f43f5e' }
+    ];
+
     return (
         <div className="space-y-8 max-w-[1600px] mx-auto pb-32 px-4 md:px-8">
             {/* Filters Section */}
@@ -195,17 +225,137 @@ export default function KasaRaporu({ mode, showToast }: KasaRaporuProps) {
                     delay={0.2}
                     showStatus
                 />
-                <div className="glass-card p-6 border-white/5 bg-gradient-to-br from-primary/5 to-transparent flex flex-col justify-center relative overflow-hidden group">
-                    <div className="absolute -right-6 -top-6 opacity-[0.05] group-hover:rotate-12 transition-transform duration-700">
-                        <Layers className="w-32 h-32" />
+            </div>
+
+            {/* Charts Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="lg:col-span-2 glass-card p-6 border-white/5 bg-white/[0.01] min-h-[350px] flex flex-col"
+                >
+                    <div className="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 className="text-xs font-black text-white uppercase tracking-[0.2em]">Finansal Akış Analizi</h3>
+                            <p className="text-[10px] text-secondary/40 font-bold uppercase mt-1">Giriş ve Çıkış Hareketlerinin Zaman Çizelgesi</p>
+                        </div>
+                        <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest">
+                            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500" /> Giriş</div>
+                            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-rose-500" /> Çıkış</div>
+                        </div>
                     </div>
-                    <p className="text-[10px] font-black text-secondary tracking-[0.3em] uppercase mb-4 opacity-50">Sistem Durumu</p>
-                    <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
-                        <span className="text-xs font-black text-white uppercase tracking-widest">VERİLER GÜNCEL</span>
+                    <div className="flex-1 w-full">
+                        <ResponsiveContainer width="100%" height={280}>
+                            {mode === "Hareket" ? (
+                                <AreaChart data={chartData}>
+                                    <defs>
+                                        <linearGradient id="colorGiris" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                                        </linearGradient>
+                                        <linearGradient id="colorCikis" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                                    <XAxis
+                                        dataKey="date"
+                                        stroke="rgba(255,255,255,0.3)"
+                                        fontSize={10}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        tick={{ fill: 'rgba(255,255,255,0.4)', fontWeight: 'bold' }}
+                                    />
+                                    <YAxis
+                                        stroke="rgba(255,255,255,0.3)"
+                                        fontSize={10}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        tick={{ fill: 'rgba(255,255,255,0.4)', fontWeight: 'bold' }}
+                                        tickFormatter={(val) => `₺${val.toLocaleString()}`}
+                                    />
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '10px' }}
+                                        itemStyle={{ fontWeight: 'bold' }}
+                                    />
+                                    <Area type="monotone" dataKey="giriş" stroke="#10b981" fillOpacity={1} fill="url(#colorGiris)" strokeWidth={3} />
+                                    <Area type="monotone" dataKey="çıkış" stroke="#f43f5e" fillOpacity={1} fill="url(#colorCikis)" strokeWidth={3} />
+                                </AreaChart>
+                            ) : (
+                                <BarChart data={chartData}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                                    <XAxis
+                                        dataKey="name"
+                                        stroke="rgba(255,255,255,0.3)"
+                                        fontSize={10}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        tick={{ fill: 'rgba(255,255,255,0.4)', fontWeight: 'bold' }}
+                                    />
+                                    <YAxis
+                                        stroke="rgba(255,255,255,0.3)"
+                                        fontSize={10}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        tick={{ fill: 'rgba(255,255,255,0.4)', fontWeight: 'bold' }}
+                                    />
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '10px' }}
+                                    />
+                                    <Bar dataKey="bakiye" radius={[6, 6, 0, 0]}>
+                                        {chartData.map((entry: any, index: number) => (
+                                            <Cell key={`cell-${index}`} fill={entry.bakiye >= 0 ? '#10b981' : '#f43f5e'} />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            )}
+                        </ResponsiveContainer>
                     </div>
-                    <p className="text-[9px] text-secondary/40 font-bold mt-2 uppercase">Son Güncelleme: {new Date().toLocaleTimeString('tr-TR')}</p>
-                </div>
+                </motion.div>
+
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.1 }}
+                    className="glass-card p-6 border-white/5 bg-white/[0.01] flex flex-col justify-center items-center relative"
+                >
+                    <div className="absolute top-6 left-6">
+                        <h3 className="text-xs font-black text-white uppercase tracking-[0.2em]">Dağılım Oranı</h3>
+                        <p className="text-[10px] text-secondary/40 font-bold uppercase mt-1">Gelir / Gider Dengesi</p>
+                    </div>
+                    <ResponsiveContainer width="100%" height={250}>
+                        <PieChart>
+                            <Pie
+                                data={pieData}
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={60}
+                                outerRadius={80}
+                                paddingAngle={10}
+                                dataKey="value"
+                            >
+                                {pieData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                ))}
+                            </Pie>
+                            <Tooltip
+                                contentStyle={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '10px' }}
+                            />
+                            <Legend
+                                verticalAlign="bottom"
+                                height={36}
+                                formatter={(value) => <span className="text-[10px] font-black uppercase text-secondary/60 tracking-widest">{value}</span>}
+                            />
+                        </PieChart>
+                    </ResponsiveContainer>
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none mt-4">
+                        <p className="text-[10px] font-black text-secondary/40 uppercase tracking-tighter">NET ORAN</p>
+                        <p className="text-sm font-black text-white uppercase tracking-widest">
+                            %{Math.round((totals.borc / (totals.borc + totals.alacak || 1)) * 100)}
+                        </p>
+                    </div>
+                </motion.div>
             </div>
 
             {/* Report Table Section */}

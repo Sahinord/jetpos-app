@@ -1,172 +1,190 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Brain, Shield, FileBarChart2, TrendingUp, BadgeDollarSign, FileText, ArrowRight } from "lucide-react";
+import Image from "next/image";
 
-const digitalFeatures = [
-    { icon: Brain, title: "Yapay Zeka", description: "Ürün, stok, kazanç, gider yönetiminiz hakkında yapay zekadan içgörüler elde edin", color: "#a78bfa" },
-    { icon: Shield, title: "Güvenlik", description: "Tüm ticari operasyonlarınızın takibini bulut tabanlı, güvenli şekilde yapın", color: "#60a5fa" },
-    { icon: FileBarChart2, title: "Raporlar", description: "Ticaretinizin her fonksiyonu için bilgilerinizi kolayca raporlayın", color: "#34d399" },
-    { icon: TrendingUp, title: "Gelir-Gider", description: "İşletmenizin nakit akışını online olarak izleyin ve analiz edin", color: "#f59e0b" },
-    { icon: BadgeDollarSign, title: "Kârlılık", description: "Partner çözümlerimiz ile kârınızı artırın ve büyüyün", color: "#fb7185" },
-    { icon: FileText, title: "E-Fatura", description: "Sadece 3 tıkla kolayca fatura kesin, e-arşiv yönetin", color: "#06b6d4" },
+// Logosu olan platformlar + sadece metin olanlar
+const logos = [
+    { name: "Trendyol", img: "/trendyol.png" },
+    { name: "Getir", img: "/getir.png" },
+    { name: "Yemeksepeti", img: "/yemeksepeti.png" },
+    { name: "Migros", img: "/migros.png" },
 ];
 
-const platforms = ["Trendyol", "Getir", "Yemeksepeti", "N11", "HepsiBurada"];
+// Marquee için iki kat ekliyoruz (sonsuz döngü efekti)
+const marqueeItems = [...logos, ...logos, ...logos];
 
 export default function Integrations() {
     return (
-        <>
-            {/* Entegrasyonlar */}
-            <section style={{ padding: "7rem 0", position: "relative", zIndex: 2 }}>
-                <div className="site-container">
-                    <motion.div
-                        initial={{ opacity: 0, y: 30 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.6 }}
-                        style={{ textAlign: "center", marginBottom: "3.5rem" }}
-                    >
-                        <span className="badge" style={{ marginBottom: "1.25rem", display: "inline-flex" }}>
-                            Entegrasyonlar
-                        </span>
-                        <h2 style={{
-                            fontSize: "clamp(2rem, 5vw, 3.25rem)",
-                            fontWeight: 800,
-                            color: "white",
-                            marginBottom: "1rem",
-                            lineHeight: 1.2
-                        }}>
-                            Güçlü{" "}
-                            <span className="holographic-text">Platform Entegrasyonları</span>
-                        </h2>
-                        <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "1.125rem", maxWidth: "560px", margin: "0 auto" }}>
-                            Türkiye&apos;nin önde gelen e-ticaret platformlarıyla sorunsuz entegrasyon.
-                        </p>
-                    </motion.div>
+        <section style={{ padding: "7rem 0", position: "relative", zIndex: 2, overflow: "hidden" }}>
+            <div className="site-container">
+                <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6 }}
+                    style={{ textAlign: "center", marginBottom: "3.5rem" }}
+                >
+                    <span className="badge" style={{ marginBottom: "1.25rem", display: "inline-flex" }}>
+                        Entegrasyonlar
+                    </span>
+                    <h2 style={{
+                        fontSize: "clamp(2rem, 5vw, 3.25rem)",
+                        fontWeight: 800,
+                        color: "white",
+                        marginBottom: "1rem",
+                        lineHeight: 1.2
+                    }}>
+                        Güçlü{" "}
+                        <span className="holographic-text">Platform Entegrasyonları</span>
+                    </h2>
+                    <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "1.125rem", maxWidth: "560px", margin: "0 auto" }}>
+                        Türkiye&apos;nin önde gelen e-ticaret ve teslimat platformlarıyla sorunsuz entegrasyon.
+                    </p>
+                </motion.div>
+            </div>
 
-                    {/* Platform logos */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.6, delay: 0.2 }}
-                        style={{
-                            background: "rgba(255,255,255,0.02)",
-                            border: "1px solid rgba(255,255,255,0.07)",
-                            borderRadius: "1.5rem",
-                            padding: "3rem 2rem",
-                            display: "flex",
-                            flexWrap: "wrap",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            gap: "1rem"
-                        }}
-                    >
-                        {platforms.map((platform, index) => (
-                            <motion.div
+            {/* Marquee - tam genişlik, container dışına taşıyor */}
+            <motion.div
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, delay: 0.3 }}
+                style={{ position: "relative" }}
+            >
+                {/* Sol fade */}
+                <div style={{
+                    position: "absolute", left: 0, top: 0, bottom: 0, width: "120px", zIndex: 2,
+                    background: "linear-gradient(to right, #060914, transparent)",
+                    pointerEvents: "none"
+                }} />
+                {/* Sağ fade */}
+                <div style={{
+                    position: "absolute", right: 0, top: 0, bottom: 0, width: "120px", zIndex: 2,
+                    background: "linear-gradient(to left, #060914, transparent)",
+                    pointerEvents: "none"
+                }} />
+
+                {/* Kayan satır */}
+                <div style={{ overflow: "hidden", padding: "1rem 0" }}>
+                    <div style={{
+                        display: "flex",
+                        gap: "1.5rem",
+                        width: "max-content",
+                        animation: "marquee 22s linear infinite",
+                    }}>
+                        {marqueeItems.map((platform, index) => (
+                            <div
                                 key={index}
-                                initial={{ opacity: 0, scale: 0.85 }}
-                                whileInView={{ opacity: 1, scale: 1 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: 0.3 + index * 0.08 }}
                                 style={{
-                                    background: "rgba(255,255,255,0.04)",
-                                    border: "1px solid rgba(255,255,255,0.1)",
-                                    borderRadius: "0.875rem",
-                                    padding: "0.875rem 1.75rem",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "0.875rem",
+                                    background: "rgba(255,255,255,0.03)",
+                                    border: "1px solid rgba(255,255,255,0.09)",
+                                    borderRadius: "1rem",
+                                    padding: "1rem 1.75rem",
+                                    flexShrink: 0,
+                                    transition: "all 0.3s",
                                     cursor: "default",
-                                    transition: "all 0.3s"
+                                    minWidth: "180px",
                                 }}
-                                whileHover={{ scale: 1.05, borderColor: "rgba(59,130,246,0.4)" }}
+                                onMouseEnter={e => {
+                                    (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(59,130,246,0.3)";
+                                    (e.currentTarget as HTMLDivElement).style.background = "rgba(59,130,246,0.06)";
+                                }}
+                                onMouseLeave={e => {
+                                    (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.09)";
+                                    (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.03)";
+                                }}
                             >
-                                <span style={{ fontSize: "1.1rem", fontWeight: 700, color: "rgba(255,255,255,0.85)" }}>
-                                    {platform}
-                                </span>
-                            </motion.div>
-                        ))}
-                    </motion.div>
-                </div>
-            </section>
-
-            {/* Dijitalleştirin */}
-            <section style={{ padding: "7rem 0", position: "relative", zIndex: 2, background: "linear-gradient(to bottom, transparent, rgba(139,92,246,0.04), transparent)" }}>
-                <div className="site-container">
-                    <motion.div
-                        initial={{ opacity: 0, y: 30 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.6 }}
-                        style={{ textAlign: "center", marginBottom: "4rem" }}
-                    >
-                        <h2 style={{
-                            fontSize: "clamp(2rem, 5vw, 3.25rem)",
-                            fontWeight: 800,
-                            color: "white",
-                            marginBottom: "1rem",
-                            lineHeight: 1.2
-                        }}>
-                            Ticaretinizi{" "}
-                            <span className="holographic-text">Dijitalleştirin</span>
-                        </h2>
-                        <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "1.125rem", maxWidth: "560px", margin: "0 auto" }}>
-                            İşletmenizin tüm ihtiyaçlarını tek platformdan karşılayın.
-                        </p>
-                    </motion.div>
-
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.25rem" }}>
-                        {digitalFeatures.map((feature, index) => (
-                            <motion.div
-                                key={index}
-                                initial={{ opacity: 0, y: 30 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ duration: 0.5, delay: index * 0.08 }}
-                            >
-                                <div className="feature-card" style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                                    <div style={{
-                                        width: "3.25rem", height: "3.25rem", borderRadius: "0.875rem",
-                                        background: `${feature.color}15`,
-                                        border: `1px solid ${feature.color}30`,
-                                        display: "flex", alignItems: "center", justifyContent: "center",
-                                        flexShrink: 0
-                                    }}>
-                                        <feature.icon style={{ width: "1.5rem", height: "1.5rem", color: feature.color }} />
-                                    </div>
-                                    <div>
-                                        <h3 style={{ fontSize: "1.1rem", fontWeight: 700, color: "white", marginBottom: "0.5rem" }}>
-                                            {feature.title}
-                                        </h3>
-                                        <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.875rem", lineHeight: 1.7 }}>
-                                            {feature.description}
-                                        </p>
-                                    </div>
+                                <div style={{
+                                    width: "2.5rem", height: "2.5rem", borderRadius: "0.625rem",
+                                    background: "white",
+                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                    overflow: "hidden", flexShrink: 0,
+                                    padding: "0.25rem"
+                                }}>
+                                    <Image
+                                        src={platform.img}
+                                        alt={platform.name}
+                                        width={40}
+                                        height={40}
+                                        style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                                    />
                                 </div>
-                            </motion.div>
+                                <span style={{
+                                    fontSize: "1rem", fontWeight: 700, color: "rgba(255,255,255,0.85)",
+                                    whiteSpace: "nowrap"
+                                }}>
+                                    {platform.name}
+                                </span>
+                            </div>
                         ))}
                     </div>
-
-                    {/* CTA */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: 0.5 }}
-                        style={{ textAlign: "center", marginTop: "4rem" }}
-                    >
-                        <h3 style={{ fontSize: "clamp(1.5rem, 3vw, 2.25rem)", fontWeight: 700, color: "white", marginBottom: "1rem" }}>
-                            Bugün Başlayın
-                        </h3>
-                        <p style={{ color: "rgba(255,255,255,0.5)", marginBottom: "2rem", maxWidth: "480px", margin: "0 auto 2rem" }}>
-                            14 gün ücretsiz deneyin, kredi kartı gerekmez.
-                        </p>
-                        <button className="btn-primary" style={{ fontSize: "1.05rem", padding: "1rem 2.25rem" }}>
-                            Hemen Başlayın
-                            <ArrowRight style={{ width: "1.125rem", height: "1.125rem" }} />
-                        </button>
-                    </motion.div>
                 </div>
-            </section>
-        </>
+
+                {/* İkinci satır — ters yönde */}
+                <div style={{ overflow: "hidden", padding: "1rem 0" }}>
+                    <div style={{
+                        display: "flex",
+                        gap: "1.5rem",
+                        width: "max-content",
+                        animation: "marquee-reverse 28s linear infinite",
+                    }}>
+                        {[...marqueeItems].reverse().map((platform, index) => (
+                            <div
+                                key={index}
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "0.875rem",
+                                    background: "rgba(255,255,255,0.025)",
+                                    border: "1px solid rgba(255,255,255,0.07)",
+                                    borderRadius: "1rem",
+                                    padding: "0.875rem 1.5rem",
+                                    flexShrink: 0,
+                                    minWidth: "160px",
+                                    cursor: "default",
+                                }}
+                            >
+                                <div style={{
+                                    width: "2rem", height: "2rem", borderRadius: "0.5rem",
+                                    background: "white",
+                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                    overflow: "hidden", flexShrink: 0,
+                                    padding: "0.2rem"
+                                }}>
+                                    <Image
+                                        src={platform.img}
+                                        alt={platform.name}
+                                        width={32}
+                                        height={32}
+                                        style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                                    />
+                                </div>
+                                <span style={{
+                                    fontSize: "0.9rem", fontWeight: 600, color: "rgba(255,255,255,0.6)",
+                                    whiteSpace: "nowrap"
+                                }}>
+                                    {platform.name}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </motion.div>
+
+            <style>{`
+                @keyframes marquee {
+                    0% { transform: translateX(0); }
+                    100% { transform: translateX(-33.333%); }
+                }
+                @keyframes marquee-reverse {
+                    0% { transform: translateX(-33.333%); }
+                    100% { transform: translateX(0); }
+                }
+            `}</style>
+        </section>
     );
 }

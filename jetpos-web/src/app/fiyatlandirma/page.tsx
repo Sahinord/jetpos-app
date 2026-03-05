@@ -17,42 +17,11 @@ const plans = [
         id: "baslangic",
         name: "Aylık Paket",
         subtitle: "Esnek ödeme seçeneği ile başlangıç için idealdir. İstediğiniz zaman iptal edebilirsiniz.",
-        monthlyPrice: 1499,
-        yearlyPrice: 1249,
+        monthlyPrice: 1249,
+        yearlyPrice: 985,
         highlight: false,
         badge: null,
-        color: "#60a5fa",
-        cta: "Bu Planı Seç",
-        features: [
-            { text: "7/24 Kişisel Teknik Destek", info: "Telefon, e-posta ve canlı chat" },
-            { text: "Hızlı Satış Sistemi", info: "Barkod ile saniyeler içinde satış" },
-            { text: "Mobil Üzerinden Barkodlu Satış", info: "iOS ve Android uyumlu" },
-            { text: "Gelir Gider Takibi", info: null },
-            { text: "Kasa - Gün Sonu Takibi", info: null },
-            { text: "Kasiyer Takip", info: null },
-            { text: "Detaylı Raporlandırma", info: null },
-            { text: "Raporlama", info: null },
-            { text: "E-Fatura", info: null },
-            { text: "E-Arşiv", info: null },
-            { text: "İşlem Takibi", info: null },
-            { text: "Yapabileceğiniz", info: null },
-            { text: "Stok Takibi", info: null },
-            { text: "Cari (Müşteri) Takibi", info: null },
-            { text: "Şube Sayısı: 1", info: null },
-        ],
-        extraFeatures: null,
-        users: "1 Kullanıcı",
-    },
-    {
-        id: "orta",
-        name: "Orta Düzey İşletme",
-        subtitle: "Yıllık ödeme ile %30 tasarruf edin. Profesyonel işletmeler için tüm temel özellikler dahil.",
-        monthlyPrice: 1049,
-        yearlyPrice: 733,
-        highlight: false,
-        badge: "%30 İndirim",
-        badgeColor: "#22c55e",
-        color: "#a78bfa",
+        color: "#22c55e",
         cta: "Bu Planı Seç",
         features: [
             { text: "7/24 Kişisel Teknik Destek", info: null },
@@ -69,46 +38,58 @@ const plans = [
             { text: "Stok Takibi", info: null },
             { text: "Cari (Müşteri) Takibi", info: null },
             { text: "Şube Sayısı: 1", info: null },
+            { text: "Masraf Takibi", info: null },
+            { text: "Dijital Katalog", info: null },
             { text: "Personel Takip", info: null },
             { text: "Teklif Oluşturma", info: null },
             { text: "Üretim Takibi", info: null },
             { text: "Depo Yönetimi", info: null },
+            { text: "Bilgilendirme Mailleri", info: null },
+            { text: "KDV & Mizan Raporları", unavailable: true },
+            { text: "Özel Barkod Yazdırabilme", unavailable: true },
+            { text: "Sınırsız Kullanıcı", unavailable: true },
+            { text: "Hediye Kontör", unavailable: true },
         ],
-        extraFeatures: {
-            title: "Aylık Paket Pakete Ek Olarak;",
-            subtitle: "Bu pakete özel avantajlar",
-            items: [
-                "Hızlı Satış Sistemi",
-                "Mobil Üzerinden Barkodlu Satış",
-                "Kasiyer Takip",
-                "Raporlama",
-                "Masraf Takibi",
-            ]
-        },
+        extraFeatures: null,
         users: "1 Kullanıcı",
     },
     {
         id: "ileri",
         name: "İleri Düzey İşletme",
         subtitle: "Gelişmiş özellikler ve 100 kontör hediyesiyle işletmenizi bir üst seviyeye taşıyın.",
-        monthlyPrice: 1470,
-        yearlyPrice: 883,
+        monthlyPrice: 883,
+        yearlyPrice: 679,
         highlight: false,
-        badge: "%40 İndirim",
-        badgeColor: "#f59e0b",
-        color: "#34d399",
+        badge: "%20 İndirim",
+        badgeColor: "#22c55e",
+        color: "#22c55e",
         cta: "Bu Planı Seç",
         features: [
+            { text: "Kurulum", tag: "Ücretsiz", tagColor: "#22c55e" },
+            { text: "Geçiş", tag: "Ücretsiz", tagColor: "#22c55e" },
             { text: "7/24 Kişisel Teknik Destek", info: null },
             { text: "Hızlı Satış Sistemi", info: null },
             { text: "Mobil Üzerinden Barkodlu Satış", info: null },
-            { text: "Detaylı Raporlandırma", info: null },
-            { text: "E-Fatura", info: null },
-            { text: "E-Arşiv", info: null },
-            { text: "Mağaza Takip", info: null },
+            { text: "Gelir Gider Takibi", info: null },
+            { text: "Kasa - Gün Sonu Takibi", info: null },
+            { text: "Kasiyer Takip", info: null },
+            { text: "Raporlama", info: null },
+            { text: "İşlem Takibi", info: null },
+            { text: "Stok Takibi", info: null },
+            { text: "Cari (Müşteri) Takibi", info: null },
+            { text: "Şube Sayısı: 1", info: null },
+            { text: "Masraf Takibi", info: null },
+            { text: "Dijital Katalog", info: null },
+            { text: "Personel Takip", info: null },
+            { text: "Teklif Oluşturma", info: null },
+            { text: "Üretim Takibi", info: null },
+            { text: "Depo Yönetimi", info: null },
+            { text: "Barkod Yazdırabilme", info: null },
+            { text: "Bilgilendirme Mailleri", info: null },
+            { text: "Özel Temsilci", info: null },
         ],
         extraFeatures: {
-            title: "Orta Düzey İşletme Pakete Ek Olarak;",
+            title: "Hediye Modüller",
             subtitle: "Bu pakete özel avantajlar",
             items: [
                 "100 Adet Kontör",
@@ -116,45 +97,84 @@ const plans = [
                 "E-Fatura",
                 "E-Arşiv",
                 "Mağaza Takip",
-            ]
+            ],
+            itemTags: ["Hediye", null, null, null, null]
         },
-        users: "3 Kullanıcı",
+        users: "1 Kullanıcı",
     },
     {
         id: "kurumsal",
         name: "2 Yıl + 1 Yıl Bizden Paketi",
         subtitle: null,
-        monthlyPrice: null,
-        yearlyPrice: 543,
-        originalYearly: 18750,
+        monthlyPrice: 543,
+        yearlyPrice: 394,
+        originalYearly: 21255,
         highlight: true,
         badge: "En Çok Tercih Edilen",
         badgeColor: "#2563eb",
-        color: "#60a5fa",
+        color: "#22c55e",
         cta: "Bu Planı Seç",
         features: [
-            { text: "+1 Yıl", info: "Hediye", tag: "Hediye", tagColor: "#22c55e" },
-            { text: "Barkod Okuyucu", info: null, tag: "Hediye", tagColor: "#22c55e" },
-            { text: "Şube Sayısı: 3", info: null },
-            { text: "Geçiş Desteği", info: null, tag: "Ücretsiz", tagColor: "#a78bfa" },
-            { text: "Cari Kasa Virman", info: null },
+            { text: "Kurulum", tag: "Ücretsiz", tagColor: "#22c55e" },
+            { text: "Sınırsız Kullanıcı", tag: "Hediye", tagColor: "#22c55e" },
+            { text: "7/24 Kişisel Teknik Destek", info: null },
+            { text: "Hızlı Satış Sistemi", info: null },
+            { text: "Mobil Üzerinden Barkodlu Satış", info: null },
+            { text: "Gelir Gider Takibi", info: null },
+            { text: "Kasa - Gün Sonu Takibi", info: null },
+            { text: "Kasiyer Takip", info: null },
+            { text: "Detaylı Raporlandırma", info: null },
+            { text: "Raporlama", info: null },
+            { text: "E-Fatura", info: null },
+            { text: "E-Arşiv", info: null },
+            { text: "Mağaza Takip", info: null },
+            { text: "İşlem Takibi", info: null },
+            { text: "Stok Takibi", info: null },
+            { text: "Cari (Müşteri) Takibi", info: null },
+            { text: "Masraf Takibi", info: null },
+            { text: "Dijital Katalog", info: null },
+            { text: "Personel Takip", info: null },
+            { text: "Teklif Oluşturma", info: null },
+            { text: "Üretim Takibi", info: null },
+            { text: "Depo Yönetimi", info: null },
+            { text: "Bilgilendirme Mailleri", info: null },
+            { text: "KDV & Mizan Raporları", info: null },
+            { text: "Özel Barkod Yazdırabilme", info: null },
         ],
         extraFeatures: {
-            title: "İleri Düzey İşletme Pakete Ek Olarak;",
-            subtitle: "Bu pakete özel avantajlar",
+            title: "Entegrasyon Hediyeleri",
+            subtitle: "Ücretsiz entegrasyonlar",
             items: [
-                "+1 Yıl",
-                "Barkod Okuyucu",
-                "Şube Sayısı: 3",
-                "Geçiş Desteği",
-                "Cari Kasa Virman",
+                "Trendyol Entegrasyonu",
+                "İkas Entegrasyonu",
             ],
-            itemTags: ["Hediye", "Hediye", null, "Ücretsiz", null]
+            itemTags: ["Hediye", "Hediye"]
         },
-        users: "3 Kullanıcı",
+        users: "Sınırsız",
         footnote: "✓ 3 yıl kullanım / Barkod okuyucu hediye / 1 yıl hediye",
     },
+    {
+        id: "ozel",
+        name: "Kendi Paketini Oluştur",
+        subtitle: "Sadece ihtiyacınız olan özellikleri seçin, kullanmadığınız özelliklere para ödemeyin.",
+        monthlyPrice: 0,
+        yearlyPrice: 0,
+        highlight: false,
+        badge: "En Esnek",
+        badgeColor: "#ec4899",
+        color: "#ec4899",
+        isCustom: true,
+        cta: "Kendi Paketini Tasarla",
+        features: [
+            { text: "Özellikleri kendin seç", info: null },
+            { text: "Kullanmadığın her şeyden tasarruf et", info: null },
+            { text: "Esnek fiyatlandırma", info: null },
+        ],
+        extraFeatures: null,
+        users: "Esnek Kullanıcı",
+    },
 ];
+
 
 /* ─── FEATURE COMPARISON TABLE ─────────────────────── */
 const featureCategories = [
@@ -162,62 +182,62 @@ const featureCategories = [
         title: "Satış & POS",
         icon: Barcode,
         features: [
-            { name: "Hızlı Satış Sistemi", plans: [true, true, true, true] },
-            { name: "Barkodlu Satış", plans: [true, true, true, true] },
-            { name: "Mobil Barkod Okuma", plans: [true, true, true, true] },
-            { name: "Kasiyer Takip", plans: [true, true, true, true] },
-            { name: "Mağaza Takip", plans: [false, false, true, true] },
+            { name: "Hızlı Satış Sistemi", plans: [true, true, true, true, true] },
+            { name: "Barkodlu Satış", plans: [true, true, true, true, true] },
+            { name: "Mobil Barkod Okuma", plans: [true, true, true, true, true] },
+            { name: "Kasiyer Takip", plans: [true, true, true, true, true] },
+            { name: "Mağaza Takip", plans: [false, false, true, true, true] },
         ]
     },
     {
         title: "Finans & Muhasebe",
         icon: Wallet,
         features: [
-            { name: "E-Fatura", plans: [true, true, true, true] },
-            { name: "E-Arşiv", plans: [true, true, true, true] },
-            { name: "Gelir Gider Takibi", plans: [true, true, true, true] },
-            { name: "Kasa Gün Sonu", plans: [true, true, true, true] },
-            { name: "Masraf Takibi", plans: [false, true, true, true] },
-            { name: "Cari Kasa Virman", plans: [false, false, false, true] },
+            { name: "E-Fatura", plans: [true, true, true, true, true] },
+            { name: "E-Arşiv", plans: [true, true, true, true, true] },
+            { name: "Gelir Gider Takibi", plans: [true, true, true, true, true] },
+            { name: "Kasa Gün Sonu", plans: [true, true, true, true, true] },
+            { name: "Masraf Takibi", plans: [false, true, true, true, true] },
+            { name: "Cari Kasa Virman", plans: [false, false, false, true, true] },
         ]
     },
     {
         title: "Stok & Depo",
         icon: Package,
         features: [
-            { name: "Stok Takibi", plans: [true, true, true, true] },
-            { name: "Depo Yönetimi", plans: [false, true, true, true] },
-            { name: "Üretim Takibi", plans: [false, true, true, true] },
-            { name: "Teklif Oluşturma", plans: [false, true, true, true] },
+            { name: "Stok Takibi", plans: [true, true, true, true, true] },
+            { name: "Depo Yönetimi", plans: [false, true, true, true, true] },
+            { name: "Üretim Takibi", plans: [false, true, true, true, true] },
+            { name: "Teklif Oluşturma", plans: [false, true, true, true, true] },
         ]
     },
     {
         title: "Müşteri & Cari",
         icon: Users,
         features: [
-            { name: "Cari (Müşteri) Takibi", plans: [true, true, true, true] },
-            { name: "Personel Takip", plans: [false, true, true, true] },
-            { name: "100 Adet Kontör", plans: [false, false, true, true] },
+            { name: "Cari (Müşteri) Takibi", plans: [true, true, true, true, true] },
+            { name: "Personel Takip", plans: [false, true, true, true, true] },
+            { name: "100 Adet Kontör", plans: [false, false, true, true, true] },
         ]
     },
     {
         title: "Raporlama & Analiz",
         icon: BarChart3,
         features: [
-            { name: "Temel Raporlama", plans: [true, true, true, true] },
-            { name: "Detaylı Raporlandırma", plans: [true, true, true, true] },
-            { name: "İşlem Takibi", plans: [true, true, true, true] },
+            { name: "Temel Raporlama", plans: [true, true, true, true, true] },
+            { name: "Detaylı Raporlandırma", plans: [true, true, true, true, true] },
+            { name: "İşlem Takibi", plans: [true, true, true, true, true] },
         ]
     },
     {
         title: "Destek & Ekstra",
         icon: Shield,
         features: [
-            { name: "7/24 Teknik Destek", plans: [true, true, true, true] },
-            { name: "Şube Sayısı", plans: ["1", "1", "3", "3"] },
-            { name: "Geçiş Desteği", plans: [false, false, false, "Ücretsiz"] },
-            { name: "Barkod Okuyucu", plans: [false, false, false, "Hediye"] },
-            { name: "+1 Yıl Bonus", plans: [false, false, false, "Hediye"] },
+            { name: "7/24 Teknik Destek", plans: [true, true, true, true, true] },
+            { name: "Şube Sayısı", plans: ["1", "1", "3", "3", "Sınırsız"] },
+            { name: "Geçiş Desteği", plans: [false, false, false, "Ücretsiz", "Ücretsiz"] },
+            { name: "Barkod Okuyucu", plans: [false, false, false, "Hediye", "Hediye"] },
+            { name: "+1 Yıl Bonus", plans: [false, false, false, "Hediye", "Hediye"] },
         ]
     },
 ];
@@ -226,6 +246,7 @@ const featureCategories = [
 function PlanCard({ plan, yearly }: { plan: typeof plans[0]; yearly: boolean }) {
     const [expanded, setExpanded] = useState(false);
     const price = yearly ? plan.yearlyPrice : plan.monthlyPrice;
+    const isCustom = (plan as any).isCustom;
     const visibleFeatures = expanded ? plan.features : plan.features.slice(0, 8);
 
     return (
@@ -254,7 +275,7 @@ function PlanCard({ plan, yearly }: { plan: typeof plans[0]; yearly: boolean }) 
                 background: plan.highlight ? "rgba(37,99,235,0.1)" : "rgba(255,255,255,0.025)",
                 border: `1px solid ${plan.highlight ? "rgba(37,99,235,0.45)" : "rgba(255,255,255,0.08)"}`,
                 borderRadius: "1.25rem",
-                padding: "1.75rem 1.5rem",
+                padding: "1.75rem 1.15rem",
                 display: "flex", flexDirection: "column", gap: "1.25rem",
                 height: "100%",
                 boxShadow: plan.highlight ? "0 0 40px rgba(37,99,235,0.18)" : "none",
@@ -262,11 +283,11 @@ function PlanCard({ plan, yearly }: { plan: typeof plans[0]; yearly: boolean }) 
             }}>
                 {/* Header */}
                 <div>
-                    <h3 style={{ fontSize: "1.05rem", fontWeight: 700, color: "white", marginBottom: "0.5rem" }}>
+                    <h3 style={{ fontSize: "1.25rem", fontWeight: 800, color: "white", marginBottom: "0.25rem" }}>
                         {plan.name}
                     </h3>
                     {plan.subtitle && (
-                        <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.45)", lineHeight: 1.6 }}>
+                        <p style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.5)", lineHeight: 1.5 }}>
                             {plan.subtitle}
                         </p>
                     )}
@@ -280,13 +301,24 @@ function PlanCard({ plan, yearly }: { plan: typeof plans[0]; yearly: boolean }) 
                         </div>
                     )}
                     <div style={{ display: "flex", alignItems: "baseline", gap: "0.25rem" }}>
-                        <span style={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.5)", fontWeight: 600 }}>₺</span>
-                        <span style={{ fontSize: "2.5rem", fontWeight: 800, color: "white", lineHeight: 1 }}>
-                            {price?.toLocaleString("tr-TR") ?? "—"}
-                        </span>
-                        <span style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.4)" }}>/ay +KDV</span>
+                        {isCustom ? (
+                            <div style={{ marginTop: "0.5rem" }}>
+                                <span style={{ fontSize: "1.5rem", fontWeight: 800, color: "white", lineHeight: 1.1, display: "block" }}>
+                                    Tamamen Size Özel
+                                </span>
+                                <span style={{ fontSize: "0.9rem", color: plan.color, fontWeight: 700 }}>Esnek Fiyatlandırma</span>
+                            </div>
+                        ) : (
+                            <>
+                                <span style={{ fontSize: "1.25rem", color: "white", fontWeight: 800 }}>₺</span>
+                                <span style={{ fontSize: "3rem", fontWeight: 900, color: "white", lineHeight: 1 }}>
+                                    {price?.toLocaleString("tr-TR") ?? "—"}
+                                </span>
+                                <span style={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.5)", marginLeft: "0.25rem" }}>+KDV/ay</span>
+                            </>
+                        )}
                     </div>
-                    {plan.monthlyPrice && yearly && (
+                    {!!plan.monthlyPrice && yearly && (
                         <p style={{ fontSize: "0.75rem", color: "#4ade80", marginTop: "0.25rem" }}>
                             Yıllık ₺{((plan.monthlyPrice - (plan.yearlyPrice ?? 0)) * 12).toLocaleString("tr-TR")} tasarruf
                         </p>
@@ -294,45 +326,101 @@ function PlanCard({ plan, yearly }: { plan: typeof plans[0]; yearly: boolean }) 
                 </div>
 
                 {/* CTA */}
-                <button style={{
-                    width: "100%", padding: "0.75rem",
-                    borderRadius: "0.75rem", border: "none",
-                    background: plan.highlight
-                        ? "linear-gradient(135deg, #2563eb, #1d4ed8)"
-                        : "rgba(255,255,255,0.06)",
-                    color: "white", fontWeight: 600, fontSize: "0.9rem",
-                    cursor: "pointer", transition: "all 0.25s",
-                    fontFamily: "inherit",
-                    boxShadow: plan.highlight ? "0 4px 16px rgba(37,99,235,0.4)" : "none"
-                }}
+                <button
+                    onClick={() => {
+                        if (isCustom) {
+                            window.location.href = "/fiyatlandirma/ozellestir";
+                        }
+                    }}
+                    style={{
+                        width: "100%", padding: "1rem",
+                        borderRadius: "0.875rem", border: "none",
+                        background: isCustom
+                            ? "linear-gradient(135deg, #ec4899, #db2777)"
+                            : "linear-gradient(135deg, #22c55e, #16a34a)",
+                        color: "white", fontWeight: 800, fontSize: "1rem",
+                        cursor: "pointer", transition: "all 0.2s",
+                        fontFamily: "inherit",
+                        boxShadow: isCustom ? "0 4px 16px rgba(236,72,153,0.4)" : "0 4px 16px rgba(34,197,94,0.3)"
+                    }}
                     onMouseEnter={e => (e.currentTarget.style.opacity = "0.85")}
                     onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
                 >
                     {plan.cta}
                 </button>
 
-                {/* Divider */}
-                <div style={{ height: "1px", background: "rgba(255,255,255,0.07)" }} />
+                {/* Extra Features Box (Gifts) */}
+                {plan.extraFeatures && (
+                    <div style={{
+                        background: "rgba(34, 197, 94, 0.05)",
+                        border: "1px solid rgba(34, 197, 94, 0.2)",
+                        borderRadius: "1rem",
+                        padding: "1.25rem",
+                        marginBottom: "0.5rem"
+                    }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
+                            <Star style={{ width: "1rem", height: "1rem", color: "#22c55e" }} />
+                            <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "white" }}>{plan.extraFeatures.title}</span>
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                            {plan.extraFeatures.items.map((item, idx) => (
+                                <div key={idx} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                                        <Check style={{ width: "0.85rem", height: "0.85rem", color: "#22c55e" }} />
+                                        <span style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.8)" }}>{item}</span>
+                                    </div>
+                                    {plan.extraFeatures.itemTags?.[idx] && (
+                                        <span style={{
+                                            fontSize: "0.65rem", fontWeight: 800, background: "rgba(34, 197, 94, 0.2)",
+                                            color: "#4ade80", padding: "0.15rem 0.5rem", borderRadius: "4px"
+                                        }}>
+                                            {plan.extraFeatures.itemTags[idx]}
+                                        </span>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
-                {/* Features */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem", flex: 1 }}>
-                    {visibleFeatures.map((f, i) => (
-                        <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                            <Check style={{ width: "0.875rem", height: "0.875rem", color: plan.color, flexShrink: 0 }} />
-                            <span style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.75)", flex: 1 }}>{f.text}</span>
-                            {(f as { text: string; info: string | null; tag?: string; tagColor?: string }).tag && (
+                {/* Features Title if has gifts */}
+                {plan.extraFeatures && (
+                    <p style={{ fontSize: "0.85rem", fontWeight: 800, color: "white", marginTop: "0.5rem" }}>Tüm Özellikler</p>
+                )}
+
+                {/* Features List */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", flex: 1 }}>
+                    {visibleFeatures.map((f: any, i) => (
+                        <div key={i} style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.5rem",
+                            opacity: f.unavailable ? 0.4 : 1
+                        }}>
+                            <Check style={{
+                                width: "1rem",
+                                height: "1rem",
+                                color: f.unavailable ? "rgba(255,255,255,0.3)" : "#22c55e",
+                                flexShrink: 0
+                            }} />
+                            <span style={{
+                                fontSize: "0.85rem",
+                                color: f.unavailable ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.7)",
+                                flex: 1,
+                                textDecoration: f.unavailable ? "line-through" : "none"
+                            }}>
+                                {f.text}
+                            </span>
+                            {f.tag && (
                                 <span style={{
-                                    fontSize: "0.65rem", fontWeight: 700,
-                                    padding: "0.15rem 0.5rem", borderRadius: "9999px",
-                                    background: `${(f as { text: string; info: string | null; tag?: string; tagColor?: string }).tagColor}20`,
-                                    color: (f as { text: string; info: string | null; tag?: string; tagColor?: string }).tagColor,
-                                    border: `1px solid ${(f as { text: string; info: string | null; tag?: string; tagColor?: string }).tagColor}40`
+                                    fontSize: "0.65rem", fontWeight: 800,
+                                    padding: "0.15rem 0.5rem", borderRadius: "4px",
+                                    background: `${f.tagColor}20`,
+                                    color: f.tagColor,
+                                    border: `1px solid ${f.tagColor}40`
                                 }}>
-                                    {(f as { text: string; info: string | null; tag?: string; tagColor?: string }).tag}
+                                    {f.tag}
                                 </span>
-                            )}
-                            {f.info && !((f as { text: string; info: string | null; tag?: string }).tag) && (
-                                <Info style={{ width: "0.75rem", height: "0.75rem", color: "rgba(255,255,255,0.25)", flexShrink: 0 }} />
                             )}
                         </div>
                     ))}
@@ -344,51 +432,20 @@ function PlanCard({ plan, yearly }: { plan: typeof plans[0]; yearly: boolean }) 
                         onClick={() => setExpanded(!expanded)}
                         style={{
                             display: "flex", alignItems: "center", gap: "0.375rem",
-                            background: "none", border: "none", cursor: "pointer",
-                            color: plan.color, fontSize: "0.8rem", fontWeight: 600,
-                            fontFamily: "inherit", padding: 0
+                            background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
+                            cursor: "pointer", borderRadius: "0.5rem",
+                            color: "rgba(255,255,255,0.4)", fontSize: "0.8rem", fontWeight: 600,
+                            fontFamily: "inherit", padding: "0.5rem 1rem", marginTop: "0.5rem",
+                            justifyContent: "center"
                         }}
                     >
-                        {expanded ? "Daha Az Göster" : "Tüm Özellikler"}
+                        {expanded ? "Daha Az Göster" : "Daha fazlası için kaydırınız"}
                         <ChevronDown style={{
                             width: "0.875rem", height: "0.875rem",
                             transform: expanded ? "rotate(180deg)" : "rotate(0deg)",
                             transition: "transform 0.2s"
                         }} />
                     </button>
-                )}
-
-                {/* Extra features */}
-                {plan.extraFeatures && (
-                    <div style={{
-                        background: "rgba(255,255,255,0.03)",
-                        border: "1px solid rgba(255,255,255,0.07)",
-                        borderRadius: "0.875rem",
-                        padding: "1rem"
-                    }}>
-                        <p style={{ fontSize: "0.78rem", fontWeight: 700, color: plan.color, marginBottom: "0.25rem" }}>
-                            {plan.extraFeatures.title}
-                        </p>
-                        <p style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.35)", marginBottom: "0.75rem" }}>
-                            {plan.extraFeatures.subtitle}
-                        </p>
-                        {plan.extraFeatures.items.map((item, i) => (
-                            <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
-                                <Check style={{ width: "0.75rem", height: "0.75rem", color: plan.color, flexShrink: 0 }} />
-                                <span style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.65)", flex: 1 }}>{item}</span>
-                                {plan.extraFeatures.itemTags?.[i] && (
-                                    <span style={{
-                                        fontSize: "0.6rem", fontWeight: 700,
-                                        padding: "0.1rem 0.4rem", borderRadius: "9999px",
-                                        background: plan.extraFeatures.itemTags[i] === "Hediye" ? "rgba(34,197,94,0.15)" : "rgba(167,139,250,0.15)",
-                                        color: plan.extraFeatures.itemTags[i] === "Hediye" ? "#4ade80" : "#a78bfa",
-                                    }}>
-                                        {plan.extraFeatures.itemTags[i]}
-                                    </span>
-                                )}
-                            </div>
-                        ))}
-                    </div>
                 )}
 
                 {/* Footnote */}
@@ -440,10 +497,10 @@ function ComparisonTable() {
                         }}>
                             {/* Header row */}
                             <div style={{
-                                display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr",
+                                display: "grid", gridTemplateColumns: "2.5fr 1fr 1fr 1fr 1fr 1fr",
                                 background: "rgba(255,255,255,0.04)",
                                 borderBottom: "1px solid rgba(255,255,255,0.07)",
-                                padding: "1rem 1.5rem", gap: "0.5rem"
+                                padding: "1rem 1.25rem", gap: "0.5rem"
                             }}>
                                 <div style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>Özellik</div>
                                 {plans.map(p => (
@@ -470,8 +527,8 @@ function ComparisonTable() {
 
                                     {cat.features.map((feat, fi) => (
                                         <div key={fi} style={{
-                                            display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr",
-                                            padding: "0.625rem 1.5rem", gap: "0.5rem",
+                                            display: "grid", gridTemplateColumns: "2.5fr 1fr 1fr 1fr 1fr 1fr",
+                                            padding: "0.625rem 1.25rem", gap: "0.5rem",
                                             borderTop: "1px solid rgba(255,255,255,0.04)",
                                             alignItems: "center"
                                         }}>
@@ -575,9 +632,9 @@ export default function FiyatlandirmaPage() {
                         {/* Plans Grid */}
                         <div style={{
                             display: "grid",
-                            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-                            gap: "1.25rem",
-                            alignItems: "start"
+                            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                            gap: "1rem",
+                            alignItems: "stretch"
                         }}>
                             {plans.map((plan) => (
                                 <PlanCard key={plan.id} plan={plan} yearly={yearly} />

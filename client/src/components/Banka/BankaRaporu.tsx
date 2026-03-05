@@ -9,6 +9,10 @@ import {
     FileSearch, MoreHorizontal, ArrowLeftRight
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+    ResponsiveContainer, PieChart as RePieChart, Pie, Cell, Legend, AreaChart, Area
+} from 'recharts';
 import { supabase } from "@/lib/supabase";
 import { useTenant } from "@/lib/tenant-context";
 
@@ -56,7 +60,6 @@ export default function BankaRaporu({ type, showToast }: BankaRaporuProps) {
                 if (error) throw error;
                 setData(data || []);
             } else if (type === "Bakiye") {
-                // Simplified balance calculation
                 const { data: hareketler, error } = await supabase
                     .from('banka_fis_satirlari')
                     .select('banka_id, borc, alacak, bankalar(tanimi, banka_adi)')
@@ -68,7 +71,6 @@ export default function BankaRaporu({ type, showToast }: BankaRaporuProps) {
                 hareketler?.forEach((h: any) => {
                     const bId = h.banka_id;
                     if (!balances[bId]) {
-                        // Handle potential array response from Supabase join
                         const bankData = Array.isArray(h.bankalar) ? h.bankalar[0] : h.bankalar;
                         balances[bId] = {
                             tanimi: bankData?.tanimi || 'N/A',
@@ -100,7 +102,6 @@ export default function BankaRaporu({ type, showToast }: BankaRaporuProps) {
                     .order('created_at', { ascending: false });
 
                 if (filters.bankaId) query = query.eq('banka_id', filters.bankaId);
-
                 const { data, error } = await query;
                 if (error) throw error;
                 setData(data || []);
@@ -111,6 +112,36 @@ export default function BankaRaporu({ type, showToast }: BankaRaporuProps) {
             setLoading(false);
         }
     };
+
+    const totals = {
+        borc: (type === "Bakiye" || type === "Hareket") ? data.reduce((sum, item) => sum + (Number(item.borc) || 0), 0) : 0,
+        alacak: (type === "Bakiye" || type === "Hareket") ? data.reduce((sum, item) => sum + (Number(item.alacak) || 0), 0) : 0,
+    };
+
+    const getChartData = () => {
+        if (type === "Bakiye") {
+            return data.map(b => ({
+                name: b.tanimi,
+                bakiye: (Number(b.borc) || 0) - (Number(b.alacak) || 0)
+            }));
+        } else if (type === "Hareket") {
+            const grouped = data.reduce((acc: any, item) => {
+                const date = new Date(item.banka_fisleri?.fis_tarihi || item.created_at).toLocaleDateString('tr-TR');
+                if (!acc[date]) acc[date] = { date, giriş: 0, çıkış: 0 };
+                acc[date].giriş += Number(item.borc) || 0;
+                acc[date].çıkış += Number(item.alacak) || 0;
+                return acc;
+            }, {});
+            return Object.values(grouped).reverse();
+        }
+        return [];
+    };
+
+    const chartData = getChartData();
+    const pieData = [
+        { name: 'Giriş', value: totals.borc, color: '#10b981' },
+        { name: 'Çıkış', value: totals.alacak, color: '#f43f5e' }
+    ];
 
     return (
         <div className="space-y-8 max-w-[1400px] mx-auto pb-32 px-4 md:px-8">
@@ -182,16 +213,10 @@ export default function BankaRaporu({ type, showToast }: BankaRaporuProps) {
                 </div>
 
                 <div className="flex items-center gap-3 self-center lg:self-auto relative z-10 border-t lg:border-t-0 lg:border-l border-white/5 pt-6 lg:pt-0 lg:pl-8">
-                    <button
-                        className="p-3.5 bg-white/[0.03] hover:bg-white/[0.08] text-secondary hover:text-white border border-white/5 rounded-xl transition-all active:scale-95 group"
-                        title="Yazdır"
-                    >
+                    <button className="p-3.5 bg-white/[0.03] hover:bg-white/[0.08] text-secondary hover:text-white border border-white/5 rounded-xl transition-all active:scale-95 group" title="Yazdır">
                         <Printer className="w-5 h-5 group-hover:scale-110 transition-transform" />
                     </button>
-                    <button
-                        className="p-3.5 bg-white/[0.03] hover:bg-white/[0.08] text-secondary hover:text-white border border-white/5 rounded-xl transition-all active:scale-95 group"
-                        title="Dışa Aktar"
-                    >
+                    <button className="p-3.5 bg-white/[0.03] hover:bg-white/[0.08] text-secondary hover:text-white border border-white/5 rounded-xl transition-all active:scale-95 group" title="Dışa Aktar">
                         <Download className="w-5 h-5 group-hover:scale-110 transition-transform" />
                     </button>
                     <button
@@ -202,6 +227,133 @@ export default function BankaRaporu({ type, showToast }: BankaRaporuProps) {
                     </button>
                 </div>
             </motion.div>
+
+            {/* Stats Overview */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <SummaryStat
+                    label="Toplam Tahsilat"
+                    value={totals.borc}
+                    icon={ArrowUpRight}
+                    color="emerald"
+                    delay={0}
+                />
+                <SummaryStat
+                    label="Toplam Tediye"
+                    value={totals.alacak}
+                    icon={ArrowDownLeft}
+                    color="rose"
+                    delay={0.1}
+                />
+                <SummaryStat
+                    label="Net Banka Mevcudu"
+                    value={totals.borc - totals.alacak}
+                    icon={Scale}
+                    color="primary"
+                    delay={0.2}
+                    showStatus
+                />
+                <div className="glass-card p-6 border-white/5 bg-gradient-to-br from-primary/5 to-transparent flex flex-wrap items-center justify-between relative overflow-hidden group">
+                    <div className="absolute -right-6 -top-6 opacity-[0.05] group-hover:rotate-12 transition-transform duration-700">
+                        <ArrowLeftRight className="w-32 h-32" />
+                    </div>
+                    <div className="relative z-10">
+                        <p className="text-[10px] font-black text-secondary tracking-[0.3em] uppercase mb-4 opacity-50">Sistem Durumu</p>
+                        <div className="flex items-center gap-3">
+                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
+                            <span className="text-xs font-black text-white uppercase tracking-widest">BANKA ENTEGRASYONU AKTİF</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Charts Section */}
+            {(type === "Bakiye" || type === "Hareket") && chartData.length > 0 && (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="lg:col-span-2 glass-card p-6 border-white/5 bg-white/[0.01] min-h-[350px] flex flex-col"
+                    >
+                        <div className="flex items-center justify-between mb-6">
+                            <div>
+                                <h3 className="text-xs font-black text-white uppercase tracking-[0.2em]">Banka Akış Analizi</h3>
+                                <p className="text-[10px] text-secondary/40 font-bold uppercase mt-1">Zaman Bazlı Finansal Hareketler</p>
+                            </div>
+                            <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest">
+                                <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500" /> Giriş</div>
+                                <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-rose-500" /> Çıkış</div>
+                            </div>
+                        </div>
+                        <div className="flex-1 w-full">
+                            <ResponsiveContainer width="100%" height={280}>
+                                {type === "Hareket" ? (
+                                    <AreaChart data={chartData}>
+                                        <defs>
+                                            <linearGradient id="colorGirisB" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                                                <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                                            </linearGradient>
+                                            <linearGradient id="colorCikisB" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3} />
+                                                <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                                        <XAxis dataKey="date" stroke="rgba(255,255,255,0.3)" fontSize={10} tickLine={false} axisLine={false} tick={{ fill: 'rgba(255,255,255,0.4)', fontWeight: 'bold' }} />
+                                        <YAxis stroke="rgba(255,255,255,0.3)" fontSize={10} tickLine={false} axisLine={false} tick={{ fill: 'rgba(255,255,255,0.4)', fontWeight: 'bold' }} tickFormatter={(val) => `₺${val.toLocaleString()}`} />
+                                        <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '10px' }} itemStyle={{ fontWeight: 'bold' }} />
+                                        <Area type="monotone" dataKey="giriş" stroke="#10b981" fillOpacity={1} fill="url(#colorGirisB)" strokeWidth={3} />
+                                        <Area type="monotone" dataKey="çıkış" stroke="#f43f5e" fillOpacity={1} fill="url(#colorCikisB)" strokeWidth={3} />
+                                    </AreaChart>
+                                ) : (
+                                    <BarChart data={chartData}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                                        <XAxis dataKey="name" stroke="rgba(255,255,255,0.3)" fontSize={10} tickLine={false} axisLine={false} tick={{ fill: 'rgba(255,255,255,0.4)', fontWeight: 'bold' }} />
+                                        <YAxis stroke="rgba(255,255,255,0.3)" fontSize={10} tickLine={false} axisLine={false} tick={{ fill: 'rgba(255,255,255,0.4)', fontWeight: 'bold' }} />
+                                        <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '10px' }} />
+                                        <Bar dataKey="bakiye" radius={[6, 6, 0, 0]}>
+                                            {chartData.map((entry: any, index: number) => (
+                                                <Cell key={`cell-${index}`} fill={entry.bakiye >= 0 ? '#10b981' : '#f43f5e'} />
+                                            ))}
+                                        </Bar>
+                                    </BarChart>
+                                )}
+                            </ResponsiveContainer>
+                        </div>
+                    </motion.div>
+
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.1 }}
+                        className="glass-card p-6 border-white/5 bg-white/[0.01] flex flex-col justify-center items-center relative"
+                    >
+                        <div className="absolute top-6 left-6">
+                            <h3 className="text-xs font-black text-white uppercase tracking-[0.2em]">Hesap Dağılımı</h3>
+                            <p className="text-[10px] text-secondary/40 font-bold uppercase mt-1">Giriş / Çıkış Oranı</p>
+                        </div>
+                        <ResponsiveContainer width="100%" height={250}>
+                            <RePieChart>
+                                <Pie
+                                    data={pieData}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={60}
+                                    outerRadius={80}
+                                    paddingAngle={10}
+                                    dataKey="value"
+                                >
+                                    {pieData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.color} />
+                                    ))}
+                                </Pie>
+                                <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '10px' }} />
+                                <Legend verticalAlign="bottom" height={36} formatter={(value) => <span className="text-[10px] font-black uppercase text-secondary/60 tracking-widest">{value}</span>} />
+                            </RePieChart>
+                        </ResponsiveContainer>
+                    </motion.div>
+                </div>
+            )}
 
             {/* Report Content */}
             <motion.div
@@ -274,7 +426,7 @@ export default function BankaRaporu({ type, showToast }: BankaRaporuProps) {
                             </thead>
                             <tbody className="divide-y divide-white/5">
                                 {data.map((item, idx) => {
-                                    const bakiye = item.borc - item.alacak;
+                                    const bakiye = (Number(item.borc) || 0) - (Number(item.alacak) || 0);
                                     return (
                                         <tr key={idx} className="hover:bg-white/[0.01] transition-colors group">
                                             <td className="px-10 py-6">
@@ -291,13 +443,13 @@ export default function BankaRaporu({ type, showToast }: BankaRaporuProps) {
                                             <td className="px-10 py-6 text-right">
                                                 <div className="flex items-baseline justify-end gap-2">
                                                     <span className="text-[10px] font-black text-emerald-500/30 italic">TRY</span>
-                                                    <span className="font-black text-lg text-emerald-400 tracking-tighter">{item.borc.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</span>
+                                                    <span className="font-black text-lg text-emerald-400 tracking-tighter">{Number(item.borc).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</span>
                                                 </div>
                                             </td>
                                             <td className="px-10 py-6 text-right">
                                                 <div className="flex items-baseline justify-end gap-2">
                                                     <span className="text-[10px] font-black text-rose-500/30 italic">TRY</span>
-                                                    <span className="font-black text-lg text-rose-400 tracking-tighter">{item.alacak.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</span>
+                                                    <span className="font-black text-lg text-rose-400 tracking-tighter">{Number(item.alacak).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</span>
                                                 </div>
                                             </td>
                                             <td className="px-10 py-6 text-right">
@@ -419,5 +571,55 @@ export default function BankaRaporu({ type, showToast }: BankaRaporuProps) {
                 </div>
             </motion.div>
         </div>
+    );
+}
+
+// Helper Components
+function SummaryStat({ label, value, icon: Icon, color, delay, showStatus }: any) {
+    const isNegative = value < 0;
+    const colors: any = {
+        emerald: "border-emerald-500/10 bg-emerald-500/[0.03] text-emerald-400 shadow-emerald-500/5",
+        rose: "border-rose-500/10 bg-rose-500/[0.03] text-rose-400 shadow-rose-500/5",
+        primary: "border-primary/10 bg-primary/[0.03] text-primary shadow-primary/5"
+    };
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay, duration: 0.5 }}
+            className={`glass-card p-6 md:p-8 border-white/5 relative overflow-hidden group shadow-xl ${colors[color]}`}
+        >
+            <div className="absolute -right-6 -bottom-6 opacity-[0.03] group-hover:scale-110 group-hover:-rotate-12 transition-all duration-700 pointer-events-none">
+                <Icon className="w-40 h-40" />
+            </div>
+
+            <div className="flex items-center gap-4 mb-6">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all duration-500 group-hover:scale-110 ${color === 'emerald' ? 'bg-emerald-500/10 border-emerald-500/20' :
+                    color === 'rose' ? 'bg-rose-500/10 border-rose-500/20' :
+                        'bg-primary/10 border-primary/20'
+                    }`}>
+                    <Icon className="w-5 h-5" />
+                </div>
+                <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest opacity-60 leading-none">{label}</p>
+                    {showStatus && (
+                        <div className="flex items-center gap-1.5 mt-1">
+                            <div className={`w-1 h-1 rounded-full ${isNegative ? 'bg-rose-500' : 'bg-emerald-500'}`} />
+                            <span className="text-[8px] font-black uppercase tracking-tighter opacity-40">{isNegative ? 'BORÇLU DURUM' : 'NET VARLIK'}</span>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            <div className="flex flex-col relative z-10">
+                <div className="flex items-baseline gap-3">
+                    <span className="text-sm font-black opacity-20 italic">TRY</span>
+                    <p className={`text-3xl font-black tracking-tighter leading-none ${isNegative ? 'text-rose-500' : 'text-current'}`}>
+                        {Math.abs(value).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                    </p>
+                </div>
+            </div>
+        </motion.div>
     );
 }
