@@ -122,7 +122,7 @@ export default function Navbar() {
 
                         {/* Right side */}
                         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }} className="nav-desktop">
-                            <button style={{
+                            <Link href="/portal/login" style={{
                                 padding: "0.5rem 1.125rem",
                                 borderRadius: "9999px",
                                 border: "1px solid rgba(255,255,255,0.18)",
@@ -131,6 +131,7 @@ export default function Navbar() {
                                 fontWeight: 600, fontSize: "0.875rem",
                                 cursor: "pointer", fontFamily: "inherit",
                                 transition: "all 0.2s",
+                                textDecoration: "none"
                             }}
                                 onMouseEnter={e => {
                                     e.currentTarget.style.borderColor = "rgba(255,255,255,0.35)";
@@ -142,7 +143,7 @@ export default function Navbar() {
                                 }}
                             >
                                 Giriş Yap
-                            </button>
+                            </Link>
                             <Link href="/demo" style={{
                                 padding: "0.5rem 1.125rem",
                                 borderRadius: "9999px",
@@ -213,6 +214,14 @@ export default function Navbar() {
                                     {link.label}
                                 </Link>
                             ))}
+                            <Link href="/portal/login" style={{
+                                color: "rgba(255,255,255,0.8)", fontWeight: 500,
+                                textDecoration: "none", padding: "0.75rem 1rem",
+                                borderRadius: "0.75rem",
+                                background: "rgba(255,255,255,0.04)"
+                            }} onClick={() => setMobileMenuOpen(false)}>
+                                Müşteri Paneli
+                            </Link>
                             <div style={{ height: "1px", background: "rgba(255,255,255,0.07)", margin: "0.25rem 0" }} />
                             <Link href="/demo"
                                 style={{

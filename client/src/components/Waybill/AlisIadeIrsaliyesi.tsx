@@ -68,9 +68,22 @@ export default function AlisIadeIrsaliyesi() {
         if (currentTenant) fetchCariList();
     }, [currentTenant]);
 
-    useEffect(() => {
-        calculateTotals();
-    }, [waybill.items]);
+    const getItemsWithTotals = (items: WaybillItem[]) => items.map(item => {
+        const line_total = item.quantity * item.unit_price;
+        const vat_amount = (line_total * item.vat_rate) / 100;
+        const line_total_with_vat = line_total + vat_amount;
+        return {
+            ...item,
+            line_total: Math.round(line_total * 100) / 100,
+            vat_amount: Math.round(vat_amount * 100) / 100,
+            line_total_with_vat: Math.round(line_total_with_vat * 100) / 100
+        };
+    });
+
+    const itemsWithTotals = getItemsWithTotals(waybill.items);
+    const subtotal = Math.round(itemsWithTotals.reduce((s, i) => s + (i.line_total || 0), 0) * 100) / 100;
+    const total_vat = Math.round(itemsWithTotals.reduce((s, i) => s + (i.vat_amount || 0), 0) * 100) / 100;
+    const grand_total = Math.round(itemsWithTotals.reduce((s, i) => s + (i.line_total_with_vat || 0), 0) * 100) / 100;
 
     const fetchCariList = async () => {
         const { data } = await supabase
@@ -79,33 +92,6 @@ export default function AlisIadeIrsaliyesi() {
             .eq('cari_tipi', 'Tedarikçi')
             .order('cari_unvan');
         if (data) setCariList(data);
-    };
-
-    const calculateTotals = () => {
-        const items = waybill.items.map(item => {
-            const line_total = item.quantity * item.unit_price;
-            const vat_amount = (line_total * item.vat_rate) / 100;
-            const line_total_with_vat = line_total + vat_amount;
-
-            return {
-                ...item,
-                line_total: Math.round(line_total * 100) / 100,
-                vat_amount: Math.round(vat_amount * 100) / 100,
-                line_total_with_vat: Math.round(line_total_with_vat * 100) / 100
-            };
-        });
-
-        const subtotal = items.reduce((sum, item) => sum + (item.line_total || 0), 0);
-        const total_vat = items.reduce((sum, item) => sum + (item.vat_amount || 0), 0);
-        const grand_total = items.reduce((sum, item) => sum + (item.line_total_with_vat || 0), 0);
-
-        setWaybill(prev => ({
-            ...prev,
-            items,
-            subtotal: Math.round(subtotal * 100) / 100,
-            total_vat: Math.round(total_vat * 100) / 100,
-            grand_total: Math.round(grand_total * 100) / 100
-        }));
     };
 
     const selectCari = (cari: any) => {
@@ -174,9 +160,9 @@ export default function AlisIadeIrsaliyesi() {
                     cari_address: waybill.cari_address,
                     notes: `${waybill.return_reason ? 'İade Nedeni: ' + waybill.return_reason + '\n' : ''}${waybill.notes}`,
                     status: 'approved',
-                    subtotal: waybill.subtotal,
-                    total_vat: waybill.total_vat,
-                    grand_total: waybill.grand_total
+                    subtotal,
+                    total_vat,
+                    grand_total
                 })
                 .select()
                 .single();
@@ -439,7 +425,7 @@ export default function AlisIadeIrsaliyesi() {
                                         </select>
                                     </td>
                                     <td className="p-2 text-right font-black text-foreground bg-purple-500/5 font-mono">
-                                        {formatCurrency(item.line_total_with_vat || 0)}
+                                        {formatCurrency(itemsWithTotals[index]?.line_total_with_vat || 0)}
                                     </td>
                                     <td className="p-2 text-center">
                                         {waybill.items.length > 1 && (
@@ -479,18 +465,18 @@ export default function AlisIadeIrsaliyesi() {
                         <div className="grid grid-cols-2 gap-3">
                             <div className="bg-background/50 rounded-lg p-3 border border-border">
                                 <div className="text-[10px] text-secondary uppercase font-bold mb-1">Mal Toplamı</div>
-                                <div className="text-lg font-black text-foreground font-mono">{formatCurrency(waybill.subtotal || 0)}</div>
+                                <div className="text-lg font-black text-foreground font-mono">{formatCurrency(subtotal)}</div>
                             </div>
                             <div className="bg-background/50 rounded-lg p-3 border border-purple-500/30">
                                 <div className="text-[10px] text-purple-500 uppercase font-bold mb-1">KDV Toplamı</div>
-                                <div className="text-lg font-black text-purple-500 font-mono">+{formatCurrency(waybill.total_vat || 0)}</div>
+                                <div className="text-lg font-black text-purple-500 font-mono">+{formatCurrency(total_vat)}</div>
                             </div>
                         </div>
 
                         <div className="bg-purple-500/20 rounded-xl border-2 border-purple-500/40 p-4">
                             <div className="text-xs font-black text-purple-500 uppercase tracking-wider mb-2">İADE TOPLAMI</div>
                             <div className="text-3xl font-black text-purple-500 font-mono tracking-tight">
-                                {formatCurrency(waybill.grand_total || 0)}
+                                {formatCurrency(grand_total)}
                             </div>
                         </div>
                     </div>

@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
     Lock, LogOut, Users, Clock, CheckCircle2, PhoneCall,
     Search, Filter, Mail, Phone, Building2, Briefcase,
-    RefreshCw, Sparkles, TrendingUp, AlertCircle, Eye
+    RefreshCw, Sparkles, TrendingUp, AlertCircle, Eye,
+    LayoutDashboard, Trash2, Edit, BookOpen, ExternalLink, Calendar
 } from "lucide-react";
 
 const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "jetpos2025";
@@ -48,55 +49,182 @@ export default function AdminPage() {
     const [authed, setAuthed] = useState(false);
     const [password, setPassword] = useState("");
     const [passwordError, setPasswordError] = useState(false);
+    const [activeTab, setActiveTab] = useState<"dashboard" | "requests" | "licenses" | "guides">("dashboard");
     const [requests, setRequests] = useState<DemoRequest[]>([]);
+    const [licenses, setLicenses] = useState<any[]>([]);
+    const [guides, setGuides] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState("");
     const [filterStatus, setFilterStatus] = useState<string>("all");
     const [selectedRequest, setSelectedRequest] = useState<DemoRequest | null>(null);
+    const [selectedLicense, setSelectedLicense] = useState<any | null>(null);
     const [updatingId, setUpdatingId] = useState<string | null>(null);
+    const [stats, setStats] = useState({ totalRequests: 0, activeLicenses: 0, pendingCalls: 0 });
+    const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+    // Form states for new license
+    const [showNewLicense, setShowNewLicense] = useState(false);
+    const [newLicenseData, setNewLicenseData] = useState({
+        client_name: "",
+        user_email: "",
+        plan_type: "PRO",
+        license_key: "",
+        total_days: 365
+    });
 
     useEffect(() => {
         const saved = sessionStorage.getItem("jetpos_admin_auth");
         if (saved === "true") {
             setAuthed(true);
-            loadRequests();
+            loadAll();
         }
     }, []);
+
+    const loadAll = () => {
+        loadRequests();
+        loadLicenses();
+        loadGuides();
+        updateStats();
+    };
+
+    const updateStats = () => {
+        setStats({
+            totalRequests: requests.length,
+            activeLicenses: licenses.length,
+            pendingCalls: requests.filter(r => r.status === "new").length
+        });
+    };
+
+    useEffect(() => {
+        updateStats();
+    }, [requests, licenses]);
+
+    const showToast = (message: string, type: "success" | "error" = "success") => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 3000);
+    };
 
     const loadRequests = async () => {
         setLoading(true);
         try {
             const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
             const serviceKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+            if (!supabaseUrl || !serviceKey) return;
+
+            const res = await fetch(`${supabaseUrl}/rest/v1/demo_requests?select=*&order=created_at.desc`, {
+                headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` }
+            });
+            if (res.ok) setRequests(await res.json());
+        } catch (e) { console.error(e); } finally { setLoading(false); }
+    };
+
+    const loadLicenses = async () => {
+        try {
+            const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+            const serviceKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+            console.log("Loading licenses from:", supabaseUrl);
 
             if (!supabaseUrl || !serviceKey) {
-                console.error("Supabase env vars missing!");
-                setLoading(false);
+                console.error("Supabase config missing!");
                 return;
             }
 
-            const res = await fetch(
-                `${supabaseUrl}/rest/v1/demo_requests?select=*&order=created_at.desc`,
-                {
-                    headers: {
-                        apikey: serviceKey,
-                        Authorization: `Bearer ${serviceKey}`,
-                    },
+            const res = await fetch(`${supabaseUrl}/rest/v1/licenses?select=*&order=created_at.desc`, {
+                headers: {
+                    apikey: serviceKey,
+                    Authorization: `Bearer ${serviceKey}`
                 }
-            );
+            });
 
             if (res.ok) {
                 const data = await res.json();
-                setRequests(data);
+                console.log("Licenses loaded count:", data.length);
+                setLicenses(data);
             } else {
-                const err = await res.json();
-                console.error("Fetch error:", err);
+                const errText = await res.text();
+                console.error("License list fetch failed:", res.status, errText);
+                showToast(`Veri çekilemedi: ${res.status}`, "error");
             }
         } catch (e) {
-            console.error("Load error:", e);
-        } finally {
-            setLoading(false);
+            console.error("Connection Error:", e);
+            showToast("Veritabanı bağlantı hatası", "error");
         }
+    };
+
+    const loadGuides = async () => {
+        try {
+            const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+            const serviceKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+            if (!supabaseUrl || !serviceKey) return;
+
+            const res = await fetch(`${supabaseUrl}/rest/v1/customer_guides?select=*&order=order_index.asc`, {
+                headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` }
+            });
+            if (res.ok) setGuides(await res.json());
+        } catch (e) { console.error(e); }
+    };
+
+    const createLicense = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        console.log("Attempting to create license:", newLicenseData);
+
+        try {
+            const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+            const serviceKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+            if (supabaseUrl && serviceKey) {
+                const res = await fetch(`${supabaseUrl}/rest/v1/licenses`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        apikey: serviceKey,
+                        Authorization: `Bearer ${serviceKey}`,
+                        Prefer: "return=representation"
+                    },
+                    body: JSON.stringify({
+                        ...newLicenseData,
+                        created_at: new Date().toISOString()
+                    })
+                });
+
+                if (res.ok) {
+                    showToast("Lisans başarıyla oluşturuldu");
+                    setShowNewLicense(false);
+                    loadLicenses();
+                    setNewLicenseData({ client_name: "", user_email: "", plan_type: "PRO", license_key: "", total_days: 365 });
+                } else {
+                    const err = await res.json();
+                    console.error("Create License Error:", err);
+                    showToast(err.message || "Kaydetme başarısız", "error");
+                }
+            }
+        } catch (e) {
+            console.error("Network Exception:", e);
+            showToast("Sunucuya erişilemedi", "error");
+        } finally { setLoading(false); }
+    };
+
+    const deleteLicense = async (id: string) => {
+        if (!confirm("Bu lisansı silmek istediğinize emin misiniz?")) return;
+        try {
+            const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+            const serviceKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+            if (supabaseUrl && serviceKey) {
+                const res = await fetch(`${supabaseUrl}/rest/v1/licenses?id=eq.${id}`, {
+                    method: "DELETE",
+                    headers: {
+                        apikey: serviceKey,
+                        Authorization: `Bearer ${serviceKey}`
+                    }
+                });
+                if (res.ok) {
+                    showToast("Lisans silindi");
+                    loadLicenses();
+                }
+            }
+        } catch (e) { console.error(e); }
     };
 
     const updateStatus = async (id: string, status: DemoRequest["status"]) => {
@@ -106,29 +234,21 @@ export default function AdminPage() {
             const serviceKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
             if (supabaseUrl && serviceKey) {
-                const res = await fetch(`${supabaseUrl}/rest/v1/demo_requests?id=eq.${id}`, {
+                await fetch(`${supabaseUrl}/rest/v1/demo_requests?id=eq.${id}`, {
                     method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
                         apikey: serviceKey,
-                        Authorization: `Bearer ${serviceKey}`,
-                        Prefer: "return=representation",
+                        Authorization: `Bearer ${serviceKey}`
                     },
                     body: JSON.stringify({ status }),
                 });
-                if (!res.ok) {
-                    console.error("Update failed:", await res.json());
-                }
             }
-
-            // Update locally regardless
             setRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
             if (selectedRequest?.id === id) {
                 setSelectedRequest(prev => prev ? { ...prev, status } : null);
             }
-        } finally {
-            setUpdatingId(null);
-        }
+        } finally { setUpdatingId(null); }
     };
 
     const handleLogin = (e: React.FormEvent) => {
@@ -136,7 +256,7 @@ export default function AdminPage() {
         if (password === ADMIN_PASSWORD) {
             setAuthed(true);
             sessionStorage.setItem("jetpos_admin_auth", "true");
-            loadRequests();
+            loadAll();
         } else {
             setPasswordError(true);
             setTimeout(() => setPasswordError(false), 2000);
@@ -147,22 +267,22 @@ export default function AdminPage() {
         setAuthed(false);
         sessionStorage.removeItem("jetpos_admin_auth");
         setRequests([]);
+        setLicenses([]);
     };
 
-    const filtered = requests.filter(r => {
-        const matchSearch = !search || [r.name, r.email, r.phone, r.company].some(v =>
-            v?.toLowerCase().includes(search.toLowerCase())
-        );
+    const filteredRequests = requests.filter(r => {
+        const matchSearch = !search || [r.name, r.email, r.phone, r.company].some(v => v?.toLowerCase().includes(search.toLowerCase()));
         const matchStatus = filterStatus === "all" || r.status === filterStatus;
         return matchSearch && matchStatus;
     });
 
-    const stats = {
-        total: requests.length,
-        new: requests.filter(r => r.status === "new").length,
-        calling: requests.filter(r => r.status === "calling").length,
-        done: requests.filter(r => r.status === "done").length,
-    };
+    const filteredLicenses = licenses.filter(l => {
+        const s = search.toLowerCase();
+        return !s ||
+            (l.client_name?.toLowerCase() || "").includes(s) ||
+            (l.user_email?.toLowerCase() || "").includes(s) ||
+            (l.license_key?.toLowerCase() || "").includes(s);
+    });
 
     // Login screen
     if (!authed) {
@@ -172,12 +292,7 @@ export default function AdminPage() {
                 display: "flex", alignItems: "center", justifyContent: "center",
                 padding: "1rem"
             }}>
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    style={{ width: "100%", maxWidth: "380px" }}
-                >
-                    {/* Logo */}
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ width: "100%", maxWidth: "380px" }}>
                     <div style={{ textAlign: "center", marginBottom: "2rem" }}>
                         <div style={{
                             width: "3.5rem", height: "3.5rem", borderRadius: "1rem",
@@ -189,58 +304,23 @@ export default function AdminPage() {
                             <Sparkles style={{ width: "1.5rem", height: "1.5rem", color: "white" }} />
                         </div>
                         <h1 style={{ fontSize: "1.5rem", fontWeight: 800, color: "white", margin: 0 }}>JetPOS Admin</h1>
-                        <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.875rem", marginTop: "0.25rem" }}>
-                            Demo talep yönetim paneli
-                        </p>
+                        <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.875rem", marginTop: "0.25rem" }}>Panel yönetimi</p>
                     </div>
 
-                    <motion.div
-                        animate={passwordError ? { x: [-8, 8, -8, 8, 0] } : { x: 0 }}
-                        transition={{ duration: 0.3 }}
-                        style={{
-                            background: "rgba(255,255,255,0.03)",
-                            border: `1px solid ${passwordError ? "rgba(239,68,68,0.5)" : "rgba(255,255,255,0.08)"}`,
-                            borderRadius: "1.25rem", padding: "2rem",
-                            transition: "border-color 0.2s"
-                        }}
-                    >
+                    <motion.div animate={passwordError ? { x: [-8, 8, -8, 8, 0] } : { x: 0 }} style={{
+                        background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
+                        borderRadius: "1.25rem", padding: "2rem"
+                    }}>
                         <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
                             <div>
-                                <label style={{ display: "block", color: "rgba(255,255,255,0.6)", fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.5rem" }}>
-                                    Şifre
-                                </label>
+                                <label style={{ display: "block", color: "rgba(255,255,255,0.6)", fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.5rem" }}>Şifre</label>
                                 <div style={{ position: "relative" }}>
-                                    <Lock style={{
-                                        position: "absolute", left: "0.875rem", top: "50%", transform: "translateY(-50%)",
-                                        width: "1rem", height: "1rem", color: "rgba(255,255,255,0.3)"
-                                    }} />
-                                    <input
-                                        type="password"
-                                        value={password}
-                                        onChange={e => setPassword(e.target.value)}
-                                        placeholder="Admin şifresi"
-                                        style={{
-                                            width: "100%", padding: "0.875rem 1rem 0.875rem 2.75rem",
-                                            background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)",
-                                            borderRadius: "0.75rem", color: "white", fontSize: "0.95rem",
-                                            outline: "none", fontFamily: "inherit", boxSizing: "border-box"
-                                        }}
-                                        autoFocus
-                                    />
+                                    <Lock style={{ position: "absolute", left: "0.875rem", top: "50%", transform: "translateY(-50%)", width: "1rem", height: "1rem", color: "rgba(255,255,255,0.3)" }} />
+                                    <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Admin şifresi" style={{ width: "100%", padding: "0.875rem 1rem 0.875rem 2.75rem", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.75rem", color: "white", outline: "none" }} autoFocus />
                                 </div>
-                                {passwordError && (
-                                    <p style={{ color: "#f87171", fontSize: "0.8rem", marginTop: "0.5rem" }}>Hatalı şifre!</p>
-                                )}
+                                {passwordError && <p style={{ color: "#f87171", fontSize: "0.8rem", marginTop: "0.5rem" }}>Hatalı şifre!</p>}
                             </div>
-                            <button type="submit" style={{
-                                padding: "0.875rem", borderRadius: "0.75rem", border: "none",
-                                background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
-                                color: "white", fontWeight: 700, fontSize: "1rem",
-                                cursor: "pointer", fontFamily: "inherit",
-                                boxShadow: "0 4px 16px rgba(37,99,235,0.4)"
-                            }}>
-                                Giriş Yap
-                            </button>
+                            <button type="submit" style={{ padding: "0.875rem", borderRadius: "0.75rem", border: "none", background: "linear-gradient(135deg, #2563eb, #1d4ed8)", color: "white", fontWeight: 700, cursor: "pointer" }}>Giriş Yap</button>
                         </form>
                     </motion.div>
                 </motion.div>
@@ -250,359 +330,286 @@ export default function AdminPage() {
 
     return (
         <div style={{ minHeight: "100vh", background: "#060914", color: "white" }}>
-            {/* Top Bar */}
             <div style={{
                 background: "rgba(255,255,255,0.02)", borderBottom: "1px solid rgba(255,255,255,0.07)",
                 padding: "1rem 2rem", display: "flex", alignItems: "center", justifyContent: "space-between",
                 position: "sticky", top: 0, zIndex: 20, backdropFilter: "blur(16px)"
             }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                    <div style={{
-                        width: "2rem", height: "2rem", borderRadius: "0.5rem",
-                        background: "linear-gradient(135deg, #2563eb, #3b82f6)",
-                        display: "flex", alignItems: "center", justifyContent: "center"
-                    }}>
-                        <Sparkles style={{ width: "1rem", height: "1rem", color: "white" }} />
+                <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                        <Sparkles style={{ width: "1.25rem", height: "1.25rem", color: "#3b82f6" }} />
+                        <h1 style={{ fontSize: "1.1rem", fontWeight: 800, color: "white", margin: 0 }}>JetPOS Admin</h1>
                     </div>
-                    <div>
-                        <h1 style={{ fontSize: "1rem", fontWeight: 800, color: "white", margin: 0 }}>JetPOS Admin</h1>
-                        <p style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.35)", margin: 0 }}>Demo Talep Yönetimi</p>
-                    </div>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                    <button
-                        onClick={loadRequests}
-                        style={{
-                            background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
-                            borderRadius: "0.625rem", padding: "0.5rem 1rem",
-                            color: "rgba(255,255,255,0.7)", cursor: "pointer", fontFamily: "inherit",
-                            display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.85rem"
-                        }}
-                    >
-                        <RefreshCw style={{ width: "0.875rem", height: "0.875rem" }} />
-                        Yenile
-                    </button>
-                    <button
-                        onClick={handleLogout}
-                        style={{
-                            background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)",
-                            borderRadius: "0.625rem", padding: "0.5rem 1rem",
-                            color: "#fca5a5", cursor: "pointer", fontFamily: "inherit",
-                            display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.85rem"
-                        }}
-                    >
-                        <LogOut style={{ width: "0.875rem", height: "0.875rem" }} />
-                        Çıkış
-                    </button>
-                </div>
-            </div>
-
-            <div style={{ padding: "2rem", maxWidth: "1400px", margin: "0 auto" }}>
-                {/* Stats */}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "1rem", marginBottom: "2rem" }}>
-                    {[
-                        { label: "Toplam Talep", value: stats.total, icon: Users, color: "#60a5fa" },
-                        { label: "Yeni", value: stats.new, icon: AlertCircle, color: "#3b82f6" },
-                        { label: "Aranıyor", value: stats.calling, icon: PhoneCall, color: "#f59e0b" },
-                        { label: "Tamamlandı", value: stats.done, icon: CheckCircle2, color: "#22c55e" },
-                    ].map(({ label, value, icon: Icon, color }, i) => (
-                        <motion.div
-                            key={i}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.05 }}
-                            style={{
-                                background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)",
-                                borderRadius: "1rem", padding: "1.25rem",
-                                display: "flex", alignItems: "center", gap: "1rem"
-                            }}
-                        >
-                            <div style={{
-                                width: "2.5rem", height: "2.5rem", borderRadius: "0.75rem",
-                                background: `${color}15`, border: `1px solid ${color}30`,
-                                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
-                            }}>
-                                <Icon style={{ width: "1.25rem", height: "1.25rem", color }} />
-                            </div>
-                            <div>
-                                <div style={{ fontSize: "1.75rem", fontWeight: 900, color: "white", lineHeight: 1 }}>{value}</div>
-                                <div style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.4)", marginTop: "0.15rem" }}>{label}</div>
-                            </div>
-                        </motion.div>
-                    ))}
-                </div>
-
-                {/* Filters */}
-                <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
-                    <div style={{ position: "relative", flex: 1, minWidth: "220px" }}>
-                        <Search style={{
-                            position: "absolute", left: "0.875rem", top: "50%", transform: "translateY(-50%)",
-                            width: "1rem", height: "1rem", color: "rgba(255,255,255,0.3)"
-                        }} />
-                        <input
-                            type="text"
-                            placeholder="Ad, e-posta, telefon veya firma ara..."
-                            value={search}
-                            onChange={e => setSearch(e.target.value)}
-                            style={{
-                                width: "100%", padding: "0.75rem 1rem 0.75rem 2.75rem",
-                                background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)",
-                                borderRadius: "0.75rem", color: "white", fontSize: "0.875rem",
-                                outline: "none", fontFamily: "inherit", boxSizing: "border-box"
-                            }}
-                        />
-                    </div>
-                    <div style={{ display: "flex", gap: "0.5rem" }}>
+                    <div style={{ display: "flex", gap: "0.25rem" }}>
                         {[
-                            { key: "all", label: "Tümü" },
-                            { key: "new", label: "Yeni" },
-                            { key: "calling", label: "Aranıyor" },
-                            { key: "done", label: "Bitti" },
-                        ].map(({ key, label }) => (
-                            <button
-                                key={key}
-                                onClick={() => setFilterStatus(key)}
-                                style={{
-                                    padding: "0.625rem 1rem", borderRadius: "0.75rem",
-                                    border: `1px solid ${filterStatus === key ? "rgba(59,130,246,0.4)" : "rgba(255,255,255,0.08)"}`,
-                                    background: filterStatus === key ? "rgba(59,130,246,0.15)" : "rgba(255,255,255,0.03)",
-                                    color: filterStatus === key ? "#93c5fd" : "rgba(255,255,255,0.5)",
-                                    cursor: "pointer", fontFamily: "inherit", fontSize: "0.85rem", fontWeight: 600,
-                                    transition: "all 0.15s"
-                                }}
-                            >
-                                {label}
+                            { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+                            { id: "requests", label: "Talep Yön.", icon: PhoneCall },
+                            { id: "licenses", label: "Lisans Yön.", icon: CheckCircle2 },
+                            { id: "guides", label: "Rehber Yön.", icon: BookOpen }
+                        ].map(t => (
+                            <button key={t.id} onClick={() => setActiveTab(t.id as any)} style={{
+                                padding: "0.5rem 0.875rem", borderRadius: "0.6rem", border: "none",
+                                background: activeTab === t.id ? "rgba(37,99,235,0.12)" : "transparent",
+                                color: activeTab === t.id ? "#60a5fa" : "rgba(255,255,255,0.45)",
+                                fontWeight: 700, fontSize: "0.85rem", cursor: "pointer",
+                                display: "flex", alignItems: "center", gap: "0.5rem",
+                                transition: "all 0.2s"
+                            }}>
+                                <t.icon style={{ width: "0.9rem", height: "0.9rem" }} />
+                                {t.label}
                             </button>
                         ))}
                     </div>
                 </div>
+                <div style={{ display: "flex", gap: "0.75rem" }}>
+                    <button onClick={loadAll} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "0.6rem", padding: "0.5rem 1rem", color: "white", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                        <RefreshCw style={{ width: "0.9rem", height: "0.9rem" }} />
+                    </button>
+                    <button onClick={handleLogout} style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: "0.6rem", padding: "0.5rem 1rem", color: "#fca5a5", cursor: "pointer" }}>Çıkış</button>
+                </div>
+            </div>
 
-                {/* Layout: List + Detail */}
-                <div style={{ display: "grid", gridTemplateColumns: selectedRequest ? "1fr 380px" : "1fr", gap: "1rem" }}>
-                    {/* List */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                        {loading ? (
-                            <div style={{ textAlign: "center", padding: "3rem", color: "rgba(255,255,255,0.3)" }}>
-                                <RefreshCw style={{ width: "1.5rem", height: "1.5rem", margin: "0 auto 0.5rem", display: "block", animation: "spin 1s linear infinite" }} />
-                                Yükleniyor...
+            <div style={{ padding: "2rem", maxWidth: "1400px", margin: "0 auto" }}>
+                {activeTab === "dashboard" && (
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2.5rem" }}>
+                            <div>
+                                <h2 style={{ fontSize: "1.75rem", fontWeight: 900, marginBottom: "0.25rem", background: "linear-gradient(to right, #fff, #94a3b8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Yönetim Paneli</h2>
+                                <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.875rem" }}>Hoş geldiniz, sistem durumu ve istatistikler aşağıdadır.</p>
                             </div>
-                        ) : filtered.length === 0 ? (
-                            <div style={{ textAlign: "center", padding: "3rem", color: "rgba(255,255,255,0.3)" }}>
-                                <Users style={{ width: "2rem", height: "2rem", margin: "0 auto 0.5rem", display: "block" }} />
-                                Talep bulunamadı
-                            </div>
-                        ) : filtered.map((req, i) => {
-                            const statusCfg = STATUS_CONFIG[req.status];
-                            const isSelected = selectedRequest?.id === req.id;
-                            return (
-                                <motion.div
-                                    key={req.id}
-                                    initial={{ opacity: 0, y: 8 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: i * 0.03 }}
-                                    onClick={() => setSelectedRequest(isSelected ? null : req)}
-                                    style={{
-                                        background: isSelected ? "rgba(59,130,246,0.08)" : "rgba(255,255,255,0.025)",
-                                        border: `1px solid ${isSelected ? "rgba(59,130,246,0.3)" : "rgba(255,255,255,0.07)"}`,
-                                        borderRadius: "1rem", padding: "1.25rem",
-                                        cursor: "pointer", transition: "all 0.15s",
-                                        display: "flex", alignItems: "center", gap: "1rem"
-                                    }}
-                                    onMouseEnter={e => {
-                                        if (!isSelected) (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.12)";
-                                    }}
-                                    onMouseLeave={e => {
-                                        if (!isSelected) (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.07)";
-                                    }}
-                                >
-                                    {/* Avatar */}
+                            <button onClick={loadAll} style={{ padding: "0.6rem 1.2rem", borderRadius: "0.75rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "white", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", fontWeight: 600 }}>
+                                <RefreshCw className={loading ? "animate-spin" : ""} style={{ width: "1rem" }} /> Yenile
+                            </button>
+                        </div>
+
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "1.5rem", marginBottom: "2.5rem" }}>
+                            {[
+                                { label: "Toplam Talep", value: stats.totalRequests, icon: Mail, color: "#3b82f6", trend: "+12%" },
+                                { label: "Bekleyen Aramalar", value: stats.pendingCalls, icon: PhoneCall, color: "#f59e0b", trend: "Acil" },
+                                { label: "Aktif Lisanslar", value: stats.activeLicenses, icon: CheckCircle2, color: "#22c55e", trend: "Stabil" }
+                            ].map((s, i) => (
+                                <motion.div key={i} whileHover={{ y: -5, background: "rgba(255,255,255,0.05)" }} style={{
+                                    background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
+                                    borderRadius: "1.5rem", padding: "2rem", display: "flex", alignItems: "center", gap: "1.5rem",
+                                    transition: "all 0.3s ease", cursor: "default"
+                                }}>
                                     <div style={{
-                                        width: "2.75rem", height: "2.75rem", borderRadius: "0.875rem",
-                                        background: "linear-gradient(135deg, #2563eb, #7c3aed)",
-                                        display: "flex", alignItems: "center", justifyContent: "center",
-                                        flexShrink: 0, fontSize: "1rem", fontWeight: 800, color: "white"
+                                        width: "4rem", height: "4rem", borderRadius: "1.25rem",
+                                        background: `${s.color}15`, display: "flex", alignItems: "center", justifyContent: "center"
                                     }}>
-                                        {req.name.charAt(0)}
+                                        <s.icon style={{ color: s.color, width: "1.75rem", height: "1.75rem" }} />
                                     </div>
-
-                                    {/* Info */}
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
-                                            <span style={{ fontWeight: 700, color: "white", fontSize: "0.95rem" }}>{req.name}</span>
-                                            <span style={{
-                                                fontSize: "0.7rem", fontWeight: 700, padding: "0.15rem 0.5rem",
-                                                borderRadius: "4px", background: statusCfg.bg, color: statusCfg.color
-                                            }}>{statusCfg.label}</span>
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
+                                            <span style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.875rem", fontWeight: 600 }}>{s.label}</span>
+                                            <span style={{ fontSize: "0.7rem", color: s.color, background: `${s.color}10`, padding: "0.1rem 0.4rem", borderRadius: "4px" }}>{s.trend}</span>
                                         </div>
-                                        <div style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.4)", display: "flex", gap: "1rem", flexWrap: "wrap" }}>
-                                            <span>{req.company}</span>
-                                            <span>{req.sector}</span>
-                                            {req.package_interest && <span style={{ color: "#4ade80" }}>{req.package_interest}</span>}
+                                        <div style={{ fontSize: "2.25rem", fontWeight: 900, letterSpacing: "-1px" }}>{s.value}</div>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+
+                        <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: "2rem" }}>
+                            <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "1.75rem", padding: "2rem", boxShadow: "0 20px 50px rgba(0,0,0,0.2)" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
+                                    <h3 style={{ fontSize: "1.1rem", fontWeight: 800 }}>Son Talepler</h3>
+                                    <button onClick={() => setActiveTab("requests")} style={{ background: "none", border: "none", color: "#3b82f6", cursor: "pointer", fontSize: "0.875rem", fontWeight: 600 }}>Tümünü Gör →</button>
+                                </div>
+                                <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                                    {requests.slice(0, 4).length > 0 ? requests.slice(0, 4).map(r => (
+                                        <div key={r.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1rem", background: "rgba(255,255,255,0.02)", borderRadius: "1rem", border: "1px solid rgba(255,255,255,0.03)" }}>
+                                            <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+                                                <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "0.75rem", background: "linear-gradient(135deg, #1e293b, #334155)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "0.8rem" }}>{r.name[0]}</div>
+                                                <div>
+                                                    <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>{r.name}</div>
+                                                    <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.3)" }}>{r.company}</div>
+                                                </div>
+                                            </div>
+                                            <div style={{ fontSize: "0.7rem", background: STATUS_CONFIG[r.status].bg, color: STATUS_CONFIG[r.status].color, padding: "0.4rem 0.75rem", borderRadius: "99px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px" }}>{STATUS_CONFIG[r.status].label}</div>
+                                        </div>
+                                    )) : (
+                                        <div style={{ textAlign: "center", padding: "3rem", color: "rgba(255,255,255,0.2)" }}>Henüz talep bulunmuyor.</div>
+                                    )}
+                                </div>
+                            </div>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+                                <div style={{ background: "linear-gradient(135deg, #1d4ed8, #2563eb)", borderRadius: "1.75rem", padding: "2rem", color: "white", position: "relative", overflow: "hidden" }}>
+                                    <div style={{ position: "relative", zIndex: 2 }}>
+                                        <h3 style={{ fontSize: "1.25rem", fontWeight: 800, marginBottom: "0.5rem" }}>Lisans Oluştur</h3>
+                                        <p style={{ fontSize: "0.875rem", color: "rgba(255,255,255,0.8)", marginBottom: "1.5rem" }}>Hızlıca yeni bir müşteri lisansı tanımlayın ve paylaşın.</p>
+                                        <button onClick={() => { setActiveTab("licenses"); setShowNewLicense(true); }} style={{ width: "100%", padding: "1rem", borderRadius: "1rem", background: "white", color: "#2563eb", fontWeight: 800, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", boxShadow: "0 10px 20px rgba(0,0,0,0.1)" }}>
+                                            <Sparkles style={{ width: "1.1rem" }} /> Şimdi Başla
+                                        </button>
+                                    </div>
+                                    <TrendingUp style={{ position: "absolute", right: "-1rem", bottom: "-1rem", width: "10rem", height: "10rem", color: "rgba(255,255,255,0.1)", transform: "rotate(-15deg)" }} />
+                                </div>
+                                <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "1.75rem", padding: "2rem" }}>
+                                    <h3 style={{ fontSize: "1.1rem", fontWeight: 800, marginBottom: "1.25rem" }}>Sistem Notları</h3>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                                        <div style={{ display: "flex", gap: "0.75rem", fontSize: "0.85rem", color: "rgba(255,255,255,0.5)" }}>
+                                            <div style={{ width: "0.5rem", height: "0.5rem", borderRadius: "50%", background: "#22c55e", marginTop: "0.25rem", flexShrink: 0 }} />
+                                            <span>Supabase bağlantısı aktif.</span>
+                                        </div>
+                                        <div style={{ display: "flex", gap: "0.75rem", fontSize: "0.85rem", color: "rgba(255,255,255,0.5)" }}>
+                                            <div style={{ width: "0.5rem", height: "0.5rem", borderRadius: "50%", background: "#3b82f6", marginTop: "0.25rem", flexShrink: 0 }} />
+                                            <span>Otomatik yedekleme devrede.</span>
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
 
-                                    {/* Right side */}
-                                    <div style={{ textAlign: "right", flexShrink: 0 }}>
-                                        <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.3)", marginBottom: "0.5rem" }}>
-                                            <Clock style={{ display: "inline", width: "0.75rem", height: "0.75rem", verticalAlign: "middle", marginRight: "0.2rem" }} />
-                                            {timeAgo(req.created_at)}
+                {activeTab === "requests" && (
+                    <>
+                        <div style={{ display: "flex", gap: "1rem", marginBottom: "2rem" }}>
+                            <div style={{ position: "relative", flex: 1 }}>
+                                <Search style={{ position: "absolute", left: "0.8rem", top: "50%", transform: "translateY(-50%)", width: "1rem", height: "1rem", color: "rgba(255,255,255,0.3)" }} />
+                                <input type="text" placeholder="Talep ara..." value={search} onChange={e => setSearch(e.target.value)} style={{ width: "100%", padding: "0.75rem 1rem 0.75rem 2.5rem", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: "0.75rem", color: "white" }} />
+                            </div>
+                        </div>
+                        <div style={{ display: "grid", gridTemplateColumns: selectedRequest ? "1fr 380px" : "1fr", gap: "1.5rem" }}>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                                {filteredRequests.map((req, i) => (
+                                    <motion.div key={req.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} onClick={() => setSelectedRequest(req)} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "1rem", padding: "1.25rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "1rem" }}>
+                                        <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "0.75rem", background: "linear-gradient(135deg, #2563eb, #7c3aed)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800 }}>{req.name[0]}</div>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ fontWeight: 700 }}>{req.name}</div>
+                                            <div style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.4)" }}>{req.company} • {req.email}</div>
                                         </div>
-                                        <div style={{ display: "flex", gap: "0.375rem", justifyContent: "flex-end" }}>
-                                            <a href={`tel:${req.phone}`} onClick={e => e.stopPropagation()}
-                                                style={{
-                                                    width: "1.75rem", height: "1.75rem", borderRadius: "0.5rem",
-                                                    background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.25)",
-                                                    display: "flex", alignItems: "center", justifyContent: "center",
-                                                    color: "#4ade80"
-                                                }}>
-                                                <Phone style={{ width: "0.75rem", height: "0.75rem" }} />
-                                            </a>
-                                            <a href={`mailto:${req.email}`} onClick={e => e.stopPropagation()}
-                                                style={{
-                                                    width: "1.75rem", height: "1.75rem", borderRadius: "0.5rem",
-                                                    background: "rgba(96,165,250,0.15)", border: "1px solid rgba(96,165,250,0.25)",
-                                                    display: "flex", alignItems: "center", justifyContent: "center",
-                                                    color: "#60a5fa"
-                                                }}>
-                                                <Mail style={{ width: "0.75rem", height: "0.75rem" }} />
-                                            </a>
+                                        <div style={{ padding: "0.2rem 0.6rem", borderRadius: "4px", fontSize: "0.7rem", fontWeight: 700, background: STATUS_CONFIG[req.status].bg, color: STATUS_CONFIG[req.status].color }}>{STATUS_CONFIG[req.status].label}</div>
+                                    </motion.div>
+                                ))}
+                            </div>
+                            {selectedRequest && (
+                                <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: "1.25rem", padding: "1.5rem", height: "fit-content", position: "sticky", top: "6rem" }}>
+                                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "1.5rem" }}>
+                                        <h3 style={{ margin: 0 }}>Talep Detayı</h3>
+                                        <button onClick={() => setSelectedRequest(null)} style={{ background: "none", border: "none", color: "white", cursor: "pointer" }}>×</button>
+                                    </div>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                                        <div><label style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.4)", textTransform: "uppercase" }}>Firma</label><div>{selectedRequest.company}</div></div>
+                                        <div><label style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.4)", textTransform: "uppercase" }}>E-posta</label><div>{selectedRequest.email}</div></div>
+                                        <div><label style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.4)", textTransform: "uppercase" }}>Telefon</label><div>{selectedRequest.phone}</div></div>
+                                        <div style={{ marginTop: "1rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                                            {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
+                                                <button key={key} onClick={() => updateStatus(selectedRequest.id, key as any)} style={{ padding: "0.6rem", borderRadius: "0.5rem", border: "1px solid rgba(255,255,255,0.1)", background: selectedRequest.status === key ? cfg.bg : "transparent", color: selectedRequest.status === key ? cfg.color : "white", cursor: "pointer", textAlign: "left" }}>{cfg.label}</button>
+                                            ))}
                                         </div>
                                     </div>
                                 </motion.div>
-                            );
-                        })}
-                    </div>
+                            )}
+                        </div>
+                    </>
+                )}
 
-                    {/* Detail Panel */}
-                    <AnimatePresence>
-                        {selectedRequest && (
-                            <motion.div
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: 20 }}
-                                transition={{ duration: 0.2 }}
-                                style={{
-                                    background: "rgba(255,255,255,0.025)",
-                                    border: "1px solid rgba(255,255,255,0.08)",
-                                    borderRadius: "1.25rem", padding: "1.75rem",
-                                    height: "fit-content", position: "sticky", top: "5rem"
-                                }}
-                            >
-                                {/* Header */}
-                                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "1.5rem" }}>
-                                    <div style={{ display: "flex", alignItems: "center", gap: "0.875rem" }}>
-                                        <div style={{
-                                            width: "3rem", height: "3rem", borderRadius: "0.875rem",
-                                            background: "linear-gradient(135deg, #2563eb, #7c3aed)",
-                                            display: "flex", alignItems: "center", justifyContent: "center",
-                                            fontSize: "1.25rem", fontWeight: 800, color: "white"
-                                        }}>
-                                            {selectedRequest.name.charAt(0)}
-                                        </div>
-                                        <div>
-                                            <div style={{ fontWeight: 800, color: "white", fontSize: "1rem" }}>{selectedRequest.name}</div>
-                                            <div style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.4)" }}>{selectedRequest.company}</div>
-                                        </div>
-                                    </div>
-                                    <button onClick={() => setSelectedRequest(null)}
-                                        style={{ background: "none", border: "none", color: "rgba(255,255,255,0.3)", cursor: "pointer", fontSize: "1.25rem", lineHeight: 1 }}>
-                                        ×
-                                    </button>
-                                </div>
+                {activeTab === "licenses" && (
+                    <>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "2rem" }}>
+                            <div style={{ position: "relative", flex: 1, maxWidth: "400px" }}>
+                                <Search style={{ position: "absolute", left: "0.8rem", top: "50%", transform: "translateY(-50%)", width: "1rem", height: "1rem", color: "rgba(255,255,255,0.3)" }} />
+                                <input type="text" placeholder="Lisans ara..." value={search} onChange={e => setSearch(e.target.value)} style={{ width: "100%", padding: "0.75rem 1rem 0.75rem 2.5rem", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: "0.75rem", color: "white" }} />
+                            </div>
+                            <button onClick={() => setShowNewLicense(true)} style={{ padding: "0.75rem 1.5rem", borderRadius: "0.75rem", background: "#2563eb", border: "none", color: "white", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                                <Sparkles style={{ width: "1rem", height: "1rem" }} />
+                                Yeni Lisans Tanımla
+                            </button>
+                        </div>
 
-                                {/* Contact */}
-                                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "1.5rem" }}>
-                                    {[
-                                        { icon: Phone, label: selectedRequest.phone, href: `tel:${selectedRequest.phone}`, color: "#4ade80" },
-                                        { icon: Mail, label: selectedRequest.email, href: `mailto:${selectedRequest.email}`, color: "#60a5fa" },
-                                    ].map(({ icon: Icon, label, href, color }, i) => (
-                                        <a key={i} href={href} style={{
-                                            display: "flex", alignItems: "center", gap: "0.625rem",
-                                            padding: "0.75rem", borderRadius: "0.75rem",
-                                            background: `${color}10`, border: `1px solid ${color}25`,
-                                            textDecoration: "none", color: "white"
-                                        }}>
-                                            <Icon style={{ width: "1rem", height: "1rem", color }} />
-                                            <span style={{ fontSize: "0.875rem", fontWeight: 600 }}>{label}</span>
-                                        </a>
-                                    ))}
-                                </div>
-
-                                {/* Details */}
-                                <div style={{
-                                    background: "rgba(255,255,255,0.03)", borderRadius: "0.875rem",
-                                    padding: "1rem", marginBottom: "1.5rem",
-                                    display: "flex", flexDirection: "column", gap: "0.625rem"
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(400px, 1fr))", gap: "1rem" }}>
+                            {filteredLicenses.map((l, i) => (
+                                <motion.div key={l.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{
+                                    background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
+                                    borderRadius: "1.25rem", padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1.25rem",
+                                    position: "relative", overflow: "hidden"
                                 }}>
-                                    {[
-                                        ["Sektör", selectedRequest.sector],
-                                        ["Çalışan", selectedRequest.employee_count],
-                                        ["Mevcut Sistem", selectedRequest.current_system || "-"],
-                                        ["İlgilendiği Paket", selectedRequest.package_interest || "-"],
-                                        ["Tarih", timeAgo(selectedRequest.created_at)],
-                                    ].map(([k, v]) => (
-                                        <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem" }}>
-                                            <span style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.8rem" }}>{k}</span>
-                                            <span style={{ color: "white", fontSize: "0.8rem", fontWeight: 600, textAlign: "right" }}>{v}</span>
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                                        <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+                                            <div style={{ width: "2.75rem", height: "2.75rem", borderRadius: "0.75rem", background: "rgba(34,197,94,0.1)", color: "#4ade80", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                                <CheckCircle2 style={{ width: "1.25rem", height: "1.25rem" }} />
+                                            </div>
+                                            <div>
+                                                <div style={{ fontWeight: 800, fontSize: "1.1rem" }}>{l.client_name}</div>
+                                                <div style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.4)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                                                    <Mail style={{ width: "0.75rem" }} /> {l.user_email}
+                                                </div>
+                                            </div>
                                         </div>
-                                    ))}
-                                </div>
-
-                                {/* Message */}
-                                {selectedRequest.message && (
-                                    <div style={{
-                                        background: "rgba(255,255,255,0.03)", borderRadius: "0.875rem",
-                                        padding: "1rem", marginBottom: "1.5rem"
-                                    }}>
-                                        <p style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.4)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.5rem" }}>
-                                            Not
-                                        </p>
-                                        <p style={{ fontSize: "0.875rem", color: "rgba(255,255,255,0.75)", lineHeight: 1.6, margin: 0 }}>
-                                            {selectedRequest.message}
-                                        </p>
+                                        <div style={{ display: "flex", gap: "0.5rem" }}>
+                                            <button onClick={() => deleteLicense(l.id)} style={{ padding: "0.5rem", borderRadius: "0.5rem", background: "rgba(239,68,68,0.1)", color: "#f87171", border: "none", cursor: "pointer" }}><Trash2 style={{ width: "0.9rem" }} /></button>
+                                        </div>
                                     </div>
-                                )}
 
-                                {/* Status Actions */}
-                                <div>
-                                    <p style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.4)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.75rem" }}>
-                                        Durumu Güncelle
-                                    </p>
-                                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                                        {(Object.entries(STATUS_CONFIG) as [DemoRequest["status"], typeof STATUS_CONFIG["new"]][]).map(([key, cfg]) => {
-                                            const Icon = cfg.icon;
-                                            const isActive = selectedRequest.status === key;
-                                            return (
-                                                <button
-                                                    key={key}
-                                                    disabled={isActive || updatingId === selectedRequest.id}
-                                                    onClick={() => updateStatus(selectedRequest.id, key)}
-                                                    style={{
-                                                        padding: "0.75rem 1rem", borderRadius: "0.75rem",
-                                                        border: `1px solid ${isActive ? cfg.color + "40" : "rgba(255,255,255,0.08)"}`,
-                                                        background: isActive ? cfg.bg : "rgba(255,255,255,0.02)",
-                                                        color: isActive ? cfg.color : "rgba(255,255,255,0.5)",
-                                                        cursor: isActive ? "default" : "pointer",
-                                                        fontFamily: "inherit", fontWeight: 600, fontSize: "0.85rem",
-                                                        display: "flex", alignItems: "center", gap: "0.5rem",
-                                                        transition: "all 0.15s"
-                                                    }}
-                                                >
-                                                    <Icon style={{ width: "0.875rem", height: "0.875rem" }} />
-                                                    {cfg.label}
-                                                    {isActive && <span style={{ marginLeft: "auto", fontSize: "0.7rem" }}>✓ Aktif</span>}
-                                                </button>
-                                            );
-                                        })}
+                                    <div style={{ background: "rgba(0,0,0,0.2)", borderRadius: "0.75rem", padding: "1rem", border: "1px solid rgba(255,255,255,0.05)" }}>
+                                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.75rem" }}>
+                                            <span style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.3)", textTransform: "uppercase", fontWeight: 700 }}>Lisans Anahtarı</span>
+                                            <span style={{ fontSize: "0.7rem", color: "#60a5fa", fontWeight: 800 }}>{l.plan_type} PLAN</span>
+                                        </div>
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                            <code style={{ fontSize: "1.1rem", color: "white", letterSpacing: "1px" }}>{l.license_key}</code>
+                                            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.8rem", color: "rgba(255,255,255,0.5)" }}>
+                                                <Calendar style={{ width: "0.8rem" }} /> {l.total_days} Gün
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            </motion.div>
+                                </motion.div>
+                            ))}
+                        </div>
+
+                        {showNewLicense && (
+                            <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
+                                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} style={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "1.5rem", padding: "2rem", width: "100%", maxWidth: "450px" }}>
+                                    <h2 style={{ marginBottom: "1.5rem" }}>Yeni Lisans Ekle</h2>
+                                    <form onSubmit={createLicense} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                                        <input type="text" placeholder="Müşteri Adı" required value={newLicenseData.client_name} onChange={e => setNewLicenseData({ ...newLicenseData, client_name: e.target.value })} style={{ padding: "0.75rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }} />
+                                        <input type="email" placeholder="E-posta" required value={newLicenseData.user_email} onChange={e => setNewLicenseData({ ...newLicenseData, user_email: e.target.value })} style={{ padding: "0.75rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }} />
+                                        <input type="text" placeholder="Lisans Anahtarı (Örn: JETPOS-1234)" required value={newLicenseData.license_key} onChange={e => setNewLicenseData({ ...newLicenseData, license_key: e.target.value.toUpperCase() })} style={{ padding: "0.75rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }} />
+                                        <select value={newLicenseData.plan_type} onChange={e => setNewLicenseData({ ...newLicenseData, plan_type: e.target.value })} style={{ padding: "0.75rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }}>
+                                            <option value="BASIC">BASIC</option>
+                                            <option value="PRO">PRO</option>
+                                            <option value="ENTERPRISE">ENTERPRISE</option>
+                                        </select>
+                                        <input type="number" placeholder="Gün Sayısı" value={newLicenseData.total_days} onChange={e => setNewLicenseData({ ...newLicenseData, total_days: parseInt(e.target.value) })} style={{ padding: "0.75rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }} />
+                                        <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+                                            <button type="button" onClick={() => setShowNewLicense(false)} style={{ flex: 1, padding: "0.75rem", borderRadius: "0.75rem", border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "white", cursor: "pointer" }}>İptal</button>
+                                            <button type="submit" style={{ flex: 1, padding: "0.75rem", borderRadius: "0.75rem", background: "#2563eb", border: "none", color: "white", fontWeight: 700, cursor: "pointer" }}>Kaydet</button>
+                                        </div>
+                                    </form>
+                                </motion.div>
+                            </div>
                         )}
-                    </AnimatePresence>
-                </div>
+                    </>
+                )}
+
+                {activeTab === "guides" && (
+                    <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "1rem", padding: "2rem", textAlign: "center", color: "rgba(255,255,255,0.4)" }}>
+                        <BookOpen style={{ width: "3rem", height: "3rem", margin: "0 auto 1.5rem", display: "block" }} />
+                        <p>Rehber içeriklerini Supabase üzerinden customer_guides tablosundan yönetebilirsiniz.</p>
+                        <p style={{ fontSize: "0.8rem" }}>İleride buraya tam özellikli bir editör eklenecektir.</p>
+                    </div>
+                )}
             </div>
+
+            {/* Toast Notifications */}
+            <AnimatePresence>
+                {toast && (
+                    <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }} style={{
+                        position: "fixed", bottom: "2rem", left: "50%", transform: "translateX(-50%)",
+                        padding: "1rem 2rem", borderRadius: "1rem",
+                        background: toast.type === "success" ? "#10b981" : "#ef4444",
+                        color: "white", fontWeight: 700, boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
+                        zIndex: 1000, display: "flex", alignItems: "center", gap: "0.75rem"
+                    }}>
+                        {toast.type === "success" ? <CheckCircle2 style={{ width: "1.25rem" }} /> : <AlertCircle style={{ width: "1.25rem" }} />}
+                        {toast.message}
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
     );
 }
+

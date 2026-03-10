@@ -45,6 +45,7 @@ import ShiftManager from '@/components/Employee/ShiftManager';
 import ProductLabelDesigner from '@/components/Tools/ProductLabelDesigner';
 import FinancialCalendar from '@/components/Calendar/FinancialCalendar';
 import InvoiceWaybillPage from '@/components/Waybill/InvoiceWaybillPage';
+import { createTrendyolGoClient } from "@/lib/trendyol-go-client";
 
 export default function Home() {
   const { currentTenant, loading: tenantLoading } = useTenant();
@@ -477,6 +478,35 @@ export default function Home() {
       const { error: itemsError } = await supabase.from('sale_items').insert(saleItems);
       if (itemsError) throw itemsError;
 
+      // --- TRENDYOL ENTEGRASYONU ---
+      let trendyolClient: any = null;
+      let mappings: any[] = [];
+      let isLive = false;
+
+      // Entegrasyon ayarlarını ve senkronizasyonun açık olup olmadığını kontrol et
+      const { data: settings } = await supabase
+        .from('integration_settings')
+        .select('*')
+        .eq('tenant_id', currentTenant.id)
+        .or('platform.eq.trendyol,type.eq.trendyol_go')
+        .maybeSingle();
+
+      const canSync = settings?.is_active && (settings?.api_config?.auto_stock_sync || settings?.settings?.auto_stock_sync);
+
+      if (canSync) {
+        isLive = settings.mode === 'live';
+        trendyolClient = createTrendyolGoClient({ trendyolGo: settings.api_config || settings.settings });
+        // Sadece senkronizasyonu açık olan eşleşmeleri çek
+        const { data: mappingData } = await supabase
+          .from('external_mappings')
+          .select('*')
+          .eq('tenant_id', currentTenant.id)
+          .eq('platform', 'trendyol')
+          .eq('sync_enabled', true);
+        mappings = mappingData || [];
+      }
+      // -----------------------------
+
       // Update Stock and check for depleted items
       const depletedProducts: string[] = [];
       const { supabase: sb, setCurrentTenant: setTenant } = await import("@/lib/supabase");
@@ -493,12 +523,32 @@ export default function Home() {
           console.error("Stok düşme hatası:", rpcError);
         } else {
           const productInState = products.find((p: any) => p.id === item.id);
-          // Check if stock became zero or less after this sale
-          // Note: productInState has OLD stock. item.quantity is what we just sold.
-          if (productInState && (productInState.stock_quantity - item.quantity) <= 0) {
-            depletedProducts.push(productInState.name);
+          const oldStock = productInState?.stock_quantity || 0;
+          const newQty = Math.max(0, oldStock - item.quantity);
 
-            // Automatically set to passive
+          // Trendyol Sync - Arka planda çalıştır (Bekletme yapmaz)
+          if (canSync && trendyolClient) {
+            const mapping = mappings.find(m => m.product_id === item.id);
+            if (mapping) {
+              if (isLive) {
+                trendyolClient.updateStock(mapping.external_sku, newQty, item.sale_price)
+                  .catch((err: any) => {
+                    console.error("Trendyol sync failed:", err);
+                    // Hata durumunda mapping tablosuna işle
+                    supabase.from('external_mappings').update({
+                      last_sync_status: 'failed',
+                      last_sync_error: err.message,
+                      last_sync_at: new Date().toISOString()
+                    }).eq('id', mapping.id).then();
+                  });
+              } else {
+                console.log(`[TEST MODU] Trendyol stok güncelleme atlandı: ${item.name} -> ${newQty}`);
+              }
+            }
+          }
+
+          if (productInState && newQty <= 0) {
+            depletedProducts.push(productInState.name);
             await sb.from('products').update({ status: 'passive' }).eq('id', item.id);
           }
         }

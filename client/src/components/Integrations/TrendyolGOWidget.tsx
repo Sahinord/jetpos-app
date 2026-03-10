@@ -127,23 +127,51 @@ export default function TrendyolGOWidget() {
     const fetchSettings = async () => {
         if (!currentTenant?.id) return;
         try {
-            // 1. Önce Veritabanından çek
-            const { data, error } = await supabase
+            // 1. Önce Entegrasyon Ayarları tablosundan çek
+            const { data: intData } = await supabase
                 .from('integration_settings')
                 .select('*')
                 .eq('tenant_id', currentTenant.id)
-                .eq('type', 'trendyol_go')
+                .or('type.eq.trendyol_go,platform.eq.trendyol')
+                .maybeSingle();
+
+            if (intData) {
+                const config = intData.api_config || intData.settings || {};
+                setSettings({
+                    sellerId: config.sellerId || "",
+                    storeId: config.storeId || "",
+                    apiKey: config.apiKey || "",
+                    apiSecret: config.apiSecret || "",
+                    agentName: config.agentName || "JetPos_Entegrasyon",
+                    token: config.token || "",
+                    isStage: config.isStage || config.stage || false
+                });
+                setIsConfigured(intData.is_active);
+                setStats(prev => ({ ...prev, lastSync: intData.last_sync_at }));
+                return; // Bulunduysa devam etme
+            }
+
+            // 2. Eğer orada yoksa, Müşteri Lisans (tenants) tablosundaki ayarları kontrol et (Super Admin verisi)
+            const { data: tenantData } = await supabase
+                .from('tenants')
+                .select('settings')
+                .eq('id', currentTenant.id)
                 .single();
 
-            if (data) {
+            if (tenantData?.settings?.trendyolGo) {
+                const tg = tenantData.settings.trendyolGo;
                 setSettings({
-                    ...data.settings,
-                    token: data.settings.token || ""
+                    sellerId: tg.sellerId || "",
+                    storeId: tg.storeId || "",
+                    apiKey: tg.apiKey || "",
+                    apiSecret: tg.apiSecret || "",
+                    agentName: "JetPos_Entegrasyon",
+                    token: tg.token || "",
+                    isStage: tg.stage || false
                 });
-                setIsConfigured(data.is_active);
-                setStats(prev => ({ ...prev, lastSync: data.last_sync_at }));
+                setIsConfigured(true);
             } else {
-                // 2. Veritabanında yoksa Sistem Ayarlarını (.env.local) kontrol et
+                // 3. Hiçbiri yoksa Sistem Ayarlarını (.env.local) kontrol et
                 const res = await fetch('/api/trendyol/settings');
                 const sys = await res.json();
 
@@ -163,7 +191,7 @@ export default function TrendyolGOWidget() {
                 }
             }
         } catch (err) {
-            console.log("No settings found or error fetching settings");
+            console.log("No settings found or error fetching settings:", err);
         }
     };
 

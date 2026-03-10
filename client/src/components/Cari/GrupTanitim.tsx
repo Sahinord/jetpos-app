@@ -21,6 +21,23 @@ export default function GrupTanitim({ showToast }: GrupTanitimProps) {
         aciklama: "",
     });
 
+    // Otomatik Grup Kodu üret (G001, G002, ...)
+    const generateNextGrupKodu = async (): Promise<string> => {
+        if (!currentTenant) return 'G001';
+        const { data } = await supabase
+            .from('cari_gruplar')
+            .select('grup_kodu')
+            .eq('tenant_id', currentTenant.id)
+            .like('grup_kodu', 'G%')
+            .order('grup_kodu', { ascending: false })
+            .limit(1);
+        if (data && data.length > 0) {
+            const num = parseInt(data[0].grup_kodu.replace(/^G/, ''), 10);
+            if (!isNaN(num)) return 'G' + String(num + 1).padStart(3, '0');
+        }
+        return 'G001';
+    };
+
     // Grup sayısını yükle
     const loadGrupCount = async () => {
         if (!currentTenant) return;
@@ -33,6 +50,9 @@ export default function GrupTanitim({ showToast }: GrupTanitimProps) {
 
     useEffect(() => {
         loadGrupCount();
+        generateNextGrupKodu().then(kod => {
+            setFormData(prev => ({ ...prev, grupKodu: kod }));
+        });
     }, [currentTenant]);
 
     const updateField = useCallback((field: string, value: string) => {
@@ -119,10 +139,11 @@ export default function GrupTanitim({ showToast }: GrupTanitimProps) {
     };
 
     // TEMİZLE
-    const handleClear = () => {
+    const handleClear = async () => {
         setEditingId(null);
+        const yeniKod = await generateNextGrupKodu();
         setFormData({
-            grupKodu: "",
+            grupKodu: yeniKod,
             grupAdi: "",
             aciklama: "",
         });

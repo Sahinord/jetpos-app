@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useCallback, memo, useEffect } from "react";
 import {
@@ -132,6 +132,11 @@ export default function CariTanitim({ showToast }: CariTanitimProps) {
     const [loading, setLoading] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [cariCount, setCariCount] = useState(0);
+    const [showFihrist, setShowFihrist] = useState(false);
+    const [showHareket, setShowHareket] = useState(false);
+    const [cariList, setCariList] = useState<any[]>([]);
+    const [hareketList, setHareketList] = useState<any[]>([]);
+    const [fihristLoading, setFihristLoading] = useState(false);
 
     const [formData, setFormData] = useState({
         cariKodu: "",
@@ -209,9 +214,66 @@ export default function CariTanitim({ showToast }: CariTanitimProps) {
         setCariCount(count || 0);
     };
 
-    // Sayfa yüklendiğinde cari sayısını al
+    // Fihrist: Tüm cari listesi
+    const handleFihrist = async () => {
+        if (!currentTenant) return;
+        setFihristLoading(true);
+        setShowFihrist(true);
+        const { data } = await supabase
+            .from('cari_hesaplar')
+            .select('cari_kodu, unvani, cari_tipi, durum')
+            .eq('tenant_id', currentTenant.id)
+            .order('cari_kodu');
+        setCariList(data || []);
+        setFihristLoading(false);
+    };
+
+    // Hareket: Seçili carinin hareketleri
+    const handleHareket = async () => {
+        if (!editingId || !currentTenant) {
+            showToast?.('Önce bir cari seçin', 'warning');
+            return;
+        }
+        setFihristLoading(true);
+        setShowHareket(true);
+        const { data } = await supabase
+            .from('cari_hareketler')
+            .select('*')
+            .eq('cari_id', editingId)
+            .order('tarih', { ascending: false })
+            .limit(100);
+        setHareketList(data || []);
+        setFihristLoading(false);
+    };
+
+    // Otomatik Cari Kodu üret (C001, C002, ...)
+    const generateNextCariKodu = async (): Promise<string> => {
+        if (!currentTenant) return 'C001';
+        const { data } = await supabase
+            .from('cari_hesaplar')
+            .select('cari_kodu')
+            .eq('tenant_id', currentTenant.id)
+            .like('cari_kodu', 'C%')
+            .order('cari_kodu', { ascending: false })
+            .limit(1);
+
+        if (data && data.length > 0) {
+            const lastKode = data[0].cari_kodu;
+            const num = parseInt(lastKode.replace(/^C/, ''), 10);
+            if (!isNaN(num)) {
+                return 'C' + String(num + 1).padStart(3, '0');
+            }
+        }
+        return 'C001';
+    };
+
+    // Sayfa yüklendiğinde cari sayısını al ve otomatik kod üret
     useEffect(() => {
         loadCariCount();
+        // İlk yüklemede otomatik kod üret
+        generateNextCariKodu().then(kod => {
+            setFormData(prev => ({ ...prev, cariKodu: kod }));
+        });
     }, [currentTenant]);
 
     // Optimize edilmiş handler
@@ -368,10 +430,11 @@ export default function CariTanitim({ showToast }: CariTanitimProps) {
     };
 
     // TEMİZLE
-    const handleClear = () => {
+    const handleClear = async () => {
         setEditingId(null);
+        const yeniKod = await generateNextCariKodu();
         setFormData({
-            cariKodu: "",
+            cariKodu: yeniKod,
             unvani: "",
             unvani2: "",
             vergiDairesi: "",
@@ -545,11 +608,11 @@ export default function CariTanitim({ showToast }: CariTanitimProps) {
                             <span className="hidden sm:inline">Kopyala</span>
                         </button>
                         <div className="hidden md:block w-px h-6 bg-white/20 mx-1" />
-                        <button className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded text-sm font-medium transition-all">
+                        <button onClick={handleFihrist} className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded text-sm font-medium transition-all">
                             <List className="w-4 h-4" />
                             <span className="hidden lg:inline">Fihrist</span>
                         </button>
-                        <button className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded text-sm font-medium transition-all">
+                        <button onClick={handleHareket} className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded text-sm font-medium transition-all">
                             <FileText className="w-4 h-4" />
                             <span className="hidden lg:inline">Hareket</span>
                         </button>
@@ -797,31 +860,97 @@ export default function CariTanitim({ showToast }: CariTanitimProps) {
                 </div>
             </div>
 
-            {/* Footer - Toplamlar */}
-            <div className="glass-card p-3 mt-3">
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                    <div className="bg-[#0a1628] rounded-lg p-3 border border-white/5">
-                        <p className="text-secondary text-xs mb-0.5">Borç Toplamı</p>
-                        <p className="text-xl font-bold text-red-500">₺0,00</p>
-                    </div>
-                    <div className="bg-[#0a1628] rounded-lg p-3 border border-white/5">
-                        <p className="text-secondary text-xs mb-0.5">Alacak Toplamı</p>
-                        <p className="text-xl font-bold text-emerald-500">₺0,00</p>
-                    </div>
-                    <div className="bg-[#0a1628] rounded-lg p-3 border border-white/5">
-                        <p className="text-secondary text-xs mb-0.5">Bakiye Toplamı</p>
-                        <p className="text-xl font-bold text-white">₺0,00</p>
-                    </div>
-                    <div className="bg-[#0a1628] rounded-lg p-3 border border-white/5">
-                        <p className="text-secondary text-xs mb-0.5">Bakiye Tipi</p>
-                        <p className="text-lg font-medium text-secondary">-</p>
-                    </div>
-                    <div className="bg-[#0a1628] rounded-lg p-3 border border-white/5">
-                        <p className="text-secondary text-xs mb-0.5">Ger. Ödeme Vadesi</p>
-                        <p className="text-lg font-medium text-secondary">-</p>
+            {/* FİHRİST MODAL */}
+            {showFihrist && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowFihrist(false)}>
+                    <div className="bg-[#0d1b2e] border border-white/10 rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between p-4 border-b border-white/10">
+                            <h2 className="text-white font-bold text-lg flex items-center gap-2"><List className="w-5 h-5 text-primary" /> Cari Fihrist</h2>
+                            <button onClick={() => setShowFihrist(false)} className="p-1.5 hover:bg-white/10 rounded transition-colors text-secondary hover:text-white"><X className="w-5 h-5" /></button>
+                        </div>
+                        <div className="overflow-auto flex-1">
+                            {fihristLoading ? (
+                                <div className="flex items-center justify-center h-32 text-secondary">Yukleniyor...</div>
+                            ) : cariList.length === 0 ? (
+                                <div className="flex items-center justify-center h-32 text-secondary">Kayit bulunamadi</div>
+                            ) : (
+                                <table className="w-full text-sm">
+                                    <thead className="sticky top-0 bg-[#0a1628]">
+                                        <tr>
+                                            <th className="text-left px-4 py-2 text-secondary font-medium">Cari Kodu</th>
+                                            <th className="text-left px-4 py-2 text-secondary font-medium">Unvani</th>
+                                            <th className="text-left px-4 py-2 text-secondary font-medium">Tipi</th>
+                                            <th className="text-left px-4 py-2 text-secondary font-medium">Durum</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {cariList.map((c: any, i: number) => (
+                                            <tr key={i} className="border-t border-white/5 hover:bg-white/5 cursor-pointer transition-colors"
+                                                onClick={() => { setFormData((prev: any) => ({ ...prev, cariKodu: c.cari_kodu })); setShowFihrist(false); }}>
+                                                <td className="px-4 py-2 text-primary font-mono font-bold">{c.cari_kodu}</td>
+                                                <td className="px-4 py-2 text-white">{c.unvani}</td>
+                                                <td className="px-4 py-2 text-secondary">{c.cari_tipi}</td>
+                                                <td className="px-4 py-2">
+                                                    <span className={c.durum === 'Aktif' ? 'px-2 py-0.5 rounded text-xs font-medium bg-emerald-500/20 text-emerald-400' : 'px-2 py-0.5 rounded text-xs font-medium bg-red-500/20 text-red-400'}>{c.durum}</span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
+                        </div>
+                        <div className="px-4 py-3 border-t border-white/10 text-secondary text-xs">
+                            Toplam: <span className="text-white font-bold">{cariList.length}</span> kayit
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
+
+            {/* HAREKET MODAL */}
+            {showHareket && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowHareket(false)}>
+                    <div className="bg-[#0d1b2e] border border-white/10 rounded-xl shadow-2xl w-full max-w-3xl mx-4 max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between p-4 border-b border-white/10">
+                            <h2 className="text-white font-bold text-lg flex items-center gap-2"><FileText className="w-5 h-5 text-blue-400" /> Cari Hareketler</h2>
+                            <button onClick={() => setShowHareket(false)} className="p-1.5 hover:bg-white/10 rounded transition-colors text-secondary hover:text-white"><X className="w-5 h-5" /></button>
+                        </div>
+                        <div className="overflow-auto flex-1">
+                            {fihristLoading ? (
+                                <div className="flex items-center justify-center h-32 text-secondary">Yukleniyor...</div>
+                            ) : hareketList.length === 0 ? (
+                                <div className="flex items-center justify-center h-32 text-secondary">Bu cariye ait hareket bulunamadi</div>
+                            ) : (
+                                <table className="w-full text-sm">
+                                    <thead className="sticky top-0 bg-[#0a1628]">
+                                        <tr>
+                                            <th className="text-left px-4 py-2 text-secondary font-medium">Tarih</th>
+                                            <th className="text-left px-4 py-2 text-secondary font-medium">Aciklama</th>
+                                            <th className="text-right px-4 py-2 text-secondary font-medium">Borc</th>
+                                            <th className="text-right px-4 py-2 text-secondary font-medium">Alacak</th>
+                                            <th className="text-right px-4 py-2 text-secondary font-medium">Bakiye</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {hareketList.map((h: any, i: number) => (
+                                            <tr key={i} className="border-t border-white/5 hover:bg-white/5 transition-colors">
+                                                <td className="px-4 py-2 text-secondary font-mono text-xs">{h.tarih ? new Date(h.tarih).toLocaleDateString('tr-TR') : '-'}</td>
+                                                <td className="px-4 py-2 text-white">{h.aciklama || '-'}</td>
+                                                <td className="px-4 py-2 text-right text-red-400 font-mono">{h.borc ? Number(h.borc).toLocaleString('tr-TR', { minimumFractionDigits: 2 }) : '-'}</td>
+                                                <td className="px-4 py-2 text-right text-emerald-400 font-mono">{h.alacak ? Number(h.alacak).toLocaleString('tr-TR', { minimumFractionDigits: 2 }) : '-'}</td>
+                                                <td className="px-4 py-2 text-right text-white font-mono font-bold">{h.bakiye !== undefined ? Number(h.bakiye).toLocaleString('tr-TR', { minimumFractionDigits: 2 }) : '-'}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
+                        </div>
+                        <div className="px-4 py-3 border-t border-white/10 text-secondary text-xs">
+                            Son <span className="text-white font-bold">{hareketList.length}</span> hareket gosteriliyor
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
+

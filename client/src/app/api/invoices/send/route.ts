@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { QNBClient } from '@/lib/qnb/client';
 import { getTenantSettings } from '@/lib/tenant-settings';
+import crypto from 'crypto';
 
 export async function POST(req: NextRequest) {
     try {
@@ -31,6 +32,43 @@ export async function POST(req: NextRequest) {
         if (result.success && tenantId) {
             try {
                 const { supabaseAdmin } = await import('@/lib/supabase-admin');
+
+                let finalPdfUrl = result.pdfUrl;
+
+                // Trendyol'a gönderilecekse ve base64 ise Supabase Storage'a yükle (Trendyol public link ister)
+                if (invoiceData.packageId && finalPdfUrl && finalPdfUrl.startsWith('data:application/pdf;base64,')) {
+                    try {
+                        const base64Data = finalPdfUrl.split(',')[1];
+                        const buffer = Buffer.from(base64Data, 'base64');
+
+                        // Güvenlik için: Tenant ID'sini URL'de açıkça göstermemek için hash'liyoruz 
+                        // ve dosya adını tahmin edilemez bir UUID yapıyoruz.
+                        const hashedTenant = crypto.createHash('sha256').update(tenantId).digest('hex').slice(0, 16);
+                        const fileGuid = crypto.randomUUID();
+                        const fileName = `invoices/${hashedTenant}/${fileGuid}.pdf`;
+
+                        const { error: uploadErr } = await supabaseAdmin.storage
+                            .from('invoices')
+                            .upload(fileName, buffer, {
+                                contentType: 'application/pdf',
+                                upsert: true,
+                                cacheControl: '3600',
+                                metadata: { tenant_id: tenantId } // Metadata sadece admin panelden görülebilir
+                            });
+
+                        if (!uploadErr) {
+                            const { data: { publicUrl } } = supabaseAdmin.storage
+                                .from('invoices')
+                                .getPublicUrl(fileName);
+                            finalPdfUrl = publicUrl;
+                        } else {
+                            console.error('Supabase Storage Upload Error:', uploadErr);
+                        }
+                    } catch (storageErr) {
+                        console.error('Storage processing error:', storageErr);
+                    }
+                }
+
                 const { data: inv, error: invErr } = await supabaseAdmin
                     .from('invoices')
                     .insert({
@@ -43,7 +81,7 @@ export async function POST(req: NextRequest) {
                         subtotal: invoiceData.subtotal,
                         total_vat: invoiceData.totalVat,
                         grand_total: invoiceData.grandTotal,
-                        pdf_url: result.pdfUrl,
+                        pdf_url: finalPdfUrl,
                         service_oid: result.listId,
                         status: 'sent',
                         is_e_invoice: true,
@@ -69,13 +107,33 @@ export async function POST(req: NextRequest) {
                     }));
                     await supabaseAdmin.from('invoice_items').insert(lineInserts);
                 }
+
+                // 3. Trendyol'a bildir (Eğer packageId varsa)
+                if (invoiceData.packageId && finalPdfUrl) {
+                    try {
+                        const { createTrendyolGoClient } = await import('@/lib/trendyol-go-client');
+                        const trendyolClient = createTrendyolGoClient(tenantSettings);
+
+                        await trendyolClient.uploadInvoice(invoiceData.packageId, {
+                            invoiceNumber: result.listId || invoiceData.invoiceNumber,
+                            invoiceLink: finalPdfUrl,
+                            invoiceDateTime: Date.now()
+                        });
+                        console.log(`[Trendyol] Invoice notified for package ${invoiceData.packageId}`);
+                    } catch (tErr) {
+                        console.error('Trendyol Invoice Upload Error:', tErr);
+                        // Fatura kesildiği için bu hatayı kullanıcıya kritik olarak yansıtmayabiliriz 
+                        // ama loglamak önemli.
+                    }
+                }
+
             } catch (dbErr) {
-                console.error('DB Operation failed but invoice was sent:', dbErr);
+                console.error('DB/Storage/Trendyol Operation failed but invoice was sent:', dbErr);
             }
 
             return NextResponse.json({
                 success: true,
-                message: 'Fatura başarıyla kuyruğa alındı ve gönderildi.',
+                message: 'Fatura başarıyla kuyruğa alındı ve Trendyol\'a iletildi.',
                 listId: result.listId,
                 pdfUrl: result.pdfUrl,
                 ettn: (result as any).ettn

@@ -32,6 +32,22 @@ export default function OdaTanitim({ showToast }: OdaTanitimProps) {
         durum: "Bos"
     });
 
+    // Otomatik Oda No üret (101, 102, ...)
+    const generateNextOdaNo = async (): Promise<string> => {
+        if (!currentTenant) return '101';
+        const { data } = await supabase
+            .from('odalar')
+            .select('oda_no')
+            .eq('tenant_id', currentTenant.id)
+            .order('oda_no', { ascending: false })
+            .limit(1);
+        if (data && data.length > 0) {
+            const num = parseInt(data[0].oda_no, 10);
+            if (!isNaN(num)) return String(num + 1);
+        }
+        return '101';
+    };
+
     const loadOdaCount = async () => {
         if (!currentTenant) return;
         const { count } = await supabase
@@ -43,6 +59,9 @@ export default function OdaTanitim({ showToast }: OdaTanitimProps) {
 
     useEffect(() => {
         loadOdaCount();
+        generateNextOdaNo().then(no => {
+            setFormData(prev => ({ ...prev, odaNo: no }));
+        });
     }, [currentTenant]);
 
     const updateField = useCallback((field: string, value: string) => {
@@ -110,10 +129,11 @@ export default function OdaTanitim({ showToast }: OdaTanitimProps) {
         }
     };
 
-    const handleClear = () => {
+    const handleClear = async () => {
         setEditingId(null);
+        const yeniNo = await generateNextOdaNo();
         setFormData({
-            odaNo: "",
+            odaNo: yeniNo,
             odaAdi: "",
             odaTipi: "Standart",
             katNo: "",

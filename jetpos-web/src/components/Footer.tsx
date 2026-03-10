@@ -68,12 +68,17 @@ export default function Footer() {
                     <div>
                         <h4 style={{ fontSize: "0.875rem", fontWeight: 700, color: "white", marginBottom: "1.25rem", textTransform: "uppercase", letterSpacing: "0.08em" }}>Platform</h4>
                         <ul style={{ display: "flex", flexDirection: "column", gap: "0.75rem", listStyle: "none" }}>
-                            {["Özellikler", "Fiyatlandırma", "Entegrasyonlar", "API Dokümantasyonu"].map(item => (
-                                <li key={item}>
-                                    <a href="#" style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.875rem", textDecoration: "none", transition: "color 0.2s" }}
+                            {[
+                                { label: "Özellikler", href: "/#features" },
+                                { label: "Fiyatlandırma", href: "/fiyatlandirma" },
+                                { label: "Demo Talebi", href: "/demo" },
+                                { label: "Entegrasyonlar", href: "/#contact" },
+                            ].map(item => (
+                                <li key={item.label}>
+                                    <a href={item.href} style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.875rem", textDecoration: "none", transition: "color 0.2s" }}
                                         onMouseEnter={e => (e.currentTarget.style.color = "white")}
                                         onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.5)")}
-                                    >{item}</a>
+                                    >{item.label}</a>
                                 </li>
                             ))}
                         </ul>
@@ -83,12 +88,16 @@ export default function Footer() {
                     <div>
                         <h4 style={{ fontSize: "0.875rem", fontWeight: 700, color: "white", marginBottom: "1.25rem", textTransform: "uppercase", letterSpacing: "0.08em" }}>Kurumsal</h4>
                         <ul style={{ display: "flex", flexDirection: "column", gap: "0.75rem", listStyle: "none" }}>
-                            {["Hakkımızda", "Blog", "Kariyer", "İletişim"].map(item => (
-                                <li key={item}>
-                                    <a href="#" style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.875rem", textDecoration: "none", transition: "color 0.2s" }}
+                            {[
+                                { label: "Hakkımızda", href: "/#contact" },
+                                { label: "Gizlilik & KVKK", href: "/gizlilik" },
+                                { label: "İletişim", href: "/#contact" },
+                            ].map(item => (
+                                <li key={item.label}>
+                                    <a href={item.href} style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.875rem", textDecoration: "none", transition: "color 0.2s" }}
                                         onMouseEnter={e => (e.currentTarget.style.color = "white")}
                                         onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.5)")}
-                                    >{item}</a>
+                                    >{item.label}</a>
                                 </li>
                             ))}
                         </ul>
@@ -122,11 +131,15 @@ export default function Footer() {
                         © {currentYear} JetPOS. Tüm hakları saklıdır.
                     </p>
                     <div style={{ display: "flex", gap: "1.5rem" }}>
-                        {["Kullanıcı Sözleşmesi", "Gizlilik Politikası", "Kullanım Koşulları"].map(item => (
-                            <a key={item} href="#" style={{ color: "rgba(255,255,255,0.35)", fontSize: "0.8125rem", textDecoration: "none", transition: "color 0.2s" }}
+                        {[
+                            { label: "Gizlilik Politikası", href: "/gizlilik" },
+                            { label: "KVKK", href: "/gizlilik#haklariniz" },
+                            { label: "Kullanım Koşulları", href: "/gizlilik" },
+                        ].map(item => (
+                            <a key={item.label} href={item.href} style={{ color: "rgba(255,255,255,0.35)", fontSize: "0.8125rem", textDecoration: "none", transition: "color 0.2s" }}
                                 onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.7)")}
                                 onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.35)")}
-                            >{item}</a>
+                            >{item.label}</a>
                         ))}
                     </div>
                 </div>
