@@ -331,6 +331,34 @@ export default function InvoicePanel() {
         }
     };
 
+    const handleDeleteSale = async (item: any) => {
+        if (!confirm('Bu satışı silmek istediğinize emin misiniz? (Bu işlem loglanacaktır)')) return;
+
+        try {
+            // 1. Log the deletion
+            // Not: sale_activity_logs tablosunu oluşturan SQL'i kullanıcıya bildireceğim
+            const { error: logError } = await supabase.from('sale_activity_logs').insert({
+                tenant_id: currentTenant?.id,
+                sale_id: item.id,
+                action_type: 'SALE_DELETE',
+                details: item,
+                performed_by: 'admin'
+            });
+
+            if (logError && logError.code !== '42P01') {
+                console.error('Logging Error:', logError);
+            }
+
+            // 2. Delete the sale (cascades to sale_items)
+            const { error: deleteError } = await supabase.from('sales').delete().eq('id', item.id);
+            if (deleteError) throw deleteError;
+
+            fetchData();
+        } catch (err: any) {
+            alert('Hata: ' + err.message);
+        }
+    };
+
     if (!mounted) return null;
 
     return (
@@ -492,6 +520,27 @@ export default function InvoicePanel() {
                                                 >
                                                     <RotateCw className="w-3.5 h-3.5" />
                                                 </button>
+                                                <button
+                                                    onClick={async () => {
+                                                        if (confirm('Bu faturayı silmek istediğinize emin misiniz?')) {
+                                                            try {
+                                                                const res = await fetch(`/api/invoices/archive?id=${item.id}`, { method: 'DELETE' });
+                                                                const data = await res.json();
+                                                                if (data.success) {
+                                                                    fetchData();
+                                                                } else {
+                                                                    alert('Silme Hatası: ' + data.error);
+                                                                }
+                                                            } catch (err) {
+                                                                console.error('Delete Error:', err);
+                                                            }
+                                                        }
+                                                    }}
+                                                    className="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white p-1.5 rounded-lg transition-all border border-red-500/20"
+                                                    title="Faturayı Sil"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
                                                 {item.pdf_url ? (
                                                     <button
                                                         onClick={() => {
@@ -546,7 +595,14 @@ export default function InvoicePanel() {
                                         </span>
                                     </td>
                                     <td className="px-4 py-2.5 text-right">
-                                        <button onClick={() => openInvoice(item, view === 'sales' ? 'sale' : 'trendyol')} className="bg-primary/5 hover:bg-primary text-secondary hover:text-white px-3 py-1 rounded-lg text-[10px] font-bold transition-all border border-border">DÜZENLE VE KES</button>
+                                        <div className="flex justify-end gap-2">
+                                            <button onClick={() => openInvoice(item, view === 'sales' ? 'sale' : 'trendyol')} className="bg-primary/5 hover:bg-primary text-secondary hover:text-white px-3 py-1 rounded-lg text-[10px] font-bold transition-all border border-border">DÜZENLE VE KES</button>
+                                            {view === 'sales' && (
+                                                <button onClick={() => handleDeleteSale(item)} className="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white p-1.5 rounded-lg transition-all border border-red-500/20" title="Satışı Sil">
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             ))
