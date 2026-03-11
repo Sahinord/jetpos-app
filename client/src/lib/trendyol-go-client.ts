@@ -253,6 +253,25 @@ export class TrendyolGoClient {
         return data.content || [];
     }
 
+    /**
+     * Trendyol'a fatura bildirimi gönder
+     * @param packageId Trendyol Paket ID (order.id)
+     * @param invoiceData Fatura bilgileri (invoiceNumber, invoiceLink, invoiceDateTime)
+     */
+    async uploadInvoice(packageId: string, invoiceData: {
+        invoiceNumber: string;
+        invoiceLink: string;
+        invoiceDateTime: number;
+    }) {
+        const url = `${this.config.baseUrl}/order/grocery/suppliers/${this.config.sellerId}/packages/${packageId}/invoice`;
+
+        return await this.request(url, 'POST', {
+            invoiceNumber: invoiceData.invoiceNumber,
+            invoiceLink: invoiceData.invoiceLink,
+            invoiceDateTime: invoiceData.invoiceDateTime
+        });
+    }
+
     async getOrderByNumber(orderNumber: string): Promise<TrendyolGoOrder | null> {
         const url = `${this.config.baseUrl}/order/grocery/suppliers/${this.config.sellerId}/packages/order-number/${orderNumber}`;
         const data = await this.request(url);

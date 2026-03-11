@@ -36,6 +36,23 @@ export default function KasaTanitim({ showToast }: KasaTanitimProps) {
 
     const [totals, setTotals] = useState({ borc: 0, alacak: 0, bakiye: 0 });
 
+    // Otomatik Kasa Kodu üret (K001, K002, ...)
+    const generateNextKasaKodu = async (): Promise<string> => {
+        if (!currentTenant) return 'K001';
+        const { data } = await supabase
+            .from('kasa_tanimlari')
+            .select('kasa_kodu')
+            .eq('tenant_id', currentTenant.id)
+            .like('kasa_kodu', 'K%')
+            .order('kasa_kodu', { ascending: false })
+            .limit(1);
+        if (data && data.length > 0) {
+            const num = parseInt(data[0].kasa_kodu.replace(/^K/, ''), 10);
+            if (!isNaN(num)) return 'K' + String(num + 1).padStart(3, '0');
+        }
+        return 'K001';
+    };
+
     const loadStats = async () => {
         if (!currentTenant) return;
 
@@ -63,6 +80,11 @@ export default function KasaTanitim({ showToast }: KasaTanitimProps) {
 
     useEffect(() => {
         loadStats();
+        if (!editingId) {
+            generateNextKasaKodu().then(kod => {
+                setFormData(prev => ({ ...prev, kasaKodu: kod }));
+            });
+        }
     }, [currentTenant, editingId]);
 
     const updateField = useCallback((field: string, value: string) => {
@@ -128,10 +150,11 @@ export default function KasaTanitim({ showToast }: KasaTanitimProps) {
         }
     };
 
-    const handleClear = () => {
+    const handleClear = async () => {
         setEditingId(null);
+        const yeniKod = await generateNextKasaKodu();
         setFormData({
-            kasaKodu: "",
+            kasaKodu: yeniKod,
             kasaAdi: "",
             yetkiliKisi: "",
             muhKodu1: "",

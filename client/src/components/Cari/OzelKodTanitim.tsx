@@ -21,6 +21,23 @@ export default function OzelKodTanitim({ showToast }: OzelKodTanitimProps) {
         aciklama: "",
     });
 
+    // Otomatik Özel Kodu üret (O001, O002, ...)
+    const generateNextOzelKodu = async (): Promise<string> => {
+        if (!currentTenant) return 'O001';
+        const { data } = await supabase
+            .from('cari_ozel_kodlar')
+            .select('kod')
+            .eq('tenant_id', currentTenant.id)
+            .like('kod', 'O%')
+            .order('kod', { ascending: false })
+            .limit(1);
+        if (data && data.length > 0) {
+            const num = parseInt(data[0].kod.replace(/^O/, ''), 10);
+            if (!isNaN(num)) return 'O' + String(num + 1).padStart(3, '0');
+        }
+        return 'O001';
+    };
+
     // Özel kod sayısını yükle
     const loadKodCount = async () => {
         if (!currentTenant) return;
@@ -33,6 +50,9 @@ export default function OzelKodTanitim({ showToast }: OzelKodTanitimProps) {
 
     useEffect(() => {
         loadKodCount();
+        generateNextOzelKodu().then(kod => {
+            setFormData(prev => ({ ...prev, ozelKodu: kod }));
+        });
     }, [currentTenant]);
 
     const updateField = useCallback((field: string, value: string) => {
@@ -119,10 +139,11 @@ export default function OzelKodTanitim({ showToast }: OzelKodTanitimProps) {
     };
 
     // TEMİZLE
-    const handleClear = () => {
+    const handleClear = async () => {
         setEditingId(null);
+        const yeniKod = await generateNextOzelKodu();
         setFormData({
-            ozelKodu: "",
+            ozelKodu: yeniKod,
             ozelAdi: "",
             aciklama: "",
         });

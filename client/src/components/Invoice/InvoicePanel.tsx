@@ -225,6 +225,7 @@ export default function InvoicePanel() {
             postaKodu: details.postalCode || details.postal_code || '',
             vergiDairesi: details.taxOffice || details.tax_office || '',
             roundAmount: 0,
+            packageId: isTrendyol ? source.raw_data?.id : null,
             items: sourceItems.map((i: any) => {
                 const productName = i.name || i.productName || i.product?.name || i.product?.productSaleName || 'Muhtelif Gıda';
                 const autoVatRate = i.vatRate || getVatRateFromProductName(productName);
@@ -294,7 +295,8 @@ export default function InvoicePanel() {
                 grandTotal: editModal.grandTotal,
                 docType, // EFATURA veya EARSIV
                 tenantId: currentTenant?.id,
-                external_id: editModal.id // Trendyol sipariş numarası veya satış ID'si
+                external_id: editModal.id, // Trendyol sipariş numarası veya satış ID'si
+                packageId: editModal.packageId
             };
 
             const response = await fetch('/api/invoices/send', {

@@ -133,7 +133,6 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
                 { id: "pos", label: "Hızlı Satış", icon: ShoppingCart, feature: "pos", description: "Hızlı nakit veya kartlı satış işlemlerini gerçekleştirebileceğiniz satış ekranı." },
                 { id: "history", label: "Satış Geçmişi", icon: History, feature: "sales_history", description: "Geçmişte yapılan tüm satışların detaylı dökümü ve yönetimi." },
                 { id: "invoice", label: "E-Fatura", icon: FileText, feature: "invoice", description: "E-Fatura gönderimi ve takibi için entegrasyon ekranı." },
-                { id: "trendyol_pos", label: "Trendyol Siparişleri", icon: ShoppingBag, feature: "trendyol_go", description: "Trendyol GO üzerinden gelen siparişlerin yönetimi ve faturalandırılması." },
             ]
         },
         {
@@ -325,7 +324,6 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
                 { id: "trendyol_integration", label: "Trendyol Yemek", icon: ShoppingBag, feature: null, description: "Trendyol siparişleri, gelir ve net kar analizi." },
                 { id: "yemeksepeti_integration", label: "Yemeksepeti", icon: Store, feature: null, description: "Yemeksepeti siparişleri, gelir ve net kar analizi." },
                 { id: "getir_integration", label: "Getir", icon: Package, feature: null, description: "Getir siparişleri, gelir ve net kar analizi." },
-                { id: "migros_integration", label: "Migros Yemek", icon: ShoppingCart, feature: null, description: "Migros Yemek siparişleri, gelir ve net kar analizi." },
             ]
         },
         {

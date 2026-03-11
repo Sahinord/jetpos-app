@@ -2,9 +2,21 @@
 
 import { useState } from "react";
 import TrendyolGOWidget from "./TrendyolGOWidget";
-import { ShoppingBag, Store, Package, ShoppingCart } from "lucide-react";
+import ProductMapping from "./ProductMapping";
+import {
+    ShoppingBag, Store, Package, ShoppingCart,
+    LayoutDashboard, Link as LinkIcon
+} from "lucide-react";
 
 export default function IntegrationsDashboard({ integrationType }: { integrationType: string }) {
+    const [activeTab, setActiveTab] = useState<'dashboard' | 'mapping'>('dashboard');
+
+    const getPlatformName = (type: string) => {
+        if (type === 'trendyol_integration') return 'trendyol';
+        if (type === 'getir_integration') return 'getir';
+        if (type === 'yemeksepeti_integration') return 'yemeksepeti';
+        return 'other';
+    };
 
     // Geçici olarak diğer entegrasyonlar için "Yakında" ekranı
     if (integrationType !== "trendyol_integration") {
@@ -29,18 +41,39 @@ export default function IntegrationsDashboard({ integrationType }: { integration
     // Trendyol ekranı
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
                 <div>
                     <h1 className="text-3xl font-black tracking-tight text-white mb-1">Pazar Yeri Yönetimi</h1>
                     <p className="text-sm font-medium text-secondary">
-                        Siparişlerinizi, gelirlerinizi ve karlılık analizlerinizi tek merkezden takip edin.
+                        Siparişlerinizi, stoklarınızı ve eşleştirmelerinizi tek merkezden takip edin.
                     </p>
+                </div>
+
+                {/* Sub-navigation Tabs */}
+                <div className="flex gap-1 bg-white/5 p-1 rounded-2xl border border-white/5 w-fit">
+                    <button
+                        onClick={() => setActiveTab('dashboard')}
+                        className={`px-5 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${activeTab === 'dashboard' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-secondary hover:text-foreground hover:bg-white/5'}`}
+                    >
+                        <LayoutDashboard className="w-4 h-4" /> GENEL BAKIŞ
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('mapping')}
+                        className={`px-5 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${activeTab === 'mapping' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-secondary hover:text-foreground hover:bg-white/5'}`}
+                    >
+                        <LinkIcon className="w-4 h-4" /> ÜRÜN EŞLEŞTİRME
+                    </button>
                 </div>
             </div>
 
-            {/* Trendyol Bileşeni - Bunu tam ekran entegrasyon için genişletebiliriz */}
-            <div className="grid grid-cols-1 gap-6">
-                <TrendyolGOWidget />
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                {activeTab === 'dashboard' ? (
+                    <div className="grid grid-cols-1 gap-6">
+                        <TrendyolGOWidget />
+                    </div>
+                ) : (
+                    <ProductMapping platform={getPlatformName(integrationType)} />
+                )}
             </div>
         </div>
     );

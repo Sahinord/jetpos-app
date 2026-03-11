@@ -41,6 +41,23 @@ export default function KasaFis({ type, showToast }: KasaFisProps) {
         { id: Date.now(), kasa_id: "", unvan: "", aciklama: "", tutar: 0, hareket_tipi: type === "Tediye" ? "Cikis" : "Giris" }
     ]);
 
+    // Otomatik Fiş No üret (KF-001, KF-002, ...)
+    const generateNextFisNo = async (): Promise<string> => {
+        if (!currentTenant) return 'KF-001';
+        const { data } = await supabase
+            .from('kasa_fisleri')
+            .select('fis_no')
+            .eq('tenant_id', currentTenant.id)
+            .like('fis_no', 'KF-%')
+            .order('fis_no', { ascending: false })
+            .limit(1);
+        if (data && data.length > 0) {
+            const num = parseInt(data[0].fis_no.replace(/^KF-/, ''), 10);
+            if (!isNaN(num)) return 'KF-' + String(num + 1).padStart(3, '0');
+        }
+        return 'KF-001';
+    };
+
     useEffect(() => {
         const loadKasalar = async () => {
             if (!currentTenant) return;
@@ -51,6 +68,9 @@ export default function KasaFis({ type, showToast }: KasaFisProps) {
             if (data) setKasalar(data);
         };
         loadKasalar();
+        generateNextFisNo().then(no => {
+            setHeader(prev => ({ ...prev, fisNo: no }));
+        });
     }, [currentTenant]);
 
     const addRow = () => {
@@ -131,9 +151,10 @@ export default function KasaFis({ type, showToast }: KasaFisProps) {
         }
     };
 
-    const handleClear = () => {
+    const handleClear = async () => {
+        const yeniNo = await generateNextFisNo();
         setHeader({
-            fisNo: "",
+            fisNo: yeniNo,
             fisTarihi: new Date().toISOString().split("T")[0],
             fisSaati: new Date().toLocaleTimeString('tr-TR', { hour12: false }).slice(0, 5),
             isyeriKodu: "Merkez",

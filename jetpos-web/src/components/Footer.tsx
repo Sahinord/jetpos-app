@@ -72,6 +72,7 @@ export default function Footer() {
                             {([
                                 { label: "Özellikler", href: "/#features" },
                                 { label: "Fiyatlandırma", href: "/fiyatlandirma" },
+                                { label: "Demo Talebi", href: "/demo" },
                                 { label: "Entegrasyonlar", href: "/#integrations" },
                                 { label: "API Dokümantasyonu", href: "/api-docs" },
                             ] as { label: string; href: string }[]).map(({ label, href }) => (
@@ -93,6 +94,7 @@ export default function Footer() {
                                 { label: "Hakkımızda", href: "/hakkimizda" },
                                 { label: "Blog", href: "/blog" },
                                 { label: "Kariyer", href: "/kariyer" },
+                                { label: "Gizlilik & KVKK", href: "/gizlilik" },
                                 { label: "İletişim", href: "/#contact" },
                             ] as { label: string; href: string }[]).map(({ label, href }) => (
                                 <li key={label}>
@@ -136,6 +138,7 @@ export default function Footer() {
                         {([
                             { label: "Kullanıcı Sözleşmesi", href: "/kullanici-sozlesmesi" },
                             { label: "Gizlilik Politikası", href: "/gizlilik-politikasi" },
+                            { label: "KVKK", href: "/gizlilik#haklariniz" },
                             { label: "Kullanım Koşulları", href: "/kullanim-kosullari" },
                         ] as { label: string; href: string }[]).map(({ label, href }) => (
                             <Link key={label} href={href} style={{ color: "rgba(255,255,255,0.35)", fontSize: "0.8125rem", textDecoration: "none", transition: "color 0.2s" }}

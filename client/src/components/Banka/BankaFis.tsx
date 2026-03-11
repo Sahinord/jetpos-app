@@ -60,8 +60,28 @@ export default function BankaFis({ type, showToast }: BankaFisProps) {
         }
     ]);
 
+    // Otomatik Fiş No üret (BF-001, BF-002, ...)
+    const generateNextFisNo = async (): Promise<string> => {
+        if (!currentTenant) return 'BF-001';
+        const { data } = await supabase
+            .from('banka_fisleri')
+            .select('fis_no')
+            .eq('tenant_id', currentTenant.id)
+            .like('fis_no', 'BF-%')
+            .order('fis_no', { ascending: false })
+            .limit(1);
+        if (data && data.length > 0) {
+            const num = parseInt(data[0].fis_no.replace(/^BF-/, ''), 10);
+            if (!isNaN(num)) return 'BF-' + String(num + 1).padStart(3, '0');
+        }
+        return 'BF-001';
+    };
+
     useEffect(() => {
         loadData();
+        generateNextFisNo().then(no => {
+            setHeader(prev => ({ ...prev, fisNo: no }));
+        });
     }, [currentTenant]);
 
     const loadData = async () => {
@@ -179,9 +199,10 @@ export default function BankaFis({ type, showToast }: BankaFisProps) {
         }
     };
 
-    const handleClear = () => {
+    const handleClear = async () => {
+        const yeniNo = await generateNextFisNo();
         setHeader({
-            fisNo: "",
+            fisNo: yeniNo,
             fisTarihi: new Date().toISOString().split("T")[0],
             fisSaati: new Date().toLocaleTimeString('tr-TR', { hour12: false }).slice(0, 5),
             belgeNo: "",
