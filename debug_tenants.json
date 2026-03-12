@@ -1,0 +1,34 @@
+[
+  {
+    "id": "755dfb53-fde1-4ab9-9070-572d20126c07",
+    "settings": {
+      "qnb": {
+        "isTest": true,
+        "erpCode": "JET31270",
+        "testVkn": "7910101045",
+        "testPassword": "898985",
+        "earsivUsername": "7910101045"
+      },
+      "trendyolGo": {
+        "stage": false,
+        "token": "WFVLa05EVmpWTG03ZGNWWTV6RXQ6UmdhemZ0Y1A3dFlSVEE2bVdGdGE=",
+        "apiKey": "XUKkNDVjVLm7dcVY5zEt",
+        "storeId": "146227",
+        "sellerId": "626729",
+        "apiSecret": "RgazftcP7tYRTA6mWFta"
+      }
+    }
+  },
+  {
+    "id": "713913e6-0dad-4bce-9d62-39330a82368e",
+    "settings": {}
+  },
+  {
+    "id": "b06f5324-9d31-450e-8f12-94e94fbf982e",
+    "settings": {}
+  },
+  {
+    "id": "83da77b8-ba53-48d2-9dad-4f16aec1f45d",
+    "settings": {}
+  }
+]

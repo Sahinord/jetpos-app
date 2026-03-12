@@ -3,8 +3,10 @@ import { supabaseAdmin } from './supabase-admin';
 export interface TenantSettings {
     qnb?: {
         erpCode?: string;
+        vkn?: string;
         testVkn?: string;
         earsivUsername?: string;
+        password?: string;
         testPassword?: string;
         baseUrl?: string;
         earsivBaseUrl?: string;

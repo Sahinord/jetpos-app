@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createTrendyolGoClient } from '@/lib/trendyol-go-client';
 import { supabase } from '@/lib/supabase';
 
-export const dynamic = 'force-dynamic'; // Cacheleme yapılmasın
+// export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
     console.log('[Sync API] REQUEST RECEIVED');

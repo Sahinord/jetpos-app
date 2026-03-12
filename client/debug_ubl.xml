@@ -13,15 +13,15 @@
     <cbc:UBLVersionID>2.1</cbc:UBLVersionID>
     <cbc:CustomizationID>TR1.2</cbc:CustomizationID>
     <cbc:ProfileID>EARSIVFATURA</cbc:ProfileID>
-    <cbc:ID>TASLAK-23b61279</cbc:ID>
+    <cbc:ID>417e0321-5da5-44</cbc:ID>
     <cbc:CopyIndicator>false</cbc:CopyIndicator>
-    <cbc:UUID>23b61279-2969-4733-a28c-1c4f0ef0919c</cbc:UUID>
-    <cbc:IssueDate>2026-03-01</cbc:IssueDate>
-    <cbc:IssueTime>02:39:42</cbc:IssueTime>
+    <cbc:UUID>347b614d-5bb5-495b-a9e0-568ea08b7480</cbc:UUID>
+    <cbc:IssueDate>2026-03-11</cbc:IssueDate>
+    <cbc:IssueTime>17:22:30</cbc:IssueTime>
     <cbc:InvoiceTypeCode>SATIS</cbc:InvoiceTypeCode>
     <cbc:Note>Gönderim Şekli: ELEKTRONIK</cbc:Note>
     <cbc:DocumentCurrencyCode>TRY</cbc:DocumentCurrencyCode>
-    <cbc:LineCountNumeric>1</cbc:LineCountNumeric>
+    <cbc:LineCountNumeric>2</cbc:LineCountNumeric>
 
 
 
@@ -58,15 +58,15 @@
             </cac:PartyIdentification>
             
             <cac:Person>
-                <cbc:FirstName>test</cbc:FirstName>
-                <cbc:FamilyName>test</cbc:FamilyName>
+                <cbc:FirstName>ünsal</cbc:FirstName>
+                <cbc:FamilyName>y.</cbc:FamilyName>
             </cac:Person>
             <cac:PostalAddress>
                 <cbc:CitySubdivisionName>ESENYURT</cbc:CitySubdivisionName>
                 <cbc:CityName>İSTANBUL</cbc:CityName>
-                <cbc:PostalZone>34000</cbc:PostalZone>
+                <cbc:PostalZone>TGO Hızlı Market</cbc:PostalZone>
                 <cac:AddressLine>
-                    <cbc:Line>test</cbc:Line>
+                    <cbc:Line>ADRES BILGISI YOK</cbc:Line>
                 </cac:AddressLine>
                 <cac:Country>
                     <cbc:Name>Türkiye</cbc:Name>
@@ -78,7 +78,7 @@
     <cac:PaymentMeans>
         <cbc:PaymentMeansCode>1</cbc:PaymentMeansCode>
         <cbc:Note>Nakit</cbc:Note>
-        <cbc:PaymentDueDate>2026-03-01</cbc:PaymentDueDate>
+        <cbc:PaymentDueDate>2026-03-11</cbc:PaymentDueDate>
         <cbc:InstructionNote>Nakit</cbc:InstructionNote>
     </cac:PaymentMeans>
 
@@ -87,10 +87,10 @@
     </cac:PaymentTerms>
 
     <cac:TaxTotal>
-        <cbc:TaxAmount currencyID="TRY">0.01</cbc:TaxAmount>
+        <cbc:TaxAmount currencyID="TRY">15.80</cbc:TaxAmount>
         <cac:TaxSubtotal>
-            <cbc:TaxableAmount currencyID="TRY">1.00</cbc:TaxableAmount>
-            <cbc:TaxAmount currencyID="TRY">0.01</cbc:TaxAmount>
+            <cbc:TaxableAmount currencyID="TRY">238.95</cbc:TaxableAmount>
+            <cbc:TaxAmount currencyID="TRY">15.80</cbc:TaxAmount>
             <cac:TaxCategory>
                 <cac:TaxScheme>
                     <cbc:ID>0015</cbc:ID>
@@ -102,24 +102,24 @@
     </cac:TaxTotal>
 
     <cac:LegalMonetaryTotal>
-        <cbc:LineExtensionAmount currencyID="TRY">1.00</cbc:LineExtensionAmount>
-        <cbc:TaxExclusiveAmount currencyID="TRY">1.00</cbc:TaxExclusiveAmount>
-        <cbc:TaxInclusiveAmount currencyID="TRY">1.01</cbc:TaxInclusiveAmount>
+        <cbc:LineExtensionAmount currencyID="TRY">238.95</cbc:LineExtensionAmount>
+        <cbc:TaxExclusiveAmount currencyID="TRY">238.95</cbc:TaxExclusiveAmount>
+        <cbc:TaxInclusiveAmount currencyID="TRY">254.75</cbc:TaxInclusiveAmount>
         <cbc:AllowanceTotalAmount currencyID="TRY">0.00</cbc:AllowanceTotalAmount>
-        <cbc:PayableAmount currencyID="TRY">1.01</cbc:PayableAmount>
+        <cbc:PayableAmount currencyID="TRY">254.75</cbc:PayableAmount>
     </cac:LegalMonetaryTotal>
 
 
     
     <cac:InvoiceLine>
         <cbc:ID>1</cbc:ID>
-        <cbc:InvoicedQuantity unitCode="KGM">1</cbc:InvoicedQuantity>
-        <cbc:LineExtensionAmount currencyID="TRY">1.00</cbc:LineExtensionAmount>
+        <cbc:InvoicedQuantity unitCode="C62">1</cbc:InvoicedQuantity>
+        <cbc:LineExtensionAmount currencyID="TRY">89.95</cbc:LineExtensionAmount>
         <cac:TaxTotal>
-            <cbc:TaxAmount currencyID="TRY">0.01</cbc:TaxAmount>
+            <cbc:TaxAmount currencyID="TRY">0.90</cbc:TaxAmount>
             <cac:TaxSubtotal>
-                <cbc:TaxableAmount currencyID="TRY">1.00</cbc:TaxableAmount>
-                <cbc:TaxAmount currencyID="TRY">0.01</cbc:TaxAmount>
+                <cbc:TaxableAmount currencyID="TRY">89.95</cbc:TaxableAmount>
+                <cbc:TaxAmount currencyID="TRY">0.90</cbc:TaxAmount>
                 <cac:TaxCategory>
                     <cbc:Percent>1</cbc:Percent>
                     <cac:TaxScheme>
@@ -131,10 +131,36 @@
             </cac:TaxSubtotal>
         </cac:TaxTotal>
         <cac:Item>
-            <cbc:Name>Muhtelif Gıda</cbc:Name>
+            <cbc:Name>Çırpıcı</cbc:Name>
         </cac:Item>
         <cac:Price>
-            <cbc:PriceAmount currencyID="TRY">1.00</cbc:PriceAmount>
+            <cbc:PriceAmount currencyID="TRY">89.95</cbc:PriceAmount>
+        </cac:Price>
+    </cac:InvoiceLine>
+    <cac:InvoiceLine>
+        <cbc:ID>2</cbc:ID>
+        <cbc:InvoicedQuantity unitCode="C62">1</cbc:InvoicedQuantity>
+        <cbc:LineExtensionAmount currencyID="TRY">149.00</cbc:LineExtensionAmount>
+        <cac:TaxTotal>
+            <cbc:TaxAmount currencyID="TRY">14.90</cbc:TaxAmount>
+            <cac:TaxSubtotal>
+                <cbc:TaxableAmount currencyID="TRY">149.00</cbc:TaxableAmount>
+                <cbc:TaxAmount currencyID="TRY">14.90</cbc:TaxAmount>
+                <cac:TaxCategory>
+                    <cbc:Percent>10</cbc:Percent>
+                    <cac:TaxScheme>
+                        <cbc:ID>0015</cbc:ID>
+                        <cbc:Name>KDV</cbc:Name>
+                        <cbc:TaxTypeCode>0015</cbc:TaxTypeCode>
+                    </cac:TaxScheme>
+                </cac:TaxCategory>
+            </cac:TaxSubtotal>
+        </cac:TaxTotal>
+        <cac:Item>
+            <cbc:Name>Kaşar Peyniri 200 Gr</cbc:Name>
+        </cac:Item>
+        <cac:Price>
+            <cbc:PriceAmount currencyID="TRY">149.00</cbc:PriceAmount>
         </cac:Price>
     </cac:InvoiceLine>
 </Invoice>

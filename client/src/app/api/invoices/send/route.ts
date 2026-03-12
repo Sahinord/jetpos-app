@@ -18,6 +18,13 @@ export async function POST(req: NextRequest) {
 
         const { tenantId } = invoiceData;
         const tenantSettings = await getTenantSettings(tenantId);
+        
+        console.log(`[Invoice API] Processing request for Tenant: ${tenantId}`);
+        console.log(`[Invoice API] Settings Found:`, JSON.stringify({
+            ...tenantSettings,
+            qnb: tenantSettings.qnb ? { ...tenantSettings.qnb, testPassword: '***' } : null
+        }, null, 2));
+
         const client = new QNBClient(tenantSettings);
 
         // 1. Önce Login (Client içinde zaten handle ediliyor ama garanti olsun)

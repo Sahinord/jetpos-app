@@ -870,25 +870,6 @@ export default function Home() {
 
           {activeTab === "alerts" && (
             <div className="max-w-[1500px] mx-auto w-full space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <button
-                    onClick={() => setActiveTab('dashboard')}
-                    className="p-2 hover:bg-white/5 rounded-lg transition-colors"
-                  >
-                    <ArrowLeft className="w-6 h-6 text-secondary hover:text-white" />
-                  </button>
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
-                      <Sparkles className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <h1 className="text-2xl font-black text-white uppercase tracking-tight">Akıllı Stok Analizi</h1>
-                      <p className="text-xs text-secondary/40 font-bold uppercase tracking-widest mt-1">AI Destekli Tahminleme ve Tedarik Planlama</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
 
               {/* Smart Metrics */}
               {(() => {

@@ -43,10 +43,39 @@ export class QNBClient {
         this.earsivBaseUrl = qnb.earsivBaseUrl || (isTest ? 'https://portaltest.qnbesolutions.com.tr' : 'https://portal.qnbesolutions.com.tr');
         this.connectorTestUrl = qnb.connectorTestUrl || (isTest ? 'https://connectortest.qnbesolutions.com.tr' : 'https://connector.qnbesolutions.com.tr');
 
-        this.vkn = qnb.testVkn || '';
-        this.earsivUsername = qnb.earsivUsername || '';
+        this.vkn = qnb.vkn || qnb.testVkn || '';
+        this.earsivUsername = qnb.earsivUsername || this.vkn; // Kullanıcı adı yoksa VKN'yi kullan
         this.erpCode = qnb.erpCode || '';
-        this.password = qnb.testPassword;
+        this.password = qnb.password || qnb.testPassword || 'CHANGE_ME';
+    }
+
+    private async handleConnectorResponse(response: any, text: string, earsivSessionCookie: string, _serviceType: string): Promise<QNBLoginResponse> {
+        console.log(`[QNB Login] Connector successful response received`);
+        const connectorCookie = response.headers.get('set-cookie');
+        let connectorSessionCookie = '';
+        if (connectorCookie) connectorSessionCookie = connectorCookie.split(';')[0];
+
+        const returnVal = extractTagContent(text, 'return');
+        let jsessionId = '';
+        if (connectorSessionCookie) {
+            const tokenVal = connectorSessionCookie.split('=').slice(1).join('=');
+            if (tokenVal) jsessionId = `JSESSIONID=${tokenVal}`;
+        }
+
+        const allCookies = [earsivSessionCookie, connectorSessionCookie, jsessionId]
+            .filter(Boolean).join('; ');
+
+        if (returnVal === 'true' || connectorSessionCookie || earsivSessionCookie) {
+            this.earsivCookie = allCookies || 'SESSION_ESTABLISHED';
+            return { success: true, sessionId: this.earsivCookie };
+        }
+
+        if (returnVal && returnVal.length > 10) {
+            this.earsivCookie = `JSESSIONID=${returnVal}`;
+            return { success: true, sessionId: returnVal };
+        }
+
+        return { success: false, error: 'Oturum bilgisi alınamadı' };
     }
 
     /**
@@ -84,52 +113,33 @@ export class QNBClient {
                 };
                 if (earsivSessionCookie) loginHeaders['Cookie'] = earsivSessionCookie;
 
-                const response = await fetch(connectorUrl, {
+                const loginRes = await fetch(connectorUrl, {
                     method: 'POST',
                     headers: loginHeaders,
                     body: SOAP_TEMPLATES.LOGIN(username, pass).trim()
                 });
-                const text = await response.text();
-                console.log(`[QNB Login] Connector response:`, text.substring(0, 200));
-                const fault = extractFault(text);
-                if (fault) return { success: false, error: fault };
-
-                // Get connector session cookie
-                const connectorCookie = response.headers.get('set-cookie');
-                let connectorSessionCookie = '';
-                if (connectorCookie) connectorSessionCookie = connectorCookie.split(';')[0];
-                console.log(`[QNB Login] Connector session: ${connectorSessionCookie}`);
-
-                const returnVal = extractTagContent(text, 'return');
-                console.log(`[QNB Login] Return val: ${returnVal}`);
-
-                // Step 3: Combine cookies — send both earsiv + connector sessions
-                // Extract raw session token from connector cookie
-                // connectortest sets TEST_CSAPSESSIONID, but earsivtest (JAX-WS) needs JSESSIONID
-                let jsessionId = '';
-                if (connectorSessionCookie) {
-                    // e.g. "TEST_CSAPSESSIONID=ABC123" → extract "ABC123"
-                    const tokenVal = connectorSessionCookie.split('=').slice(1).join('=');
-                    if (tokenVal) jsessionId = `JSESSIONID=${tokenVal}`;
-                }
-                console.log(`[QNB Login] JSESSIONID alias: ${jsessionId}`);
-
-                // Combine: original connector cookie + JSESSIONID alias + earsivtest session
-                const allCookies = [earsivSessionCookie, connectorSessionCookie, jsessionId]
-                    .filter(Boolean).join('; ');
-
-                if (returnVal === 'true' || connectorSessionCookie || earsivSessionCookie) {
-                    this.earsivCookie = allCookies || 'SESSION_ESTABLISHED';
-                    console.log(`[QNB Login] Final earsiv cookie: ${this.earsivCookie}`);
-                    return { success: true, sessionId: this.earsivCookie };
+                const loginText = await loginRes.text();
+                const loginFault = extractFault(loginText);
+                
+                if (loginFault) {
+                    console.log(`[QNB Login] Primary login failed for ${username}: ${loginFault}. Trying VKN fallback...`);
+                    // Fallback to VKN if different
+                    if (this.vkn !== username) {
+                        const fallbackRes = await fetch(connectorUrl, {
+                            method: 'POST',
+                            headers: loginHeaders,
+                            body: SOAP_TEMPLATES.LOGIN(this.vkn, pass).trim()
+                        });
+                        const fallbackText = await fallbackRes.text();
+                        const fallbackFault = extractFault(fallbackText);
+                        if (!fallbackFault) {
+                            return this.handleConnectorResponse(fallbackRes, fallbackText, earsivSessionCookie, serviceType);
+                        }
+                    }
+                    return { success: false, error: loginFault };
                 }
 
-                if (returnVal && returnVal.length > 10) {
-                    this.earsivCookie = `JSESSIONID=${returnVal}`;
-                    return { success: true, sessionId: returnVal };
-                }
-
-                return { success: false, error: 'Oturum açılamadı' };
+                return this.handleConnectorResponse(loginRes, loginText, earsivSessionCookie, serviceType);
             } catch (err: any) {
                 return { success: false, error: err.message };
             }
@@ -140,7 +150,7 @@ export class QNBClient {
         const url = `${this.baseUrl}/efatura/ws/connectorService`;
 
         try {
-            console.log(`[QNB Login] Attempting EFATURA @ ${url}`);
+            console.log(`[QNB Login] Attempting EFATURA @ ${url} for user ${username}`);
             const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/xml;charset=UTF-8', 'SOAPAction': '""' },
@@ -274,6 +284,18 @@ export class QNBClient {
             // WS-Security: credentials embedded in SOAP header — no separate login needed
             const islemId = crypto.randomUUID();
             endpoint = `${this.earsivBaseUrl}/earsiv/ws/EarsivWebService`;
+            
+            // Check session
+            if (!this.earsivCookie) {
+                console.log(`[QNB E-Arşiv] No session found, attempting login first...`);
+                const loginRes = await this.login('EARSIV');
+                if (!loginRes.success) {
+                    console.error(`[QNB E-Arşiv] Login failed: ${loginRes.error}`);
+                    return { success: false, error: `QNB Oturum Hatası: ${loginRes.error}` };
+                }
+            }
+            cookie = this.earsivCookie || '';
+
             soapBody = SOAP_TEMPLATES.CREATE_EARSIV_INVOICE_EXT(b64Data, this.vkn, this.erpCode, this.earsivUsername, this.password || '', islemId);
             console.log(`[QNB Send] Endpoint: ${endpoint}, islemId: ${islemId}`);
             // Write UBL to file for debugging / QNB support
@@ -303,12 +325,7 @@ export class QNBClient {
                 headers: {
                     'Content-Type': 'text/xml;charset=UTF-8',
                     'SOAPAction': '""',
-                    'Cookie': cookie,
-                    // earsivtest uses its own session separate from connectortest
-                    // Add Basic Auth as a fallback authentication mechanism
-                    ...(docType === 'EARSIV' && this.password ? {
-                        'Authorization': 'Basic ' + Buffer.from(`${this.earsivUsername}:${this.password}`).toString('base64')
-                    } : {})
+                    'Cookie': cookie
                 },
                 body: soapBody.trim()
             });

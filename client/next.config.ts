@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 import pkg from "./package.json";
 
 const nextConfig: NextConfig = {
-  // output: "export", // Vercel'de export bazen chunk hatalarına sebep olur, standalone daha iyidir
+  output: "export", 
   images: {
     unoptimized: true,
   },
