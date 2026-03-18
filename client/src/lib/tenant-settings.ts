@@ -3,14 +3,26 @@ import { supabaseAdmin } from './supabase-admin';
 export interface TenantSettings {
     qnb?: {
         erpCode?: string;
+        isTest?: boolean;
+        
+        // Üretim (Production) Bilgileri
         vkn?: string;
-        testVkn?: string;
-        earsivUsername?: string;
         password?: string;
+        earsivUsername?: string;
+        
+        // Test Ortamı Bilgileri
+        testVkn?: string;
         testPassword?: string;
+        testEarsivUsername?: string;
+
+        // Özel URL Tanımları (Gerekirse)
         baseUrl?: string;
         earsivBaseUrl?: string;
-        connectorTestUrl?: string;
+        connectorBaseUrl?: string;
+
+        // Şube/Kasa Kodları
+        branchCode?: string;
+        counterCode?: string;
     };
     trendyolGo?: {
         sellerId?: string;

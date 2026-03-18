@@ -1,6 +1,6 @@
 "use client";
 
-import { Mail, Phone, Instagram, Linkedin, Twitter, Zap } from "lucide-react";
+import { Mail, Zap } from "lucide-react";
 import Link from "next/link";
 
 export default function Footer() {
@@ -28,41 +28,7 @@ export default function Footer() {
                         <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.875rem", lineHeight: 1.7 }}>
                             İşletmenizi dijital çağa taşıyan, yapay zeka destekli stok ve satış yönetim platformu.
                         </p>
-                        <div style={{ display: "flex", gap: "0.625rem" }}>
-                            {[
-                                { icon: Instagram, href: "https://instagram.com", label: "Instagram" },
-                                { icon: Linkedin, href: "https://linkedin.com", label: "LinkedIn" },
-                                { icon: Twitter, href: "https://twitter.com", label: "Twitter" },
-                            ].map(({ icon: Icon, href, label }) => (
-                                <a
-                                    key={label}
-                                    href={href}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    aria-label={label}
-                                    style={{
-                                        width: "2.25rem", height: "2.25rem",
-                                        background: "rgba(255,255,255,0.05)",
-                                        border: "1px solid rgba(255,255,255,0.1)",
-                                        borderRadius: "0.5rem",
-                                        display: "flex", alignItems: "center", justifyContent: "center",
-                                        color: "rgba(255,255,255,0.6)",
-                                        transition: "all 0.2s",
-                                        textDecoration: "none"
-                                    }}
-                                    onMouseEnter={e => {
-                                        (e.currentTarget as HTMLAnchorElement).style.color = "white";
-                                        (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(59,130,246,0.4)";
-                                    }}
-                                    onMouseLeave={e => {
-                                        (e.currentTarget as HTMLAnchorElement).style.color = "rgba(255,255,255,0.6)";
-                                        (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(255,255,255,0.1)";
-                                    }}
-                                >
-                                    <Icon style={{ width: "1rem", height: "1rem" }} />
-                                </a>
-                            ))}
-                        </div>
+
                     </div>
 
                     {/* Platform */}
@@ -86,14 +52,13 @@ export default function Footer() {
                         </ul>
                     </div>
 
-                    {/* Kurumsal */}
                     <div>
-                        <h4 style={{ fontSize: "0.875rem", fontWeight: 700, color: "white", marginBottom: "1.25rem", textTransform: "uppercase", letterSpacing: "0.08em" }}>Kurumsal</h4>
+                        <h4 style={{ fontSize: "0.875rem", fontWeight: 700, color: "white", marginBottom: "1.25rem", textTransform: "uppercase", letterSpacing: "0.08em" }}>Platform</h4>
                         <ul style={{ display: "flex", flexDirection: "column", gap: "0.75rem", listStyle: "none" }}>
                             {([
-                                { label: "Hakkımızda", href: "/hakkimizda" },
-                                { label: "Blog", href: "/blog" },
-                                { label: "Kariyer", href: "/kariyer" },
+                                { label: "Özellikler", href: "/#features" },
+                                { label: "Demo Talebi", href: "/demo" },
+                                { label: "Entegrasyonlar", href: "/#integrations" },
                                 { label: "Gizlilik & KVKK", href: "/gizlilik" },
                                 { label: "İletişim", href: "/#contact" },
                             ] as { label: string; href: string }[]).map(({ label, href }) => (
@@ -111,19 +76,12 @@ export default function Footer() {
                     <div>
                         <h4 style={{ fontSize: "0.875rem", fontWeight: 700, color: "white", marginBottom: "1.25rem", textTransform: "uppercase", letterSpacing: "0.08em" }}>İletişim</h4>
                         <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
-                            <a href="mailto:info@jetpos.com" style={{ display: "flex", alignItems: "center", gap: "0.625rem", color: "rgba(255,255,255,0.5)", fontSize: "0.875rem", textDecoration: "none", transition: "color 0.2s" }}
+                            <a href="mailto:info@jetpos.com.tr" style={{ display: "flex", alignItems: "center", gap: "0.625rem", color: "rgba(255,255,255,0.5)", fontSize: "0.875rem", textDecoration: "none", transition: "color 0.2s" }}
                                 onMouseEnter={e => (e.currentTarget.style.color = "white")}
                                 onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.5)")}
                             >
                                 <Mail style={{ width: "1rem", height: "1rem", flexShrink: 0 }} />
-                                info@jetpos.com
-                            </a>
-                            <a href="tel:+905001234567" style={{ display: "flex", alignItems: "center", gap: "0.625rem", color: "rgba(255,255,255,0.5)", fontSize: "0.875rem", textDecoration: "none", transition: "color 0.2s" }}
-                                onMouseEnter={e => (e.currentTarget.style.color = "white")}
-                                onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.5)")}
-                            >
-                                <Phone style={{ width: "1rem", height: "1rem", flexShrink: 0 }} />
-                                +90 500 123 45 67
+                                info@jetpos.com.tr
                             </a>
                         </div>
                     </div>
@@ -136,10 +94,8 @@ export default function Footer() {
                     </p>
                     <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
                         {([
-                            { label: "Kullanıcı Sözleşmesi", href: "/kullanici-sozlesmesi" },
-                            { label: "Gizlilik Politikası", href: "/gizlilik-politikasi" },
+                            { label: "Gizlilik Politikası", href: "/gizlilik" },
                             { label: "KVKK", href: "/gizlilik#haklariniz" },
-                            { label: "Kullanım Koşulları", href: "/kullanim-kosullari" },
                         ] as { label: string; href: string }[]).map(({ label, href }) => (
                             <Link key={label} href={href} style={{ color: "rgba(255,255,255,0.35)", fontSize: "0.8125rem", textDecoration: "none", transition: "color 0.2s" }}
                                 onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.7)")}

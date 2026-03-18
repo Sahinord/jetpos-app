@@ -3,241 +3,197 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    Check, ChevronDown, Zap, Info, Star, ArrowRight,
-    Barcode, FileText, Package, Wallet, CreditCard,
-    Brain, Shield, Users, Building2, TrendingUp,
-    Clock, Smartphone, Store, Truck, BarChart3
+    Check, ChevronDown, Zap, Star, ArrowRight,
+    Barcode, FileText, Package, Wallet,
+    Brain, Shield, Users, Building2, BarChart3, PhoneCall
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import Link from "next/link";
 
 /* ─── PLAN DATA ─────────────────────────────────────── */
 const plans = [
     {
         id: "baslangic",
-        name: "Aylık Paket",
-        subtitle: "Esnek ödeme seçeneği ile başlangıç için idealdir. İstediğiniz zaman iptal edebilirsiniz.",
+        name: "Starter",
+        period: "Aylık · Taahhütsüz",
+        subtitle: "Taahhütsüz, esnek ödeme. İstediğiniz zaman iptal edebilirsiniz.",
         monthlyPrice: 1249,
         yearlyPrice: 985,
         highlight: false,
-        badge: null,
-        color: "#22c55e",
-        cta: "Bu Planı Seç",
-        features: [
-            { text: "7/24 Kişisel Teknik Destek", info: null },
-            { text: "Hızlı Satış Sistemi", info: null },
-            { text: "Mobil Üzerinden Barkodlu Satış", info: null },
-            { text: "Gelir Gider Takibi", info: null },
-            { text: "Kasa - Gün Sonu Takibi", info: null },
-            { text: "Kasiyer Takip", info: null },
-            { text: "Detaylı Raporlandırma", info: null },
-            { text: "Raporlama", info: null },
-            { text: "E-Fatura", info: null },
-            { text: "E-Arşiv", info: null },
-            { text: "İşlem Takibi", info: null },
-            { text: "Stok Takibi", info: null },
-            { text: "Cari (Müşteri) Takibi", info: null },
-            { text: "Şube Sayısı: 1", info: null },
-            { text: "Masraf Takibi", info: null },
-            { text: "Dijital Katalog", info: null },
-            { text: "Personel Takip", info: null },
-            { text: "Teklif Oluşturma", info: null },
-            { text: "Üretim Takibi", info: null },
-            { text: "Depo Yönetimi", info: null },
-            { text: "Bilgilendirme Mailleri", info: null },
-            { text: "KDV & Mizan Raporları", unavailable: true },
-            { text: "Özel Barkod Yazdırabilme", unavailable: true },
-            { text: "Sınırsız Kullanıcı", unavailable: true },
-            { text: "Hediye Kontör", unavailable: true },
-        ],
-        extraFeatures: null,
+        badge: "Taahhütsüz",
+        badgeColor: "#60a5fa",
+        color: "#60a5fa",
+        cta: "14 Gün Ücretsiz Dene",
         users: "1 Kullanıcı",
+        features: [
+            { text: "Hızlı Satış Sistemi" },
+            { text: "Barkodlu Satış" },
+            { text: "Mobil Barkod Okuma" },
+            { text: "Stok Takibi" },
+            { text: "Kasa & Gün Sonu Takibi" },
+            { text: "Kasiyer Takip" },
+            { text: "Gelir Gider Takibi" },
+            { text: "Temel Raporlama" },
+            { text: "7/24 Teknik Destek" },
+        ],
+        notIncluded: [
+            "E-Fatura & E-Arşiv",
+            "Yapay Zeka Analizleri",
+            "Depo Yönetimi",
+            "Çoklu Şube",
+        ],
     },
     {
-        id: "ileri",
-        name: "İleri Düzey İşletme",
-        subtitle: "Gelişmiş özellikler ve 100 kontör hediyesiyle işletmenizi bir üst seviyeye taşıyın.",
+        id: "buyume",
+        name: "JetScale",
+        period: "Yıllık · %21 Tasarruf",
+        subtitle: "E-Fatura, AI analizleri ve gelişmiş depo yönetimi dahil.",
         monthlyPrice: 883,
         yearlyPrice: 679,
         highlight: false,
-        badge: "%20 İndirim",
-        badgeColor: "#22c55e",
-        color: "#22c55e",
-        cta: "Bu Planı Seç",
+        badge: "⭐ En Popüler",
+        badgeColor: "#a78bfa",
+        color: "#a78bfa",
+        cta: "14 Gün Ücretsiz Dene",
+        users: "3 Kullanıcı",
         features: [
-            { text: "Kurulum", tag: "Ücretsiz", tagColor: "#22c55e" },
-            { text: "Geçiş", tag: "Ücretsiz", tagColor: "#22c55e" },
-            { text: "7/24 Kişisel Teknik Destek", info: null },
-            { text: "Hızlı Satış Sistemi", info: null },
-            { text: "Mobil Üzerinden Barkodlu Satış", info: null },
-            { text: "Gelir Gider Takibi", info: null },
-            { text: "Kasa - Gün Sonu Takibi", info: null },
-            { text: "Kasiyer Takip", info: null },
-            { text: "Raporlama", info: null },
-            { text: "İşlem Takibi", info: null },
-            { text: "Stok Takibi", info: null },
-            { text: "Cari (Müşteri) Takibi", info: null },
-            { text: "Şube Sayısı: 1", info: null },
-            { text: "Masraf Takibi", info: null },
-            { text: "Dijital Katalog", info: null },
-            { text: "Personel Takip", info: null },
-            { text: "Teklif Oluşturma", info: null },
-            { text: "Üretim Takibi", info: null },
-            { text: "Depo Yönetimi", info: null },
-            { text: "Barkod Yazdırabilme", info: null },
-            { text: "Bilgilendirme Mailleri", info: null },
-            { text: "Özel Temsilci", info: null },
+            { text: "Tüm Starter özellikleri" },
+            { text: "E-Fatura & E-Arşiv", tag: "Dahil", tagColor: "#a78bfa" },
+            { text: "Yapay Zeka Analizleri", tag: "Dahil", tagColor: "#a78bfa" },
+            { text: "Depo Yönetimi" },
+            { text: "Cari Hesap Yönetimi" },
+            { text: "Personel Takibi" },
+            { text: "Üretim Takibi" },
+            { text: "Teklif Oluşturma" },
+            { text: "Detaylı Raporlama" },
+            { text: "Barkod Yazdırma" },
+            { text: "Ücretsiz Kurulum", tag: "Hediye", tagColor: "#22c55e" },
         ],
-        extraFeatures: {
-            title: "Hediye Modüller",
-            subtitle: "Bu pakete özel avantajlar",
-            items: [
-                "100 Adet Kontör",
-                "Detaylı Raporlandırma",
-                "E-Fatura",
-                "E-Arşiv",
-                "Mağaza Takip",
-            ],
-            itemTags: ["Hediye", null, null, null, null]
-        },
-        users: "1 Kullanıcı",
+        notIncluded: [
+            "Çoklu Şube",
+            "Sınırsız Kullanıcı",
+        ],
     },
     {
-        id: "kurumsal",
-        name: "2 Yıl + 1 Yıl Bizden Paketi",
-        subtitle: null,
+        id: "pro",
+        name: "Pro",
+        period: "2 Yıl Öde · 3 Yıl Kullan",
+        subtitle: "2 yıl öde, 3 yıl kullan. Sınırsız kullanıcı ve barkod okuyucu hediye.",
         monthlyPrice: 543,
         yearlyPrice: 394,
         originalYearly: 21255,
         highlight: true,
-        badge: "En Çok Tercih Edilen",
-        badgeColor: "#2563eb",
-        color: "#22c55e",
+        badge: "⚡ En İyi Değer",
+        badgeColor: "#059669",
+        color: "#34d399",
         cta: "Bu Planı Seç",
-        features: [
-            { text: "Kurulum", tag: "Ücretsiz", tagColor: "#22c55e" },
-            { text: "Sınırsız Kullanıcı", tag: "Hediye", tagColor: "#22c55e" },
-            { text: "7/24 Kişisel Teknik Destek", info: null },
-            { text: "Hızlı Satış Sistemi", info: null },
-            { text: "Mobil Üzerinden Barkodlu Satış", info: null },
-            { text: "Gelir Gider Takibi", info: null },
-            { text: "Kasa - Gün Sonu Takibi", info: null },
-            { text: "Kasiyer Takip", info: null },
-            { text: "Detaylı Raporlandırma", info: null },
-            { text: "Raporlama", info: null },
-            { text: "E-Fatura", info: null },
-            { text: "E-Arşiv", info: null },
-            { text: "Mağaza Takip", info: null },
-            { text: "İşlem Takibi", info: null },
-            { text: "Stok Takibi", info: null },
-            { text: "Cari (Müşteri) Takibi", info: null },
-            { text: "Masraf Takibi", info: null },
-            { text: "Dijital Katalog", info: null },
-            { text: "Personel Takip", info: null },
-            { text: "Teklif Oluşturma", info: null },
-            { text: "Üretim Takibi", info: null },
-            { text: "Depo Yönetimi", info: null },
-            { text: "Bilgilendirme Mailleri", info: null },
-            { text: "KDV & Mizan Raporları", info: null },
-            { text: "Özel Barkod Yazdırabilme", info: null },
-        ],
-        extraFeatures: {
-            title: "Entegrasyon Hediyeleri",
-            subtitle: "Ücretsiz entegrasyonlar",
-            items: [
-                "Trendyol Entegrasyonu",
-                "İkas Entegrasyonu",
-            ],
-            itemTags: ["Hediye", "Hediye"]
-        },
         users: "Sınırsız",
-        footnote: "✓ 3 yıl kullanım / Barkod okuyucu hediye / 1 yıl hediye",
+        features: [
+            { text: "Tüm JetScale özellikleri" },
+            { text: "Sınırsız Kullanıcı", tag: "Hediye", tagColor: "#22c55e" },
+            { text: "Çoklu Şube (3'e kadar)" },
+            { text: "KDV & Mizan Raporları" },
+            { text: "Trendyol Entegrasyonu", tag: "Hediye", tagColor: "#22c55e" },
+            { text: "İkas Entegrasyonu", tag: "Hediye", tagColor: "#22c55e" },
+            { text: "Özel Barkod Yazdırma" },
+            { text: "Ücretsiz Kurulum & Geçiş", tag: "Hediye", tagColor: "#22c55e" },
+            { text: "Barkod Okuyucu", tag: "Hediye", tagColor: "#22c55e" },
+            { text: "+1 Yıl Kullanım", tag: "Hediye", tagColor: "#22c55e" },
+        ],
+        notIncluded: [],
+        footnote: "✓ 3 yıl kullanım · Barkod okuyucu hediye · 1 yıl bonus",
     },
     {
         id: "ozel",
-        name: "Kendi Paketini Oluştur",
-        subtitle: "Sadece ihtiyacınız olan özellikleri seçin, kullanmadığınız özelliklere para ödemeyin.",
+        name: "Kurumsal",
+        period: "Özel Teklif",
+        subtitle: "Çok şubeli zincirler ve büyük işletmeler için özel çözüm.",
         monthlyPrice: 0,
         yearlyPrice: 0,
         highlight: false,
-        badge: "En Esnek",
+        badge: "Teklif Al",
         badgeColor: "#ec4899",
         color: "#ec4899",
         isCustom: true,
-        cta: "Kendi Paketini Tasarla",
+        cta: "Bize Ulaşın",
+        users: "Sınırsız",
         features: [
-            { text: "Özellikleri kendin seç", info: null },
-            { text: "Kullanmadığın her şeyden tasarruf et", info: null },
-            { text: "Esnek fiyatlandırma", info: null },
+            { text: "Tüm Pro özellikleri" },
+            { text: "Sınırsız Şube & Kullanıcı" },
+            { text: "Özel API Erişimi" },
+            { text: "ERP Entegrasyonu" },
+            { text: "Özel Raporlama & KPI" },
+            { text: "Özel Temsilci Atama" },
+            { text: "SLA Garantisi" },
+            { text: "7/24 Telefon Desteği" },
         ],
-        extraFeatures: null,
-        users: "Esnek Kullanıcı",
+        notIncluded: [],
     },
 ];
 
-
-/* ─── FEATURE COMPARISON TABLE ─────────────────────── */
+/* ─── COMPARISON ──────────────────────────────── */
 const featureCategories = [
     {
         title: "Satış & POS",
         icon: Barcode,
         features: [
-            { name: "Hızlı Satış Sistemi", plans: [true, true, true, true, true] },
-            { name: "Barkodlu Satış", plans: [true, true, true, true, true] },
-            { name: "Mobil Barkod Okuma", plans: [true, true, true, true, true] },
-            { name: "Kasiyer Takip", plans: [true, true, true, true, true] },
-            { name: "Mağaza Takip", plans: [false, false, true, true, true] },
+            { name: "Hızlı Satış Sistemi", plans: [true, true, true, true] },
+            { name: "Barkodlu Satış", plans: [true, true, true, true] },
+            { name: "Mobil Barkod Okuma", plans: [true, true, true, true] },
+            { name: "Kasiyer Takip", plans: [true, true, true, true] },
+            { name: "Çoklu Şube", plans: [false, false, "3 Şube", "Sınırsız"] },
         ]
     },
     {
         title: "Finans & Muhasebe",
         icon: Wallet,
         features: [
-            { name: "E-Fatura", plans: [true, true, true, true, true] },
-            { name: "E-Arşiv", plans: [true, true, true, true, true] },
-            { name: "Gelir Gider Takibi", plans: [true, true, true, true, true] },
-            { name: "Kasa Gün Sonu", plans: [true, true, true, true, true] },
-            { name: "Masraf Takibi", plans: [false, true, true, true, true] },
-            { name: "Cari Kasa Virman", plans: [false, false, false, true, true] },
+            { name: "Gelir Gider Takibi", plans: [true, true, true, true] },
+            { name: "Kasa Gün Sonu", plans: [true, true, true, true] },
+            { name: "E-Fatura & E-Arşiv", plans: [false, true, true, true] },
+            { name: "KDV & Mizan Raporları", plans: [false, false, true, true] },
+            { name: "Cari Hesap Yönetimi", plans: [false, true, true, true] },
         ]
     },
     {
         title: "Stok & Depo",
         icon: Package,
         features: [
-            { name: "Stok Takibi", plans: [true, true, true, true, true] },
-            { name: "Depo Yönetimi", plans: [false, true, true, true, true] },
-            { name: "Üretim Takibi", plans: [false, true, true, true, true] },
-            { name: "Teklif Oluşturma", plans: [false, true, true, true, true] },
+            { name: "Stok Takibi", plans: [true, true, true, true] },
+            { name: "Depo Yönetimi", plans: [false, true, true, true] },
+            { name: "Üretim Takibi", plans: [false, true, true, true] },
+            { name: "Teklif Oluşturma", plans: [false, true, true, true] },
         ]
     },
     {
-        title: "Müşteri & Cari",
+        title: "Personel & Müşteri",
         icon: Users,
         features: [
-            { name: "Cari (Müşteri) Takibi", plans: [true, true, true, true, true] },
-            { name: "Personel Takip", plans: [false, true, true, true, true] },
-            { name: "100 Adet Kontör", plans: [false, false, true, true, true] },
+            { name: "Kullanıcı Sayısı", plans: ["1", "3", "Sınırsız", "Sınırsız"] },
+            { name: "Personel Takibi", plans: [false, true, true, true] },
+            { name: "Özel Temsilci", plans: [false, false, false, true] },
         ]
     },
     {
-        title: "Raporlama & Analiz",
-        icon: BarChart3,
+        title: "Yapay Zeka & Raporlama",
+        icon: Brain,
         features: [
-            { name: "Temel Raporlama", plans: [true, true, true, true, true] },
-            { name: "Detaylı Raporlandırma", plans: [true, true, true, true, true] },
-            { name: "İşlem Takibi", plans: [true, true, true, true, true] },
+            { name: "Temel Raporlama", plans: [true, true, true, true] },
+            { name: "Detaylı Raporlama", plans: [false, true, true, true] },
+            { name: "AI Satış Analizleri", plans: [false, true, true, true] },
+            { name: "Özel KPI Raporları", plans: [false, false, false, true] },
         ]
     },
     {
-        title: "Destek & Ekstra",
+        title: "Entegrasyon & Destek",
         icon: Shield,
         features: [
-            { name: "7/24 Teknik Destek", plans: [true, true, true, true, true] },
-            { name: "Şube Sayısı", plans: ["1", "1", "3", "3", "Sınırsız"] },
-            { name: "Geçiş Desteği", plans: [false, false, false, "Ücretsiz", "Ücretsiz"] },
-            { name: "Barkod Okuyucu", plans: [false, false, false, "Hediye", "Hediye"] },
-            { name: "+1 Yıl Bonus", plans: [false, false, false, "Hediye", "Hediye"] },
+            { name: "7/24 Teknik Destek", plans: [true, true, true, true] },
+            { name: "Ücretsiz Kurulum", plans: [false, "Hediye", "Hediye", "Hediye"] },
+            { name: "Trendyol Entegrasyonu", plans: [false, false, "Hediye", true] },
+            { name: "Barkod Okuyucu", plans: [false, false, "Hediye", true] },
+            { name: "API Erişimi", plans: [false, false, false, true] },
         ]
     },
 ];
@@ -245,9 +201,9 @@ const featureCategories = [
 /* ─── PLAN CARD ─────────────────────────────────────── */
 function PlanCard({ plan, yearly }: { plan: typeof plans[0]; yearly: boolean }) {
     const [expanded, setExpanded] = useState(false);
-    const price = yearly ? plan.yearlyPrice : plan.monthlyPrice;
     const isCustom = (plan as any).isCustom;
-    const visibleFeatures = expanded ? plan.features : plan.features.slice(0, 8);
+    const price = yearly ? plan.yearlyPrice : plan.monthlyPrice;
+    const visibleFeatures = expanded ? plan.features : plan.features.slice(0, 7);
 
     return (
         <motion.div
@@ -261,197 +217,159 @@ function PlanCard({ plan, yearly }: { plan: typeof plans[0]; yearly: boolean }) 
             {plan.badge && (
                 <div style={{
                     position: "absolute", top: "-1px", left: "50%", transform: "translateX(-50%)",
-                    background: plan.highlight ? "linear-gradient(135deg, #1d4ed8, #2563eb)" : plan.badgeColor,
-                    color: "white", fontSize: "0.7rem", fontWeight: 700,
+                    background: plan.highlight
+                        ? "linear-gradient(135deg, #047857, #059669)"
+                        : plan.badge === "⭐ En Popüler"
+                            ? "linear-gradient(135deg, #6d28d9, #7c3aed)"
+                            : plan.badgeColor,
+                    color: "white", fontSize: "0.68rem", fontWeight: 700,
                     padding: "0.3rem 1rem", borderRadius: "0 0 0.625rem 0.625rem",
-                    whiteSpace: "nowrap", zIndex: 10, letterSpacing: "0.04em"
+                    whiteSpace: "nowrap", zIndex: 10, letterSpacing: "0.05em"
                 }}>
-                    {plan.highlight && <Star style={{ width: "0.7rem", height: "0.7rem", display: "inline", marginRight: "0.25rem" }} />}
                     {plan.badge}
                 </div>
             )}
 
             <div style={{
-                background: plan.highlight ? "rgba(37,99,235,0.1)" : "rgba(255,255,255,0.025)",
-                border: `1px solid ${plan.highlight ? "rgba(37,99,235,0.45)" : "rgba(255,255,255,0.08)"}`,
+                background: plan.highlight ? "rgba(5,150,105,0.07)" : "rgba(255,255,255,0.025)",
+                border: `1px solid ${plan.highlight ? "rgba(52,211,153,0.35)" : plan.badge === "⭐ En Popüler" ? "rgba(139,92,246,0.35)" : "rgba(255,255,255,0.08)"}`,
                 borderRadius: "1.25rem",
-                padding: "1.75rem 1.15rem",
+                padding: "1.75rem 1.5rem",
                 display: "flex", flexDirection: "column", gap: "1.25rem",
                 height: "100%",
-                boxShadow: plan.highlight ? "0 0 40px rgba(37,99,235,0.18)" : "none",
+                boxShadow: plan.highlight ? "0 0 40px rgba(52,211,153,0.12)" : plan.badge === "⭐ En Popüler" ? "0 0 30px rgba(139,92,246,0.12)" : "none",
                 transition: "all 0.3s ease",
             }}>
                 {/* Header */}
                 <div>
-                    <h3 style={{ fontSize: "1.25rem", fontWeight: 800, color: "white", marginBottom: "0.25rem" }}>
-                        {plan.name}
-                    </h3>
-                    {plan.subtitle && (
-                        <p style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.5)", lineHeight: 1.5 }}>
-                            {plan.subtitle}
-                        </p>
-                    )}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.5rem" }}>
+                        <h3 style={{ fontSize: "1.35rem", fontWeight: 800, color: "white", margin: 0 }}>
+                            {plan.name}
+                        </h3>
+                        <span style={{
+                            fontSize: "0.65rem", fontWeight: 700, color: plan.color,
+                            background: `${plan.color}15`, border: `1px solid ${plan.color}30`,
+                            padding: "0.2rem 0.6rem", borderRadius: "9999px",
+                            whiteSpace: "nowrap"
+                        }}>
+                            {plan.users}
+                        </span>
+                    </div>
+                    <p style={{ fontSize: "0.7rem", color: plan.color, fontWeight: 600, marginBottom: "0.5rem" }}>
+                        {plan.period}
+                    </p>
+                    <p style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.5)", lineHeight: 1.5 }}>
+                        {plan.subtitle}
+                    </p>
                 </div>
 
                 {/* Price */}
                 <div>
-                    {plan.originalYearly && (
-                        <div style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.35)", textDecoration: "line-through", marginBottom: "0.25rem" }}>
-                            ₺{plan.originalYearly.toLocaleString("tr-TR")} +KDV
+                    {(plan as any).originalYearly && (
+                        <div style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.3)", textDecoration: "line-through", marginBottom: "0.25rem" }}>
+                            ₺{(plan as any).originalYearly.toLocaleString("tr-TR")} +KDV
                         </div>
                     )}
-                    <div style={{ display: "flex", alignItems: "baseline", gap: "0.25rem" }}>
-                        {isCustom ? (
-                            <div style={{ marginTop: "0.5rem" }}>
-                                <span style={{ fontSize: "1.5rem", fontWeight: 800, color: "white", lineHeight: 1.1, display: "block" }}>
-                                    Tamamen Size Özel
-                                </span>
-                                <span style={{ fontSize: "0.9rem", color: plan.color, fontWeight: 700 }}>Esnek Fiyatlandırma</span>
-                            </div>
-                        ) : (
-                            <>
-                                <span style={{ fontSize: "1.25rem", color: "white", fontWeight: 800 }}>₺</span>
+                    {isCustom ? (
+                        <div>
+                            <span style={{ fontSize: "1.5rem", fontWeight: 800, color: "white" }}>Teklif Bazlı</span>
+                            <p style={{ fontSize: "0.8rem", color: plan.color, fontWeight: 600, marginTop: "0.25rem" }}>İşletmenize özel fiyat</p>
+                        </div>
+                    ) : (
+                        <>
+                            <div style={{ display: "flex", alignItems: "baseline", gap: "0.2rem" }}>
+                                <span style={{ fontSize: "1rem", color: "rgba(255,255,255,0.6)", fontWeight: 700 }}>₺</span>
                                 <span style={{ fontSize: "3rem", fontWeight: 900, color: "white", lineHeight: 1 }}>
-                                    {price?.toLocaleString("tr-TR") ?? "—"}
+                                    {price?.toLocaleString("tr-TR")}
                                 </span>
-                                <span style={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.5)", marginLeft: "0.25rem" }}>+KDV/ay</span>
-                            </>
-                        )}
-                    </div>
-                    {!!plan.monthlyPrice && yearly && (
-                        <p style={{ fontSize: "0.75rem", color: "#4ade80", marginTop: "0.25rem" }}>
-                            Yıllık ₺{((plan.monthlyPrice - (plan.yearlyPrice ?? 0)) * 12).toLocaleString("tr-TR")} tasarruf
-                        </p>
+                                <span style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.4)" }}>+KDV/ay</span>
+                            </div>
+                            {yearly && plan.monthlyPrice > 0 && (
+                                <p style={{ fontSize: "0.75rem", color: "#4ade80", marginTop: "0.3rem" }}>
+                                    Yıllık ₺{((plan.monthlyPrice - plan.yearlyPrice) * 12).toLocaleString("tr-TR")} tasarruf
+                                </p>
+                            )}
+                        </>
                     )}
                 </div>
 
                 {/* CTA */}
-                <button
-                    onClick={() => {
-                        if (isCustom) {
-                            window.location.href = "/fiyatlandirma/ozellestir";
-                        }
-                    }}
+                <Link
+                    href={isCustom ? "/#contact" : "/demo"}
                     style={{
-                        width: "100%", padding: "1rem",
-                        borderRadius: "0.875rem", border: "none",
-                        background: isCustom
-                            ? "linear-gradient(135deg, #ec4899, #db2777)"
-                            : "linear-gradient(135deg, #22c55e, #16a34a)",
-                        color: "white", fontWeight: 800, fontSize: "1rem",
-                        cursor: "pointer", transition: "all 0.2s",
-                        fontFamily: "inherit",
-                        boxShadow: isCustom ? "0 4px 16px rgba(236,72,153,0.4)" : "0 4px 16px rgba(34,197,94,0.3)"
-                    }}
-                    onMouseEnter={e => (e.currentTarget.style.opacity = "0.85")}
-                    onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
+                        display: "block", textAlign: "center",
+                        width: "100%", padding: "0.9rem",
+                        borderRadius: "0.875rem",
+                        border: "none",
+                        background: plan.highlight
+                            ? "linear-gradient(135deg, #059669, #34d399)"
+                            : plan.badge === "⭐ En Popüler"
+                                ? "linear-gradient(135deg, #6d28d9, #7c3aed)"
+                                : isCustom
+                                    ? "linear-gradient(135deg, #be185d, #ec4899)"
+                                    : "rgba(255,255,255,0.07)",
+                        color: "white", fontWeight: 700, fontSize: "0.95rem",
+                        cursor: "pointer", textDecoration: "none",
+                        boxShadow: plan.highlight ? "0 4px 16px rgba(52,211,153,0.3)" : plan.badge === "⭐ En Popüler" ? "0 4px 16px rgba(124,58,237,0.35)" : "none",
+                        border2: plan.highlight || plan.badge === "⭐ En Popüler" || isCustom ? "none" : "1px solid rgba(255,255,255,0.12)",
+                    } as any}
                 >
                     {plan.cta}
-                </button>
+                </Link>
 
-                {/* Extra Features Box (Gifts) */}
-                {plan.extraFeatures && (
-                    <div style={{
-                        background: "rgba(34, 197, 94, 0.05)",
-                        border: "1px solid rgba(34, 197, 94, 0.2)",
-                        borderRadius: "1rem",
-                        padding: "1.25rem",
-                        marginBottom: "0.5rem"
-                    }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
-                            <Star style={{ width: "1rem", height: "1rem", color: "#22c55e" }} />
-                            <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "white" }}>{plan.extraFeatures.title}</span>
-                        </div>
-                        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                            {plan.extraFeatures.items.map((item, idx) => (
-                                <div key={idx} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                                        <Check style={{ width: "0.85rem", height: "0.85rem", color: "#22c55e" }} />
-                                        <span style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.8)" }}>{item}</span>
-                                    </div>
-                                    {plan.extraFeatures.itemTags?.[idx] && (
-                                        <span style={{
-                                            fontSize: "0.65rem", fontWeight: 800, background: "rgba(34, 197, 94, 0.2)",
-                                            color: "#4ade80", padding: "0.15rem 0.5rem", borderRadius: "4px"
-                                        }}>
-                                            {plan.extraFeatures.itemTags[idx]}
-                                        </span>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
+                <div style={{ height: "1px", background: "rgba(255,255,255,0.06)" }} />
 
-                {/* Features Title if has gifts */}
-                {plan.extraFeatures && (
-                    <p style={{ fontSize: "0.85rem", fontWeight: 800, color: "white", marginTop: "0.5rem" }}>Tüm Özellikler</p>
-                )}
-
-                {/* Features List */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", flex: 1 }}>
-                    {visibleFeatures.map((f: any, i) => (
-                        <div key={i} style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "0.5rem",
-                            opacity: f.unavailable ? 0.4 : 1
-                        }}>
-                            <Check style={{
-                                width: "1rem",
-                                height: "1rem",
-                                color: f.unavailable ? "rgba(255,255,255,0.3)" : "#22c55e",
-                                flexShrink: 0
-                            }} />
-                            <span style={{
-                                fontSize: "0.85rem",
-                                color: f.unavailable ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.7)",
-                                flex: 1,
-                                textDecoration: f.unavailable ? "line-through" : "none"
-                            }}>
-                                {f.text}
-                            </span>
+                {/* Features */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem", flex: 1 }}>
+                    {visibleFeatures.map((f: any, i: number) => (
+                        <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                            <Check style={{ width: "0.875rem", height: "0.875rem", color: plan.color, flexShrink: 0 }} />
+                            <span style={{ fontSize: "0.83rem", color: "rgba(255,255,255,0.75)", flex: 1 }}>{f.text}</span>
                             {f.tag && (
                                 <span style={{
-                                    fontSize: "0.65rem", fontWeight: 800,
-                                    padding: "0.15rem 0.5rem", borderRadius: "4px",
-                                    background: `${f.tagColor}20`,
-                                    color: f.tagColor,
-                                    border: `1px solid ${f.tagColor}40`
+                                    fontSize: "0.6rem", fontWeight: 800,
+                                    padding: "0.1rem 0.4rem", borderRadius: "4px",
+                                    background: `${f.tagColor}20`, color: f.tagColor,
+                                    border: `1px solid ${f.tagColor}35`,
+                                    whiteSpace: "nowrap"
                                 }}>
                                     {f.tag}
                                 </span>
                             )}
                         </div>
                     ))}
+                    {(plan as any).notIncluded?.map((f: string, i: number) => (
+                        <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.5rem", opacity: 0.3 }}>
+                            <span style={{ width: "0.875rem", height: "0.875rem", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: "0.7rem", color: "rgba(255,255,255,0.4)" }}>✕</span>
+                            <span style={{ fontSize: "0.83rem", color: "rgba(255,255,255,0.4)", textDecoration: "line-through" }}>{f}</span>
+                        </div>
+                    ))}
                 </div>
 
-                {/* Expand toggle */}
-                {plan.features.length > 8 && (
+                {/* Expand */}
+                {plan.features.length > 7 && (
                     <button
                         onClick={() => setExpanded(!expanded)}
                         style={{
-                            display: "flex", alignItems: "center", gap: "0.375rem",
+                            display: "flex", alignItems: "center", justifyContent: "center", gap: "0.375rem",
                             background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
                             cursor: "pointer", borderRadius: "0.5rem",
-                            color: "rgba(255,255,255,0.4)", fontSize: "0.8rem", fontWeight: 600,
-                            fontFamily: "inherit", padding: "0.5rem 1rem", marginTop: "0.5rem",
-                            justifyContent: "center"
+                            color: "rgba(255,255,255,0.4)", fontSize: "0.78rem", fontWeight: 600,
+                            fontFamily: "inherit", padding: "0.5rem 1rem",
                         }}
                     >
-                        {expanded ? "Daha Az Göster" : "Daha fazlası için kaydırınız"}
+                        {expanded ? "Daha Az" : "Tüm Özellikleri Gör"}
                         <ChevronDown style={{
-                            width: "0.875rem", height: "0.875rem",
+                            width: "0.8rem", height: "0.8rem",
                             transform: expanded ? "rotate(180deg)" : "rotate(0deg)",
                             transition: "transform 0.2s"
                         }} />
                     </button>
                 )}
 
-                {/* Footnote */}
-                {plan.footnote && (
-                    <p style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.35)", textAlign: "center" }}>
-                        {plan.footnote}
+                {(plan as any).footnote && (
+                    <p style={{ fontSize: "0.68rem", color: "rgba(255,255,255,0.3)", textAlign: "center" }}>
+                        {(plan as any).footnote}
                     </p>
                 )}
             </div>
@@ -462,19 +380,22 @@ function PlanCard({ plan, yearly }: { plan: typeof plans[0]; yearly: boolean }) 
 /* ─── COMPARISON TABLE ──────────────────────────────── */
 function ComparisonTable() {
     const [open, setOpen] = useState(false);
+    const planColors = plans.map(p => p.color);
 
     return (
-        <div style={{ marginTop: "5rem" }}>
+        <div style={{ marginTop: "4rem" }}>
             <button
                 onClick={() => setOpen(!open)}
                 style={{
                     display: "flex", alignItems: "center", gap: "0.625rem",
-                    margin: "0 auto", background: "rgba(255,255,255,0.05)",
-                    border: "1px solid rgba(255,255,255,0.12)", borderRadius: "0.75rem",
-                    padding: "0.75rem 1.75rem", color: "white", fontWeight: 600,
-                    fontSize: "0.95rem", cursor: "pointer", fontFamily: "inherit",
+                    margin: "0 auto", background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.75rem",
+                    padding: "0.75rem 1.75rem", color: "rgba(255,255,255,0.7)", fontWeight: 600,
+                    fontSize: "0.9rem", cursor: "pointer", fontFamily: "inherit",
                     transition: "all 0.2s"
                 }}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)")}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)")}
             >
                 Tüm Özellikleri Karşılaştır
                 <ChevronDown style={{ width: "1rem", height: "1rem", transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.3s" }} />
@@ -486,65 +407,67 @@ function ComparisonTable() {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.4 }}
+                        transition={{ duration: 0.35 }}
                         style={{ overflow: "hidden", marginTop: "2rem" }}
                     >
                         <div style={{
                             background: "rgba(255,255,255,0.02)",
                             border: "1px solid rgba(255,255,255,0.07)",
-                            borderRadius: "1.25rem",
-                            overflow: "hidden"
+                            borderRadius: "1.25rem", overflow: "auto"
                         }}>
-                            {/* Header row */}
+                            {/* Header */}
                             <div style={{
-                                display: "grid", gridTemplateColumns: "2.5fr 1fr 1fr 1fr 1fr 1fr",
-                                background: "rgba(255,255,255,0.04)",
+                                display: "grid", gridTemplateColumns: "2.5fr 1fr 1fr 1fr 1fr",
+                                background: "rgba(255,255,255,0.03)",
                                 borderBottom: "1px solid rgba(255,255,255,0.07)",
-                                padding: "1rem 1.25rem", gap: "0.5rem"
+                                padding: "1rem 1.5rem", gap: "0.5rem", minWidth: "600px"
                             }}>
-                                <div style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>Özellik</div>
+                                <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.35)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>Özellik</div>
                                 {plans.map(p => (
-                                    <div key={p.id} style={{ fontSize: "0.75rem", fontWeight: 700, color: p.color, textAlign: "center" }}>
-                                        {p.name.split(" ").slice(0, 2).join(" ")}
+                                    <div key={p.id} style={{ fontSize: "0.78rem", fontWeight: 800, color: p.color, textAlign: "center" }}>
+                                        {p.name}
                                     </div>
                                 ))}
                             </div>
 
                             {featureCategories.map((cat, ci) => (
                                 <div key={ci}>
-                                    {/* Category header */}
                                     <div style={{
                                         display: "flex", alignItems: "center", gap: "0.5rem",
-                                        padding: "0.75rem 1.5rem",
-                                        background: "rgba(255,255,255,0.02)",
-                                        borderTop: ci > 0 ? "1px solid rgba(255,255,255,0.05)" : "none"
+                                        padding: "0.625rem 1.5rem",
+                                        background: "rgba(255,255,255,0.015)",
+                                        borderTop: ci > 0 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                                        minWidth: "600px"
                                     }}>
-                                        <cat.icon style={{ width: "0.875rem", height: "0.875rem", color: "rgba(255,255,255,0.4)" }} />
-                                        <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                                        <cat.icon style={{ width: "0.8rem", height: "0.8rem", color: "rgba(255,255,255,0.35)" }} />
+                                        <span style={{ fontSize: "0.7rem", fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
                                             {cat.title}
                                         </span>
                                     </div>
 
                                     {cat.features.map((feat, fi) => (
                                         <div key={fi} style={{
-                                            display: "grid", gridTemplateColumns: "2.5fr 1fr 1fr 1fr 1fr 1fr",
-                                            padding: "0.625rem 1.25rem", gap: "0.5rem",
-                                            borderTop: "1px solid rgba(255,255,255,0.04)",
-                                            alignItems: "center"
+                                            display: "grid", gridTemplateColumns: "2.5fr 1fr 1fr 1fr 1fr",
+                                            padding: "0.6rem 1.5rem", gap: "0.5rem",
+                                            borderTop: "1px solid rgba(255,255,255,0.035)",
+                                            alignItems: "center", minWidth: "600px",
                                         }}>
-                                            <span style={{ fontSize: "0.825rem", color: "rgba(255,255,255,0.7)" }}>{feat.name}</span>
+                                            <span style={{ fontSize: "0.82rem", color: "rgba(255,255,255,0.65)" }}>{feat.name}</span>
                                             {feat.plans.map((val, pi) => (
                                                 <div key={pi} style={{ display: "flex", justifyContent: "center" }}>
                                                     {val === true ? (
-                                                        <Check style={{ width: "1rem", height: "1rem", color: plans[pi].color }} />
+                                                        <Check style={{ width: "0.9rem", height: "0.9rem", color: planColors[pi] }} />
                                                     ) : val === false ? (
-                                                        <span style={{ color: "rgba(255,255,255,0.15)", fontSize: "0.875rem" }}>—</span>
+                                                        <span style={{ color: "rgba(255,255,255,0.12)", fontSize: "0.8rem" }}>—</span>
                                                     ) : (
                                                         <span style={{
-                                                            fontSize: "0.65rem", fontWeight: 700,
-                                                            padding: "0.15rem 0.5rem", borderRadius: "9999px",
-                                                            background: "rgba(34,197,94,0.15)", color: "#4ade80"
-                                                        }}>{val}</span>
+                                                            fontSize: "0.6rem", fontWeight: 700,
+                                                            padding: "0.15rem 0.45rem", borderRadius: "9999px",
+                                                            background: "rgba(34,197,94,0.12)", color: "#4ade80",
+                                                            border: "1px solid rgba(34,197,94,0.2)"
+                                                        }}>
+                                                            {val}
+                                                        </span>
                                                     )}
                                                 </div>
                                             ))}
@@ -582,10 +505,10 @@ export default function FiyatlandirmaPage() {
                         >
                             <span className="badge" style={{ marginBottom: "1.25rem", display: "inline-flex" }}>
                                 <Zap style={{ width: "0.875rem", height: "0.875rem" }} />
-                                Fiyatlandırma
+                                Şeffaf Fiyatlandırma
                             </span>
                             <h1 style={{
-                                fontSize: "clamp(2.25rem, 6vw, 4rem)",
+                                fontSize: "clamp(2.25rem, 6vw, 3.75rem)",
                                 fontWeight: 800, color: "white",
                                 lineHeight: 1.15, marginBottom: "1rem",
                                 letterSpacing: "-0.03em"
@@ -594,7 +517,7 @@ export default function FiyatlandirmaPage() {
                                 <span className="holographic-text">Planı Seçin</span>
                             </h1>
                             <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "1.05rem", maxWidth: "500px", margin: "0 auto 2rem" }}>
-                                Tüm planlar 14 gün ücretsiz deneme ile gelir. Memnun kalmazsanız ücret alınmaz.
+                                14 gün ücretsiz deneyin. Kredi kartı gerekmez, memnun kalmazsanız ücret alınmaz.
                             </p>
 
                             {/* Toggle */}
@@ -624,7 +547,7 @@ export default function FiyatlandirmaPage() {
                                         background: "#22c55e", color: "white",
                                         fontSize: "0.65rem", padding: "0.1rem 0.4rem",
                                         borderRadius: "9999px", fontWeight: 700
-                                    }}>%40&apos;a varan indirim</span>
+                                    }}>%20&apos;ye varan indirim</span>
                                 </button>
                             </div>
                         </motion.div>
@@ -632,8 +555,8 @@ export default function FiyatlandirmaPage() {
                         {/* Plans Grid */}
                         <div style={{
                             display: "grid",
-                            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                            gap: "1rem",
+                            gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
+                            gap: "1.25rem",
                             alignItems: "stretch"
                         }}>
                             {plans.map((plan) => (
@@ -644,36 +567,61 @@ export default function FiyatlandirmaPage() {
                         {/* Comparison Table */}
                         <ComparisonTable />
 
-                        {/* FAQ / Bottom CTA */}
+                        {/* CTA Banner */}
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             style={{
                                 marginTop: "5rem",
-                                background: "rgba(37,99,235,0.08)",
-                                border: "1px solid rgba(37,99,235,0.25)",
+                                background: "rgba(37,99,235,0.07)",
+                                border: "1px solid rgba(37,99,235,0.2)",
                                 borderRadius: "1.5rem",
-                                padding: "3rem",
+                                padding: "3rem 2rem",
                                 textAlign: "center"
                             }}
                         >
-                            <h2 style={{ fontSize: "clamp(1.5rem, 3vw, 2.25rem)", fontWeight: 700, color: "white", marginBottom: "1rem" }}>
-                                Hangi planın size uygun olduğundan emin değil misiniz?
+                            <div style={{
+                                display: "inline-flex", alignItems: "center", justifyContent: "center",
+                                width: "3.5rem", height: "3.5rem", borderRadius: "1rem",
+                                background: "rgba(37,99,235,0.15)", border: "1px solid rgba(37,99,235,0.3)",
+                                marginBottom: "1.5rem"
+                            }}>
+                                <PhoneCall style={{ width: "1.5rem", height: "1.5rem", color: "#60a5fa" }} />
+                            </div>
+                            <h2 style={{ fontSize: "clamp(1.5rem, 3vw, 2rem)", fontWeight: 700, color: "white", marginBottom: "0.75rem" }}>
+                                Hangi plan size uygun, emin değil misiniz?
                             </h2>
-                            <p style={{ color: "rgba(255,255,255,0.55)", marginBottom: "2rem", maxWidth: "480px", margin: "0 auto 2rem" }}>
-                                Uzmanlarımız işletmenize en uygun planı belirlemenize yardımcı olsun.
+                            <p style={{ color: "rgba(255,255,255,0.5)", marginBottom: "2rem", maxWidth: "440px", margin: "0 auto 2rem", lineHeight: 1.7 }}>
+                                Satış uzmanlarımız işletmenize özel en uygun planı belirlesinler. Ücretsiz danışmanlık alın.
                             </p>
                             <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
-                                <button className="btn-primary" style={{ fontSize: "1rem", padding: "0.875rem 2rem" }}>
-                                    Demo Talep Et
-                                    <ArrowRight style={{ width: "1rem", height: "1rem" }} />
-                                </button>
-                                <button className="btn-outline" style={{ fontSize: "1rem", padding: "0.875rem 2rem" }}>
+                                <Link href="/demo" className="btn-primary" style={{ fontSize: "0.95rem", padding: "0.875rem 2rem", display: "inline-flex", alignItems: "center", gap: "0.5rem", textDecoration: "none" }}>
+                                    Demo Talep Et <ArrowRight style={{ width: "1rem", height: "1rem" }} />
+                                </Link>
+                                <Link href="/#contact" style={{
+                                    fontSize: "0.95rem", padding: "0.875rem 2rem",
+                                    display: "inline-flex", alignItems: "center", gap: "0.5rem",
+                                    borderRadius: "9999px", border: "1px solid rgba(255,255,255,0.15)",
+                                    color: "rgba(255,255,255,0.75)", textDecoration: "none",
+                                    fontWeight: 600, background: "transparent",
+                                    transition: "all 0.2s"
+                                }}
+                                    onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.35)"; e.currentTarget.style.color = "white"; }}
+                                    onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)"; e.currentTarget.style.color = "rgba(255,255,255,0.75)"; }}
+                                >
                                     Bize Ulaşın
-                                </button>
+                                </Link>
                             </div>
                         </motion.div>
+
+                        <p style={{ textAlign: "center", color: "rgba(255,255,255,0.22)", fontSize: "0.85rem", marginTop: "2rem", lineHeight: 1.6 }}>
+                            Tüm fiyatlara KDV dahil değildir. İstediğiniz zaman iptal edebilirsiniz.
+                            <br />
+                            <span style={{ color: "rgba(255,255,255,0.15)", fontSize: "0.75rem" }}>
+                                * Yapay zeka özellikleri (stok tahmini, satış analizi, otomatik kategorizasyon vb.) kullanım bazlı token ücretlendirmesine tabidir ve paket fiyatlarına dahil değildir.
+                            </span>
+                        </p>
                     </div>
                 </div>
 

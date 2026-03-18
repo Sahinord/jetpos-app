@@ -1,68 +1,83 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Check, Zap, Star, Building2 } from "lucide-react";
+import { Check, Zap, Star, Building2, ArrowRight } from "lucide-react";
 import { useState } from "react";
+import Link from "next/link";
 
 const plans = [
     {
-        name: "Başlangıç",
+        name: "Starter",
         icon: Zap,
-        price: { monthly: 299, yearly: 249 },
-        description: "Küçük işletmeler için ideal başlangıç paketi",
+        tag: null,
+        price: { monthly: 985, yearly: 790 },
+        period: "Aylık · Taahhütsüz",
+        description: "Küçük işletmeler için esnek giriş paketi. İstediğiniz zaman iptal edin.",
         color: "#60a5fa",
+        popular: false,
         features: [
             "1 Kullanıcı",
-            "Barkod ile satış",
-            "Stok takibi",
-            "Temel raporlar",
-            "E-posta desteği",
-            "500 ürün limiti",
+            "Hızlı Satış Sistemi",
+            "Barkodlu Satış",
+            "Stok Takibi",
+            "Kasa & Gün Sonu",
+            "Temel Raporlama",
+            "7/24 Teknik Destek",
         ],
-        notIncluded: ["E-Fatura", "Yapay Zeka", "API Erişimi"],
+        notIncluded: ["E-Fatura & E-Arşiv", "Yapay Zeka Analizleri", "Çoklu Şube"],
+        cta: "Ücretsiz Dene",
     },
     {
-        name: "Pro",
+        name: "JetScale",
         icon: Star,
-        price: { monthly: 599, yearly: 499 },
-        description: "Büyüyen işletmeler için tam özellikli paket",
+        tag: "EN POPÜLER",
+        price: { monthly: 1249, yearly: 985 },
+        period: "Yıllık · %21 tasarruf",
+        description: "Büyüyen işletmeler için tam donanımlı paket. E-Fatura dahil.",
         color: "#a78bfa",
         popular: true,
         features: [
-            "5 Kullanıcı",
-            "Barkod ile satış",
-            "Gelişmiş stok takibi",
+            "3 Kullanıcı",
+            "Hızlı Satış Sistemi",
+            "Barkodlu Satış",
+            "Gelişmiş Stok & Depo",
             "E-Fatura & E-Arşiv",
-            "Yapay Zeka analizleri",
-            "Sınırsız ürün",
-            "Cari hesap yönetimi",
-            "Öncelikli destek",
+            "Yapay Zeka Analizleri",
+            "Cari Hesap Yönetimi",
+            "Personel Takibi",
+            "7/24 Öncelikli Destek",
         ],
-        notIncluded: ["Özel API Erişimi"],
+        notIncluded: ["Çoklu Şube", "Özel API Erişimi"],
+        cta: "Ücretsiz Dene",
     },
     {
-        name: "Kurumsal",
+        name: "Pro",
         icon: Building2,
-        price: { monthly: 1299, yearly: 999 },
-        description: "Büyük işletmeler için özelleştirilebilir çözüm",
+        tag: "EN İYİ DEĞİR",
+        price: { monthly: 543, yearly: 394 },
+        period: "2 Yıl + 1 Yıl Hediye",
+        description: "3 yıl kullanım, barkod okuyucu hediye. Sınırsız kullanıcı.",
         color: "#34d399",
+        popular: false,
         features: [
             "Sınırsız Kullanıcı",
-            "Tüm Pro özellikleri",
-            "API Erişimi",
-            "Özel entegrasyonlar",
-            "Trendyol / N11 sync",
-            "Çoklu şube desteği",
-            "Özel raporlama",
-            "7/24 telefon desteği",
-            "Özel eğitim",
+            "Tüm Büyüme özellikleri",
+            "Çoklu Şube (3'e kadar)",
+            "KDV & Mizan Raporları",
+            "Trendyol Entegrasyonu",
+            "İkas Entegrasyonu",
+            "Ücretsiz Kurulum & Geçiş",
+            "Barkod Okuyucu Hediye",
+            "+1 Yıl Kullanım Hediye",
         ],
         notIncluded: [],
+        cta: "Bu Planı Seç",
+        badge: "3 yıl öde, ücretsiz başla",
     },
 ];
 
 export default function Pricing() {
-    const [yearly, setYearly] = useState(false);
+    const [yearly, setYearly] = useState(true);
 
     return (
         <section id="pricing" style={{ padding: "7rem 0", position: "relative", zIndex: 2 }}>
@@ -89,7 +104,7 @@ export default function Pricing() {
                         <span className="holographic-text">Planı Seçin</span>
                     </h2>
                     <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "1.125rem", maxWidth: "560px", margin: "0 auto 2rem" }}>
-                        Tüm planlar 14 gün ücretsiz deneme içerir. Kredi kartı gerekmez.
+                        14 gün ücretsiz deneyin. Kredi kartı gerekmez, istediğiniz zaman iptal edin.
                     </p>
 
                     {/* Toggle */}
@@ -102,7 +117,8 @@ export default function Pricing() {
                                 border: "none",
                                 cursor: "pointer",
                                 fontWeight: 600,
-                                fontSize: "0.9rem",
+                                fontSize: "0.875rem",
+                                fontFamily: "inherit",
                                 transition: "all 0.3s",
                                 background: !yearly ? "linear-gradient(135deg, #2563eb, #3b82f6)" : "transparent",
                                 color: !yearly ? "white" : "rgba(255,255,255,0.5)",
@@ -118,7 +134,8 @@ export default function Pricing() {
                                 border: "none",
                                 cursor: "pointer",
                                 fontWeight: 600,
-                                fontSize: "0.9rem",
+                                fontSize: "0.875rem",
+                                fontFamily: "inherit",
                                 transition: "all 0.3s",
                                 background: yearly ? "linear-gradient(135deg, #2563eb, #3b82f6)" : "transparent",
                                 color: yearly ? "white" : "rgba(255,255,255,0.5)",
@@ -129,7 +146,7 @@ export default function Pricing() {
                         >
                             Yıllık
                             <span style={{ background: "#22c55e", color: "white", fontSize: "0.7rem", padding: "0.1rem 0.4rem", borderRadius: "9999px", fontWeight: 700 }}>
-                                %20 İndirim
+                                %20+ İndirim
                             </span>
                         </button>
                     </div>
@@ -146,28 +163,32 @@ export default function Pricing() {
                             transition={{ duration: 0.5, delay: index * 0.1 }}
                             style={{ position: "relative" }}
                         >
-                            {plan.popular && (
+                            {/* Popular Badge */}
+                            {plan.tag && (
                                 <div style={{
                                     position: "absolute",
                                     top: "-1px",
                                     left: "50%",
                                     transform: "translateX(-50%)",
-                                    background: "linear-gradient(135deg, #7c3aed, #a78bfa)",
+                                    background: plan.popular
+                                        ? "linear-gradient(135deg, #7c3aed, #a78bfa)"
+                                        : "linear-gradient(135deg, #059669, #34d399)",
                                     color: "white",
-                                    fontSize: "0.75rem",
+                                    fontSize: "0.7rem",
                                     fontWeight: 700,
                                     padding: "0.35rem 1.25rem",
                                     borderRadius: "0 0 0.75rem 0.75rem",
-                                    letterSpacing: "0.05em",
+                                    letterSpacing: "0.08em",
                                     zIndex: 10,
                                     whiteSpace: "nowrap"
                                 }}>
-                                    ⭐ EN POPÜLER
+                                    {plan.tag === "EN İYİ DEĞİR" ? "⚡ EN İYİ DEĞER" : `⭐ ${plan.tag}`}
                                 </div>
                             )}
+
                             <div style={{
                                 background: plan.popular ? "rgba(139,92,246,0.08)" : "rgba(255,255,255,0.03)",
-                                border: `1px solid ${plan.popular ? "rgba(139,92,246,0.4)" : "rgba(255,255,255,0.07)"}`,
+                                border: `1px solid ${plan.popular ? "rgba(139,92,246,0.4)" : plan.name === "Pro" ? "rgba(52,211,153,0.3)" : "rgba(255,255,255,0.07)"}`,
                                 borderRadius: "1.5rem",
                                 padding: "2.25rem",
                                 height: "100%",
@@ -175,7 +196,7 @@ export default function Pricing() {
                                 flexDirection: "column",
                                 gap: "1.5rem",
                                 transition: "all 0.3s ease",
-                                boxShadow: plan.popular ? "0 0 40px rgba(139,92,246,0.15)" : "none",
+                                boxShadow: plan.popular ? "0 0 40px rgba(139,92,246,0.15)" : plan.name === "Pro" ? "0 0 40px rgba(52,211,153,0.08)" : "none",
                             }}
                                 onMouseEnter={e => {
                                     (e.currentTarget as HTMLDivElement).style.transform = "translateY(-6px)";
@@ -197,7 +218,10 @@ export default function Pricing() {
                                         }}>
                                             <plan.icon style={{ width: "1.25rem", height: "1.25rem", color: plan.color }} />
                                         </div>
-                                        <span style={{ fontSize: "1.25rem", fontWeight: 700, color: "white" }}>{plan.name}</span>
+                                        <div>
+                                            <span style={{ fontSize: "1.25rem", fontWeight: 700, color: "white", display: "block" }}>{plan.name}</span>
+                                            <span style={{ fontSize: "0.7rem", color: plan.color, fontWeight: 600, opacity: 0.8 }}>{plan.period}</span>
+                                        </div>
                                     </div>
                                     <p style={{ fontSize: "0.875rem", color: "rgba(255,255,255,0.5)", lineHeight: 1.5 }}>{plan.description}</p>
                                 </div>
@@ -205,33 +229,59 @@ export default function Pricing() {
                                 {/* Price */}
                                 <div>
                                     <div style={{ display: "flex", alignItems: "baseline", gap: "0.25rem" }}>
-                                        <span style={{ fontSize: "2.75rem", fontWeight: 800, color: "white", lineHeight: 1 }}>
-                                            ₺{yearly ? plan.price.yearly : plan.price.monthly}
+                                        <span style={{ fontSize: "1rem", color: "rgba(255,255,255,0.6)", fontWeight: 700 }}>₺</span>
+                                        <span style={{ fontSize: "3rem", fontWeight: 800, color: "white", lineHeight: 1 }}>
+                                            {yearly ? plan.price.yearly : plan.price.monthly}
                                         </span>
                                         <span style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.9rem" }}>/ay</span>
                                     </div>
                                     {yearly && (
-                                        <p style={{ fontSize: "0.8rem", color: "#4ade80", marginTop: "0.25rem" }}>
-                                            Yıllık ödeme ile ₺{(plan.price.monthly - plan.price.yearly) * 12} tasarruf
+                                        <p style={{ fontSize: "0.8rem", color: "#4ade80", marginTop: "0.35rem" }}>
+                                            Yıllık ödemede ₺{((plan.price.monthly - plan.price.yearly) * 12).toLocaleString("tr-TR")} tasarruf
                                         </p>
+                                    )}
+                                    {plan.badge && (
+                                        <div style={{
+                                            marginTop: "0.75rem",
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: "0.35rem",
+                                            background: "rgba(52,211,153,0.1)",
+                                            border: "1px solid rgba(52,211,153,0.25)",
+                                            borderRadius: "9999px",
+                                            padding: "0.25rem 0.75rem",
+                                            fontSize: "0.7rem",
+                                            color: "#34d399",
+                                            fontWeight: 700
+                                        }}>
+                                            🎁 {plan.badge}
+                                        </div>
                                     )}
                                 </div>
 
                                 {/* CTA */}
-                                <button style={{
+                                <Link href="/demo" style={{
+                                    display: "block",
                                     width: "100%",
                                     padding: "0.875rem",
                                     borderRadius: "0.875rem",
-                                    border: plan.popular ? "none" : `1px solid rgba(255,255,255,0.15)`,
-                                    background: plan.popular ? "linear-gradient(135deg, #7c3aed, #a78bfa)" : "rgba(255,255,255,0.05)",
+                                    border: plan.popular ? "none" : plan.name === "Pro" ? "none" : "1px solid rgba(255,255,255,0.15)",
+                                    background: plan.popular
+                                        ? "linear-gradient(135deg, #7c3aed, #a78bfa)"
+                                        : plan.name === "Pro"
+                                            ? "linear-gradient(135deg, #059669, #34d399)"
+                                            : "rgba(255,255,255,0.05)",
                                     color: "white",
                                     fontWeight: 600,
                                     fontSize: "0.95rem",
                                     cursor: "pointer",
                                     transition: "all 0.3s",
+                                    textAlign: "center",
+                                    textDecoration: "none",
+                                    boxShadow: plan.popular ? "0 4px 20px rgba(124,58,237,0.35)" : plan.name === "Pro" ? "0 4px 16px rgba(52,211,153,0.3)" : "none"
                                 }}>
-                                    14 Gün Ücretsiz Dene
-                                </button>
+                                    {plan.cta}
+                                </Link>
 
                                 {/* Divider */}
                                 <div style={{ height: "1px", background: "rgba(255,255,255,0.07)" }} />
@@ -252,7 +302,7 @@ export default function Pricing() {
                                         </div>
                                     ))}
                                     {plan.notIncluded.map((f, i) => (
-                                        <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.625rem", opacity: 0.35 }}>
+                                        <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.625rem", opacity: 0.3 }}>
                                             <div style={{
                                                 width: "1.25rem", height: "1.25rem", borderRadius: "50%",
                                                 background: "rgba(255,255,255,0.05)",
@@ -270,16 +320,34 @@ export default function Pricing() {
                     ))}
                 </div>
 
-                {/* Bottom note */}
-                <motion.p
+                {/* All plans link */}
+                <motion.div
                     initial={{ opacity: 0 }}
                     whileInView={{ opacity: 1 }}
                     viewport={{ once: true }}
                     transition={{ delay: 0.4 }}
-                    style={{ textAlign: "center", color: "rgba(255,255,255,0.35)", fontSize: "0.875rem", marginTop: "2.5rem" }}
+                    style={{ textAlign: "center", marginTop: "2.5rem" }}
                 >
-                    Tüm fiyatlara KDV dahil değildir. İstediğiniz zaman iptal edebilirsiniz.
-                </motion.p>
+                    <Link href="/fiyatlandirma" style={{
+                        display: "inline-flex", alignItems: "center", gap: "0.5rem",
+                        color: "rgba(255,255,255,0.45)", fontSize: "0.875rem",
+                        textDecoration: "none", transition: "color 0.2s",
+                        fontWeight: 500
+                    }}
+                        onMouseEnter={e => (e.currentTarget.style.color = "white")}
+                        onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.45)")}
+                    >
+                        Tüm plan karşılaştırmasını gör
+                        <ArrowRight style={{ width: "0.875rem", height: "0.875rem" }} />
+                    </Link>
+                    <p style={{ color: "rgba(255,255,255,0.25)", fontSize: "0.8rem", marginTop: "0.75rem", lineHeight: 1.75 }}>
+                        Tüm fiyatlara KDV dahil değildir. İstediğiniz zaman iptal edebilirsiniz.
+                        <br />
+                        <span style={{ color: "rgba(255,255,255,0.18)" }}>
+                            * Yapay zeka özellikleri (stok tahmini, satış analizi vb.) kullanım bazlı token ücretlendirmesine tabidir ve plan fiyatlarına dahil değildir.
+                        </span>
+                    </p>
+                </motion.div>
             </div>
         </section>
     );

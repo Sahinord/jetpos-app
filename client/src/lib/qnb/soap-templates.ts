@@ -53,16 +53,17 @@ export const SOAP_TEMPLATES = {
    </soapenv:Body>
 </soapenv:Envelope>`,
 
-   CREATE_EARSIV_INVOICE_EXT: (veri: string, vkn: string, erpCode: string, username: string, password: string, islemId: string) => {
-      // Raw JSON in XML — no &quot; escaping needed for element content per XML spec
+   CREATE_EARSIV_INVOICE_EXT: (veri: string, vkn: string, erpCode: string, username: string, password: string, islemId: string, sube: string = "", kasa: string = "") => {
       const inputJson = JSON.stringify({
          islemId: islemId,
          vkn: vkn,
-         sube: "DFLT",
-         kasa: "DFLT",
-         donenBelgeFormati: "3", // 3: PDF formatı iste
-         erpKodu: erpCode,
-         numaraVerilsinMi: 1
+         sube: (sube || "DFLT").toUpperCase(),
+         kasa: (kasa || "DFLT").toUpperCase(),
+         donenBelgeFormati: "3", 
+         erpKodu: erpCode || "JET31270",
+         numaraVerilsinMi: 1,
+         kaynak: 2,
+         goruntuOlusturulsunMu: 1
       });
 
       return `
@@ -87,13 +88,14 @@ export const SOAP_TEMPLATES = {
 </soapenv:Envelope>`;
    },
 
-   EARSIV_STATUS: (vkn: string, faturaNo: string, username: string, password: string) => {
+   EARSIV_STATUS: (vkn: string, faturaNo: string, username: string, password: string, sube: string = "", kasa: string = "") => {
       const inputJson = JSON.stringify({
          vkn: vkn,
-         sube: "DFLT",
-         kasa: "DFLT",
+         sube: sube || "",
+         kasa: kasa || "",
          donenBelgeFormati: "3",
-         faturaNo: faturaNo
+         faturaNo: faturaNo,
+         kaynak: 2
       });
 
       return `
@@ -114,13 +116,14 @@ export const SOAP_TEMPLATES = {
 </soapenv:Envelope>`;
    },
 
-   EARSIV_STATUS_BY_UUID: (vkn: string, uuid: string, username: string, password: string) => {
+   EARSIV_STATUS_BY_UUID: (vkn: string, uuid: string, username: string, password: string, sube: string = "", kasa: string = "") => {
       const inputJson = JSON.stringify({
          vkn: vkn,
-         sube: "DFLT",
-         kasa: "DFLT",
+         sube: sube || "",
+         kasa: kasa || "",
          donenBelgeFormati: "3",
-         faturaUuid: uuid
+         faturaUuid: uuid,
+         kaynak: 2
       });
 
       return `

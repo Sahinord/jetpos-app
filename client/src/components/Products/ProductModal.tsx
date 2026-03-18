@@ -25,7 +25,8 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
             ...product,
             unit: product.unit || "Adet",
             status: product.status || (product.is_active === false ? 'passive' : 'active'),
-            image_url: product.image_url || ""
+            image_url: product.image_url || "",
+            category_id: product.category_id || "",
         });
         else setFormData({
             name: "",
@@ -142,7 +143,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                 <input
                                     type="text"
                                     className="w-full bg-background border border-border rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary/50 outline-none text-foreground"
-                                    value={formData.name}
+                                    value={formData.name || ""}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                     placeholder="Örn: Dana Kuşbaşı"
                                 />
@@ -153,7 +154,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                 </label>
                                 <select
                                     className="w-full bg-background border border-border rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary/50 outline-none text-foreground"
-                                    value={formData.category_id}
+                                    value={formData.category_id || ""}
                                     onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
                                 >
                                     <option value="">Kategori Seçin</option>
@@ -167,7 +168,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                 <input
                                     type="text"
                                     className="w-full bg-background border border-border rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary/50 outline-none"
-                                    value={formData.barcode}
+                                    value={formData.barcode || ""}
                                     onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
                                     placeholder="Barkod taratın veya yazın"
                                 />
@@ -178,7 +179,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                     <input
                                         type="number"
                                         className="w-full bg-background border border-border rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary/50 outline-none text-foreground"
-                                        value={formData.purchase_price === 0 ? "" : formData.purchase_price}
+                                        value={!formData.purchase_price ? "" : formData.purchase_price}
                                         onChange={(e) => setFormData({ ...formData, purchase_price: e.target.value === "" ? 0 : parseFloat(e.target.value) })}
                                     />
                                 </div>
@@ -211,7 +212,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                 <input
                                     type="number"
                                     className="w-full bg-background border border-border rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary/50 outline-none"
-                                    value={formData.sale_price === 0 ? "" : formData.sale_price}
+                                    value={!formData.sale_price ? "" : formData.sale_price}
                                     onChange={(e) => setFormData({ ...formData, sale_price: e.target.value === "" ? 0 : parseFloat(e.target.value) })}
                                 />
                             </div>
@@ -253,7 +254,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                 <input
                                     type="number"
                                     className="w-full bg-background border border-border rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary/50 outline-none text-lg font-bold text-foreground"
-                                    value={formData.stock_quantity === 0 ? "" : formData.stock_quantity}
+                                    value={!formData.stock_quantity ? "" : formData.stock_quantity}
                                     onChange={(e) => setFormData({ ...formData, stock_quantity: e.target.value === "" ? 0 : parseFloat(e.target.value) })}
                                     step="0.001"
                                     placeholder="0"

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Building2, Key, Check, X, Save, Edit, Trash2, Plus, MessageSquare, Bell, LifeBuoy, Send, User, Trash, Sparkles, FileText } from 'lucide-react';
+import { Building2, Key, Check, X, Save, Edit, Trash2, Plus, MessageSquare, Bell, LifeBuoy, Send, User, Trash, Sparkles, FileText, Home, MapPin, Store } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 interface Tenant {
@@ -63,11 +63,16 @@ export default function SuperAdmin() {
 
     // QNB states
     const [qnbModal, setQnbModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
-    const [qnbSettings, setQnbSettings] = useState({ vkn: '', username: '', password: '', erpCode: 'JET31270', isTest: true });
+    const [qnbSettings, setQnbSettings] = useState({ vkn: '', username: '', password: '', erpCode: 'JET31270', isTest: true, branchCode: '', counterCode: '' });
 
     // Trendyol GO states
     const [trendyolModal, setTrendyolModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
     const [trendyolSettings, setTrendyolSettings] = useState({ sellerId: '', storeId: '', apiKey: '', apiSecret: '', token: '', stage: false });
+    
+    // Warehouse management states
+    const [warehouseModal, setWarehouseModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
+    const [warehousesList, setWarehousesList] = useState<any[]>([]);
+    const [editingWarehouse, setEditingWarehouse] = useState<any | null>(null);
 
 
     useEffect(() => {
@@ -384,11 +389,16 @@ export default function SuperAdmin() {
             const updatedSettings = {
                 ...currentSettings,
                 qnb: {
-                    testVkn: qnbSettings.vkn,
+                    ...currentSettings.qnb, // Eski diğer ayarları (varsa URL'ler vb.) koru
+                    vkn: !qnbSettings.isTest ? qnbSettings.vkn : (currentSettings.qnb?.vkn || ''),
+                    password: !qnbSettings.isTest ? qnbSettings.password : (currentSettings.qnb?.password || ''),
+                    testVkn: qnbSettings.isTest ? qnbSettings.vkn : (currentSettings.qnb?.testVkn || qnbSettings.vkn),
+                    testPassword: qnbSettings.isTest ? qnbSettings.password : (currentSettings.qnb?.testPassword || qnbSettings.password),
                     earsivUsername: qnbSettings.username,
-                    testPassword: qnbSettings.password,
                     erpCode: qnbSettings.erpCode,
-                    isTest: qnbSettings.isTest
+                    isTest: qnbSettings.isTest,
+                    branchCode: qnbSettings.branchCode,
+                    counterCode: qnbSettings.counterCode
                 }
             };
 
@@ -443,6 +453,76 @@ export default function SuperAdmin() {
             alert('❌ Hata: ' + err.message);
         } finally {
             setSaving(false);
+        }
+    };
+
+    const fetchWarehouses = async (tenantId: string) => {
+        setLoading(true);
+        try {
+            const { data, error } = await supabase
+                .from('warehouses')
+                .select('*')
+                .eq('tenant_id', tenantId)
+                .order('created_at', { ascending: true });
+
+            if (error) throw error;
+            setWarehousesList(data || []);
+        } catch (err: any) {
+            alert('Hata: ' + err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSaveWarehouse = async (data: any) => {
+        if (!warehouseModal) return;
+        setSaving(true);
+        try {
+            if (data.id) {
+                const { error } = await supabase
+                    .from('warehouses')
+                    .update({
+                        name: data.name,
+                        code: data.code,
+                        type: data.type,
+                        address: data.address,
+                        is_active: data.is_active,
+                        is_default: data.is_default
+                    })
+                    .eq('id', data.id);
+                if (error) throw error;
+            } else {
+                const { error } = await supabase
+                    .from('warehouses')
+                    .insert([{
+                        tenant_id: warehouseModal.tenantId,
+                        name: data.name,
+                        code: data.code,
+                        type: data.type,
+                        address: data.address,
+                        is_active: true,
+                        is_default: data.is_default || false
+                    }]);
+                if (error) throw error;
+            }
+            alert('✅ Mağaza kaydedildi!');
+            setEditingWarehouse(null);
+            await fetchWarehouses(warehouseModal.tenantId);
+        } catch (err: any) {
+            alert('❌ Hata: ' + err.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleDeleteWarehouse = async (id: string) => {
+        if (!warehouseModal || !confirm('Bu mağazayı silmek istediğinize emin misiniz?')) return;
+        try {
+            const { error } = await supabase.from('warehouses').delete().eq('id', id);
+            if (error) throw error;
+            await fetchWarehouses(warehouseModal.tenantId);
+        } catch (err: any) {
+            alert('❌ Hata: ' + err.message);
         }
     };
 
@@ -563,11 +643,13 @@ export default function SuperAdmin() {
                                                     tenantName: tenant.company_name || tenant.license_key
                                                 });
                                                 setQnbSettings({
-                                                    vkn: currentQnb.testVkn || '',
+                                                    vkn: currentQnb.vkn || currentQnb.testVkn || '',
                                                     username: currentQnb.earsivUsername || '',
-                                                    password: currentQnb.testPassword || '',
+                                                    password: currentQnb.password || currentQnb.testPassword || '',
                                                     erpCode: currentQnb.erpCode || 'JET31270',
-                                                    isTest: currentQnb.isTest !== false
+                                                    isTest: currentQnb.isTest !== false,
+                                                    branchCode: currentQnb.branchCode || '',
+                                                    counterCode: currentQnb.counterCode || ''
                                                 });
                                             }}
                                             className="p-3 bg-white/5 hover:bg-emerald-500/20 rounded-xl text-slate-400 hover:text-emerald-500 transition-all font-bold"
@@ -595,6 +677,16 @@ export default function SuperAdmin() {
                                             title="Trendyol GO Ayarları"
                                         >
                                             <span className="font-black text-xs">TY</span>
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setWarehouseModal({ tenantId: tenant.id, tenantName: tenant.company_name || tenant.license_key });
+                                                fetchWarehouses(tenant.id);
+                                            }}
+                                            className="p-3 bg-white/5 hover:bg-indigo-500/20 rounded-xl text-slate-400 hover:text-indigo-500 transition-all"
+                                            title="Mağazaları Yönet"
+                                        >
+                                            <Home className="w-5 h-5" />
                                         </button>
                                         <button
                                             onClick={() => {
@@ -1000,6 +1092,28 @@ export default function SuperAdmin() {
                                     className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-emerald-500/50"
                                 />
                             </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Şube Kodu</label>
+                                    <input
+                                        type="text"
+                                        value={qnbSettings.branchCode}
+                                        onChange={(e) => setQnbSettings({ ...qnbSettings, branchCode: e.target.value })}
+                                        placeholder="DFLT veya Merkez"
+                                        className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-emerald-500/50"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Kasa Kodu</label>
+                                    <input
+                                        type="text"
+                                        value={qnbSettings.counterCode}
+                                        onChange={(e) => setQnbSettings({ ...qnbSettings, counterCode: e.target.value })}
+                                        placeholder="DFLT veya Form"
+                                        className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-emerald-500/50"
+                                    />
+                                </div>
+                            </div>
                             <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
                                 <span className="text-sm font-bold text-white">Test Modu</span>
                                 <button
@@ -1202,6 +1316,133 @@ export default function SuperAdmin() {
                                 className="flex-1 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-black shadow-lg shadow-blue-500/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                             >
                                 {saving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><User className="w-4 h-4" /> Gruplandırmayı Kaydet</>}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Warehouse Management Modal */}
+            {warehouseModal && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+                    <div className="bg-slate-900 border border-white/10 rounded-[2.5rem] max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col">
+                        <div className="sticky top-0 bg-slate-900/80 backdrop-blur-md border-b border-white/10 p-8 flex items-center justify-between z-10">
+                            <div>
+                                <h3 className="text-2xl font-black text-white">{warehouseModal.tenantName} - Mağaza/Depo Yönetimi</h3>
+                                <p className="text-xs text-slate-500 mt-1 uppercase tracking-widest font-bold font-mono">ID: {warehouseModal.tenantId}</p>
+                            </div>
+                            <button onClick={() => setWarehouseModal(null)} className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-all">
+                                <X className="w-6 h-6 text-slate-400" />
+                            </button>
+                        </div>
+
+                        <div className="p-8 flex-1">
+                            <div className="grid grid-cols-1 gap-4">
+                                <button
+                                    onClick={() => setEditingWarehouse({ name: '', code: '', type: 'store', address: '', is_default: false })}
+                                    className="flex items-center justify-center gap-2 p-4 bg-primary/10 border border-primary/20 hover:bg-primary/20 text-primary rounded-2xl font-bold transition-all mb-4"
+                                >
+                                    <Plus className="w-5 h-5" />
+                                    Yeni Mağaza/Depo Ekle
+                                </button>
+
+                                {warehousesList.map(w => (
+                                    <div key={w.id} className="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center">
+                                                <Home className="w-6 h-6 text-indigo-400" />
+                                            </div>
+                                            <div>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-white font-bold">{w.name}</span>
+                                                    {w.is_default && <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 rounded text-[10px] uppercase font-black">Varsayılan</span>}
+                                                </div>
+                                                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">{w.type === 'store' ? 'Mağaza' : 'Depo'} | {w.code || 'Kodsuz'}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button onClick={() => setEditingWarehouse(w)} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition-all">
+                                                <Edit className="w-4 h-4" />
+                                            </button>
+                                            <button onClick={() => handleDeleteWarehouse(w.id)} className="p-2 hover:bg-rose-500/10 rounded-lg text-slate-400 hover:text-rose-500 transition-all">
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+
+                                {warehousesList.length === 0 && !loading && (
+                                    <div className="text-center py-12 text-slate-600">Henüz mağaza bulunmuyor.</div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Warehouse Edit/Add Sub-Modal */}
+            {editingWarehouse && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-6">
+                    <div className="bg-slate-900 border border-white/20 rounded-[2rem] max-w-lg w-full p-8 space-y-6 shadow-2xl">
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-xl font-black text-white">{editingWarehouse.id ? 'Mağazayı Düzenle' : 'Yeni Mağaza'}</h4>
+                            <button onClick={() => setEditingWarehouse(null)} className="p-2 hover:bg-white/5 rounded-xl transition-all">
+                                <X className="w-5 h-5 text-slate-400" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Mağaza Adı</label>
+                                <input
+                                    type="text"
+                                    value={editingWarehouse.name}
+                                    onChange={e => setEditingWarehouse({ ...editingWarehouse, name: e.target.value })}
+                                    className="w-full px-5 py-3 bg-black/40 border border-white/10 rounded-xl text-white outline-none focus:border-primary/50"
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Tür</label>
+                                    <select
+                                        value={editingWarehouse.type}
+                                        onChange={e => setEditingWarehouse({ ...editingWarehouse, type: e.target.value })}
+                                        className="w-full px-5 py-3 bg-black/40 border border-white/10 rounded-xl text-white outline-none focus:border-primary/50"
+                                    >
+                                        <option value="store">Mağaza</option>
+                                        <option value="warehouse">Depo</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Mağaza Kodu</label>
+                                    <input
+                                        type="text"
+                                        value={editingWarehouse.code}
+                                        onChange={e => setEditingWarehouse({ ...editingWarehouse, code: e.target.value })}
+                                        className="w-full px-5 py-3 bg-black/40 border border-white/10 rounded-xl text-white outline-none focus:border-primary/50"
+                                        placeholder="Örn: M01"
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3 p-4 bg-white/5 rounded-xl border border-white/10">
+                                <input
+                                    type="checkbox"
+                                    id="is_default"
+                                    checked={editingWarehouse.is_default}
+                                    onChange={e => setEditingWarehouse({ ...editingWarehouse, is_default: e.target.checked })}
+                                    className="w-5 h-5 accent-primary"
+                                />
+                                <label htmlFor="is_default" className="text-sm text-slate-300 font-bold cursor-pointer">Varsayılan (Ana) Mağaza</label>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button onClick={() => setEditingWarehouse(null)} className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold transition-all">İptal</button>
+                            <button
+                                onClick={() => handleSaveWarehouse(editingWarehouse)}
+                                disabled={saving}
+                                className="flex-1 py-3 bg-primary hover:bg-primary/90 text-white rounded-xl font-black shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2"
+                            >
+                                {saving ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : 'Kaydet'}
                             </button>
                         </div>
                     </div>

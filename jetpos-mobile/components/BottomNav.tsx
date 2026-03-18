@@ -1,10 +1,6 @@
 "use client";
 
-import { LayoutDashboard } from 'lucide-react';
-import { Package } from 'lucide-react';
-import { AlertTriangle } from 'lucide-react';
-import { ScanLine } from 'lucide-react';
-import { Wallet } from 'lucide-react';
+import { LayoutDashboard, Package, ScanLine, Wallet, ClipboardCheck } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 
@@ -29,9 +25,9 @@ export default function BottomNav() {
             path: '/products',
         },
         {
-            name: 'Stok',
-            icon: AlertTriangle,
-            path: '/low-stock',
+            name: 'Sayım',
+            icon: ClipboardCheck,
+            path: '/inventory-count',
         },
         {
             name: 'Barkod',

@@ -31,7 +31,7 @@ import SmartScanner from "@/components/Tools/SmartScanner";
 import { useTenant } from "@/lib/tenant-context";
 
 
-export default function ProductTable({ products, onEdit, onDelete, onAdd, onManageCategories, onBulkImport, onClearAll, onToggleAllCampaign, campaignRate, hideFilters = false, limit, onRefresh, showToast, onViewChangeLogs }: any) {
+export default function ProductTable({ products, onEdit, onDelete, onAdd, onManageCategories, onBulkImport, onClearAll, onToggleAllCampaign, campaignRate, hideFilters = false, limit, onRefresh, showToast, onViewChangeLogs, isPriceSyncEnabled = false, isStockSyncEnabled = false }: any) {
     const [search, setSearch] = useState("");
     const [filter, setFilter] = useState("all"); // all, active, passive, campaign
     const [sortBy, setSortBy] = useState("name-asc"); // name-asc, name-desc, stock-asc, stock-desc, price-desc
@@ -51,7 +51,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
 
     // NEW: Smart AI Scanner States
     const [isSmartScannerOpen, setIsSmartScannerOpen] = useState(false);
-    const { currentTenant } = useTenant();
+    const { currentTenant, activeWarehouse } = useTenant();
 
     // NEW: Processing state for bulk actions
 
@@ -86,7 +86,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
 
             return matchesSearch && matchesFilter;
         });
-    }, [products, search, filter]);
+    }, [products, search, filter, activeWarehouse, isPriceSyncEnabled]);
 
     // 2. Count Logic
     const counts = useMemo(() => {
@@ -509,7 +509,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                 <span>AI SMART SCAN</span>
                             </button>
                             <button
-                                onClick={onAdd}
+                                onClick={() => onAdd()}
                                 className="flex items-center space-x-2 bg-primary hover:bg-primary/90 text-white px-8 py-3.5 rounded-2xl font-black transition-all shadow-xl shadow-primary/20 active:scale-95"
                             >
                                 <Plus className="w-5 h-5" />
@@ -660,10 +660,11 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                 {onClearAll && (
                                     <button
                                         onClick={onClearAll}
-                                        className="p-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 rounded-xl transition-all"
-                                        title="Tümünü Temizle"
+                                        className="flex items-center gap-2 px-4 py-2.5 bg-rose-500/10 hover:bg-rose-600 text-rose-500 hover:text-white border border-rose-500/30 hover:border-rose-600 rounded-xl transition-all duration-300 font-black text-[10px] tracking-widest uppercase group"
+                                        title="Tüm Veritabanını Sıfırla"
                                     >
-                                        <Trash2 className="w-4 h-4" />
+                                        <Trash2 className="w-4 h-4 group-hover:animate-bounce" />
+                                        <span>TÜMÜNÜ TEMİZLE</span>
                                     </button>
                                 )}
                             </div>
@@ -700,8 +701,13 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                         </thead>
                         <tbody className="divide-y divide-border/50">
                             {paginatedProducts.map((product: any) => {
-                                const profit = product.sale_price - product.purchase_price;
-                                const profitPercent = product.purchase_price > 0 ? (profit / product.purchase_price) * 100 : 0;
+                                const wsData = product.warehouse_stock?.find((ws: any) => ws.warehouse_id === activeWarehouse?.id);
+                                const currentSalePrice = (!isPriceSyncEnabled && wsData?.sale_price) ? wsData.sale_price : product.sale_price;
+                                const currentPurchasePrice = (!isPriceSyncEnabled && wsData?.purchase_price) ? wsData.purchase_price : product.purchase_price;
+                                const currentStock = (isStockSyncEnabled || !activeWarehouse) ? (product.stock_quantity || 0) : (wsData?.quantity || 0);
+
+                                const profit = currentSalePrice - currentPurchasePrice;
+                                const profitPercent = currentPurchasePrice > 0 ? (profit / currentPurchasePrice) * 100 : 0;
 
                                 return (
                                     <tr
@@ -744,8 +750,8 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                         </td>
                                         <td className="px-6 py-4 text-center border-x border-border/10">
                                             <div className="flex flex-col items-center">
-                                                <span className="text-secondary/40 text-[10px] font-bold line-through">₺{product.purchase_price.toFixed(2)}</span>
-                                                <span className="text-primary font-black text-lg tracking-tight">₺{product.sale_price.toFixed(2)}</span>
+                                                <span className="text-secondary/40 text-[10px] font-bold line-through">₺{currentPurchasePrice.toFixed(2)}</span>
+                                                <span className="text-primary font-black text-lg tracking-tight">₺{currentSalePrice.toFixed(2)}</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-center">
@@ -758,18 +764,18 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <div className="flex flex-col items-center">
-                                                <span className={`text-base font-black tracking-tight ${product.stock_quantity <= 2 ? 'text-rose-500 animate-pulse' : 'text-foreground'}`}>
+                                                <span className={`text-base font-black tracking-tight ${currentStock <= 2 ? 'text-rose-500 animate-pulse' : 'text-foreground'}`}>
                                                     {product.unit?.toLowerCase() === 'kg'
-                                                        ? (product.stock_quantity >= 1
-                                                            ? `${product.stock_quantity.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
-                                                            : `${(product.stock_quantity * 1000).toFixed(0)} gr`)
-                                                        : product.stock_quantity
+                                                        ? (currentStock >= 1
+                                                            ? `${currentStock.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
+                                                            : `${(currentStock * 1000).toFixed(0)} gr`)
+                                                        : currentStock
                                                     }
                                                 </span>
                                                 <div className={`mt-1 h-1 w-12 rounded-full bg-primary/10 overflow-hidden`}>
                                                     <div
-                                                        className={`h-full ${product.stock_quantity <= 2 ? 'bg-rose-500' : 'bg-emerald-500'}`}
-                                                        style={{ width: `${Math.min(100, (product.stock_quantity / 10) * 100)}%` }}
+                                                        className={`h-full ${currentStock <= 2 ? 'bg-rose-500' : 'bg-emerald-500'}`}
+                                                        style={{ width: `${Math.min(100, (currentStock / 10) * 100)}%` }}
                                                     />
                                                 </div>
                                             </div>
@@ -777,7 +783,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                         {previewCampaign && (
                                             <td className="px-6 py-4 text-center">
                                                 <div className="px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30">
-                                                    <p className="text-sm font-black text-amber-600">₺{(product.sale_price * campaignRate).toFixed(2)}</p>
+                                                    <p className="text-sm font-black text-amber-600">₺{(currentSalePrice * campaignRate).toFixed(2)}</p>
                                                 </div>
                                             </td>
                                         )}

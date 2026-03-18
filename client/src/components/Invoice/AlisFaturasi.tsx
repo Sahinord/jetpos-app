@@ -6,6 +6,7 @@ import {
     Package, Trash2, Calculator, Receipt, AlertCircle, Check, Sparkles,
     Eye, EyeOff, LayoutPanelLeft, Type
 } from 'lucide-react';
+import { useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useTenant } from '@/lib/tenant-context';
 import AIPDFInvoiceAnalyzer from './AIPDFInvoiceAnalyzer';
@@ -151,9 +152,33 @@ export default function AlisFaturasi() {
         }
     }, [currentTenant]);
 
-    useEffect(() => {
-        calculateTotals();
+    const enrichedItems = useMemo(() => {
+        return invoice.items.map(item => {
+            const discountAmount = (item.quantity * item.unit_price * item.discount_rate) / 100;
+            const line_total = (item.quantity * item.unit_price) - discountAmount;
+            const vat_amount = (line_total * item.vat_rate) / 100;
+            const line_total_with_vat = line_total + vat_amount;
+
+            return {
+                ...item,
+                line_total: Math.round(line_total * 100) / 100,
+                vat_amount: Math.round(vat_amount * 100) / 100,
+                line_total_with_vat: Math.round(line_total_with_vat * 100) / 100
+            };
+        });
     }, [invoice.items]);
+
+    const totals = useMemo(() => {
+        const subtotal = enrichedItems.reduce((sum, item) => sum + (item.line_total || 0), 0);
+        const total_vat = enrichedItems.reduce((sum, item) => sum + (item.vat_amount || 0), 0);
+        const grand_total = enrichedItems.reduce((sum, item) => sum + (item.line_total_with_vat || 0), 0);
+
+        return {
+            subtotal: Math.round(subtotal * 100) / 100,
+            total_vat: Math.round(total_vat * 100) / 100,
+            grand_total: Math.round(grand_total * 100) / 100
+        };
+    }, [enrichedItems]);
 
     const fetchCariList = async () => {
         const { data } = await supabase
@@ -172,33 +197,6 @@ export default function AlisFaturasi() {
         if (data) setProductList(data);
     };
 
-    const calculateTotals = () => {
-        const items = invoice.items.map(item => {
-            const discountAmount = (item.quantity * item.unit_price * item.discount_rate) / 100;
-            const line_total = (item.quantity * item.unit_price) - discountAmount;
-            const vat_amount = (line_total * item.vat_rate) / 100;
-            const line_total_with_vat = line_total + vat_amount;
-
-            return {
-                ...item,
-                line_total: Math.round(line_total * 100) / 100,
-                vat_amount: Math.round(vat_amount * 100) / 100,
-                line_total_with_vat: Math.round(line_total_with_vat * 100) / 100
-            };
-        });
-
-        const subtotal = items.reduce((sum, item) => sum + (item.line_total || 0), 0);
-        const total_vat = items.reduce((sum, item) => sum + (item.vat_amount || 0), 0);
-        const grand_total = items.reduce((sum, item) => sum + (item.line_total_with_vat || 0), 0);
-
-        setInvoice(prev => ({
-            ...prev,
-            items,
-            subtotal: Math.round(subtotal * 100) / 100,
-            total_vat: Math.round(total_vat * 100) / 100,
-            grand_total: Math.round(grand_total * 100) / 100
-        }));
-    };
 
     const selectCari = (cari: any) => {
         setInvoice(prev => ({
@@ -295,9 +293,9 @@ export default function AlisFaturasi() {
                     notes: invoice.notes,
                     status: 'approved',
                     payment_status: 'unpaid',
-                    subtotal: invoice.subtotal,
-                    total_vat: invoice.total_vat,
-                    grand_total: invoice.grand_total
+                    subtotal: totals.subtotal,
+                    total_vat: totals.total_vat,
+                    grand_total: totals.grand_total
                 })
                 .select()
                 .single();
@@ -356,7 +354,7 @@ export default function AlisFaturasi() {
                 cari_id: invoice.cari_id,
                 hareket_tipi: 'borclandirma',
                 aciklama: `Alış Faturası: ${nextNumber}`,
-                alacak: invoice.grand_total,
+                alacak: totals.grand_total,
                 borc: 0,
                 tarih: invoice.invoice_date,
                 belge_no: nextNumber,
@@ -595,7 +593,7 @@ export default function AlisFaturasi() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/5">
-                                    {invoice.items.map((item, index) => (
+                                    {enrichedItems.map((item, index) => (
                                         <tr key={index} className="hover:bg-white/[0.02] group">
                                             {/* Ürün Adı */}
                                             <td className="p-2 relative">
@@ -731,18 +729,18 @@ export default function AlisFaturasi() {
                             <div className="space-y-2">
                                 <div className="flex justify-between items-center">
                                     <span className="text-xs text-secondary">Ara Toplam:</span>
-                                    <span className="text-sm font-bold text-foreground font-mono">{formatCurrency(invoice.subtotal || 0)}</span>
+                                    <span className="text-sm font-bold text-foreground font-mono">{formatCurrency(totals.subtotal || 0)}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-xs text-emerald-500">KDV Toplam:</span>
-                                    <span className="text-sm font-bold text-emerald-500 font-mono">+{formatCurrency(invoice.total_vat || 0)}</span>
+                                    <span className="text-sm font-bold text-emerald-500 font-mono">+{formatCurrency(totals.total_vat || 0)}</span>
                                 </div>
                                 <div className="border-t border-white/5 pt-4">
                                     <div className="bg-emerald-500/10 rounded-2xl border border-emerald-500/20 p-5 flex flex-col gap-1 items-end relative overflow-hidden group">
                                         <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl group-hover:scale-150 transition-transform duration-700" />
                                         <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-[0.3em]">Genel Toplam (KDV DAHL)</span>
                                         <span className="text-3xl font-bold text-emerald-500 font-mono tracking-tighter">
-                                            {formatCurrency(invoice.grand_total || 0).replace('₺', '')} <span className="text-sm">₺</span>
+                                            {formatCurrency(totals.grand_total || 0).replace('₺', '')} <span className="text-sm">₺</span>
                                         </span>
                                     </div>
                                 </div>

@@ -6,7 +6,6 @@ import crypto from 'crypto';
 
 // Regex Helpers
 const extractTagContent = (xml: string, tag: string): string | null => {
-    // Handle both <tagName> and <ns:tagName>
     const regex = new RegExp(`<([a-z0-9]+:)?${tag}[^>]*>([^<]+)</([a-z0-9]+:)?${tag}>`, 'i');
     const match = xml.match(regex);
     return match ? match[2] : null;
@@ -21,36 +20,67 @@ const extractFault = (xml: string): string | null => {
     return null;
 };
 
+// Timeout Fetch Helper - 90 saniye (QNB bazen çok yavaş PDF üretir)
+async function fetchWithTimeout(url: string, options: any = {}, timeout = 90000) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+    try {
+        const response = await fetch(url, {
+            ...options,
+            signal: controller.signal
+        });
+        clearTimeout(id);
+        return response;
+    } catch (err) {
+        clearTimeout(id);
+        throw err;
+    }
+}
+
 export class QNBClient {
     private baseUrl: string;
     private earsivBaseUrl: string;
-    private connectorTestUrl: string;
+    private connectorBaseUrl: string;
     private vkn: string;
     private earsivUsername: string;
     private erpCode: string;
     private password?: string;
+    private branchCode: string;
+    private counterCode: string;
+    private isTest: boolean;
 
-    // Separate sessions because we have different users/endpoints
     private efaturaCookie?: string;
     private earsivCookie?: string;
 
     constructor(config?: { qnb?: any }) {
         const qnb = config?.qnb || {};
+        this.isTest = qnb.isTest !== false;
 
-        const isTest = qnb.isTest !== false;
+        this.baseUrl = qnb.baseUrl || (this.isTest ? 'https://erpefaturatest1.qnbesolutions.com.tr' : 'https://efaturaconnector.qnbesolutions.com.tr');
+        this.earsivBaseUrl = qnb.earsivBaseUrl || (this.isTest ? 'https://portaltest.qnbesolutions.com.tr' : 'https://earsivconnector.qnbesolutions.com.tr');
+        this.connectorBaseUrl = qnb.connectorBaseUrl || (this.isTest ? 'https://connectortest.qnbesolutions.com.tr' : 'https://connector.qnbesolutions.com.tr');
 
-        this.baseUrl = qnb.baseUrl || (isTest ? 'https://erpefaturatest1.qnbesolutions.com.tr' : 'https://erpefatura.qnbesolutions.com.tr');
-        this.earsivBaseUrl = qnb.earsivBaseUrl || (isTest ? 'https://portaltest.qnbesolutions.com.tr' : 'https://portal.qnbesolutions.com.tr');
-        this.connectorTestUrl = qnb.connectorTestUrl || (isTest ? 'https://connectortest.qnbesolutions.com.tr' : 'https://connector.qnbesolutions.com.tr');
+        if (this.isTest) {
+            this.vkn = qnb.testVkn || '';
+            this.password = qnb.testPassword || '';
+            this.earsivUsername = qnb.testEarsivUsername || qnb.earsivUsername || this.vkn;
+        } else {
+            // CANLI MOD: Test bilgilerine fallback yapmıyoruz ki hata net anlaşılsın
+            this.vkn = qnb.vkn || '';
+            this.password = qnb.password || '';
+            this.earsivUsername = qnb.earsivUsername || this.vkn;
+            
+            if (!this.vkn || this.vkn === '7910101045') {
+               console.error(`[QNB Client] KRİTİK HATA: Canlı moddasınız ama VKN eksik veya Test VKN (7910101045) girilmiş!`);
+            }
+        }
 
-        this.vkn = qnb.vkn || qnb.testVkn || '';
-        this.earsivUsername = qnb.earsivUsername || this.vkn; // Kullanıcı adı yoksa VKN'yi kullan
         this.erpCode = qnb.erpCode || '';
-        this.password = qnb.password || qnb.testPassword || 'CHANGE_ME';
+        this.branchCode = qnb.branchCode || '';
+        this.counterCode = qnb.counterCode || '';
     }
 
     private async handleConnectorResponse(response: any, text: string, earsivSessionCookie: string, _serviceType: string): Promise<QNBLoginResponse> {
-        console.log(`[QNB Login] Connector successful response received`);
         const connectorCookie = response.headers.get('set-cookie');
         let connectorSessionCookie = '';
         if (connectorCookie) connectorSessionCookie = connectorCookie.split(';')[0];
@@ -78,12 +108,15 @@ export class QNBClient {
         return { success: false, error: 'Oturum bilgisi alınamadı' };
     }
 
-    /**
-     * Updated Login Logic based on latest documentation
-     */
     async login(serviceType: 'EFATURA' | 'EARSIV' = 'EFATURA'): Promise<QNBLoginResponse> {
-        if (!this.password || this.password === 'CHANGE_ME_FROM_MAIL') {
-            return { success: false, error: 'Şifre tanımlanmamış (.env.local kontrol edin)' };
+        console.log(`[QNB Client] Logging in to ${serviceType} (Env: ${this.isTest ? 'TEST' : 'PRODUCTION'})...`);
+        
+        if (!this.vkn || this.vkn === '7910101045' && !this.isTest) {
+            return { success: false, error: 'CANLI MOD aktif ancak gerçek VKN tanımlanmamış veya hatalı.' };
+        }
+        
+        if (!this.password) {
+            return { success: false, error: 'QNB Şifresi tanımlanmamış. Lütfen ayarları kontrol edin.' };
         }
 
         const pass = this.password;
@@ -91,29 +124,29 @@ export class QNBClient {
         if (serviceType === 'EARSIV') {
             const username = this.earsivUsername;
             try {
-                // Step 1: Hit earsivtest first to get its own session cookie
                 const earsivEndpoint = `${this.earsivBaseUrl}/earsiv/ws/EarsivWebService`;
-                console.log(`[QNB Login] Step 1: Getting earsivtest session from ${earsivEndpoint}`);
                 let earsivSessionCookie = '';
                 try {
-                    const initRes = await fetch(earsivEndpoint, { method: 'GET' });
+                    console.log(`[QNB Client] Step 1: GET Session Cookie from ${earsivEndpoint}`);
+                    const initRes = await fetchWithTimeout(earsivEndpoint, { method: 'GET' }, 8000);
                     const initCookie = initRes.headers.get('set-cookie');
                     if (initCookie) {
                         earsivSessionCookie = initCookie.split(';')[0];
-                        console.log(`[QNB Login] earsivtest session: ${earsivSessionCookie}`);
+                        console.log(`[QNB Client] Session Cookie received: ${earsivSessionCookie}`);
                     }
-                } catch (e) { /* ignore, GET might fail */ }
+                } catch (e) { 
+                    console.log(`[QNB Client] Step 1 (Session) skipped or failed:`, e); 
+                }
 
-                // Step 2: Login at connectortest, passing earsivtest session cookie
-                const connectorUrl = `${this.connectorTestUrl}/connector/ws/userService`;
-                console.log(`[QNB Login] Step 2: Login at connectortest @ ${connectorUrl}`);
+                const connectorUrl = `${this.connectorBaseUrl}/connector/ws/userService`;
+                console.log(`[QNB Client] Step 2: Login via ${connectorUrl}`);
                 const loginHeaders: Record<string, string> = {
                     'Content-Type': 'text/xml;charset=UTF-8',
                     'SOAPAction': '""'
                 };
                 if (earsivSessionCookie) loginHeaders['Cookie'] = earsivSessionCookie;
 
-                const loginRes = await fetch(connectorUrl, {
+                const loginRes = await fetchWithTimeout(connectorUrl, {
                     method: 'POST',
                     headers: loginHeaders,
                     body: SOAP_TEMPLATES.LOGIN(username, pass).trim()
@@ -122,10 +155,10 @@ export class QNBClient {
                 const loginFault = extractFault(loginText);
                 
                 if (loginFault) {
-                    console.log(`[QNB Login] Primary login failed for ${username}: ${loginFault}. Trying VKN fallback...`);
-                    // Fallback to VKN if different
+                    console.log(`[QNB Client] Login Error: ${loginFault}`);
                     if (this.vkn !== username) {
-                        const fallbackRes = await fetch(connectorUrl, {
+                        console.log(`[QNB Client] Retrying with VKN instead of username...`);
+                        const fallbackRes = await fetchWithTimeout(connectorUrl, {
                             method: 'POST',
                             headers: loginHeaders,
                             body: SOAP_TEMPLATES.LOGIN(this.vkn, pass).trim()
@@ -139,19 +172,21 @@ export class QNBClient {
                     return { success: false, error: loginFault };
                 }
 
+                console.log(`[QNB Client] Login Success!`);
                 return this.handleConnectorResponse(loginRes, loginText, earsivSessionCookie, serviceType);
             } catch (err: any) {
-                return { success: false, error: err.message };
+                console.error(`[QNB Client] Login Exception:`, err);
+                return { success: false, error: `Bağlantı Hatası: ${err.message}` };
             }
         }
 
-
         const username = this.vkn;
-        const url = `${this.baseUrl}/efatura/ws/connectorService`;
+        const servicePath = this.baseUrl.includes('efaturaconnector') ? '/connector/ws/connectorService' : '/efatura/ws/connectorService';
+        const url = `${this.baseUrl}${servicePath}`;
 
         try {
-            console.log(`[QNB Login] Attempting EFATURA @ ${url} for user ${username}`);
-            const response = await fetch(url, {
+            console.log(`[QNB Client] E-Fatura Login to ${url}`);
+            const response = await fetchWithTimeout(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/xml;charset=UTF-8', 'SOAPAction': '""' },
                 body: SOAP_TEMPLATES.LOGIN(username, pass).trim()
@@ -161,12 +196,15 @@ export class QNBClient {
             const fault = extractFault(text);
 
             if (!fault) {
+                console.log(`[QNB Client] E-Fatura Login Success!`);
                 return this.processLoginResponse(text, response.headers, serviceType);
             }
 
+            console.log(`[QNB Client] E-Fatura Login Fault: ${fault}`);
             return { success: false, error: fault };
         } catch (err: any) {
-            return { success: false, error: err.message };
+            console.error(`[QNB Client] E-Fatura Login Exception:`, err);
+            return { success: false, error: `Bağlantı Hatası: ${err.message}` };
         }
     }
 
@@ -178,11 +216,7 @@ export class QNBClient {
             sessionCookie = cookieHeader.split(';')[0];
         }
 
-        console.log(`[QNB Login] Set-Cookie raw: ${cookieHeader}`);
-        console.log(`[QNB Login] Session cookie: ${sessionCookie}`);
-
         const returnVal = extractTagContent(text, 'return');
-        console.log(`[QNB Login] Return val: ${returnVal}`);
 
         if (returnVal === 'true' || sessionCookie) {
             if (serviceType === 'EFATURA') {
@@ -218,12 +252,10 @@ export class QNBClient {
                 if (!loginRes.success) throw new Error('EARSIV Login failed: ' + loginRes.error);
             }
             cookie = this.earsivCookie || '';
-
-            // Eğer gecici ID ile gelmişse ve ETTN varsa (bir şekilde iletilmeli), UUID üzerinden sorgulanabilir.
-            // Şimdilik faturaNo üzerinden deniyoruz.
-            soapBody = SOAP_TEMPLATES.EARSIV_STATUS(this.vkn, docNo, this.earsivUsername, this.password || '');
+            soapBody = SOAP_TEMPLATES.EARSIV_STATUS(this.vkn, docNo, this.earsivUsername, this.password || '', this.branchCode, this.counterCode);
         } else {
-            endpoint = `${this.baseUrl}/efatura/ws/connectorService`;
+            const servicePath = this.baseUrl.includes('efaturaconnector') ? '/connector/ws/connectorService' : '/efatura/ws/connectorService';
+            endpoint = `${this.baseUrl}${servicePath}`;
             if (!this.efaturaCookie) {
                 const loginRes = await this.login('EFATURA');
                 if (!loginRes.success) throw new Error('EFATURA Login failed: ' + loginRes.error);
@@ -233,7 +265,7 @@ export class QNBClient {
         }
 
         try {
-            const response = await fetch(endpoint, {
+            const response = await fetchWithTimeout(endpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'text/xml;charset=UTF-8',
@@ -245,10 +277,7 @@ export class QNBClient {
 
             const text = await response.text();
             const fault = extractFault(text);
-            if (fault) {
-                console.warn(`QNB Status Check Fault (${docType}):`, fault);
-                return null;
-            }
+            if (fault) return null;
 
             const durum = extractTagContent(text, 'durum') || extractTagContent(text, 'durumAciklamasi') || extractTagContent(text, 'resultText');
             const ettn = extractTagContent(text, 'ettn') || extractTagContent(text, 'faturaUuid');
@@ -264,9 +293,7 @@ export class QNBClient {
                 gonderimDurumu: text,
                 pdfUrl: pdfUrl || undefined
             };
-
-        } catch (error) {
-            console.error("Status Check Error:", error);
+        } catch {
             return null;
         }
     }
@@ -276,51 +303,36 @@ export class QNBClient {
         let soapBody = '';
         let cookie = '';
 
+        console.log(`[QNB Client] Sending ${docType} invoice (Supplier VKN: ${this.vkn}, ERP: ${this.erpCode})...`);
+
         const ublXml = generateUBL(invoiceData, this.erpCode, this.vkn);
         const b64Data = Buffer.from(ublXml, 'utf-8').toString('base64');
         const docHash = crypto.createHash('md5').update(ublXml).digest('hex').toUpperCase();
 
         if (docType === 'EARSIV') {
-            // WS-Security: credentials embedded in SOAP header — no separate login needed
-            const islemId = crypto.randomUUID();
             endpoint = `${this.earsivBaseUrl}/earsiv/ws/EarsivWebService`;
-            
-            // Check session
             if (!this.earsivCookie) {
-                console.log(`[QNB E-Arşiv] No session found, attempting login first...`);
                 const loginRes = await this.login('EARSIV');
-                if (!loginRes.success) {
-                    console.error(`[QNB E-Arşiv] Login failed: ${loginRes.error}`);
-                    return { success: false, error: `QNB Oturum Hatası: ${loginRes.error}` };
-                }
+                if (!loginRes.success) return { success: false, error: `QNB Oturum Hatası: ${loginRes.error}` };
             }
             cookie = this.earsivCookie || '';
-
-            soapBody = SOAP_TEMPLATES.CREATE_EARSIV_INVOICE_EXT(b64Data, this.vkn, this.erpCode, this.earsivUsername, this.password || '', islemId);
-            console.log(`[QNB Send] Endpoint: ${endpoint}, islemId: ${islemId}`);
-            // Write UBL to file for debugging / QNB support
-            const fs = await import('fs');
-            const path = await import('path');
-            const debugPath = path.join(process.cwd(), 'debug_ubl.xml');
-            fs.writeFileSync(debugPath, ublXml, 'utf-8');
-            console.log(`[QNB Debug] UBL written to ${debugPath}`);
-
-
+            soapBody = SOAP_TEMPLATES.CREATE_EARSIV_INVOICE_EXT(b64Data, this.vkn, this.erpCode, this.earsivUsername, this.password || '', crypto.randomUUID(), this.branchCode, this.counterCode);
+            console.log(`[QNB Client] FULL SOAP Body:`, soapBody);
         } else {
             if (!this.efaturaCookie) {
                 const loginRes = await this.login('EFATURA');
-                if (!loginRes.success) throw new Error('e-Fatura Login failed: ' + loginRes.error);
+                if (!loginRes.success) return { success: false, error: `QNB Oturum Hatası: ${loginRes.error}` };
             }
             cookie = this.efaturaCookie || '';
-            endpoint = `${this.baseUrl}/efatura/ws/connectorService`;
+            const servicePath = this.baseUrl.includes('efaturaconnector') ? '/connector/ws/connectorService' : '/efatura/ws/connectorService';
+            endpoint = `${this.baseUrl}${servicePath}`;
             soapBody = SOAP_TEMPLATES.SEND_DOCUMENT_EXT(cookie, this.vkn, 'FATURA_UBL', invoiceData.invoiceNumber || 'TASLAK-' + Date.now(), b64Data, docHash, this.erpCode);
         }
 
         try {
-            console.log(`[QNB Send] DocType: ${docType}, Endpoint: ${endpoint}`);
-            console.log(`[QNB Send] SOAP Body Length: ${soapBody.length}, First 200 chars: ${soapBody.slice(0, 200)}...`);
-
-            const response = await fetch(endpoint, {
+            console.log(`[QNB Client] SOAP Body Preview: ${soapBody.slice(0, 500)}...`);
+            console.log(`[QNB Client] Posting invoice to ${endpoint} (Timeout: 90s)`);
+            const response = await fetchWithTimeout(endpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'text/xml;charset=UTF-8',
@@ -328,53 +340,31 @@ export class QNBClient {
                     'Cookie': cookie
                 },
                 body: soapBody.trim()
-            });
+            }, 90000);
 
             const text = await response.text();
-            console.log(`[QNB Response] Status: ${response.status}`);
-            console.log(`[QNB Response Full] ${text.substring(0, 1500)}`);
-
+            console.log(`[QNB Client] Response received (${text.length} chars)`);
             const fault = extractFault(text);
-            if (fault) return { success: false, error: fault };
+            if (fault) {
+                console.error(`[QNB Client] SOAP Fault: ${fault}`);
+                return { success: false, error: fault };
+            }
 
             if (docType === 'EARSIV') {
-                // QNB E-Arşiv returns result inside <return> as a JSON string
                 const returnRaw = extractTagContent(text, 'return');
-                console.log(`[QNB E-Arşiv] Raw return: ${returnRaw?.substring(0, 500)}`);
-
                 let faturaNo = extractTagContent(text, 'faturaNo');
                 let url = extractTagContent(text, 'url') || extractTagContent(text, 'faturaUrl');
                 let ettn = extractTagContent(text, 'ettn') || extractTagContent(text, 'faturaUuid');
                 const resultCode = extractTagContent(text, 'resultCode');
                 const resultText = extractTagContent(text, 'resultText');
 
-                // QNB returns PDF as base64 inside <belgeIcerigi> tag for EARSIV_STATUS check
-                let belgeIcerigi = extractTagContent(text, 'belgeIcerigi');
-                if (belgeIcerigi) {
-                    url = `data:application/pdf;base64,${belgeIcerigi}`;
-                    console.log(`[QNB E-Arşiv] Found Base64 PDF Content, length: ${belgeIcerigi.length}`);
-                }
-
-                // Try to parse return tag as JSON (QNB wraps results in JSON)
                 if (returnRaw) {
                     try {
                         const parsed = JSON.parse(returnRaw);
                         faturaNo = faturaNo || parsed.faturaNo || parsed.belgeNo || parsed.invoiceNo;
                         url = url || parsed.url || parsed.faturaUrl || parsed.pdfUrl || parsed.htmlUrl;
                         ettn = ettn || parsed.ettn || parsed.uuid;
-
-                        // Parse JSON result nested inside resultExtra if exists
-                        if (parsed.resultExtra && typeof parsed.resultExtra === 'string') {
-                            try {
-                                const extraParsed = JSON.parse(parsed.resultExtra);
-                                if (extraParsed.faturaOid) {
-                                    ettn = ettn || extraParsed.faturaOid;
-                                    faturaNo = faturaNo || extraParsed.faturaNo;
-                                }
-                            } catch (e) { /* ignore */ }
-                        }
                     } catch {
-                        // Not JSON, try extracting from text directly
                         const noMatch = returnRaw.match(/faturaNo["\s:]+([A-Z0-9]+)/);
                         const urlMatch = returnRaw.match(/https?:\/\/[^\s"<]+/);
                         if (noMatch) faturaNo = faturaNo || noMatch[1];
@@ -382,28 +372,35 @@ export class QNBClient {
                     }
                 }
 
-                console.log(`QNB E-Arşiv Response - No: ${faturaNo}, Code: ${resultCode}, Text: ${resultText ? resultText.substring(0, 50) : ''}... URL: ${url ? 'YES' : 'NO'}`);
+                if (url && typeof url === 'string' && !url.startsWith('http') && !url.startsWith('data:')) {
+                    url = `data:application/pdf;base64,${url}`;
+                }
 
                 if (resultCode && resultCode !== 'AE00000' && resultCode !== '0') {
-                    return { success: false, error: `QNB Error (${resultCode}): ${resultText}` };
+                    console.error(`[QNB Client] Business Error (${resultCode}): ${resultText}`);
+                    return { success: false, error: `QNB İşlem Hatası (${resultCode}): ${resultText}` };
                 }
 
-                if (faturaNo || ettn) {
-                    return { success: true, listId: (faturaNo || ettn) as string, pdfUrl: url || undefined, ettn: ettn || undefined };
-                }
-
-                const tempId = 'EP-' + Date.now().toString().slice(-10);
-                return { success: true, listId: tempId, pdfUrl: url || undefined, ettn: ettn || undefined };
-
+                console.log(`[QNB Client] Invoice successfully sent! No: ${faturaNo}`);
+                return { 
+                    success: true, 
+                    listId: (faturaNo || ettn || 'EP-' + Date.now()) as string, 
+                    pdfUrl: url || undefined, 
+                    ettn: ettn || undefined 
+                };
             } else {
                 const resultOid = extractTagContent(text, 'belgeOid');
+                console.log(`[QNB Client] E-Fatura sent! OID: ${resultOid}`);
                 if (resultOid) return { success: true, listId: resultOid };
             }
 
             return { success: false, error: 'Belge gönderildi ancak ID alınamadı.' };
         } catch (error: any) {
-            console.error('Send Invoice Error:', error);
-            return { success: false, error: error.message };
+            console.error(`[QNB Client] Send Error:`, error);
+            if (error.name === 'AbortError' || error.message?.includes('aborted')) {
+                return { success: false, error: 'QNB Sunucusu cevap vermedi (Zaman Aşımı: 90sn). Fatura QNB portalına düşmüş olabilir, lütfen kontrol edin.' };
+            }
+            return { success: false, error: `Sunucu Hatası: ${error.message}` };
         }
     }
 }

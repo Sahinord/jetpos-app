@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { TrendingUp, Package, AlertTriangle, DollarSign, Plus, ClipboardList, FileText, LogOut, SlidersHorizontal } from 'lucide-react';
+import { TrendingUp, Package, AlertTriangle, DollarSign, Plus, ClipboardList, FileText, LogOut, SlidersHorizontal, ClipboardCheck, Store, ChevronDown, Send } from 'lucide-react';
+import { toast } from 'sonner';
 import BottomNav from '@/components/BottomNav';
 
 interface DashboardStats {
@@ -31,6 +32,8 @@ export default function DashboardPage() {
     });
     const [loading, setLoading] = useState(true);
     const [companyName, setCompanyName] = useState('');
+    const [warehouses, setWarehouses] = useState<any[]>([]);
+    const [activeWarehouseId, setActiveWarehouseId] = useState<string>('');
 
     // States
     const [productFilter, setProductFilter] = useState<'active' | 'inactive' | 'all'>('active');
@@ -50,11 +53,47 @@ export default function DashboardPage() {
 
     useEffect(() => {
         const name = localStorage.getItem('companyName') || 'İşletmem';
+        const savedWarehouseId = localStorage.getItem('activeWarehouseId');
+        if (savedWarehouseId) setActiveWarehouseId(savedWarehouseId);
+        
         setCompanyName(name);
-        fetchDashboardData();
+        fetchWarehouses().then(fetchDashboardData);
+        
         const interval = setInterval(fetchDashboardData, 60000);
         return () => clearInterval(interval);
     }, []);
+
+    const fetchWarehouses = async () => {
+        const tenantId = localStorage.getItem('tenantId');
+        if (!tenantId) return;
+
+        const { data } = await supabase
+            .from('warehouses')
+            .select('*')
+            .eq('tenant_id', tenantId)
+            .eq('is_active', true);
+        
+        if (data && data.length > 0) {
+            setWarehouses(data);
+            if (!localStorage.getItem('activeWarehouseId')) {
+                const defaultWh = data.find(w => w.is_default) || data[0];
+                setActiveWarehouseId(defaultWh.id);
+                localStorage.setItem('activeWarehouseId', defaultWh.id);
+                localStorage.setItem('activeWarehouseName', defaultWh.name);
+            }
+        }
+    };
+
+    const handleWarehouseChange = (id: string) => {
+        const wh = warehouses.find(w => w.id === id);
+        if (wh) {
+            setActiveWarehouseId(id);
+            localStorage.setItem('activeWarehouseId', id);
+            localStorage.setItem('activeWarehouseName', wh.name);
+            toast.success(`${wh.name} mağazasına geçiş yapıldı`);
+            fetchDashboardData();
+        }
+    };
 
     const fetchDashboardData = async () => {
         try {
@@ -158,19 +197,42 @@ export default function DashboardPage() {
             </div>
 
             {/* Header */}
-            <header className="sticky top-0 z-50 glass border-b border-white/5 p-6 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl glass-dark border border-white/10 flex items-center justify-center">
-                        <TrendingUp className="w-6 h-6 text-blue-400" />
+            <header className="sticky top-0 z-50 glass border-b border-white/5 p-4 flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl glass-dark border border-white/10 flex items-center justify-center">
+                            <TrendingUp className="w-5 h-5 text-blue-400" />
+                        </div>
+                        <div>
+                            <p className="text-[9px] font-black text-secondary tracking-[3px] uppercase">JETPOS MOBILE</p>
+                            <h1 className="text-lg font-black text-white tracking-tight leading-none">{companyName}</h1>
+                        </div>
                     </div>
-                    <div>
-                        <p className="text-[10px] font-black text-secondary tracking-[4px] uppercase">Sistem Durumu</p>
-                        <h1 className="text-xl font-black text-white tracking-tight leading-none">{companyName}</h1>
-                    </div>
+                    <button onClick={handleLogout} className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 active:scale-95 transition-all">
+                        <LogOut size={18} />
+                    </button>
                 </div>
-                <button onClick={handleLogout} className="w-11 h-11 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 active:scale-95 transition-all">
-                    <LogOut size={20} />
-                </button>
+
+                {/* Warehouse Selector */}
+                {warehouses.length > 0 && (
+                    <div className="relative">
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
+                            <Store className="w-4 h-4 text-emerald-400" />
+                        </div>
+                        <select 
+                            value={activeWarehouseId}
+                            onChange={(e) => handleWarehouseChange(e.target.value)}
+                            className="w-full h-12 glass-dark border border-white/10 rounded-2xl pl-11 pr-10 text-xs font-black text-white appearance-none outline-none focus:border-blue-500/50 transition-all uppercase tracking-widest"
+                        >
+                            {warehouses.map(wh => (
+                                <option key={wh.id} value={wh.id} className="bg-slate-900">{wh.name}</option>
+                            ))}
+                        </select>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                            <ChevronDown className="w-4 h-4 text-secondary" />
+                        </div>
+                    </div>
+                )}
             </header>
 
             <div className="p-6 space-y-8 relative z-10">
@@ -229,9 +291,10 @@ export default function DashboardPage() {
                     </div>
                     <div className="space-y-4">
                         {[
-                            { label: 'Ürünleri Yönet', icon: Plus, path: '/products', desc: 'Stok ve fiyatları güncelle' },
-                            { label: 'Barkod Okut / Sayım', icon: ClipboardList, path: '/scanner', desc: 'Otomatik barkod tarama' },
-                            { label: 'Kritik Stok Takibi', icon: FileText, path: '/low-stock', desc: 'Biten ürünleri kontrol et' }
+                            { label: 'Ürünleri Yönet', icon: Package, path: '/products', desc: 'Stok ve fiyatları güncelle' },
+                            { label: 'Mağazalar Arası Transfer', icon: Send, path: '/warehouse-transfer', desc: 'Diğer mağazalara stok gönder' },
+                            { label: 'Envanter Sayımı', icon: ClipboardCheck, path: '/inventory-count', desc: 'Barkod ile hızlı sayım yap' },
+                            { label: 'Barkod Okut', icon: ClipboardList, path: '/scanner', desc: 'Ürün bul veya yeni ekle' }
                         ].map((action, idx) => (
                             <button key={idx} onClick={() => router.push(action.path)} className="w-full glass-dark border border-white/10 rounded-3xl p-5 flex items-center gap-5 group active:scale-[0.98] transition-all shadow-xl text-left">
                                 <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">

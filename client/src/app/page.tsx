@@ -26,10 +26,11 @@ import ProductChangeLogs from "@/components/Products/ProductChangeLogs";
 import TrendyolGOWidget from "@/components/Integrations/TrendyolGOWidget";
 import IntegrationsDashboard from "@/components/Integrations/IntegrationsDashboard";
 import LicenseGate from "@/components/Auth/LicenseGate";
+import StoreSelectionOverlay from "@/components/Auth/StoreSelectionOverlay";
 import { useTenant } from "@/lib/tenant-context";
 import { calculateStockMetrics, calculateStockPredictions } from "@/lib/calculations";
 import { supabase } from "@/lib/supabase";
-import { LayoutDashboard, ShoppingCart, Package, AlertTriangle, ArrowLeft, Sparkles, Clock } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Package, AlertTriangle, ArrowLeft, Sparkles, Clock, ShieldAlert, Trash2, X } from "lucide-react";
 import TenantProfile from "@/components/Tenant/TenantProfile";
 import SupportTicketModal from "@/components/Support/SupportTicketModal";
 
@@ -45,10 +46,11 @@ import ShiftManager from '@/components/Employee/ShiftManager';
 import ProductLabelDesigner from '@/components/Tools/ProductLabelDesigner';
 import FinancialCalendar from '@/components/Calendar/FinancialCalendar';
 import InvoiceWaybillPage from '@/components/Waybill/InvoiceWaybillPage';
+import WarehousePage from '@/components/Warehouse/WarehousePage';
 import { createTrendyolGoClient } from "@/lib/trendyol-go-client";
 
 export default function Home() {
-  const { currentTenant, loading: tenantLoading } = useTenant();
+  const { currentTenant, loading: tenantLoading, activeWarehouse } = useTenant();
   const [isLicenseValid, setIsLicenseValid] = useState(false);
   const [activeTab, setActiveTab] = useState("home");
   const [products, setProducts] = useState<any[]>([]);
@@ -64,6 +66,11 @@ export default function Home() {
   const [isBeepEnabled, setIsBeepEnabled] = useState(true);
   const [showHelpIcons, setShowHelpIcons] = useState(false);
   const [isEmployeeModuleEnabled, setIsEmployeeModuleEnabled] = useState(true);
+  const [isPriceSyncEnabled, setIsPriceSyncEnabled] = useState(false);
+  const [isStockSyncEnabled, setIsStockSyncEnabled] = useState(false);
+  const [isWarehouseStockDeductionEnabled, setIsWarehouseStockDeductionEnabled] = useState(true);
+  const [isClearAllModalOpen, setIsClearAllModalOpen] = useState(false);
+  const [clearAllConfirmationText, setClearAllConfirmationText] = useState("");
 
   const [toast, setToast] = useState({ isVisible: false, message: "", type: "success" as ToastType });
 
@@ -77,7 +84,7 @@ export default function Home() {
     if (!tenantLoading && currentTenant) {
       fetchData();
     }
-  }, [tenantLoading, currentTenant]);
+  }, [tenantLoading, currentTenant, activeWarehouse]);
 
   useEffect(() => {
     const savedRate = localStorage.getItem('campaignRate');
@@ -95,12 +102,19 @@ export default function Home() {
     const savedEmployeeModule = localStorage.getItem('isEmployeeModuleEnabled');
     if (savedEmployeeModule !== null) setIsEmployeeModuleEnabled(savedEmployeeModule === 'true');
 
+    const savedPriceSync = localStorage.getItem('isPriceSyncEnabled');
+    if (savedPriceSync !== null) setIsPriceSyncEnabled(savedPriceSync === 'true');
+
+    const savedStockDeduction = localStorage.getItem('isWarehouseStockDeductionEnabled');
+    if (savedStockDeduction !== null) setIsWarehouseStockDeductionEnabled(savedStockDeduction === 'true');
+
     // Hash control for profile tab
     const handleHashChange = () => {
       if (window.location.hash === '#profile') {
         setActiveTab('profile');
       }
     };
+
     window.addEventListener('hashchange', handleHashChange);
     handleHashChange(); // Check on mount
 
@@ -112,7 +126,10 @@ export default function Home() {
     localStorage.setItem('isBeepEnabled', isBeepEnabled.toString());
     localStorage.setItem('showHelpIcons', showHelpIcons.toString());
     localStorage.setItem('isEmployeeModuleEnabled', isEmployeeModuleEnabled.toString());
-  }, [theme, isBeepEnabled, showHelpIcons, isEmployeeModuleEnabled]);
+    localStorage.setItem('isPriceSyncEnabled', isPriceSyncEnabled.toString());
+    localStorage.setItem('isStockSyncEnabled', isStockSyncEnabled.toString());
+    localStorage.setItem('isWarehouseStockDeductionEnabled', isWarehouseStockDeductionEnabled.toString());
+  }, [theme, isBeepEnabled, showHelpIcons, isEmployeeModuleEnabled, isPriceSyncEnabled, isStockSyncEnabled, isWarehouseStockDeductionEnabled]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -152,7 +169,7 @@ export default function Home() {
 
         const { data, error } = await supabase
           .from('products')
-          .select('*, categories(name)')
+          .select('*, categories(name), warehouse_stock(*)')
           .eq('tenant_id', currentTenant.id)
           .order('id', { ascending: true })
           .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
@@ -164,16 +181,13 @@ export default function Home() {
 
         if (data && data.length > 0) {
           allProducts = [...allProducts, ...data];
-          setProducts([...allProducts]); // Update state progressively
-
-          if (data.length < PAGE_SIZE) {
-            hasMore = false;
-          }
+          if (data.length < PAGE_SIZE) hasMore = false;
         } else {
           hasMore = false;
         }
         page++;
       }
+      setProducts(allProducts);
 
       console.log(`Final Success! Total: ${allProducts.length}`);
     } catch (error: any) {
@@ -199,49 +213,95 @@ export default function Home() {
         }
       }
 
+      // UUID Debug & Validation Checks
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const catId = !formData.category_id || formData.category_id === "undefined" ? null : formData.category_id;
+      
+      if (catId !== null && !uuidRegex.test(catId)) {
+          throw new Error(`category_id geçersiz UUID: ${catId}`);
+      }
+      if (!currentTenant.id || !uuidRegex.test(currentTenant.id)) {
+          throw new Error(`tenant_id geçersiz UUID: ${currentTenant.id}`);
+      }
+      if (editingProduct && (!(editingProduct as any).id || !uuidRegex.test((editingProduct as any).id))) {
+          throw new Error(`editingProduct.id geçersiz UUID: ${(editingProduct as any).id}`);
+      }
+
+      const productId = editingProduct ? (editingProduct as any).id : null;
+      
+      const productPayload: any = {
+        name: formData.name,
+        barcode: formData.barcode,
+        vat_rate: formData.vat_rate,
+        category_id: catId,
+        unit: formData.unit,
+        status: formData.status,
+        is_campaign: formData.is_campaign,
+        image_url: formData.image_url,
+        tenant_id: currentTenant.id
+      };
+
+      // Only update master prices if sync is enabled OR no warehouse is selected
+      if (isPriceSyncEnabled || !activeWarehouse) {
+        productPayload.sale_price = formData.sale_price;
+        productPayload.purchase_price = formData.purchase_price;
+      }
+      
+      // Handle master stock quantity
+      if (isStockSyncEnabled || !activeWarehouse) {
+        productPayload.stock_quantity = formData.stock_quantity;
+      }
+
+      let savedProductId = productId;
+
       if (editingProduct) {
-        const { error } = await supabase
+        const { error: pError } = await supabase
           .from('products')
-          .update({
-            name: formData.name,
-            barcode: formData.barcode,
-            purchase_price: formData.purchase_price,
-            sale_price: formData.sale_price,
-            vat_rate: formData.vat_rate,
-            stock_quantity: formData.stock_quantity,
-            category_id: formData.category_id || null,
-            unit: formData.unit,
-            status: formData.status,
-            is_campaign: formData.is_campaign,
-            image_url: formData.image_url,
-            tenant_id: currentTenant.id
-          })
-          .eq('id', (editingProduct as any).id)
+          .update(productPayload)
+          .eq('id', productId)
           .eq('tenant_id', currentTenant.id);
 
-        if (error) throw error;
-        showToast("Ürün güncellendi");
+        if (pError) throw pError;
       } else {
-        const { error } = await supabase
+        const { data: pData, error: pError } = await supabase
           .from('products')
-          .insert([{
-            name: formData.name,
-            barcode: formData.barcode,
-            purchase_price: formData.purchase_price,
-            sale_price: formData.sale_price,
-            vat_rate: formData.vat_rate,
-            stock_quantity: formData.stock_quantity,
-            category_id: formData.category_id || null,
-            unit: formData.unit,
-            status: formData.status,
-            is_campaign: formData.is_campaign,
-            image_url: formData.image_url,
-            tenant_id: currentTenant.id
-          }]);
+          .insert([productPayload])
+          .select()
+          .single();
 
-        if (error) throw error;
-        showToast("Yeni ürün eklendi");
+        if (pError) throw pError;
+        savedProductId = pData.id;
       }
+
+      // 3. Handle Warehouse Local Prices & Stock
+      if (activeWarehouse) {
+        const wsPayload: any = {
+          tenant_id: currentTenant.id,
+          warehouse_id: activeWarehouse.id,
+          product_id: savedProductId
+        };
+
+        // Save local stock if sync is disabled
+        if (!isStockSyncEnabled) {
+          wsPayload.quantity = formData.stock_quantity;
+        }
+
+        // Save local prices if sync is disabled
+        if (!isPriceSyncEnabled) {
+          wsPayload.sale_price = formData.sale_price;
+          wsPayload.purchase_price = formData.purchase_price;
+        }
+
+        if (wsPayload.quantity !== undefined || wsPayload.sale_price !== undefined || wsPayload.purchase_price !== undefined) {
+          const { error: wsError } = await supabase
+            .from('warehouse_stock')
+            .upsert(wsPayload, { onConflict: 'warehouse_id,product_id' });
+
+          if (wsError) throw wsError;
+        }
+      }
+
+      showToast(editingProduct ? "Ürün güncellendi" : "Yeni ürün eklendi");
       await fetchData();
       setIsModalOpen(false);
     } catch (error: any) {
@@ -256,20 +316,27 @@ export default function Home() {
     if (!confirm("Silmek istediğinize emin misiniz?")) return;
 
     try {
-      // First delete related sale items to allow product deletion and update charts
-      const { error: itemsError } = await supabase.from('sale_items').delete().eq('product_id', id);
-      if (itemsError) throw itemsError;
+      setLoading(true);
+      // Delete from all tables that reference this product_id
+      await supabase.from('warehouse_stock').delete().eq('product_id', id);
+      await supabase.from('warehouse_transfer_items').delete().eq('product_id', id);
+      await supabase.from('inventory_count_items').delete().eq('product_id', id);
+      await supabase.from('sale_items').delete().eq('product_id', id);
+      await supabase.from('price_change_logs').delete().eq('product_id', id);
 
       const { error } = await supabase.from('products')
         .delete()
         .eq('id', id)
         .eq('tenant_id', currentTenant.id);
+      
       if (error) throw error;
 
-      showToast("Ürün ve geçmiş verileri silindi", "info");
-      fetchData();
+      showToast("Ürün ve ilişkili tüm veriler silindi", "info");
+      await fetchData();
     } catch (error: any) {
-      showToast(error.message, "error");
+      showToast("Silme hatası: " + error.message, "error");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -300,27 +367,63 @@ export default function Home() {
 
   const handleClearAllProducts = async () => {
     if (!currentTenant) return;
-    if (!confirm("TÜM ÜRÜNLERİ SİLMEK İSTEDİĞİNİZE EMİN MİSİNİZ? Bu işlem geri alınamaz ve tüm satış geçmişi ile ilişkili veriler silinecektir!")) return;
-    if (!confirm("SON UYARI: Gerçekten tüm veritabanını sıfırlamak istiyor musunuz?")) return;
+    
+    // If modal is not open, open it
+    if (!isClearAllModalOpen) {
+      setIsClearAllModalOpen(true);
+      setClearAllConfirmationText("");
+      return;
+    }
+
+    // If modal is open, verify text
+    if (clearAllConfirmationText !== "ONAYLIYORUM") {
+      showToast("Lütfen 'ONAYLIYORUM' yazarak doğrula", "error");
+      return;
+    }
 
     try {
       setLoading(true);
-      // Delete sale items first due to foreign key constraints
-      const { error: itemsError } = await supabase.from('sale_items').delete().eq('tenant_id', currentTenant.id);
-      if (itemsError) throw itemsError;
+      setIsClearAllModalOpen(false);
+      
+      // 1. Delete Warehouse Stock (references products and warehouses)
+      const { error: wsError } = await supabase.from('warehouse_stock').delete().eq('tenant_id', currentTenant.id);
+      if (wsError) console.warn("Warehouse stock delete error:", wsError.message);
 
-      const { error: salesError } = await supabase.from('sales').delete().eq('tenant_id', currentTenant.id);
-      if (salesError) throw salesError;
+      // 2. Delete Warehouse Transfers & Items (items CASCADE from transfers)
+      const { error: wtError } = await supabase.from('warehouse_transfers').delete().eq('tenant_id', currentTenant.id);
+      if (wtError) console.warn("Warehouse transfers delete error:", wtError.message);
 
+      // 3. Delete Inventory Counts & Items (items CASCADE from counts)
+      const { error: icError } = await supabase.from('inventory_counts').delete().eq('tenant_id', currentTenant.id);
+      if (icError) console.warn("Inventory counts delete error:", icError.message);
+
+      // 4. Delete Logs
+      await supabase.from('price_change_logs').delete().eq('tenant_id', currentTenant.id);
+      await supabase.from('product_change_logs').delete().eq('tenant_id', currentTenant.id);
+
+      // 5. Delete Sale Items and Sales
+      const { error: siError } = await supabase.from('sale_items').delete().eq('tenant_id', currentTenant.id);
+      if (siError) console.warn("Sale items delete error:", siError.message);
+      
+      const { error: sError } = await supabase.from('sales').delete().eq('tenant_id', currentTenant.id);
+      if (sError) console.warn("Sales delete error:", sError.message);
+
+      // 6. Delete External Mappings
+      const { error: emError } = await supabase.from('external_mappings').delete().eq('tenant_id', currentTenant.id);
+      if (emError) console.warn("External mappings delete error:", emError.message);
+
+      // 7. Finally delete products
       const { error: productsError } = await supabase.from('products')
         .delete()
         .eq('tenant_id', currentTenant.id);
+      
       if (productsError) throw productsError;
 
-      showToast("Tüm ürünler temizlendi", "info");
+      showToast("Tüm veri tabanı başarıyla sıfırlandı", "info");
       await fetchData();
     } catch (error: any) {
-      showToast(error.message, "error");
+      console.error("Clear all products error:", error);
+      showToast("Sıfırlama başarısız: " + error.message, "error");
     } finally {
       setLoading(false);
     }
@@ -514,10 +617,19 @@ export default function Home() {
       if (savedTenantId) await setTenant(savedTenantId);
 
       for (const item of cartItems) {
-        const { error: rpcError } = await sb.rpc('decrement_stock', {
+        // Prepare RPC parameters
+        const rpcParams: any = {
           p_product_id: item.id,
           p_qty: item.quantity
-        });
+        };
+
+        // If warehouse stock deduction is enabled and a warehouse is active, pass the warehouse ID
+        // BUT ONLY IF stock sync is disabled.
+        if (isWarehouseStockDeductionEnabled && activeWarehouse && !isStockSyncEnabled) {
+          rpcParams.p_warehouse_id = activeWarehouse.id;
+        }
+
+        const { error: rpcError } = await sb.rpc('decrement_stock', rpcParams);
 
         if (rpcError) {
           console.error("Stok düşme hatası:", rpcError);
@@ -623,7 +735,8 @@ export default function Home() {
   // Normal App (Kullanıcılar için)
   return (
     <div className={`flex min-h-screen bg-background text-foreground theme-${theme}`}>
-      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} showHelpIcons={showHelpIcons} />
+      <StoreSelectionOverlay />
+      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} showHelpIcons={showHelpIcons} showToast={showToast} />
 
       <main className="flex-1 overflow-y-auto max-h-screen relative flex flex-col">
         <TopBar activeTab={activeTab} />
@@ -673,9 +786,19 @@ export default function Home() {
                   products={products}
                   hideFilters={true}
                   limit={5}
-                  onEdit={(p: any) => { setEditingProduct(p); setIsModalOpen(true); }}
+                  onEdit={(p: any) => { 
+                    const wsData = p.warehouse_stock?.find((ws: any) => ws.warehouse_id === activeWarehouse?.id);
+                    const contextProduct = {
+                      ...p,
+                      sale_price: (!isPriceSyncEnabled && wsData?.sale_price !== null && wsData?.sale_price !== undefined) ? wsData.sale_price : p.sale_price,
+                      purchase_price: (!isPriceSyncEnabled && wsData?.purchase_price !== null && wsData?.purchase_price !== undefined) ? wsData.purchase_price : p.purchase_price,
+                      stock_quantity: activeWarehouse ? (wsData?.quantity || 0) : (p.stock_quantity || 0)
+                    };
+                    setEditingProduct(contextProduct); 
+                    setIsModalOpen(true); 
+                  }}
                   onDelete={handleDelete}
-                  onAdd={() => { setEditingProduct(null); setIsModalOpen(true); }}
+                  onAdd={(data?: any) => { setEditingProduct(data && !data.nativeEvent ? data : null); setIsModalOpen(true); }}
                   onManageCategories={() => setIsCatModalOpen(true)}
                   onBulkImport={handleBulkImport}
                   onClearAll={handleClearAllProducts}
@@ -683,6 +806,8 @@ export default function Home() {
                   campaignRate={campaignRate}
                   onRefresh={fetchData}
                   showToast={showToast}
+                  isPriceSyncEnabled={isPriceSyncEnabled}
+                  isStockSyncEnabled={isStockSyncEnabled}
                 />
               </section>
             </div>
@@ -699,6 +824,8 @@ export default function Home() {
                 theme={theme}
                 setTheme={setTheme}
                 isBeepEnabled={isBeepEnabled}
+                isPriceSyncEnabled={isPriceSyncEnabled}
+                isStockSyncEnabled={isStockSyncEnabled}
                 setActiveTab={setActiveTab}
               />
             </div>
@@ -715,6 +842,12 @@ export default function Home() {
                 setShowHelpIcons={setShowHelpIcons}
                 isEmployeeModuleEnabled={isEmployeeModuleEnabled}
                 setIsEmployeeModuleEnabled={setIsEmployeeModuleEnabled}
+                isPriceSyncEnabled={isPriceSyncEnabled}
+                setIsPriceSyncEnabled={setIsPriceSyncEnabled}
+                isStockSyncEnabled={isStockSyncEnabled}
+                setIsStockSyncEnabled={setIsStockSyncEnabled}
+                isWarehouseStockDeductionEnabled={isWarehouseStockDeductionEnabled}
+                setIsWarehouseStockDeductionEnabled={setIsWarehouseStockDeductionEnabled}
                 showToast={showToast}
               />
             </div>
@@ -724,9 +857,19 @@ export default function Home() {
             <div className="max-w-[1500px] mx-auto w-full">
               <ProductTable
                 products={products}
-                onEdit={(p: any) => { setEditingProduct(p); setIsModalOpen(true); }}
+                onEdit={(p: any) => { 
+                  const wsData = p.warehouse_stock?.find((ws: any) => ws.warehouse_id === activeWarehouse?.id);
+                  const contextProduct = {
+                    ...p,
+                    sale_price: (!isPriceSyncEnabled && wsData?.sale_price !== null && wsData?.sale_price !== undefined) ? wsData.sale_price : p.sale_price,
+                    purchase_price: (!isPriceSyncEnabled && wsData?.purchase_price !== null && wsData?.purchase_price !== undefined) ? wsData.purchase_price : p.purchase_price,
+                    stock_quantity: activeWarehouse ? (wsData?.quantity || 0) : (p.stock_quantity || 0)
+                  };
+                  setEditingProduct(contextProduct); 
+                  setIsModalOpen(true); 
+                }}
                 onDelete={handleDelete}
-                onAdd={(data?: any) => { setEditingProduct(data || null); setIsModalOpen(true); }}
+                onAdd={(data?: any) => { setEditingProduct(data && !data.nativeEvent ? data : null); setIsModalOpen(true); }}
                 onManageCategories={() => setIsCatModalOpen(true)}
                 onBulkImport={handleBulkImport}
                 onClearAll={handleClearAllProducts}
@@ -734,6 +877,8 @@ export default function Home() {
                 campaignRate={campaignRate}
                 onRefresh={fetchData}
                 showToast={showToast}
+                isPriceSyncEnabled={isPriceSyncEnabled}
+                isStockSyncEnabled={isStockSyncEnabled}
                 onViewChangeLogs={() => setActiveTab("product-logs")}
               />
             </div>
@@ -787,6 +932,11 @@ export default function Home() {
           {activeTab === "profile" && (
             <div className="max-w-[1500px] mx-auto w-full">
               <TenantProfile />
+            </div>
+          )}
+          {activeTab === "warehouse" && (
+            <div className="max-w-[1500px] mx-auto w-full">
+              <WarehousePage />
             </div>
           )}
 
@@ -916,7 +1066,7 @@ export default function Home() {
                         products={smartAlerts}
                         onEdit={(p: any) => { setEditingProduct(p); setIsModalOpen(true); }}
                         onDelete={handleDelete}
-                        onAdd={() => { setEditingProduct(null); setIsModalOpen(true); }}
+                        onAdd={(data?: any) => { setEditingProduct(data && !data.nativeEvent ? data : null); setIsModalOpen(true); }}
                         onManageCategories={() => setIsCatModalOpen(true)}
                         onBulkImport={handleBulkImport}
                         onClearAll={handleClearAllProducts}
@@ -965,6 +1115,104 @@ export default function Home() {
         isOpen={activeTab === "support"}
         onClose={() => setActiveTab("home")}
       />
+
+      {/* Danger Zone: Clear All Products Modal */}
+      <AnimatePresence>
+        {isClearAllModalOpen && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="glass-card max-w-lg w-full !p-0 overflow-hidden border-rose-500/30 shadow-[0_0_50px_rgba(244,63,94,0.2)]"
+            >
+              {/* Header */}
+              <div className="bg-rose-500/10 p-6 border-b border-rose-500/20 flex items-center gap-4">
+                <div className="w-12 h-12 bg-rose-500 rounded-2xl flex items-center justify-center shadow-lg shadow-rose-500/20">
+                  <ShieldAlert className="text-white w-7 h-7" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-white tracking-widest uppercase">TEHLİKELİ ALAN</h2>
+                  <p className="text-[10px] font-bold text-rose-500 tracking-[0.2em] uppercase">Tüm Veritabanını Sıfırla</p>
+                </div>
+                <button 
+                  onClick={() => setIsClearAllModalOpen(false)}
+                  className="ml-auto p-2 text-secondary hover:text-white hover:bg-white/5 rounded-xl transition-all"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="p-8 space-y-6">
+                <div className="space-y-4">
+                  <div className="p-4 bg-rose-500/5 rounded-2xl border border-rose-500/10">
+                    <p className="text-sm font-bold text-rose-200/80 leading-relaxed">
+                      Bu işlem sonucunda aşağıdaki tüm veriler <span className="text-rose-500 font-black underline">KALICI OLARAK SİLİNECEKTİR</span>:
+                    </p>
+                    <ul className="mt-4 space-y-2">
+                      {[
+                        "Tüm Ürün Kartları ve Barkodlar",
+                        "Tüm Depo Stokları ve Fiyatlar",
+                        "Tüm Satış Geçmişi ve Raporlar",
+                        "Tüm Stok Transferleri ve Sayımlar",
+                        "Fiyat ve Ürün Değişiklik Günlükleri"
+                      ].map((item, idx) => (
+                        <li key={idx} className="flex items-center gap-3 text-xs font-bold text-secondary">
+                          <div className="w-1.5 h-1.5 bg-rose-500 rounded-full" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-secondary tracking-widest uppercase">
+                      Devam etmek için aşağıdaki kutuya <span className="text-rose-500">ONAYLIYORUM</span> yazın:
+                    </label>
+                    <input
+                      autoFocus
+                      type="text"
+                      value={clearAllConfirmationText || ""}
+                      onChange={(e) => setClearAllConfirmationText(e.target.value.toUpperCase())}
+                      placeholder="ONAYLIYORUM"
+                      className="w-full bg-black/40 border-2 border-rose-500/20 focus:border-rose-500/50 rounded-2xl p-4 text-center font-black tracking-[4px] text-rose-500 outline-none transition-all placeholder:opacity-20"
+                    />
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    onClick={() => setIsClearAllModalOpen(false)}
+                    className="py-4 bg-white/5 hover:bg-white/10 text-secondary font-black rounded-2xl transition-all uppercase tracking-widest text-xs"
+                  >
+                    Vazgeç
+                  </button>
+                  <button
+                    disabled={clearAllConfirmationText !== "ONAYLIYORUM" || loading}
+                    onClick={handleClearAllProducts}
+                    className={`py-4 flex items-center justify-center gap-2 rounded-2xl font-black transition-all uppercase tracking-widest text-xs shadow-lg ${
+                      clearAllConfirmationText === "ONAYLIYORUM"
+                        ? 'bg-rose-500 text-white shadow-rose-500/20 active:scale-95'
+                        : 'bg-rose-500/10 text-rose-500/30 cursor-not-allowed border border-rose-500/10'
+                    }`}
+                  >
+                    {loading ? (
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <Trash2 size={16} />
+                        Verileri Yok Et
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <ProductModal
         isOpen={isModalOpen}

@@ -45,12 +45,48 @@ const mapUnitCode = (unit: string) => {
     }
 };
 
+const formatPersonName = (fullName: string) => {
+    const parts = (fullName || 'BILINMIYOR').trim().split(' ').filter(p => p.trim() !== '');
+    
+    let firstName = parts[0] || 'BILINMIYOR';
+    let familyName = parts.length > 1 ? parts.slice(1).join(' ') : firstName;
+
+    // QNB e-Arşiv UBL kuralları gereği FirstName ve FamilyName en az 2 karakter olmalıdır
+    if (firstName.length < 2) firstName = firstName + 'X';
+    if (familyName.length < 2) familyName = familyName + 'X';
+
+    return { firstName, familyName };
+};
+
 export const generateUBL = (invoice: any, erpCode: string, supplierVkn?: string) => {
     const uuid = crypto.randomUUID();
     const issueDate = new Date().toISOString().split('T')[0];
     const issueTime = new Date().toLocaleTimeString('tr-TR', { hour12: false });
 
     const profileId = invoice.profileId || (invoice.docType === 'EARSIV' ? 'EARSIVFATURA' : 'TICARIFATURA');
+
+    const groupedVat: Record<string, { taxableAmount: number, taxAmount: number }> = {};
+    invoice.lines.forEach((line: any) => {
+        const rate = (line.vatRate || 0).toString();
+        if (!groupedVat[rate]) groupedVat[rate] = { taxableAmount: 0, taxAmount: 0 };
+        const lineTotal = line.quantity * line.price;
+        groupedVat[rate].taxableAmount += lineTotal;
+        groupedVat[rate].taxAmount += lineTotal * (Number(rate) / 100);
+    });
+
+    const taxSubtotals = Object.entries(groupedVat).map(([rate, amounts]) => `
+        <cac:TaxSubtotal>
+            <cbc:TaxableAmount currencyID="TRY">${amounts.taxableAmount.toFixed(2)}</cbc:TaxableAmount>
+            <cbc:TaxAmount currencyID="TRY">${amounts.taxAmount.toFixed(2)}</cbc:TaxAmount>
+            <cac:TaxCategory>
+                <cbc:Percent>${Number(rate).toFixed(2)}</cbc:Percent>
+                <cac:TaxScheme>
+                    <cbc:ID>0015</cbc:ID>
+                    <cbc:Name>KDV</cbc:Name>
+                    <cbc:TaxTypeCode>0015</cbc:TaxTypeCode>
+                </cac:TaxScheme>
+            </cac:TaxCategory>
+        </cac:TaxSubtotal>`).join('');
 
     // Basit UBL 2.1 Şablonu
     return `<?xml version="1.0" encoding="UTF-8"?>
@@ -75,6 +111,14 @@ export const generateUBL = (invoice: any, erpCode: string, supplierVkn?: string)
     <cbc:IssueTime>${issueTime}</cbc:IssueTime>
     <cbc:InvoiceTypeCode>SATIS</cbc:InvoiceTypeCode>
     <cbc:Note>Gönderim Şekli: ELEKTRONIK</cbc:Note>
+    ${invoice.isInternetOrder ? `
+    <cbc:Note>##internetSatis_webAdresi#Web Adresi: ${escapeXml(invoice.webAddress || 'www.jetpos.com.tr')}</cbc:Note>
+    <cbc:Note>##internetSatis_odemeSekli#Ödeme Şekli: ${escapeXml(invoice.paymentType || 'KREDIKARTI/BANKAKARTI')}</cbc:Note>
+    <cbc:Note>##internetSatis_odemeTarihi#Ödeme Tarihi: ${issueDate}</cbc:Note>
+    <cbc:Note>##internetSatis_gonderimTarihi#Gönderim Tarihi: ${issueDate}</cbc:Note>
+    <cbc:Note>##internetSatis_gonderiTasiyanTuru#Gönderi Taşıyan Kişi Türü: Tüzel</cbc:Note>
+    <cbc:Note>##internetSatis_gonderiTasiyanKimlikNo#Gönderi Taşıyan Kişi Kimlik No: ${escapeXml(invoice.carrierVkn || '0000000000')}</cbc:Note>
+    <cbc:Note>##internetSatis_gonderiTasiyanAd#Gönderi Taşıyan Kişi Ad: ${escapeXml(invoice.carrierName || 'Kargo')}</cbc:Note>` : ''}
     <cbc:DocumentCurrencyCode>TRY</cbc:DocumentCurrencyCode>
     <cbc:LineCountNumeric>${invoice.lines.length}</cbc:LineCountNumeric>
 
@@ -83,11 +127,16 @@ export const generateUBL = (invoice: any, erpCode: string, supplierVkn?: string)
     <cac:AccountingSupplierParty>
         <cac:Party>
             <cac:PartyIdentification>
-                <cbc:ID schemeID="VKN">${supplierVkn || invoice.supplier.vkn}</cbc:ID>
+                <cbc:ID schemeID="${String(supplierVkn || invoice.supplier.vkn).trim().length === 11 ? 'TCKN' : 'VKN'}">${String(supplierVkn || invoice.supplier.vkn).trim()}</cbc:ID>
             </cac:PartyIdentification>
+            ${String(supplierVkn || invoice.supplier.vkn).trim().length === 11 ? `
+            <cac:Person>
+                <cbc:FirstName>${escapeXml(formatPersonName(invoice.supplier.name).firstName)}</cbc:FirstName>
+                <cbc:FamilyName>${escapeXml(formatPersonName(invoice.supplier.name).familyName)}</cbc:FamilyName>
+            </cac:Person>` : `
             <cac:PartyName>
                 <cbc:Name>${escapeXml(invoice.supplier.name)}</cbc:Name>
-            </cac:PartyName>
+            </cac:PartyName>`}
             <cac:PostalAddress>
                 <cbc:CitySubdivisionName>${escapeXml(invoice.supplier.district || '')}</cbc:CitySubdivisionName>
                 <cbc:CityName>${escapeXml(invoice.supplier.city || '')}</cbc:CityName>
@@ -109,12 +158,12 @@ export const generateUBL = (invoice: any, erpCode: string, supplierVkn?: string)
     <cac:AccountingCustomerParty>
         <cac:Party>
             <cac:PartyIdentification>
-                <cbc:ID schemeID="${invoice.customer.vkn.length === 11 ? 'TCKN' : 'VKN'}">${invoice.customer.vkn}</cbc:ID>
+                <cbc:ID schemeID="${String(invoice.customer.vkn).trim().length === 11 ? 'TCKN' : 'VKN'}">${String(invoice.customer.vkn).trim()}</cbc:ID>
             </cac:PartyIdentification>
-            ${invoice.customer.vkn.length === 11 ? `
+            ${String(invoice.customer.vkn).trim().length === 11 ? `
             <cac:Person>
-                <cbc:FirstName>${escapeXml(invoice.customer.name.split(' ')[0] || 'BILINMIYOR')}</cbc:FirstName>
-                <cbc:FamilyName>${escapeXml(invoice.customer.name.split(' ').slice(1).join(' ') || invoice.customer.name.split(' ')[0] || 'BILINMIYOR')}</cbc:FamilyName>
+                <cbc:FirstName>${escapeXml(formatPersonName(invoice.customer.name).firstName)}</cbc:FirstName>
+                <cbc:FamilyName>${escapeXml(formatPersonName(invoice.customer.name).familyName)}</cbc:FamilyName>
             </cac:Person>` : `
             <cac:PartyName>
                 <cbc:Name>${escapeXml(invoice.customer.name)}</cbc:Name>
@@ -145,18 +194,7 @@ export const generateUBL = (invoice: any, erpCode: string, supplierVkn?: string)
     </cac:PaymentTerms>
 
     <cac:TaxTotal>
-        <cbc:TaxAmount currencyID="TRY">${Number(invoice.totalVat).toFixed(2)}</cbc:TaxAmount>
-        <cac:TaxSubtotal>
-            <cbc:TaxableAmount currencyID="TRY">${Number(invoice.subtotal).toFixed(2)}</cbc:TaxableAmount>
-            <cbc:TaxAmount currencyID="TRY">${Number(invoice.totalVat).toFixed(2)}</cbc:TaxAmount>
-            <cac:TaxCategory>
-                <cac:TaxScheme>
-                    <cbc:ID>0015</cbc:ID>
-                    <cbc:Name>KDV</cbc:Name>
-                    <cbc:TaxTypeCode>0015</cbc:TaxTypeCode>
-                </cac:TaxScheme>
-            </cac:TaxCategory>
-        </cac:TaxSubtotal>
+        <cbc:TaxAmount currencyID="TRY">${Number(invoice.totalVat).toFixed(2)}</cbc:TaxAmount>${taxSubtotals}
     </cac:TaxTotal>
 
     <cac:LegalMonetaryTotal>

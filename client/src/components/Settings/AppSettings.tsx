@@ -5,10 +5,19 @@ import {
     Volume2, VolumeX, Monitor,
     Palette, CheckCircle2,
     Shield, Bell, Database,
-    Info, ExternalLink, Users
+    Info, ExternalLink, Users, Tag
 } from "lucide-react";
 
-export default function AppSettings({ theme, setTheme, isBeepEnabled, setIsBeepEnabled, showHelpIcons, setShowHelpIcons, isEmployeeModuleEnabled, setIsEmployeeModuleEnabled, showToast }: any) {
+export default function AppSettings({ 
+    theme, setTheme, 
+    isBeepEnabled, setIsBeepEnabled, 
+    showHelpIcons, setShowHelpIcons, 
+    isEmployeeModuleEnabled, setIsEmployeeModuleEnabled,
+    isPriceSyncEnabled, setIsPriceSyncEnabled,
+    isStockSyncEnabled, setIsStockSyncEnabled,
+    isWarehouseStockDeductionEnabled, setIsWarehouseStockDeductionEnabled,
+    showToast 
+}: any) {
     const themes = [
         { id: 'modern', name: 'MODERN DARK', color: 'bg-primary', desc: 'Sleek ve modern bir arayüz' },
         { id: 'light', name: 'GÜNEŞ IŞIĞI', color: 'bg-white', desc: 'Aydınlık ve ferah çalışma alanı' },
@@ -117,6 +126,81 @@ export default function AppSettings({ theme, setTheme, isBeepEnabled, setIsBeepE
                                 className={`w-16 h-8 rounded-full relative transition-all duration-300 ${isEmployeeModuleEnabled ? 'bg-emerald-500' : 'bg-primary/10'}`}
                             >
                                 <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all duration-300 shadow-lg ${isEmployeeModuleEnabled ? 'left-9' : 'left-1'}`} />
+                            </button>
+                        </div>
+                    </div>
+                </motion.div>
+
+                {/* Store Management Settings */}
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="glass-card space-y-6">
+                    <div className="flex items-center gap-3 border-b border-border pb-4">
+                        <Database className="text-primary" />
+                        <h2 className="font-black tracking-widest uppercase text-foreground">MAĞAZA VE ENVANTER</h2>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between p-4 bg-primary/5 rounded-2xl border border-border">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-indigo-500/10 rounded-xl">
+                                    <Tag className="text-indigo-500" />
+                                </div>
+                                <div>
+                                    <div className="font-black text-sm uppercase tracking-wider text-foreground">FİYAT SENKRONİZASYONU</div>
+                                    <div className="text-[10px] text-secondary font-bold">Tüm mağazalarda fiyatları aynı tut</div>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setIsPriceSyncEnabled(!isPriceSyncEnabled);
+                                    showToast(isPriceSyncEnabled ? "Fiyat izolasyonu aktif" : "Fiyat eşitleme aktif");
+                                }}
+                                className={`w-16 h-8 rounded-full relative transition-all duration-300 ${isPriceSyncEnabled ? 'bg-indigo-500' : 'bg-primary/10'}`}
+                            >
+                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all duration-300 shadow-lg ${isPriceSyncEnabled ? 'left-9' : 'left-1'}`} />
+                            </button>
+                        </div>
+
+                        {/* Stok Düşüm Ayarı */}
+                        <div className="flex items-center justify-between p-4 bg-primary/5 rounded-2xl border border-border">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-amber-500/10 rounded-xl">
+                                    <Database className="text-amber-500" />
+                                </div>
+                                <div>
+                                    <div className="font-black text-sm uppercase tracking-wider text-foreground">AKTİF MAĞAZA STOK DÜŞÜMÜ</div>
+                                    <div className="text-[10px] text-secondary font-bold">Satışları seçili mağazanın stoğundan düş</div>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setIsWarehouseStockDeductionEnabled(!isWarehouseStockDeductionEnabled);
+                                    showToast(isWarehouseStockDeductionEnabled ? "Global stok düşümü aktif" : "Mağaza bazlı stok düşümü aktif");
+                                }}
+                                className={`w-16 h-8 rounded-full relative transition-all duration-300 ${isWarehouseStockDeductionEnabled ? 'bg-amber-500' : 'bg-primary/10'}`}
+                            >
+                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all duration-300 shadow-lg ${isWarehouseStockDeductionEnabled ? 'left-9' : 'left-1'}`} />
+                            </button>
+                        </div>
+
+                        {/* Stok Senkronizasyon Ayarı */}
+                        <div className="flex items-center justify-between p-4 bg-primary/5 rounded-2xl border border-border">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-rose-500/10 rounded-xl">
+                                    <Database className="text-rose-500" />
+                                </div>
+                                <div>
+                                    <div className="font-black text-sm uppercase tracking-wider text-foreground">STOK SENKRONİZASYONU</div>
+                                    <div className="text-[10px] text-secondary font-bold">Tüm mağazalarda tek bir stok havuzu kullan</div>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setIsStockSyncEnabled(!isStockSyncEnabled);
+                                    showToast(isStockSyncEnabled ? "Stoklar ayrıştırıldı" : "Stoklar eşitlendi");
+                                }}
+                                className={`w-16 h-8 rounded-full relative transition-all duration-300 ${isStockSyncEnabled ? 'bg-rose-500' : 'bg-primary/10'}`}
+                            >
+                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all duration-300 shadow-lg ${isStockSyncEnabled ? 'left-9' : 'left-1'}`} />
                             </button>
                         </div>
                     </div>

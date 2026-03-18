@@ -21,7 +21,7 @@ export default function WhatsAppButton() {
         return () => clearTimeout(t);
     }, [visible]);
 
-    const phone = "905001234567"; // Başında 90 ile, + olmadan
+    const phone = "905366610169";
     const message = encodeURIComponent("Merhaba! JetPOS hakkında bilgi almak istiyorum.");
     const href = `https://wa.me/${phone}?text=${message}`;
 

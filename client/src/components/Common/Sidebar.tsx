@@ -27,6 +27,7 @@ import {
     User,
     Palette,
     Store,
+    Building2,
     CreditCard,
     ShoppingBag,
     FileBarChart,
@@ -81,10 +82,11 @@ interface SidebarProps {
     activeTab: string;
     onTabChange: (tab: string) => void;
     showHelpIcons: boolean;
+    showToast?: (message: string, type?: "success" | "error" | "warning" | "info") => void;
 }
 
-export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: SidebarProps) {
-    const { currentTenant } = useTenant();
+export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToast }: SidebarProps) {
+    const { currentTenant, warehouses, activeWarehouse, setActiveWarehouse } = useTenant();
     const [openCategories, setOpenCategories] = useState<string[]>(["main", "sales", "products"]);
     const [, setFavoritesVersion] = useState(0); // Force re-render on favorites change
     const [isBottomPanelOpen, setIsBottomPanelOpen] = useState(true); // Alt panel açık/kapalı
@@ -141,6 +143,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
             icon: Package,
             items: [
                 { id: "products", label: "Ürün Listesi", icon: Boxes, feature: "products", description: "Stoktaki ürünlerin listelenmesi, yeni ürün ekleme ve düzenleme işlemleri." },
+                { id: "warehouse", label: "Depo Yönetimi", icon: Building2, feature: "products", description: "Farklı depo ve mağazaların stok ve fiyat yönetimi." },
                 { id: "alerts", label: "Stok Uyarıları", icon: AlertTriangle, feature: "products", description: "Kritik stok seviyesine düşen ürünler için otomatik uyarılar." },
             ]
         },
@@ -805,7 +808,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
             </div>
 
             {/* Bottom Section - User & Settings (Collapsible) */}
-            <div className="border-t border-border mt-auto bg-primary/5 overflow-hidden">
+            <div className="border-t border-border mt-auto bg-primary/5">
                 {/* Toggle Button */}
                 <button
                     onClick={() => setIsBottomPanelOpen(!isBottomPanelOpen)}
@@ -824,8 +827,8 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
                     {isBottomPanelOpen && (
                         <motion.div
                             initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1, transitionEnd: { overflow: "visible" } }}
+                            exit={{ height: 0, opacity: 0, overflow: "hidden" }}
                             transition={{ duration: 0.3, ease: "easeInOut" }}
                             className="overflow-hidden"
                         >
@@ -842,6 +845,50 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons }: Sideb
                                             {currentTenant?.company_name || 'JetPos'}
                                         </p>
                                         <p className="text-xs text-[var(--color-sidebar-muted)]">Admin</p>
+                                    </div>
+                                </div>
+
+                                {/* Store Switcher */}
+                                <div className="mb-4 px-2">
+                                    <div className="relative group/store">
+                                        <button
+                                            onClick={() => {
+                                                // Local state for dropdown if needed, or just show a small list
+                                                // For now, let's just make it a simple list if clicked, or a fixed selector
+                                            }}
+                                            className="w-full flex items-center justify-between gap-3 p-2 bg-indigo-500/10 border border-indigo-500/20 rounded-xl hover:bg-indigo-500/20 transition-all text-left"
+                                        >
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
+                                                    {activeWarehouse?.type === 'virtual' ? <ShoppingBag className="w-4 h-4 text-indigo-400" /> : <Store className="w-4 h-4 text-indigo-400" />}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="text-[10px] font-black text-indigo-400/70 uppercase tracking-widest leading-none mb-1">Aktif Mağaza</p>
+                                                    <p className="text-xs font-bold text-white truncate">{activeWarehouse?.name || 'Seçilmedi'}</p>
+                                                </div>
+                                            </div>
+                                            <ArrowLeftRight className="w-3.5 h-3.5 text-indigo-400/50" />
+                                        </button>
+
+                                        {/* Simple Dropdown on Hover/Click - Let's use a simple absolute menu */}
+                                        <div className="absolute bottom-full left-0 w-full mb-2 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl opacity-0 invisible group-hover/store:opacity-100 group-hover/store:visible transition-all z-[100] p-2 space-y-1">
+                                            <p className="text-[10px] font-black text-secondary/50 uppercase tracking-widest p-2 border-b border-white/5 mb-1">Mağaza Değiştir</p>
+                                            {warehouses.map(w => (
+                                                <button
+                                                    key={w.id}
+                                                    onClick={() => {
+                                                        setActiveWarehouse(w);
+                                                        if (showToast) {
+                                                            showToast(`${w.name} mağazasına geçildi.`, "success");
+                                                        }
+                                                    }}
+                                                    className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all text-left ${activeWarehouse?.id === w.id ? 'bg-indigo-500/20 text-white' : 'hover:bg-white/5 text-secondary hover:text-white'}`}
+                                                >
+                                                    {w.type === 'virtual' ? <ShoppingBag className="w-3.5 h-3.5" /> : <Store className="w-3.5 h-3.5" />}
+                                                    <span className="text-xs font-bold truncate">{w.name}</span>
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
 

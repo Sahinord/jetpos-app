@@ -151,15 +151,22 @@ export default function InvoicePanel() {
     const calculate = (state: any) => {
         const items = state.items.map((item: any) => {
             const qty = Number(item.quantity) || 0;
-            const price = Number(item.price) || 0;
+            const grossPrice = Number(item.price) || 0; // KDV Dahil Birim Fiyat
             const vatRate = Number(item.vatRate) || 0;
 
-            const rawLineTotal = qty * price;
-            const lineTotal = Math.round(rawLineTotal * 100) / 100;
+            // KDV Hariç Birim Fiyat (Hassas hesaplama)
+            const basePrice = grossPrice / (1 + vatRate / 100);
+            
+            // Satır Toplamı (Net)
+            const lineTotal = Math.round((qty * basePrice) * 100) / 100;
+            
+            // Satır KDV Tutarı
             const vatAmount = Math.round((lineTotal * (vatRate / 100)) * 100) / 100;
+            
+            // Satır Genel Toplam
             const fullTotal = lineTotal + vatAmount;
 
-            return { ...item, lineTotal, vatAmount, fullTotal };
+            return { ...item, basePrice, lineTotal, vatAmount, fullTotal };
         });
 
         const totalLineAmount = items.reduce((s: number, i: any) => s + i.lineTotal, 0);
@@ -215,8 +222,8 @@ export default function InvoicePanel() {
             unvan: details.companyTitle || source.customer_name || '',
             ad: details.firstName || source.customer_name?.split(' ')[0] || '',
             soyad: details.lastName || source.customer_name?.split(' ').slice(1).join(' ') || '',
-            sehir: (details.city || 'İSTANBUL').toUpperCase(),
-            ilce: (details.district || 'ESENYURT').toUpperCase(),
+            sehir: (details.city?.trim() || 'İSTANBUL').toUpperCase(),
+            ilce: (details.district?.trim() || 'ESENYURT').toUpperCase(),
             mahalle: details.neighborhood || '',
             bulvar: details.street || '',
             binaNo: details.building_no || '',
@@ -226,6 +233,11 @@ export default function InvoicePanel() {
             vergiDairesi: details.taxOffice || details.tax_office || '',
             roundAmount: 0,
             packageId: isTrendyol ? source.raw_data?.id : null,
+            isInternetOrder: isTrendyol,
+            webAddress: isTrendyol ? 'www.trendyol.com' : 'www.jetpos.com.tr',
+            paymentType: isTrendyol ? 'KREDIKARTI/BANKAKARTI' : 'KREDIKARTI/BANKAKARTI',
+            carrierVkn: '0000000000',
+            carrierName: isTrendyol ? (source.raw_data?.cargoProviderName || 'Trendyol Kargo') : 'Kargo',
             items: sourceItems.map((i: any) => {
                 const productName = i.name || i.productName || i.product?.name || i.product?.productSaleName || 'Muhtelif Gıda';
                 const autoVatRate = i.vatRate || getVatRateFromProductName(productName);
@@ -258,7 +270,7 @@ export default function InvoicePanel() {
             // 11 hane = TCKN (Şahıs) -> Genelde e-Arşiv (Nihai Tüketici)
             // TODO: İleride checkUser servisi ile mükellef kontrolü yapılmalı.
             const vknLen = editModal.vkn?.length || 0;
-            const docType = vknLen === 10 ? 'EFATURA' : 'EARSIV';
+            const docType = 'EARSIV'; // vknLen === 10 ? 'EFATURA' : 'EARSIV'; // Geçici olarak hep EARSIV
 
             // API'ye gönderilecek veri yapısı
             const invoicePayload = {
@@ -286,7 +298,7 @@ export default function InvoicePanel() {
                     name: item.name,
                     quantity: Number(item.quantity),
                     unit: item.unit || 'ADET',
-                    price: Number(item.price),
+                    price: Number(item.basePrice || item.price), // KDV Hariç Fiyatı Gönderiyoruz
                     vatRate: Number(item.vatRate)
                 })),
 
@@ -296,7 +308,12 @@ export default function InvoicePanel() {
                 docType, // EFATURA veya EARSIV
                 tenantId: currentTenant?.id,
                 external_id: editModal.id, // Trendyol sipariş numarası veya satış ID'si
-                packageId: editModal.packageId
+                packageId: editModal.packageId,
+                isInternetOrder: editModal.isInternetOrder,
+                webAddress: editModal.webAddress,
+                paymentType: editModal.paymentType,
+                carrierVkn: editModal.carrierVkn,
+                carrierName: editModal.carrierName
             };
 
             const response = await fetch('/api/invoices/send', {

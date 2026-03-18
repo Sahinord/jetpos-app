@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PrintReceiptButton } from "./Receipt";
 import { Html5QrcodeScanner } from "html5-qrcode";
 import { useTenant } from "@/lib/tenant-context";
+import { supabase } from "@/lib/supabase";
 import SmartScanner from "@/components/Tools/SmartScanner";
 
 
@@ -24,6 +25,8 @@ export default function POS({
     theme = 'modern',
     setTheme,
     isBeepEnabled = true,
+    isPriceSyncEnabled = false,
+    isStockSyncEnabled = false,
     setActiveTab
 }: any) {
     // Audio Utility for "Beep"
@@ -79,7 +82,9 @@ export default function POS({
     const [isScannerOpen, setIsScannerOpen] = useState(false);
     const [isSmartScannerOpen, setIsSmartScannerOpen] = useState(false);
     const scannerRef = useRef<Html5QrcodeScanner | null>(null);
-    const { currentTenant } = useTenant();
+    const { currentTenant, activeWarehouse, warehouses, setActiveWarehouse } = useTenant();
+
+    // We use activeWarehouse directly from context for better reactivity
 
 
     // Performance Optimization: Visible products limit
@@ -151,7 +156,7 @@ export default function POS({
         }
 
         return products;
-    }, [products, barcodeMap, selectedCategory, deferredSearch]);
+    }, [products, barcodeMap, selectedCategory, deferredSearch, activeWarehouse, isPriceSyncEnabled]);
 
     // Scanner Logic
     useEffect(() => {
@@ -261,7 +266,16 @@ export default function POS({
 
         const qtyToAdd = manualQty || 1;
         const existing = cart.find(item => item.id === product.id);
-        const adjustedPrice = product.is_campaign ? parseFloat((product.sale_price * campaignRate).toFixed(2)) : product.sale_price;
+        
+        const currentWarehouseId = activeWarehouse?.id || warehouses[0]?.id;
+        
+        // Find warehouse specific price unless sync is enabled
+        const wsData = (!isPriceSyncEnabled && currentWarehouseId) 
+            ? product.warehouse_stock?.find((ws: any) => ws.warehouse_id === currentWarehouseId)
+            : null;
+            
+        const basePrice = wsData?.sale_price !== null && wsData?.sale_price !== undefined ? wsData.sale_price : product.sale_price;
+        const adjustedPrice = product.is_campaign ? parseFloat((basePrice * campaignRate).toFixed(2)) : basePrice;
 
         if (existing) {
             setCart(cart.map(item =>
@@ -380,6 +394,45 @@ export default function POS({
                     <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl border border-primary/20 backdrop-blur-sm">
                         <User size={16} className="text-primary" />
                         <span className="text-xs font-black text-foreground uppercase tracking-wider">GENEL MÜDÜR</span>
+                    </div>
+
+                    {/* Warehouse/Store Selector */}
+                    {warehouses.length > 0 && (
+                        <div className="flex items-center gap-2 px-4 py-1.5 bg-indigo-500/10 rounded-xl border border-indigo-500/30 backdrop-blur-sm">
+                            <Building2 size={16} className="text-indigo-400" />
+                            <select 
+                                value={activeWarehouse?.id || ""}
+                                onChange={(e) => {
+                                    const selected = warehouses.find(w => w.id === e.target.value);
+                                    if (selected) {
+                                        if (cart.length > 0) {
+                                            if (confirm("Mağaza değişince sepetinizdeki fiyatlar güncellenmeyebilir. Sepeti temizlemek ister misiniz?")) {
+                                                setCart([]);
+                                            }
+                                        }
+                                        setActiveWarehouse(selected);
+                                        if (showToast) {
+                                            showToast(`${selected.name} mağazasına geçildi.`, "success");
+                                        }
+                                    }
+                                }}
+                                className="bg-transparent text-xs font-bold text-indigo-200 outline-none cursor-pointer"
+                            >
+                                {warehouses.map((w: any) => (
+                                    <option key={w.id} value={w.id} className="bg-slate-900 text-white">
+                                        {w.name} {w.type === 'virtual' ? '(Online)' : ''}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+                    {/* Pricing Mode Badge */}
+                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border backdrop-blur-sm ${isPriceSyncEnabled ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500'}`}>
+                        <BadgePercent size={14} />
+                        <span className="text-[10px] font-black uppercase tracking-tighter">
+                            {isPriceSyncEnabled ? "Fiyatlar Senkronize" : "Mağaza Bazlı Fiyatlar"}
+                        </span>
                     </div>
                 </div>
 
@@ -687,13 +740,27 @@ export default function POS({
                                             <div className="flex items-end justify-between mt-auto gap-2">
                                                 <div className="space-y-0.5">
                                                     {/* Current Price */}
-                                                    <div className="text-xl font-bold text-white tracking-tight">
-                                                        ₺{p.sale_price.toFixed(2)}
-                                                    </div>
-                                                    {/* Unit */}
-                                                    <div className="text-[9px] font-bold text-secondary/50 uppercase tracking-wider">
-                                                        {p.unit || 'ADET'}
-                                                    </div>
+                                                    {(() => {
+                                                        const currentWarehouseId = activeWarehouse?.id || warehouses[0]?.id;
+                                                        const wsData = p.warehouse_stock?.find((ws: any) => ws.warehouse_id === currentWarehouseId);
+                                                        const price = (!isPriceSyncEnabled && wsData?.sale_price !== null && wsData?.sale_price !== undefined) ? wsData.sale_price : p.sale_price;
+                                                        const qty = (isStockSyncEnabled || !activeWarehouse) ? (p.stock_quantity || 0) : (wsData?.quantity || 0);
+                                                        return (
+                                                            <>
+                                                                <div className="text-xl font-bold text-white tracking-tight">
+                                                                    ₺{price.toFixed(2)}
+                                                                </div>
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <span className="text-[9px] font-bold text-secondary/50 uppercase tracking-wider">
+                                                                        {p.unit || 'ADET'}
+                                                                    </span>
+                                                                    <span className={`text-[9px] font-black px-1.5 rounded-full ${qty > 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                                                                        STOK: {qty}
+                                                                    </span>
+                                                                </div>
+                                                            </>
+                                                        );
+                                                    })()}
                                                 </div>
 
                                                 {/* Add Button - Smaller */}

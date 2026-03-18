@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Mail, Phone, MapPin, Send, Check, Loader2 } from "lucide-react";
+import { Mail, Send, Check, Loader2 } from "lucide-react";
 
 export default function Contact() {
     const [form, setForm] = useState({ name: "", email: "", message: "" });
@@ -227,8 +227,6 @@ export default function Contact() {
                     >
                         {[
                             { icon: Mail, label: "E-posta", value: "info@jetpos.com.tr", href: "mailto:info@jetpos.com.tr", color: "#60a5fa" },
-                            { icon: Phone, label: "Telefon", value: "+90 500 123 45 67", href: "tel:+905001234567", color: "#a78bfa" },
-                            { icon: MapPin, label: "Adres", value: "Teknoloji Caddesi No: 123\nŞişli / İstanbul", href: "#", color: "#34d399" },
                         ].map((item, i) => (
                             <div key={i} style={{
                                 background: "rgba(255,255,255,0.03)",

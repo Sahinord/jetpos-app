@@ -6,9 +6,9 @@ import crypto from 'crypto';
 
 export async function POST(req: NextRequest) {
     try {
+        console.log(`[Invoice API] --- NEW REQUEST RECEIVED ---`);
         const invoiceData = await req.json();
 
-        // Validasyon: Fatura numarası, müşteri vb. kontrol edilebilir
         if (!invoiceData.customer || !invoiceData.lines || invoiceData.lines.length === 0) {
             return NextResponse.json(
                 { success: false, error: 'Eksik fatura verisi (Müşteri veya kalemler yok)' },
@@ -19,37 +19,36 @@ export async function POST(req: NextRequest) {
         const { tenantId } = invoiceData;
         const tenantSettings = await getTenantSettings(tenantId);
         
-        console.log(`[Invoice API] Processing request for Tenant: ${tenantId}`);
-        console.log(`[Invoice API] Settings Found:`, JSON.stringify({
-            ...tenantSettings,
-            qnb: tenantSettings.qnb ? { ...tenantSettings.qnb, testPassword: '***' } : null
-        }, null, 2));
+        console.log(`[Invoice API] Tenant: ${tenantId}`);
+        
+        // Güvenlik için log maskeleme
+        const maskedSettings = JSON.parse(JSON.stringify(tenantSettings));
+        if (maskedSettings.qnb) {
+            if (maskedSettings.qnb.password) maskedSettings.qnb.password = '***';
+            if (maskedSettings.qnb.testPassword) maskedSettings.qnb.testPassword = '***';
+        }
+        console.log(`[Invoice API] Settings:`, JSON.stringify(maskedSettings, null, 2));
 
         const client = new QNBClient(tenantSettings);
-
-        // 1. Önce Login (Client içinde zaten handle ediliyor ama garanti olsun)
-        // 2. Fatura Gönder
-        // docType client tarafından belirlensin veya request'ten gelsin
         const docType = invoiceData.docType || 'EFATURA';
 
-        // UBL Builder için fatura tipi gerekebilir, şimdilik client.sendInvoice hallediyor.
-
+        console.log(`[Invoice API] Sending invoice to QNB (${docType})...`);
+        
+        // BURADA TAKILIYOR OLABİLİR - Zaman aşımı ekleyelim mi? 
         const result = await client.sendInvoice(invoiceData, docType);
+        
+        console.log(`[Invoice API] QNB Response received:`, JSON.stringify(result));
 
         if (result.success && tenantId) {
             try {
                 const { supabaseAdmin } = await import('@/lib/supabase-admin');
-
                 let finalPdfUrl = result.pdfUrl;
 
-                // Trendyol'a gönderilecekse ve base64 ise Supabase Storage'a yükle (Trendyol public link ister)
-                if (invoiceData.packageId && finalPdfUrl && finalPdfUrl.startsWith('data:application/pdf;base64,')) {
+                if (finalPdfUrl && finalPdfUrl.startsWith('data:application/pdf;base64,')) {
+                    console.log(`[Invoice API] Uploading PDF to Storage...`);
                     try {
                         const base64Data = finalPdfUrl.split(',')[1];
                         const buffer = Buffer.from(base64Data, 'base64');
-
-                        // Güvenlik için: Tenant ID'sini URL'de açıkça göstermemek için hash'liyoruz 
-                        // ve dosya adını tahmin edilemez bir UUID yapıyoruz.
                         const hashedTenant = crypto.createHash('sha256').update(tenantId).digest('hex').slice(0, 16);
                         const fileGuid = crypto.randomUUID();
                         const fileName = `invoices/${hashedTenant}/${fileGuid}.pdf`;
@@ -60,7 +59,7 @@ export async function POST(req: NextRequest) {
                                 contentType: 'application/pdf',
                                 upsert: true,
                                 cacheControl: '3600',
-                                metadata: { tenant_id: tenantId } // Metadata sadece admin panelden görülebilir
+                                metadata: { tenant_id: tenantId }
                             });
 
                         if (!uploadErr) {
@@ -68,14 +67,14 @@ export async function POST(req: NextRequest) {
                                 .from('invoices')
                                 .getPublicUrl(fileName);
                             finalPdfUrl = publicUrl;
-                        } else {
-                            console.error('Supabase Storage Upload Error:', uploadErr);
+                            console.log(`[Invoice API] PDF Uploaded: ${finalPdfUrl}`);
                         }
                     } catch (storageErr) {
                         console.error('Storage processing error:', storageErr);
                     }
                 }
 
+                console.log(`[Invoice API] Saving to Database...`);
                 const { data: inv, error: invErr } = await supabaseAdmin
                     .from('invoices')
                     .insert({
@@ -97,9 +96,7 @@ export async function POST(req: NextRequest) {
                     .select()
                     .single();
 
-                if (invErr) {
-                    console.error('Database Invoice Insert Error:', invErr);
-                } else if (inv && invoiceData.lines) {
+                if (inv && invoiceData.lines) {
                     const lineInserts = invoiceData.lines.map((line: any) => ({
                         invoice_id: inv.id,
                         tenant_id: tenantId,
@@ -115,8 +112,8 @@ export async function POST(req: NextRequest) {
                     await supabaseAdmin.from('invoice_items').insert(lineInserts);
                 }
 
-                // 3. Trendyol'a bildir (Eğer packageId varsa)
                 if (invoiceData.packageId && finalPdfUrl) {
+                    console.log(`[Invoice API] Notifying Trendyol...`);
                     try {
                         const { createTrendyolGoClient } = await import('@/lib/trendyol-go-client');
                         const trendyolClient = createTrendyolGoClient(tenantSettings);
@@ -126,11 +123,8 @@ export async function POST(req: NextRequest) {
                             invoiceLink: finalPdfUrl,
                             invoiceDateTime: Date.now()
                         });
-                        console.log(`[Trendyol] Invoice notified for package ${invoiceData.packageId}`);
                     } catch (tErr) {
                         console.error('Trendyol Invoice Upload Error:', tErr);
-                        // Fatura kesildiği için bu hatayı kullanıcıya kritik olarak yansıtmayabiliriz 
-                        // ama loglamak önemli.
                     }
                 }
 
@@ -140,15 +134,16 @@ export async function POST(req: NextRequest) {
 
             return NextResponse.json({
                 success: true,
-                message: 'Fatura başarıyla kuyruğa alındı ve Trendyol\'a iletildi.',
+                message: 'Fatura başarıyla gönderildi.',
                 listId: result.listId,
                 pdfUrl: result.pdfUrl,
                 ettn: (result as any).ettn
             });
         } else {
+            console.error(`[Invoice API] QNB Error:`, result.error);
             return NextResponse.json({
                 success: false,
-                error: result.error || 'QNB Fatura gönderimi başarısız oldu (Hata detayı alınamadı).'
+                error: result.error || 'QNB Fatura gönderimi başarısız oldu.'
             }, { status: 400 });
         }
 

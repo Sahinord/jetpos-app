@@ -15,12 +15,24 @@ interface Tenant {
     openrouter_api_key?: string;
 }
 
+interface Warehouse {
+    id: string;
+    name: string;
+    type: string;
+    is_default: boolean;
+    address?: string;
+}
+
 interface TenantContextType {
     currentTenant: Tenant | null;
     availableTenants: Tenant[];
     switchTenant: (tenantId: string) => void;
     refreshTenants: () => Promise<void>;
     loading: boolean;
+    activeWarehouse: Warehouse | null;
+    setActiveWarehouse: (warehouse: Warehouse | null) => void;
+    warehouses: Warehouse[];
+    refreshWarehouses: () => Promise<void>;
 }
 
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
@@ -99,6 +111,50 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         await fetchTenants();
     };
 
+    const [activeWarehouse, setActiveWarehouse] = useState<Warehouse | null>(null);
+    const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+
+    useEffect(() => {
+        if (currentTenant) {
+            fetchWarehouses();
+        }
+    }, [currentTenant]);
+
+    const fetchWarehouses = async () => {
+        const { data } = await supabase
+            .from('warehouses')
+            .select('*')
+            .eq('tenant_id', currentTenant?.id)
+            .eq('is_active', true);
+        
+        if (data) {
+            setWarehouses(data);
+            // If we have saved warehouse but it's not in the list (deleted/disabled), clear it
+            const saved = localStorage.getItem('activeWarehouse');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    const found = data.find(w => w.id === parsed.id);
+                    if (found) {
+                        setActiveWarehouse(found);
+                    } else {
+                        localStorage.removeItem('activeWarehouse');
+                        setActiveWarehouse(null);
+                    }
+                } catch (e) {
+                    localStorage.removeItem('activeWarehouse');
+                    setActiveWarehouse(null);
+                }
+            }
+        }
+    };
+
+    const handleSetActiveWarehouse = (w: Warehouse | null) => {
+        setActiveWarehouse(w);
+        if (w) localStorage.setItem('activeWarehouse', JSON.stringify(w));
+        else localStorage.removeItem('activeWarehouse');
+    };
+
     return (
         <TenantContext.Provider
             value={{
@@ -106,7 +162,11 @@ export function TenantProvider({ children }: { children: ReactNode }) {
                 availableTenants,
                 switchTenant,
                 refreshTenants,
-                loading
+                loading,
+                activeWarehouse,
+                setActiveWarehouse: handleSetActiveWarehouse,
+                warehouses,
+                refreshWarehouses: fetchWarehouses
             }}
         >
             {children}
