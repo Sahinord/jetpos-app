@@ -27,7 +27,11 @@ export default function POS({
     isBeepEnabled = true,
     isPriceSyncEnabled = false,
     isStockSyncEnabled = false,
-    setActiveTab
+    isCashDrawerEnabled = false,
+    cashDrawerPrinterName = "",
+    setActiveTab,
+    initialCart = [],
+    onCartCleared
 }: any) {
     // Audio Utility for "Beep"
     const playBeep = () => {
@@ -62,6 +66,15 @@ export default function POS({
 
     // Core Sales State
     const [cart, setCart] = useState<any[]>([]);
+    
+    // Sync with initialCart (for Adisyon integration)
+    useEffect(() => {
+        if (initialCart && initialCart.length > 0) {
+            setCart(initialCart);
+            if (onCartCleared) onCartCleared();
+        }
+    }, [initialCart]);
+
     const [suspendedSales, setSuspendedSales] = useState<any[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<string>("all");
     const [search, setSearch] = useState("");
@@ -363,6 +376,16 @@ export default function POS({
         setCart([]);
         setDiscount(0);
         setNumpadValue(""); // Clear numpad after checkout
+
+        // --- NAKİT ÇEKMECE TETİKLEME ---
+        if (method === 'NAKİT' && isCashDrawerEnabled && window.require) {
+            try {
+                const { ipcRenderer } = window.require('electron');
+                ipcRenderer.send('open-cash-drawer', { printerName: cashDrawerPrinterName });
+            } catch (err) {
+                console.error("Kasa çekmecesi tetikleme hatası (Renderer):", err);
+            }
+        }
     };
 
     return (
@@ -745,21 +768,31 @@ export default function POS({
                                                         const wsData = p.warehouse_stock?.find((ws: any) => ws.warehouse_id === currentWarehouseId);
                                                         const price = (!isPriceSyncEnabled && wsData?.sale_price !== null && wsData?.sale_price !== undefined) ? wsData.sale_price : p.sale_price;
                                                         const qty = (isStockSyncEnabled || !activeWarehouse) ? (p.stock_quantity || 0) : (wsData?.quantity || 0);
-                                                        return (
-                                                            <>
-                                                                <div className="text-xl font-bold text-white tracking-tight">
+                                                        return <>
+                                                                 <div className="text-xl font-bold text-white tracking-tight">
                                                                     ₺{price.toFixed(2)}
-                                                                </div>
-                                                                <div className="flex items-center gap-1.5">
-                                                                    <span className="text-[9px] font-bold text-secondary/50 uppercase tracking-wider">
-                                                                        {p.unit || 'ADET'}
-                                                                    </span>
-                                                                    <span className={`text-[9px] font-black px-1.5 rounded-full ${qty > 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
-                                                                        STOK: {qty}
-                                                                    </span>
-                                                                </div>
-                                                            </>
-                                                        );
+                                                                 </div>
+                                                                 <div className="flex items-center gap-2 mt-1">
+                                                                     <span className="text-[9px] font-black text-secondary/40 uppercase tracking-[2px]">
+                                                                         {p.unit || 'ADET'}
+                                                                     </span>
+                                                                     <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md border backdrop-blur-md transition-all ${
+                                                                         qty > 10 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 
+                                                                         qty > 0 ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' : 
+                                                                         'bg-rose-500/10 border-rose-500/20 text-rose-400'
+                                                                     }`}>
+                                                                         <div className={`w-1.5 h-1.5 rounded-full ${
+                                                                             qty > 10 ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 
+                                                                             qty > 0 ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]' : 
+                                                                             'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]'
+                                                                         }`} />
+                                                                         <span className="text-[10px] font-black tracking-tight whitespace-nowrap uppercase">
+                                                                             {qty} STOK
+                                                                         </span>
+                                                                     </div>
+                                                                 </div>
+                                                             </>
+                                                        ;
                                                     })()}
                                                 </div>
 

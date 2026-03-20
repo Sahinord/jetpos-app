@@ -16,6 +16,11 @@ export default function AppSettings({
     isPriceSyncEnabled, setIsPriceSyncEnabled,
     isStockSyncEnabled, setIsStockSyncEnabled,
     isWarehouseStockDeductionEnabled, setIsWarehouseStockDeductionEnabled,
+    isCashDrawerEnabled, setIsCashDrawerEnabled,
+    cashDrawerPrinterName, setCashDrawerPrinterName,
+    isAdisyonStoreSpecificEnabled, setIsAdisyonStoreSpecificEnabled,
+    isAdisyonAutoOpenReservationEnabled, setIsAdisyonAutoOpenReservationEnabled,
+    currentTenant,
     showToast 
 }: any) {
     const themes = [
@@ -25,6 +30,25 @@ export default function AppSettings({
         { id: 'glass', name: 'CAM KABARCIK', color: 'bg-blue-400', desc: 'Yüksek derinlikli modern cam' }
     ];
 
+
+    const hasAdisyonAccess = (() => {
+        if (!currentTenant?.features) return false;
+        try {
+            if (typeof currentTenant.features === 'string') {
+                const arr = JSON.parse(currentTenant.features);
+                return arr.includes('adisyon') || arr.includes('*');
+            }
+            if (Array.isArray(currentTenant.features)) {
+                return currentTenant.features.includes('adisyon') || currentTenant.features.includes('*');
+            }
+            if (typeof currentTenant.features === 'object') {
+                return currentTenant.features['adisyon'] === true || currentTenant.features['*'] === true;
+            }
+        } catch (e) {
+            return String(currentTenant.features).includes('adisyon');
+        }
+        return false;
+    })();
 
     return (
         <div className="space-y-8 pb-10">
@@ -128,8 +152,121 @@ export default function AppSettings({
                                 <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all duration-300 shadow-lg ${isEmployeeModuleEnabled ? 'left-9' : 'left-1'}`} />
                             </button>
                         </div>
+
+                        {/* Nakit Çekmece Ayarı */}
+                        <div className="space-y-4 pt-4 border-t border-border/20">
+                            <div className="flex items-center justify-between p-4 bg-primary/5 rounded-2xl border border-border">
+                                <div className="flex items-center gap-4">
+                                    <div className="p-3 bg-blue-500/10 rounded-xl">
+                                        <Database className="text-blue-500" />
+                                    </div>
+                                    <div>
+                                        <div className="font-black text-sm uppercase tracking-wider text-foreground">NAKİT ÇEKMECESİ</div>
+                                        <div className="text-[10px] text-secondary font-bold">Nakit satışlarda kasayı otomatik aç</div>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setIsCashDrawerEnabled(!isCashDrawerEnabled)}
+                                    className={`w-16 h-8 rounded-full relative transition-all duration-300 ${isCashDrawerEnabled ? 'bg-blue-500' : 'bg-primary/10'}`}
+                                >
+                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all duration-300 shadow-lg ${isCashDrawerEnabled ? 'left-9' : 'left-1'}`} />
+                                </button>
+                            </div>
+
+                            {isCashDrawerEnabled && (
+                                <div className="p-4 bg-primary/5 rounded-2xl border border-border space-y-2">
+                                    <div className="flex items-center justify-between gap-4">
+                                        <div className="flex-1 space-y-2">
+                                            <label className="text-[10px] font-black text-secondary tracking-widest uppercase">YAZICI ADI (SİSTEMDEKİ ADI)</label>
+                                            <input 
+                                                type="text"
+                                                value={cashDrawerPrinterName}
+                                                onChange={(e) => setCashDrawerPrinterName(e.target.value)}
+                                                placeholder="Örn: Rongta RP80"
+                                                className="w-full bg-card border border-border rounded-xl px-4 py-3 text-xs font-bold text-foreground outline-none focus:border-primary transition-all"
+                                            />
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                if (!cashDrawerPrinterName) return showToast("Önce yazıcı adını giriniz", "error");
+                                                if (window.require) {
+                                                    try {
+                                                        const { ipcRenderer } = window.require('electron');
+                                                        ipcRenderer.send('open-cash-drawer', { printerName: cashDrawerPrinterName });
+                                                        showToast("Kasa açma komutu gönderildi (Rongta)", "info");
+                                                    } catch (err) {
+                                                        console.error("Test hatası:", err);
+                                                        showToast("Test işlemi başarısız", "error");
+                                                    }
+                                                }
+                                            }}
+                                            className="px-6 py-3 self-end bg-primary/10 hover:bg-primary/20 border border-primary/30 rounded-xl text-[10px] font-black text-primary transition-all active:scale-95"
+                                        >
+                                            TEST ET
+                                        </button>
+                                    </div>
+                                    <p className="text-[9px] text-secondary/60 italic mt-1 font-medium leading-relaxed uppercase">
+                                        * Kasayı açmak için ESC/POS destekli bir termal yazıcı gereklidir.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </motion.div>
+
+                {/* Adisyon Ayarları */}
+                {hasAdisyonAccess && (
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }} className="glass-card space-y-6">
+                        <div className="flex items-center gap-3 border-b border-border pb-4">
+                            <span className="text-primary text-xl">🍽️</span>
+                            <h2 className="font-black tracking-widest uppercase text-foreground">ADİSYON SİSTEMİ</h2>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between p-4 bg-primary/5 rounded-2xl border border-border">
+                                <div className="flex items-center gap-4">
+                                    <div className="p-3 bg-purple-500/10 rounded-xl">
+                                        <Database className="text-purple-500" />
+                                    </div>
+                                    <div>
+                                        <div className="font-black text-sm uppercase tracking-wider text-foreground">ŞUBEYE ÖZEL MASALAR</div>
+                                        <div className="text-[10px] text-secondary font-bold">Masaları bulunduğun şubeye göre izole et</div>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        setIsAdisyonStoreSpecificEnabled(!isAdisyonStoreSpecificEnabled);
+                                        showToast(!isAdisyonStoreSpecificEnabled ? "Masalar şubelere ayrıldı" : "Tüm masalar ortak yapıldı");
+                                    }}
+                                    className={`w-16 h-8 rounded-full relative transition-all duration-300 ${isAdisyonStoreSpecificEnabled ? 'bg-purple-500' : 'bg-primary/10'}`}
+                                >
+                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all duration-300 shadow-lg ${isAdisyonStoreSpecificEnabled ? 'left-9' : 'left-1'}`} />
+                                </button>
+                            </div>
+
+                            <div className="flex items-center justify-between p-4 bg-primary/5 rounded-2xl border border-border">
+                                <div className="flex items-center gap-4">
+                                    <div className="p-3 bg-emerald-500/10 rounded-xl">
+                                        <CheckCircle2 className="text-emerald-500" />
+                                    </div>
+                                    <div>
+                                        <div className="font-black text-sm uppercase tracking-wider text-foreground">OTOMATİK REZERVASYON AÇILIŞI</div>
+                                        <div className="text-[10px] text-secondary font-bold">Saati gelen rezervasyonlarda masayı otomatik aç</div>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        setIsAdisyonAutoOpenReservationEnabled(!isAdisyonAutoOpenReservationEnabled);
+                                        showToast(!isAdisyonAutoOpenReservationEnabled ? "Otomatik açılış aktif" : "Otomatik açılış kapalı");
+                                    }}
+                                    className={`w-16 h-8 rounded-full relative transition-all duration-300 ${isAdisyonAutoOpenReservationEnabled ? 'bg-emerald-500' : 'bg-primary/10'}`}
+                                >
+                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all duration-300 shadow-lg ${isAdisyonAutoOpenReservationEnabled ? 'left-9' : 'left-1'}`} />
+                                </button>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
 
                 {/* Store Management Settings */}
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="glass-card space-y-6">

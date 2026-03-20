@@ -8,7 +8,8 @@ import {
     ShieldCheck,
     Minus,
     Square,
-    X
+    X,
+    Menu
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
@@ -16,7 +17,7 @@ import TenantSwitcher from "../Tenant/TenantSwitcher";
 import { useTenant } from "@/lib/tenant-context";
 import NotificationCenter from "../Notifications/NotificationCenter";
 
-export default function TopBar({ activeTab }: { activeTab: string }) {
+export default function TopBar({ activeTab, onMenuClick }: { activeTab: string, onMenuClick?: () => void }) {
     const [currentTime, setCurrentTime] = useState(new Date());
     const { currentTenant } = useTenant();
 
@@ -132,11 +133,18 @@ export default function TopBar({ activeTab }: { activeTab: string }) {
 
     return (
         <header
-            className="h-24 border-b border-border bg-card/80 backdrop-blur-xl flex items-center justify-between px-10 sticky top-0 z-40 select-none"
+            className="h-20 lg:h-24 border-b border-border bg-card/80 backdrop-blur-xl flex items-center justify-between px-4 lg:px-10 sticky top-0 z-40 select-none"
             style={{ WebkitAppRegion: 'drag' } as any}
         >
-            {/* Left Section: Tenant Switcher + Title */}
-            <div className="flex items-center gap-4" style={{ WebkitAppRegion: 'no-drag' } as any}>
+            {/* Left Section: Mobile Menu + Tenant Switcher + Title */}
+            <div className="flex items-center gap-3 lg:gap-4" style={{ WebkitAppRegion: 'no-drag' } as any}>
+                <button 
+                    onClick={onMenuClick}
+                    className="p-2 -ml-2 text-secondary hover:text-primary transition-colors lg:hidden rounded-lg hover:bg-primary/5"
+                >
+                    <Menu className="w-6 h-6" />
+                </button>
+
                 <TenantSwitcher />
 
                 <div className="hidden md:flex flex-col space-y-1">

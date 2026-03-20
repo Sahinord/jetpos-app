@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 import pkg from "./package.json";
 
 const nextConfig: NextConfig = {
-  images: {
+  output: 'export', images: {
     unoptimized: true,
   },
   env: {

@@ -7,6 +7,7 @@ import SummaryCards from "@/components/Dashboard/SummaryCards";
 import ProductTable from "@/components/Products/ProductTable";
 import ProductModal from "@/components/Products/ProductModal";
 import POS from "@/components/POS/POS";
+import Adisyon from "@/components/Adisyon/Adisyon";
 import Expenses from "@/components/Expenses/Expenses";
 import SalesChart from "@/components/Dashboard/SalesChart";
 import QuickStockAlerts from "@/components/Dashboard/QuickStockAlerts";
@@ -57,6 +58,7 @@ export default function Home() {
   const [categories, setCategories] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCatModalOpen, setIsCatModalOpen] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [saleItems, setSaleItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,6 +73,11 @@ export default function Home() {
   const [isWarehouseStockDeductionEnabled, setIsWarehouseStockDeductionEnabled] = useState(true);
   const [isClearAllModalOpen, setIsClearAllModalOpen] = useState(false);
   const [clearAllConfirmationText, setClearAllConfirmationText] = useState("");
+  const [isCashDrawerEnabled, setIsCashDrawerEnabled] = useState(false);
+  const [cashDrawerPrinterName, setCashDrawerPrinterName] = useState("");
+  const [adisyonCart, setAdisyonCart] = useState<any[]>([]);
+  const [isAdisyonStoreSpecificEnabled, setIsAdisyonStoreSpecificEnabled] = useState(true);
+  const [isAdisyonAutoOpenReservationEnabled, setIsAdisyonAutoOpenReservationEnabled] = useState(true);
 
   const [toast, setToast] = useState({ isVisible: false, message: "", type: "success" as ToastType });
 
@@ -108,6 +115,18 @@ export default function Home() {
     const savedStockDeduction = localStorage.getItem('isWarehouseStockDeductionEnabled');
     if (savedStockDeduction !== null) setIsWarehouseStockDeductionEnabled(savedStockDeduction === 'true');
 
+    const savedCashDrawer = localStorage.getItem('isCashDrawerEnabled');
+    if (savedCashDrawer !== null) setIsCashDrawerEnabled(savedCashDrawer === 'true');
+
+    const savedPrinterName = localStorage.getItem('cashDrawerPrinterName');
+    if (savedPrinterName) setCashDrawerPrinterName(savedPrinterName);
+
+    const savedAdisyonStoreSpecific = localStorage.getItem('isAdisyonStoreSpecificEnabled');
+    if (savedAdisyonStoreSpecific !== null) setIsAdisyonStoreSpecificEnabled(savedAdisyonStoreSpecific === 'true');
+
+    const savedAdisyonAutoOpen = localStorage.getItem('isAdisyonAutoOpenReservationEnabled');
+    if (savedAdisyonAutoOpen !== null) setIsAdisyonAutoOpenReservationEnabled(savedAdisyonAutoOpen === 'true');
+
     // Hash control for profile tab
     const handleHashChange = () => {
       if (window.location.hash === '#profile') {
@@ -129,7 +148,11 @@ export default function Home() {
     localStorage.setItem('isPriceSyncEnabled', isPriceSyncEnabled.toString());
     localStorage.setItem('isStockSyncEnabled', isStockSyncEnabled.toString());
     localStorage.setItem('isWarehouseStockDeductionEnabled', isWarehouseStockDeductionEnabled.toString());
-  }, [theme, isBeepEnabled, showHelpIcons, isEmployeeModuleEnabled, isPriceSyncEnabled, isStockSyncEnabled, isWarehouseStockDeductionEnabled]);
+    localStorage.setItem('isCashDrawerEnabled', isCashDrawerEnabled.toString());
+    localStorage.setItem('cashDrawerPrinterName', cashDrawerPrinterName);
+    localStorage.setItem('isAdisyonStoreSpecificEnabled', isAdisyonStoreSpecificEnabled.toString());
+    localStorage.setItem('isAdisyonAutoOpenReservationEnabled', isAdisyonAutoOpenReservationEnabled.toString());
+  }, [theme, isBeepEnabled, showHelpIcons, isEmployeeModuleEnabled, isPriceSyncEnabled, isStockSyncEnabled, isWarehouseStockDeductionEnabled, isCashDrawerEnabled, cashDrawerPrinterName, isAdisyonStoreSpecificEnabled, isAdisyonAutoOpenReservationEnabled]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -736,10 +759,27 @@ export default function Home() {
   return (
     <div className={`flex min-h-screen bg-background text-foreground theme-${theme}`}>
       <StoreSelectionOverlay />
-      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} showHelpIcons={showHelpIcons} showToast={showToast} />
+      <Sidebar 
+        activeTab={activeTab} 
+        onTabChange={(tab) => {
+          setActiveTab(tab);
+          setIsMobileSidebarOpen(false); // Sekme seçince menüyü kapat
+        }} 
+        showHelpIcons={showHelpIcons} 
+        showToast={showToast}
+        isMobileOpen={isMobileSidebarOpen}
+      />
 
-      <main className="flex-1 overflow-y-auto max-h-screen relative flex flex-col">
-        <TopBar activeTab={activeTab} />
+      {/* Mobile Sidebar Overlay */}
+      {isMobileSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
+
+      <main className="flex-1 overflow-y-auto max-h-screen relative flex flex-col min-w-0">
+        <TopBar activeTab={activeTab} onMenuClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)} />
 
         <div className="p-2 lg:p-3 w-full flex-1 flex flex-col min-h-0">
           {activeTab === "home" && (
@@ -826,7 +866,11 @@ export default function Home() {
                 isBeepEnabled={isBeepEnabled}
                 isPriceSyncEnabled={isPriceSyncEnabled}
                 isStockSyncEnabled={isStockSyncEnabled}
+                isCashDrawerEnabled={isCashDrawerEnabled}
+                cashDrawerPrinterName={cashDrawerPrinterName}
                 setActiveTab={setActiveTab}
+                initialCart={adisyonCart}
+                onCartCleared={() => setAdisyonCart([])}
               />
             </div>
           )}
@@ -848,6 +892,15 @@ export default function Home() {
                 setIsStockSyncEnabled={setIsStockSyncEnabled}
                 isWarehouseStockDeductionEnabled={isWarehouseStockDeductionEnabled}
                 setIsWarehouseStockDeductionEnabled={setIsWarehouseStockDeductionEnabled}
+                isCashDrawerEnabled={isCashDrawerEnabled}
+                setIsCashDrawerEnabled={setIsCashDrawerEnabled}
+                cashDrawerPrinterName={cashDrawerPrinterName}
+                setCashDrawerPrinterName={setCashDrawerPrinterName}
+                isAdisyonStoreSpecificEnabled={isAdisyonStoreSpecificEnabled}
+                setIsAdisyonStoreSpecificEnabled={setIsAdisyonStoreSpecificEnabled}
+                isAdisyonAutoOpenReservationEnabled={isAdisyonAutoOpenReservationEnabled}
+                setIsAdisyonAutoOpenReservationEnabled={setIsAdisyonAutoOpenReservationEnabled}
+                currentTenant={currentTenant}
                 showToast={showToast}
               />
             </div>
@@ -887,6 +940,16 @@ export default function Home() {
           {activeTab === "expenses" && (
             <div className="max-w-[1500px] mx-auto w-full">
               <Expenses />
+            </div>
+          )}
+          {activeTab === "adisyon" && (
+            <div className="max-w-[1500px] mx-auto w-full flex-1 flex flex-col min-h-0">
+              <Adisyon 
+                products={products}
+                categories={categories}
+                showToast={showToast}
+                onCheckout={handleCheckout}
+              />
             </div>
           )}
           {activeTab === "calculator" && (

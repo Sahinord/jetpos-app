@@ -33,6 +33,14 @@ const AVAILABLE_FEATURES = [
     { id: 'invoice', label: 'E-Fatura Entegrasyonu (QNB)' },
     { id: 'invoice_management', label: 'Fatura ve İrsaliye Yönetimi' },
     { id: 'ai_features', label: 'JetPos AI (Öngörüler & Asistan)' },
+    { id: 'adisyon', label: 'Adisyon (Masa Yönetimi)' },
+];
+
+const MOBILE_FEATURES = [
+    { id: 'mobile_adisyon', label: 'Mobil Adisyon (Garson Ekranı)' },
+    { id: 'mobile_pos', label: 'Mobil POS (Satış Yapma)' },
+    { id: 'mobile_inventory', label: 'Mobil Depo & Sayım' },
+    { id: 'mobile_reports', label: 'Mobil Raporlar & Ciro' },
 ];
 
 export default function SuperAdmin() {
@@ -917,13 +925,28 @@ export default function SuperAdmin() {
                             </div>
 
                             <div className="space-y-4">
-                                <h4 className="text-sm font-black text-white uppercase tracking-[0.2em] ml-1">Erişim Yetkileri (Özellikler)</h4>
+                                <h4 className="text-sm font-black text-white uppercase tracking-[0.2em] ml-1">Erişim Yetkileri (Terminal PC)</h4>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                     {AVAILABLE_FEATURES.map(f => {
                                         const isActive = editingTenant.features?.[f.id];
                                         return (
                                             <button key={f.id} onClick={() => toggleFeature(f.id)} className={`p-4 rounded-[1.5rem] border-2 transition-all text-left group ${isActive ? 'border-primary bg-primary/10' : 'border-white/5 hover:border-white/10'}`}>
                                                 <div className={`w-8 h-8 rounded-xl flex items-center justify-center mb-3 ${isActive ? 'bg-primary text-white shadow-lg shadow-primary/30' : 'bg-white/5 text-slate-700'}`}>
+                                                    {isActive ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                                                </div>
+                                                <p className={`text-[11px] font-black leading-tight ${isActive ? 'text-white' : 'text-slate-600'}`}>{f.label}</p>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+
+                                <h4 className="text-sm font-black text-white uppercase tracking-[0.2em] ml-1 mt-8 pt-4 border-t border-white/5">JetPOS Mobile Yetkileri (Telefon/Tablet)</h4>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    {MOBILE_FEATURES.map(f => {
+                                        const isActive = editingTenant.features?.[f.id];
+                                        return (
+                                            <button key={f.id} onClick={() => toggleFeature(f.id)} className={`p-4 rounded-[1.5rem] border-2 transition-all text-left group ${isActive ? 'border-blue-500 bg-blue-500/10' : 'border-white/5 hover:border-white/10'}`}>
+                                                <div className={`w-8 h-8 rounded-xl flex items-center justify-center mb-3 ${isActive ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30' : 'bg-white/5 text-slate-700'}`}>
                                                     {isActive ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
                                                 </div>
                                                 <p className={`text-[11px] font-black leading-tight ${isActive ? 'text-white' : 'text-slate-600'}`}>{f.label}</p>

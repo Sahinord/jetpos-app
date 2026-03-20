@@ -54,6 +54,8 @@ import {
     Blocks,
     Search,
     X,
+    Utensils,
+    Grid3X3,
     type LucideIcon
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -83,9 +85,10 @@ interface SidebarProps {
     onTabChange: (tab: string) => void;
     showHelpIcons: boolean;
     showToast?: (message: string, type?: "success" | "error" | "warning" | "info") => void;
+    isMobileOpen?: boolean;
 }
 
-export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToast }: SidebarProps) {
+export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToast, isMobileOpen }: SidebarProps) {
     const { currentTenant, warehouses, activeWarehouse, setActiveWarehouse } = useTenant();
     const [openCategories, setOpenCategories] = useState<string[]>(["main", "sales", "products"]);
     const [, setFavoritesVersion] = useState(0); // Force re-render on favorites change
@@ -135,6 +138,15 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                 { id: "pos", label: "Hızlı Satış", icon: ShoppingCart, feature: "pos", description: "Hızlı nakit veya kartlı satış işlemlerini gerçekleştirebileceğiniz satış ekranı." },
                 { id: "history", label: "Satış Geçmişi", icon: History, feature: "sales_history", description: "Geçmişte yapılan tüm satışların detaylı dökümü ve yönetimi." },
                 { id: "invoice", label: "E-Fatura", icon: FileText, feature: "invoice", description: "E-Fatura gönderimi ve takibi için entegrasyon ekranı." },
+            ]
+        },
+        {
+            id: "adisyon",
+            label: "Adisyon Sistemi",
+            icon: Utensils,
+            feature: "adisyon",
+            items: [
+                { id: "adisyon", label: "Masa Yönetimi", icon: Grid3X3, feature: null, description: "Restoran ve kafeler için masa bazlı sipariş takip ve adisyon ekranı." },
             ]
         },
         {
@@ -477,7 +489,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
     };
 
     return (
-        <aside className="w-72 premium-sidebar flex flex-col h-screen sticky top-0 overflow-hidden border-r">
+        <aside className={`w-72 premium-sidebar flex flex-col h-screen fixed lg:sticky top-0 left-0 bg-card z-50 overflow-hidden border-r transition-transform duration-300 ${isMobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0 shadow-none'}`}>
             {/* Logo / Firma Header */}
             <div className="p-6 border-b border-border">
                 <div className="flex items-center justify-center space-x-3">

@@ -1,4 +1,5 @@
 const { app, BrowserWindow, Menu, ipcMain, dialog } = require('electron');
+const { exec } = require('child_process');
 const path = require('path');
 const isDev = require('electron-is-dev');
 const serve = require('electron-serve');
@@ -69,6 +70,32 @@ function createWindow() {
         else win.maximize();
     });
     ipcMain.on('window-close', () => win.close());
+
+    // --- KASA ÇEKMECESİ AÇMA (ELECTRON) ---
+    ipcMain.on('open-cash-drawer', (event, { printerName }) => {
+        if (!printerName) {
+            console.log("Kasa çekmecesi hatası: Yazıcı adı belirtilmemiş.");
+            return;
+        }
+
+        console.log(`🚀 Kasa çekmecesi açılıyor: ${printerName}`);
+
+        // ESC/POS standard drawer open command: ESC p m t1 t2
+        // ESC = 27, p = 112, m = 0 (Pin 2), t1 = 25, t2 = 250
+        const command = `powershell -Command "Out-Printer -Name '${printerName}' -InputObject ([char]27 + [char]112 + [char]0 + [char]25 + [char]250)"`;
+
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+                console.error(`Kasa açma hatası: ${error.message}`);
+                return;
+            }
+            if (stderr) {
+                console.error(`Kasa açma uyarısı: ${stderr}`);
+                return;
+            }
+            console.log("Kasa başarıyla açıldı.");
+        });
+    });
 
     // In production, we load the built static files via electron-serve
     // In development, we load the localhost:3000
