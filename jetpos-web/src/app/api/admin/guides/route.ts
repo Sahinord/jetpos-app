@@ -23,35 +23,12 @@ export async function GET(req: NextRequest) {
     if (!checkAdminAuth(req)) return unauthorized();
     try {
         const sb = getAdminSupabase();
-        // tenants tablosunu kullan, client_name ve user_email olarak alias ver
         const { data, error } = await sb
-            .from("tenants")
-            .select(`
-                id,
-                license_key,
-                company_name,
-                contact_email,
-                status,
-                features,
-                download_link,
-                created_at,
-                expires_at
-            `)
-            .order("created_at", { ascending: false });
-        
+            .from("customer_guides")
+            .select("*")
+            .order("order_index", { ascending: true });
         if (error) throw error;
-
-        // Frontend uyumluluğu için eşleme yap
-        const mappedData = data.map(t => ({
-            ...t,
-            client_name: t.company_name,
-            user_email: t.contact_email,
-            // total_days hesapla
-            total_days: t.expires_at ? Math.ceil((new Date(t.expires_at).getTime() - new Date(t.created_at).getTime()) / (1000 * 60 * 60 * 24)) : 365,
-            plan_type: t.features?.enterprise ? "ENTERPRISE" : (t.features?.pro ? "PRO" : "BASIC")
-        }));
-
-        return NextResponse.json(mappedData);
+        return NextResponse.json(data);
     } catch (e: any) {
         return NextResponse.json({ error: e.message }, { status: 500 });
     }
@@ -62,36 +39,38 @@ export async function POST(req: NextRequest) {
     if (!checkAdminAuth(req)) return unauthorized();
     try {
         const body = await req.json();
-        // company_name ve license_key zorunlu
-        if (!body.client_name || !body.license_key) {
-            return NextResponse.json({ error: "client_name ve license_key zorunlu" }, { status: 400 });
+        if (!body.title || !body.content) {
+            return NextResponse.json({ error: "Title ve Content zorunlu" }, { status: 400 });
         }
-
         const sb = getAdminSupabase();
-        
-        // tenants tablosuna ekle
-        const expiry = new Date();
-        expiry.setDate(expiry.getDate() + (body.total_days || 365));
-
-        const insertData = {
-            license_key: body.license_key,
-            company_name: body.client_name,
-            contact_email: body.user_email,
-            status: 'active',
-            features: body.features || {},
-            download_link: body.download_link,
-            expires_at: expiry.toISOString(),
-            created_at: new Date().toISOString()
-        };
-
         const { data, error } = await sb
-            .from("tenants")
-            .insert([insertData])
+            .from("customer_guides")
+            .insert([{ ...body, created_at: new Date().toISOString() }])
             .select()
             .single();
-
         if (error) throw error;
         return NextResponse.json(data, { status: 201 });
+    } catch (e: any) {
+        return NextResponse.json({ error: e.message }, { status: 500 });
+    }
+}
+
+// ── PATCH ───────────────────────────────────────────────────────── (UPDATE)
+export async function PATCH(req: NextRequest) {
+    if (!checkAdminAuth(req)) return unauthorized();
+    const id = req.nextUrl.searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "id zorunlu" }, { status: 400 });
+    try {
+        const body = await req.json();
+        const sb = getAdminSupabase();
+        const { data, error } = await sb
+            .from("customer_guides")
+            .update(body)
+            .eq("id", id)
+            .select()
+            .single();
+        if (error) throw error;
+        return NextResponse.json(data);
     } catch (e: any) {
         return NextResponse.json({ error: e.message }, { status: 500 });
     }
@@ -104,7 +83,7 @@ export async function DELETE(req: NextRequest) {
     if (!id) return NextResponse.json({ error: "id zorunlu" }, { status: 400 });
     try {
         const sb = getAdminSupabase();
-        const { error } = await sb.from("tenants").delete().eq("id", id);
+        const { error } = await sb.from("customer_guides").delete().eq("id", id);
         if (error) throw error;
         return NextResponse.json({ success: true });
     } catch (e: any) {

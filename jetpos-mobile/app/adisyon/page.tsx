@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Utensils, Users, ArrowLeft, Plus, Check, Search, Coffee, Save, X, Minus, Trash2 } from 'lucide-react';
+import { Utensils, Users, ArrowLeft, Plus, Check, Search, Coffee, Save, X, Minus, Trash2, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -44,6 +44,24 @@ export default function AdisyonMobile() {
     const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
     const [showProductSelector, setShowProductSelector] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [visibleCount, setVisibleCount] = useState(30);
+
+    // --- OPTİMİZASYON: Ürün Listeleme & Filtreleme ---
+    const filteredProducts = useMemo(() => {
+        return products.filter(p => {
+            const matchesCategory = selectedCategoryId ? p.category_id === selectedCategoryId : true;
+            const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
+            return matchesCategory && matchesSearch;
+        });
+    }, [products, searchTerm, selectedCategoryId]);
+
+    const displayedProducts = useMemo(() => {
+        return filteredProducts.slice(0, visibleCount);
+    }, [filteredProducts, visibleCount]);
+
+    useEffect(() => {
+        setVisibleCount(30);
+    }, [searchTerm, selectedCategoryId]);
 
     const fetchTables = async () => {
         setLoading(true);
@@ -79,7 +97,6 @@ export default function AdisyonMobile() {
         const tenantId = localStorage.getItem('tenantId');
         if (!tenantId) return;
         
-        // Fetch Categories
         const { data: catData } = await supabase
             .from('categories')
             .select('*')
@@ -87,7 +104,6 @@ export default function AdisyonMobile() {
             .order('name');
         if (catData) setCategories(catData);
 
-        // Fetch Products
         const { data } = await supabase
             .from('products')
             .select('id, name, sale_price, stock_quantity, category_id')
@@ -203,12 +219,6 @@ export default function AdisyonMobile() {
     };
 
     const filteredTables = tables.filter(t => t.section === activeSection);
-    const filteredProducts = products.filter(p => {
-        const matchesCategory = selectedCategoryId ? p.category_id === selectedCategoryId : true;
-        const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
-        return matchesCategory && matchesSearch;
-    });
-    
     const orderTotal = tableOrders.reduce((acc, item) => acc + (item.quantity * item.unit_price), 0);
 
     const getStatusColor = (status: string) => {
@@ -293,7 +303,6 @@ export default function AdisyonMobile() {
                 )}
             </div>
 
-            {/* Table Details Modal */}
             <AnimatePresence>
                 {selectedTable && !showProductSelector && (
                     <motion.div
@@ -351,7 +360,6 @@ export default function AdisyonMobile() {
                                         </button>
                                     </div>
 
-                                    {/* Note Input Area */}
                                     <AnimatePresence>
                                         {editingNoteFor === item.product_id && (
                                             <motion.div 
@@ -415,7 +423,6 @@ export default function AdisyonMobile() {
                 )}
             </AnimatePresence>
 
-            {/* Product Selector Modal */}
             <AnimatePresence>
                 {showProductSelector && (
                     <motion.div
@@ -428,20 +435,24 @@ export default function AdisyonMobile() {
                             <button onClick={() => setShowProductSelector(false)} className="p-2 bg-white/5 rounded-xl">
                                 <X className="w-5 h-5 text-white" />
                             </button>
-                            <div className="flex-1 relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                                <input
-                                    type="text"
-                                    placeholder="Ürün Ara..."
-                                    value={searchTerm}
-                                    onChange={e => setSearchTerm(e.target.value)}
-                                    className="w-full bg-black/40 border border-white/10 rounded-xl py-2 pl-9 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
-                                    autoFocus
-                                />
+                            <div className="flex-1 flex items-center gap-2">
+                                <div className="relative flex-1">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                                    <input
+                                        type="text"
+                                        placeholder="Ürün Ara..."
+                                        value={searchTerm}
+                                        onChange={e => setSearchTerm(e.target.value)}
+                                        className="w-full bg-black/40 border border-white/10 rounded-xl py-2 pl-9 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                                        autoFocus
+                                    />
+                                </div>
+                                <button className="p-2.5 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-xl active:scale-90">
+                                    <Search className="w-5 h-5" />
+                                </button>
                             </div>
                         </header>
 
-                        {/* Category Filter Horizontal Scroll */}
                         <div className="px-4 py-2 border-b border-white/5 overflow-x-auto whitespace-nowrap hide-scrollbar flex gap-2">
                             <button
                                 onClick={() => setSelectedCategoryId(null)}
@@ -468,22 +479,36 @@ export default function AdisyonMobile() {
                             ))}
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] space-y-2">
-                            {filteredProducts.map(p => (
+                        <div className="flex-1 overflow-y-auto p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] space-y-2 no-scrollbar">
+                            {displayedProducts.map(p => (
                                 <button
                                     key={p.id}
                                     onClick={() => addToOrder(p)}
                                     className="w-full flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 active:scale-95 transition-all rounded-2xl border border-white/5"
                                 >
                                     <div className="text-left">
-                                        <p className="font-bold text-white">{p.name}</p>
-                                        <p className="text-xs text-slate-400 font-mono mt-0.5">Stok: {p.stock_quantity}</p>
+                                        <p className="font-bold text-white text-sm">{p.name}</p>
+                                        <p className="text-[10px] text-slate-400 font-mono mt-0.5 opacity-60">Stok: {p.stock_quantity}</p>
                                     </div>
                                     <span className="font-black text-blue-400">₺{p.sale_price}</span>
                                 </button>
                             ))}
-                            {filteredProducts.length === 0 && (
-                                <div className="text-center py-10 opacity-50 text-sm font-bold">Ürün bulunamadı.</div>
+
+                            {filteredProducts.length > visibleCount && (
+                                <button 
+                                    onClick={() => setVisibleCount(v => v + 30)}
+                                    className="w-full py-4 text-[10px] font-black uppercase text-slate-500 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-white/5 rounded-2xl mt-4"
+                                >
+                                    <ChevronDown className="w-5 h-5" />
+                                    Daha Fazla Göster ({filteredProducts.length - visibleCount} ürün daha var)
+                                </button>
+                            )}
+
+                            {displayedProducts.length === 0 && (
+                                <div className="text-center py-20 opacity-30 flex flex-col items-center">
+                                    <Search className="w-12 h-12 mb-4" />
+                                    <p className="text-xs font-black uppercase tracking-widest">Ürün bulunamadı.</p>
+                                </div>
                             )}
                         </div>
                     </motion.div>

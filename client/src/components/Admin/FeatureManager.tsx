@@ -26,6 +26,8 @@ const AVAILABLE_FEATURES: Feature[] = [
     { id: 'invoice_management', label: 'Fatura ve İrsaliye Yönetimi', description: 'Alış/Satış faturaları ve irsaliye takibi' },
     { id: 'ai_features', label: 'JetPos AI', description: 'Yapay zeka asistanı ve işletme öngörüleri' },
     { id: 'employee_module', label: 'Çalışan Yönetimi', description: 'Personel ve vardiya takip sistemi' },
+    { id: 'adisyon', label: 'Adisyon (Bar/Mutfak) Sistemi', description: 'Restoran ve kafeler için QR adisyon ve masa yönetimi' },
+    { id: 'mobile_app', label: 'Mobil Uygulama Desteği', description: 'Cebinizdeki JetPos: Satış ve stok takibi her an yanınızda' },
     { id: 'label_designer', label: 'Etiket Tasarımı', description: 'Barkod ve fiyat etiketi tasarlama aracı' },
 ];
 

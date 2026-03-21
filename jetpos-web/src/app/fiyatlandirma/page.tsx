@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Check, ChevronDown, Zap, Star, ArrowRight,
     Barcode, FileText, Package, Wallet,
-    Brain, Shield, Users, Building2, BarChart3, PhoneCall
+    Brain, Shield, Users, Building2, BarChart3, PhoneCall, HelpCircle, Globe, Utensils, X
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -231,26 +232,24 @@ function PlanCard({ plan, yearly }: { plan: typeof plans[0]; yearly: boolean }) 
             )}
 
             <div style={{
-                background: plan.highlight ? "rgba(5,150,105,0.07)" : "rgba(255,255,255,0.025)",
-                border: `1px solid ${plan.highlight ? "rgba(52,211,153,0.35)" : plan.badge === "⭐ En Popüler" ? "rgba(139,92,246,0.35)" : "rgba(255,255,255,0.08)"}`,
-                borderRadius: "1.25rem",
-                padding: "1.75rem 1.5rem",
-                display: "flex", flexDirection: "column", gap: "1.25rem",
+                background: plan.highlight ? "rgba(5,150,105,0.07)" : "rgba(255,255,255,0.02)",
+                border: `1px solid ${plan.highlight ? "rgba(52,211,153,0.3)" : plan.badge === "⭐ En Popüler" ? "rgba(139,92,246,0.3)" : "rgba(255,255,255,0.06)"}`,
+                borderRadius: "1rem",
+                padding: "1.25rem",
+                display: "flex", flexDirection: "column", gap: "1rem",
                 height: "100%",
-                boxShadow: plan.highlight ? "0 0 40px rgba(52,211,153,0.12)" : plan.badge === "⭐ En Popüler" ? "0 0 30px rgba(139,92,246,0.12)" : "none",
                 transition: "all 0.3s ease",
             }}>
                 {/* Header */}
                 <div>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.5rem" }}>
-                        <h3 style={{ fontSize: "1.35rem", fontWeight: 800, color: "white", margin: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.25rem" }}>
+                        <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "white", margin: 0 }}>
                             {plan.name}
                         </h3>
                         <span style={{
-                            fontSize: "0.65rem", fontWeight: 700, color: plan.color,
-                            background: `${plan.color}15`, border: `1px solid ${plan.color}30`,
-                            padding: "0.2rem 0.6rem", borderRadius: "9999px",
-                            whiteSpace: "nowrap"
+                            fontSize: "0.6rem", fontWeight: 700, color: plan.color,
+                            background: `${plan.color}10`, border: `1px solid ${plan.color}20`,
+                            padding: "0.15rem 0.5rem", borderRadius: "9999px"
                         }}>
                             {plan.users}
                         </span>
@@ -394,8 +393,6 @@ function ComparisonTable() {
                     fontSize: "0.9rem", cursor: "pointer", fontFamily: "inherit",
                     transition: "all 0.2s"
                 }}
-                onMouseEnter={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)")}
-                onMouseLeave={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)")}
             >
                 Tüm Özellikleri Karşılaştır
                 <ChevronDown style={{ width: "1rem", height: "1rem", transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.3s" }} />
@@ -485,7 +482,147 @@ function ComparisonTable() {
 
 /* ─── PAGE ──────────────────────────────────────────── */
 export default function FiyatlandirmaPage() {
+    const searchParams = useSearchParams();
     const [yearly, setYearly] = useState(true);
+    const [viewMode, setViewMode] = useState<"plans" | "custom">("plans");
+
+    useEffect(() => {
+        const tab = searchParams.get("tab");
+        if (tab === "custom") setViewMode("custom");
+    }, [searchParams]);
+
+    const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
+    const [showForm, setShowForm] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [success, setSuccess] = useState(false);
+    const [formData, setFormData] = useState({ name: "", email: "", phone: "", company: "", message: "" });
+
+    const FEATURES = [
+        { 
+            id: "pos", 
+            label: "Hızlı Satış (POS)", 
+            description: "Market, mağaza ve perakende noktaları için ultra hızlı barkodlu satış terminali.",
+            detailed: "Saniyeler içinde fiş kesmenizi sağlar. Online/Offline çalışma özelliğiyle internet kesilse bile satışa devam edebilirsiniz. Terazi entegrasyonu ve dokunmatik ekran desteği mevcuttur.",
+            benefit: "Kasa kuyruklarını %40 azaltın, saniyeler içinde fiş kesin.",
+            icon: Barcode, 
+            category: "Operasyon" 
+        },
+        { 
+            id: "adisyon", 
+            label: "Adisyon & Restoran", 
+            description: "Masa takibi, mutfak yönetimi ve garson uygulaması ile tam entegre restoran çözümü.",
+            detailed: "Masaları anlık görün, siparişleri mutfağa otomatik iletin. Reçete sistemi ile maliyet hesabı yapın. Yemeksepeti, Getir ve Trendyol Yemek entegrasyonu dahildir.",
+            benefit: "Sipariş hatalarını sıfıra indirin, mutfak hızını artırın.",
+            icon: Utensils, 
+            category: "Restaurant & Cafe" 
+        },
+        { 
+            id: "ecommerce", 
+            label: "E-Ticaret Entegrasyonu", 
+            description: "Shopify, Woocommerce ve İkas gibi platformlarla tam stok ve fiyat senkronizasyonu.", 
+            detailed: "Fiziksel mağazanızdaki stoklar ile web sitenizdeki stoklar tek panelden yönetilir. Bir yerden satıldığında her yerde otomatik düşer. Fiyat güncellemeleri anlıktır.",
+            benefit: "Stok hatalarını önleyin, manuel iş yükünü %90 azaltın.",
+            icon: Globe, 
+            category: "Pazaryeri" 
+        },
+        { 
+            id: "products", 
+            label: "Gelişmiş Stok Yönetimi", 
+            description: "Kritik stok seviyesi uyarıları, varyantlı ürün takibi ve barkod etiket tasarımı.", 
+            detailed: "Çoklu depo takibi yapabilir, depolar arası transferleri yönetebilirsiniz. Parti ve seri no takibi ile son kullanma tarihi yaklaşan ürünleri önceden görün.",
+            benefit: "Kaybolan ürünleri engelleyin, deponuzdaki her kuruşu takip edin.",
+            icon: Package, 
+            category: "Operasyon" 
+        },
+        { 
+            id: "sicak_satis", 
+            label: "Sıcak Satış (Plasiyer)", 
+            description: "Saha ekipleri için araçta fatura kesme ve tahsilat yönetimi modülü.", 
+            detailed: "Plasiyerleriniz sahada telefon veya tabletten sipariş alabilir, fatura kesebilir. GPS takibi ile rota yönetimi ve anlık depo kontrolü sağlar.",
+            benefit: "Saha verimliliğini %50 artırın, hatalı sevkiyatı önleyin.",
+            icon: PhoneCall, 
+            category: "Mobilite" 
+        },
+        { 
+            id: "loyalty", 
+            label: "Müşteri Sadakat (Puan)", 
+            description: "Müşterilerinize alışveriş yaptıkça puan kazandırın, sadakati artırın.", 
+            detailed: "Müşteri kartı veya telefon numarası ile puan toplama. Özel günlerde kampanya tanımlama (örn: Doğum gününde 2 kat puan). SMS marketing entegreli.",
+            benefit: "Müşteri geri dönüş oranını %30 artırın.",
+            icon: Star, 
+            category: "Pazaryeri" 
+        },
+        { 
+            id: "currency", 
+            label: "Dövizli İşlemler", 
+            description: "Dolar, Euro veya Altın bazlı satış yapma ve kasa tutma özelliği.", 
+            detailed: "Merkez Bankası kurlarını otomatik çeker. Cari hesaplarınızı dövizli takip edebilir, raporlarınızı istediğiniz para birimiyle anlık olarak alabilirsiniz.",
+            benefit: "Enflasyona karşı nakit akışınızı koruyun, kur kaybını önleyin.",
+            icon: Wallet, 
+            category: "Finansal" 
+        },
+        { 
+            id: "cari_hesap", 
+            label: "Cari & Veresiye Takibi", 
+            description: "Müşteri ve tedarikçi limitleri, borç hatırlatıcı ve vadelendirme sistemi.", 
+            detailed: "Ödeme gecikmelerinde otomatik hatırlatma. Risk analizi ve limit tanımlama. Hesap özetini tek tıkla PDF veya WhatsApp üzerinden gönderme.",
+            benefit: "Alacaklarınızı zamanında toplayın, nakit akışınızı koruyun.",
+            icon: Users, 
+            category: "Finansal" 
+        },
+        { 
+            id: "invoice", 
+            label: "E-Fatura & E-Arşiv", 
+            description: "Dosya kağıdı yerine resmi fatura düzenleme. QNB Finansbank garantisiyle.", 
+            detailed: "BİS entegrasyonu ile tam yasal uyumluluk. İptal ve iade süreçleri kolayca yönetilir. Arşivleme süresi boyunca yasal saklama garantisi.",
+            benefit: "Fatura maliyetlerini %80 düşürün, resmi süreçleri hızlandırın.",
+            icon: FileText, 
+            category: "Dijital Dönüşüm" 
+        },
+        { 
+            id: "ai_insights", 
+            label: "Yapay Zeka (JetAI)", 
+            description: "Gelecek satışı tahmin eden ve ölü stokları uyaran akıllı asistan.", 
+            detailed: "Mevsimsellik analizi ve talep tahmini. Karlılık odaklı stok önerileri. Robot asistan ile işletme durumu hakkında sesli veya yazılı rapor sunumu.",
+            benefit: "Geleceği verilerle tahmin edin, rakiplerinizden öne geçin.",
+            icon: Brain, 
+            category: "İleri Teknoloji" 
+        },
+        { 
+            id: "mobile_app", 
+            label: "Uzaktan Yönetim Uygulaması", 
+            description: "Mağazanızdan uzakta olsanız bile tüm satışları anlık takip edin.", 
+            detailed: "iOS ve Android uyumlu yerel uygulama. Anlık bildirimler, canlı kasa durumu, personel performans raporları. Dünyanın her yerinden tam kontrol.",
+            benefit: "İşletmenizin durumu her an avucunuzun içinde olsun.",
+            icon: BarChart3, 
+            category: "Mobilite" 
+        },
+    ];
+
+    const [expandedDetails, setExpandedDetails] = useState<string[]>([]);
+
+    const toggleDetail = (id: string, e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setExpandedDetails(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+    };
+
+    const toggleFeature = (id: string) => {
+        setSelectedFeatures(prev => prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]);
+    };
+
+    const categories = Array.from(new Set(FEATURES.map(f => f.category)));
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        const packageFeatures = selectedFeatures.map(id => FEATURES.find(x => x.id === id)?.label).join(", ");
+        const payload = { ...formData, package_interest: "Custom Builder", message: `[KENDİ PAKETİNİ OLUŞTUR] Seçilen Özellikler: ${packageFeatures}\n\nNot: ${formData.message}` };
+        try {
+            const res = await fetch("/api/demo-request", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+            if (res.ok) { setSuccess(true); setShowForm(false); setSelectedFeatures([]); }
+        } finally { setLoading(false); }
+    };
 
     return (
         <>
@@ -493,140 +630,179 @@ export default function FiyatlandirmaPage() {
             <main style={{ position: "relative", zIndex: 1, minHeight: "100vh" }}>
                 <Navbar />
 
-                <div style={{ paddingTop: "7rem", paddingBottom: "5rem" }}>
+                <div style={{ paddingTop: "7.5rem", paddingBottom: "7rem" }}>
                     <div className="site-container">
 
                         {/* Header */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 30 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.6 }}
-                            style={{ textAlign: "center", marginBottom: "3.5rem" }}
-                        >
-                            <span className="badge" style={{ marginBottom: "1.25rem", display: "inline-flex" }}>
-                                <Zap style={{ width: "0.875rem", height: "0.875rem" }} />
-                                Şeffaf Fiyatlandırma
-                            </span>
-                            <h1 style={{
-                                fontSize: "clamp(2.25rem, 6vw, 3.75rem)",
-                                fontWeight: 800, color: "white",
-                                lineHeight: 1.15, marginBottom: "1rem",
-                                letterSpacing: "-0.03em"
-                            }}>
-                                İşletmenize Uygun{" "}
-                                <span className="holographic-text">Planı Seçin</span>
+                        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} style={{ textAlign: "center", marginBottom: "4rem" }}>
+                            <div style={{ display: "inline-flex", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "100px", padding: "0.25rem", marginBottom: "2.5rem" }}>
+                                <button onClick={() => setViewMode("plans")} style={{ padding: "0.5rem 1.5rem", borderRadius: "100px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: "0.85rem", background: viewMode === "plans" ? "#2563eb" : "transparent", color: viewMode === "plans" ? "white" : "rgba(255,255,255,0.4)" }}>Standart</button>
+                                <button onClick={() => setViewMode("custom")} style={{ padding: "0.5rem 1.5rem", borderRadius: "100px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: "0.85rem", background: viewMode === "custom" ? "#2563eb" : "transparent", color: viewMode === "custom" ? "white" : "rgba(255,255,255,0.4)" }}>Özel Paket</button>
+                            </div>
+
+                            <h1 style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", fontWeight: 900, color: "white", marginBottom: "1rem", letterSpacing: "-0.03em" }}>
+                                {viewMode === "plans" ? "Hızınıza Hız Katın" : "Sadece Gerekeni Seçin"}
                             </h1>
-                            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "1.05rem", maxWidth: "500px", margin: "0 auto 2rem" }}>
-                                14 gün ücretsiz deneyin. Kredi kartı gerekmez, memnun kalmazsanız ücret alınmaz.
+                            <p style={{ color: "rgba(255,255,255,0.35)", fontSize: "1rem", maxWidth: "550px", margin: "0 auto 2rem" }}>
+                                {viewMode === "plans" 
+                                    ? "Hazır paketlerimizden birini seçerek anında başlayın."
+                                    : "İhtiyacın olmayan özelliklere para ödeme, kendi paketini yap."}
                             </p>
 
-                            {/* Toggle */}
-                            <div style={{
-                                display: "inline-flex", alignItems: "center", gap: "0",
-                                background: "rgba(255,255,255,0.05)",
-                                border: "1px solid rgba(255,255,255,0.1)",
-                                borderRadius: "9999px", padding: "0.3rem"
-                            }}>
-                                <button onClick={() => setYearly(false)} style={{
-                                    padding: "0.5rem 1.25rem", borderRadius: "9999px", border: "none",
-                                    cursor: "pointer", fontWeight: 600, fontSize: "0.875rem",
-                                    fontFamily: "inherit", transition: "all 0.25s",
-                                    background: !yearly ? "linear-gradient(135deg, #2563eb, #3b82f6)" : "transparent",
-                                    color: !yearly ? "white" : "rgba(255,255,255,0.5)",
-                                }}>Aylık</button>
-                                <button onClick={() => setYearly(true)} style={{
-                                    padding: "0.5rem 1.25rem", borderRadius: "9999px", border: "none",
-                                    cursor: "pointer", fontWeight: 600, fontSize: "0.875rem",
-                                    fontFamily: "inherit", transition: "all 0.25s",
-                                    background: yearly ? "linear-gradient(135deg, #2563eb, #3b82f6)" : "transparent",
-                                    color: yearly ? "white" : "rgba(255,255,255,0.5)",
-                                    display: "flex", alignItems: "center", gap: "0.5rem"
+                            {viewMode === "plans" && (
+                                <div style={{ display: "inline-flex", alignItems: "center", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "100px", padding: "0.2rem" }}>
+                                    <button onClick={() => setYearly(false)} style={{ padding: "0.4rem 1.25rem", borderRadius: "100px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: "0.75rem", background: !yearly ? "white" : "transparent", color: !yearly ? "black" : "rgba(255,255,255,0.3)" }}>Aylık</button>
+                                    <button onClick={() => setYearly(true)} style={{ padding: "0.4rem 1.25rem", borderRadius: "100px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: "0.75rem", background: yearly ? "white" : "transparent", color: yearly ? "black" : "rgba(255,255,255,0.3)" }}>Yıllık</button>
+                                </div>
+                            )}
+                        </motion.div>
+
+                        <AnimatePresence mode="wait">
+                            {viewMode === "plans" ? (
+                                <motion.div key="plans" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: "1rem" }}>
+                                        {plans.map((p) => <PlanCard key={p.id} plan={p} yearly={yearly} />)}
+                                    </div>
+                                    <ComparisonTable />
+                                </motion.div>
+                            ) : (
+                                <motion.div key="custom" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.02 }}>
+                                    {categories.map((cat, idx) => (
+                                        <div key={cat} style={{ marginBottom: idx === categories.length - 1 ? 0 : "3rem" }}>
+                                            <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1.5rem" }}>
+                                                <div style={{ height: "1px", flex: 1, background: "linear-gradient(to right, transparent, rgba(37,99,235,0.2))" }} />
+                                                <h3 style={{ fontSize: "0.9rem", fontWeight: 800, color: "rgba(37,99,235,0.8)", textTransform: "uppercase", letterSpacing: "0.2em" }}>{cat}</h3>
+                                                <div style={{ height: "1px", flex: 1, background: "linear-gradient(to left, transparent, rgba(37,99,235,0.2))" }} />
+                                            </div>
+                                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "1rem" }}>
+                                                {FEATURES.filter(f => f.category === cat).map((f: any) => {
+                                                    const active = selectedFeatures.includes(f.id);
+                                                    const isExpanded = expandedDetails.includes(f.id);
+                                                    return (
+                                                        <motion.div key={f.id} layout style={{
+                                                            background: active ? "rgba(37,99,235,0.08)" : "rgba(255,255,255,0.015)",
+                                                            border: `1px solid ${active ? "rgba(37,99,235,0.3)" : "rgba(255,255,255,0.04)"}`,
+                                                            borderRadius: "1.25rem", padding: "1.25rem", position: "relative", transition: "all 0.3s ease",
+                                                            cursor: "pointer"
+                                                        }} onClick={() => toggleFeature(f.id)}>
+                                                            <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                                                                <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "0.75rem", background: active ? "#2563eb" : "rgba(255,255,255,0.03)", display: "flex", alignItems: "center", justifyContent: "center", color: active ? "white" : "rgba(255,255,255,0.25)", transition: "all 0.3s" }}>
+                                                                    <f.icon style={{ width: "1.1rem", height: "1.1rem" }} />
+                                                                </div>
+                                                                <div style={{ flex: 1 }}>
+                                                                    <h3 style={{ fontSize: "0.95rem", fontWeight: 800, color: "white", marginBottom: "0.15rem" }}>{f.label}</h3>
+                                                                    <button 
+                                                                        onClick={(e) => toggleDetail(f.id, e)}
+                                                                        style={{ 
+                                                                            background: "none", border: "none", padding: 0, 
+                                                                            color: "#3b82f6", fontSize: "0.7rem", fontWeight: 700, 
+                                                                            cursor: "pointer", display: "flex", alignItems: "center", 
+                                                                            gap: "0.25rem", position: "relative", zIndex: 10
+                                                                        }}
+                                                                    >
+                                                                        {isExpanded ? "Kapat" : "Modül Hakkında"}
+                                                                    </button>
+                                                                </div>
+                                                                {active && (
+                                                                    <div style={{ background: "#2563eb", borderRadius: "50%", padding: "0.15rem", boxShadow: "0 0 10px rgba(37,99,235,0.3)" }}>
+                                                                        <Check style={{ width: "0.75rem", height: "0.75rem", color: "white" }} strokeWidth={3} />
+                                                                    </div>
+                                                                )}
+                                                            </div>
+
+                                                            <AnimatePresence>
+                                                                {isExpanded && (
+                                                                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} style={{ overflow: "hidden" }}>
+                                                                        <div style={{ paddingTop: "1rem", marginTop: "1rem", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                                                                            <p style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.5)", lineHeight: 1.5, marginBottom: "0.75rem" }}>{f.detailed}</p>
+                                                                            <div style={{ background: "rgba(34,197,94,0.05)", border: "1px solid rgba(34,197,94,0.1)", borderRadius: "0.75rem", padding: "0.75rem" }}>
+                                                                                <div style={{ color: "#4ade80", fontSize: "0.65rem", fontWeight: 800, marginBottom: "0.2rem" }}>FAYDA:</div>
+                                                                                <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.8)", fontStyle: "italic" }}>"{f.benefit}"</div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </motion.div>
+                                                                )}
+                                                            </AnimatePresence>
+                                                        </motion.div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        {/* Summary Bar */}
+                        <AnimatePresence>
+                            {selectedFeatures.length > 0 && viewMode === "custom" && (
+                                <motion.div initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }} style={{
+                                    position: "fixed", bottom: "3.5rem", left: "50%", transform: "translateX(-50%)",
+                                    background: "rgba(10, 15, 25, 0.8)", backdropFilter: "blur(24px) saturate(180%)", border: "1px solid rgba(37,99,235,0.3)",
+                                    padding: "1.25rem 3rem", borderRadius: "100px", display: "flex", alignItems: "center", gap: "3.5rem", zIndex: 1000, boxShadow: "0 30px 60px rgba(0,0,0,0.6)"
                                 }}>
-                                    Yıllık
-                                    <span style={{
-                                        background: "#22c55e", color: "white",
-                                        fontSize: "0.65rem", padding: "0.1rem 0.4rem",
-                                        borderRadius: "9999px", fontWeight: 700
-                                    }}>%20&apos;ye varan indirim</span>
-                                </button>
-                            </div>
-                        </motion.div>
+                                    <div style={{ display: "flex", alignItems: "center", gap: "1.25rem" }}>
+                                        <div style={{ width: "3.25rem", height: "3.25rem", borderRadius: "50%", background: "linear-gradient(135deg, #2563eb, #3b82f6)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: "1.35rem", color: "white", boxShadow: "0 0 20px rgba(37,99,235,0.4)" }}>{selectedFeatures.length}</div>
+                                        <div style={{ display: "flex", flexDirection: "column" }}>
+                                            <span style={{ fontWeight: 900, fontSize: "1.1rem", color: "white" }}>Harika Bir Paket!</span>
+                                            <span style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.45)" }}>Sizin için en uygun teklifi hazırlayalım</span>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => setShowForm(true)} style={{ background: "#2563eb", color: "white", border: "none", padding: "1rem 3.5rem", borderRadius: "100px", fontWeight: 900, fontSize: "1rem", cursor: "pointer", transition: "all 0.3s", boxShadow: "0 8px 25px rgba(37,99,235,0.5)" }}>Teklifi İncele →</button>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
 
-                        {/* Plans Grid */}
-                        <div style={{
-                            display: "grid",
-                            gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
-                            gap: "1.25rem",
-                            alignItems: "stretch"
-                        }}>
-                            {plans.map((plan) => (
-                                <PlanCard key={plan.id} plan={plan} yearly={yearly} />
-                            ))}
-                        </div>
+                        {/* Modal Form */}
+                        <AnimatePresence>
+                            {showForm && (
+                                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.9)", backdropFilter: "blur(16px)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem" }}>
+                                    <motion.div initial={{ y: 50, scale: 0.9, opacity: 0 }} animate={{ y: 0, scale: 1, opacity: 1 }} exit={{ y: 50, scale: 0.9, opacity: 0 }} style={{ background: "#0a0c10", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "3rem", padding: "4rem", width: "100%", maxWidth: "600px", position: "relative", boxShadow: "0 40px 100px rgba(0,0,0,0.8)" }}>
+                                        <button onClick={() => setShowForm(false)} style={{ position: "absolute", top: "2rem", right: "2rem", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "50%", width: "3.5rem", height: "3.5rem", color: "white", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><X style={{ width: "1.5rem" }} /></button>
+                                        
+                                        <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
+                                            <div style={{ width: "4rem", height: "4rem", background: "rgba(37,99,235,0.15)", borderRadius: "1.5rem", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1.5rem" }}><Zap style={{ color: "#2563eb", width: "2rem" }} /></div>
+                                            <h2 style={{ fontSize: "2.5rem", fontWeight: 950, marginBottom: "0.75rem", color: "white", letterSpacing: "-0.04em" }}>Neredeyse Bitti!</h2>
+                                            <p style={{ color: "rgba(255,255,255,0.45)", fontSize: "1.1rem" }}>{selectedFeatures.length} modül içeren size özel yapılandırma için bir adım kaldı.</p>
+                                        </div>
 
-                        {/* Comparison Table */}
-                        <ComparisonTable />
+                                        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+                                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
+                                                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                                                    <label style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.3)", fontWeight: 800, paddingLeft: "1rem" }}>AD SOYAD</label>
+                                                    <input required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} style={{ padding: "1.25rem", borderRadius: "1.25rem", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)", color: "white", fontSize: "1rem" }} />
+                                                </div>
+                                                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                                                    <label style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.3)", fontWeight: 800, paddingLeft: "1rem" }}>TELEFON NO</label>
+                                                    <input required value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} style={{ padding: "1.25rem", borderRadius: "1.25rem", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)", color: "white", fontSize: "1rem" }} />
+                                                </div>
+                                            </div>
+                                            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                                                <label style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.3)", fontWeight: 800, paddingLeft: "1rem" }}>İŞLETME ADI</label>
+                                                <input required value={formData.company} onChange={e => setFormData({ ...formData, company: e.target.value })} style={{ padding: "1.25rem", borderRadius: "1.25rem", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)", color: "white", fontSize: "1rem" }} />
+                                            </div>
+                                            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                                                <label style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.3)", fontWeight: 800, paddingLeft: "1rem" }}>E-POSTA</label>
+                                                <input type="email" required value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} style={{ padding: "1.25rem", borderRadius: "1.25rem", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)", color: "white", fontSize: "1rem" }} />
+                                            </div>
+                                            <button disabled={loading} style={{ marginTop: "1rem", background: "#2563eb", color: "white", border: "none", padding: "1.5rem", borderRadius: "1.5rem", fontWeight: 900, fontSize: "1.2rem", cursor: "pointer", transition: "all 0.3s", boxShadow: "0 10px 30px rgba(37,99,235,0.3)" }}>{loading ? "GÖNDERİLİYOR..." : "ÖZEL TEKLİFİMİ İLET"}</button>
+                                        </form>
+                                    </motion.div>
+                                </div>
+                            )}
+                        </AnimatePresence>
 
-                        {/* CTA Banner */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            style={{
-                                marginTop: "5rem",
-                                background: "rgba(37,99,235,0.07)",
-                                border: "1px solid rgba(37,99,235,0.2)",
-                                borderRadius: "1.5rem",
-                                padding: "3rem 2rem",
-                                textAlign: "center"
-                            }}
-                        >
-                            <div style={{
-                                display: "inline-flex", alignItems: "center", justifyContent: "center",
-                                width: "3.5rem", height: "3.5rem", borderRadius: "1rem",
-                                background: "rgba(37,99,235,0.15)", border: "1px solid rgba(37,99,235,0.3)",
-                                marginBottom: "1.5rem"
-                            }}>
-                                <PhoneCall style={{ width: "1.5rem", height: "1.5rem", color: "#60a5fa" }} />
-                            </div>
-                            <h2 style={{ fontSize: "clamp(1.5rem, 3vw, 2rem)", fontWeight: 700, color: "white", marginBottom: "0.75rem" }}>
-                                Hangi plan size uygun, emin değil misiniz?
-                            </h2>
-                            <p style={{ color: "rgba(255,255,255,0.5)", marginBottom: "2rem", maxWidth: "440px", margin: "0 auto 2rem", lineHeight: 1.7 }}>
-                                Satış uzmanlarımız işletmenize özel en uygun planı belirlesinler. Ücretsiz danışmanlık alın.
-                            </p>
-                            <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
-                                <Link href="/demo" className="btn-primary" style={{ fontSize: "0.95rem", padding: "0.875rem 2rem", display: "inline-flex", alignItems: "center", gap: "0.5rem", textDecoration: "none" }}>
-                                    Demo Talep Et <ArrowRight style={{ width: "1rem", height: "1rem" }} />
-                                </Link>
-                                <Link href="/#contact" style={{
-                                    fontSize: "0.95rem", padding: "0.875rem 2rem",
-                                    display: "inline-flex", alignItems: "center", gap: "0.5rem",
-                                    borderRadius: "9999px", border: "1px solid rgba(255,255,255,0.15)",
-                                    color: "rgba(255,255,255,0.75)", textDecoration: "none",
-                                    fontWeight: 600, background: "transparent",
-                                    transition: "all 0.2s"
-                                }}
-                                    onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.35)"; e.currentTarget.style.color = "white"; }}
-                                    onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)"; e.currentTarget.style.color = "rgba(255,255,255,0.75)"; }}
-                                >
-                                    Bize Ulaşın
-                                </Link>
-                            </div>
-                        </motion.div>
-
-                        <p style={{ textAlign: "center", color: "rgba(255,255,255,0.22)", fontSize: "0.85rem", marginTop: "2rem", lineHeight: 1.6 }}>
-                            Tüm fiyatlara KDV dahil değildir. İstediğiniz zaman iptal edebilirsiniz.
+                        <div style={{ marginTop: "7rem", textAlign: "center", color: "rgba(255,255,255,0.15)", fontSize: "0.9rem", lineHeight: 2 }}>
+                            © 2026 JetPOS Teknolojileri A.Ş. Tüm hakları saklıdır.
                             <br />
-                            <span style={{ color: "rgba(255,255,255,0.15)", fontSize: "0.75rem" }}>
-                                * Yapay zeka özellikleri (stok tahmini, satış analizi, otomatik kategorizasyon vb.) kullanım bazlı token ücretlendirmesine tabidir ve paket fiyatlarına dahil değildir.
-                            </span>
-                        </p>
+                            <span style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.1)" }}>Donanım gereksinimleri ve entegrasyon detayları için lütfen kullanım koşullarını inceleyin.</span>
+                        </div>
                     </div>
                 </div>
-
                 <Footer />
             </main>
+            {success && <motion.div initial={{ y: -100 }} animate={{ y: 20 }} style={{ position: "fixed", top: 0, left: "50%", transform: "translateX(-50%)", background: "#10b981", color: "white", padding: "1.25rem 3.5rem", borderRadius: "5rem", fontWeight: 900, fontSize: "1.1rem", zIndex: 10000, boxShadow: "0 20px 50px rgba(16,185,129,0.4)" }}>🚀 Harika! Talebiniz Alındı. <button onClick={() => setSuccess(false)} style={{ background: "none", border: "none", color: "white", marginLeft: "1.5rem", cursor: "pointer", fontSize: "1.25rem" }}>✕</button></motion.div>}
         </>
     );
 }
+

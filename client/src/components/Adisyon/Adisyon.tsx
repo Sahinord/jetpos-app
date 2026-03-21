@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { 
     LayoutDashboard, 
     Plus, 
@@ -28,7 +28,8 @@ import {
     Eraser,
     CalendarClock,
     UserCheck,
-    AlertTriangle
+    AlertTriangle,
+    ChevronDown
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
@@ -61,6 +62,7 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("all");
+    const [visibleCount, setVisibleCount] = useState(40); // Performans için sınırlı başlat
     const [sections, setSections] = useState<string[]>(["Genel", "Bahçe", "Teras", "VIP"]);
     const [activeSection, setActiveSection] = useState("Genel");
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -516,11 +518,24 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
         }
     };
 
-    const filteredProducts = products.filter((p: any) => {
-        const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.barcode?.includes(searchQuery);
-        const matchesCategory = selectedCategory === "all" || p.category_id === selectedCategory;
-        return matchesSearch && matchesCategory;
-    });
+    // --- OPTİMİZASYON: Ürün Listeleme & Filtreleme ---
+    const filteredProducts = useMemo(() => {
+        return products.filter((p: any) => {
+            const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.barcode?.includes(searchQuery);
+            const matchesCategory = selectedCategory === "all" || p.category_id === selectedCategory;
+            return matchesSearch && matchesCategory;
+        });
+    }, [products, searchQuery, selectedCategory]);
+
+    // DOM yükünü azaltmak için sadece görünür olanları al
+    const displayedProducts = useMemo(() => {
+        return filteredProducts.slice(0, visibleCount);
+    }, [filteredProducts, visibleCount]);
+
+    // Arama veya kategori değişince listeyi başa sar
+    useEffect(() => {
+        setVisibleCount(40);
+    }, [searchQuery, selectedCategory]);
 
     const subtotal = isSplitMode 
         ? tableOrders.filter((_, idx) => selectedItemsForPayment.includes(idx)).reduce((sum, item) => sum + (item.unit_price * item.quantity), 0)
@@ -732,22 +747,39 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                             </div>
 
                             {/* Order Search/Categories */}
-                            <div className="p-4 space-y-3 border-b border-border/10">
-                                <div className="relative group">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary group-focus-within:text-primary transition-colors" />
-                                    <input 
-                                        type="text" 
-                                        placeholder="Ürün ekle..."
-                                        className="w-full bg-white/5 border border-border/40 rounded-xl pl-10 pr-4 py-2 text-xs outline-none focus:border-primary/40 transition-all font-bold"
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                    />
+                            <div className="p-4 space-y-3 border-b border-border/10 bg-black/10">
+                                <div className="flex items-center gap-2">
+                                    <div className="relative flex-1 group">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary group-focus-within:text-primary transition-colors" />
+                                        <input 
+                                            type="text" 
+                                            placeholder="Ürün veya Barkod ara..."
+                                            className="w-full bg-white/5 border border-border/40 rounded-xl pl-10 pr-4 py-2.5 text-xs outline-none focus:border-primary/40 transition-all font-bold"
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    // Enter basıldığında ilk sonuca odaklanabilir veya sadece titreşim verebiliriz
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                    <button 
+                                        onClick={() => {
+                                            // Arama tetikleyici - live arama olduğu için şimdilik sadece görsel geri bildirim
+                                            showToast(`${searchQuery || 'Tüm'} ürünler listeleniyor`, "info");
+                                        }}
+                                        className="px-4 py-2.5 bg-primary/20 hover:bg-primary/30 border border-primary/40 text-primary rounded-xl text-[10px] font-black transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap"
+                                    >
+                                        <Search className="w-4 h-4" />
+                                        ARA
+                                    </button>
                                 </div>
                                 <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
                                     <button 
                                         onClick={() => setSelectedCategory("all")}
                                         className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase whitespace-nowrap transition-all border ${
-                                            selectedCategory === "all" ? 'bg-primary border-primary text-white' : 'bg-white/5 border-border/40 text-secondary'
+                                            selectedCategory === "all" ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' : 'bg-white/5 border-border/40 text-secondary hover:bg-white/10'
                                         }`}
                                     >
                                         Hepsi
@@ -757,7 +789,7 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                                             key={cat.id}
                                             onClick={() => setSelectedCategory(cat.id)}
                                             className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase whitespace-nowrap transition-all border ${
-                                                selectedCategory === cat.id ? 'bg-primary border-primary text-white' : 'bg-white/5 border-border/40 text-secondary'
+                                                selectedCategory === cat.id ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' : 'bg-white/5 border-border/40 text-secondary hover:bg-white/10'
                                             }`}
                                         >
                                             {cat.name}
@@ -766,110 +798,150 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                                 </div>
                             </div>
 
-                            {/* Order Items List */}
-                            <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
-                                {tableOrders.length > 0 ? (
-                                    tableOrders.map((item, idx) => (
-                                        <div key={idx} className={`flex items-center justify-between p-3 border rounded-xl group transition-all ${isSplitMode && selectedItemsForPayment.includes(idx) ? 'bg-primary/20 border-primary shadow-lg shadow-primary/10' : 'bg-white/5 border-border/10 hover:bg-white/10'}`}>
-                                            <div className="flex items-center gap-3">
-                                                {isSplitMode && (
-                                                    <button 
-                                                        onClick={() => {
-                                                            if (selectedItemsForPayment.includes(idx)) {
-                                                                setSelectedItemsForPayment(prev => prev.filter(i => i !== idx));
-                                                            } else {
-                                                                setSelectedItemsForPayment(prev => [...prev, idx]);
-                                                            }
-                                                        }}
-                                                        className="text-primary transition-all active:scale-90"
-                                                    >
-                                                        {selectedItemsForPayment.includes(idx) ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5 text-secondary" />}
-                                                    </button>
-                                                )}
-                                                <div className="flex flex-col">
-                                                    <span className={`text-xs font-black uppercase ${item.unit_price === 0 ? 'text-amber-400' : 'text-white'}`}>{item.name}</span>
-                                                    <span className="text-[10px] text-secondary font-bold">₺{item.unit_price} x {item.quantity}</span>
+                            {/* Main Content: Current Order (Upper) & Product Catalog (Lower) */}
+                            <div className="flex-1 flex flex-col min-h-0 bg-black/5">
+                                
+                                {/* 1. Current Order Items List (Scrollable, limited initial height) */}
+                                <div className="h-[280px] overflow-y-auto p-4 space-y-2 custom-scrollbar border-b border-border/10 shadow-inner">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-[10px] font-black text-secondary uppercase tracking-[0.2em] opacity-60">Mevcut Siparişler</span>
+                                        <span className="text-[10px] font-bold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-md">{tableOrders.length} Kalem</span>
+                                    </div>
+                                    {tableOrders.length > 0 ? (
+                                        tableOrders.map((item, idx) => (
+                                            <div key={idx} className={`flex items-center justify-between p-3 border rounded-xl group transition-all ${isSplitMode && selectedItemsForPayment.includes(idx) ? 'bg-primary/20 border-primary shadow-lg shadow-primary/10' : 'bg-white/5 border-border/10 hover:bg-white/10'}`}>
+                                                <div className="flex items-center gap-3">
+                                                    {isSplitMode && (
+                                                        <button 
+                                                            onClick={() => {
+                                                                if (selectedItemsForPayment.includes(idx)) {
+                                                                    setSelectedItemsForPayment(prev => prev.filter(i => i !== idx));
+                                                                } else {
+                                                                    setSelectedItemsForPayment(prev => [...prev, idx]);
+                                                                }
+                                                            }}
+                                                            className="text-primary transition-all active:scale-90"
+                                                        >
+                                                            {selectedItemsForPayment.includes(idx) ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5 text-secondary" />}
+                                                        </button>
+                                                    )}
+                                                    <div className="flex flex-col">
+                                                        <span className={`text-[11px] font-black uppercase ${item.unit_price === 0 ? 'text-amber-400' : 'text-white'}`}>{item.name}</span>
+                                                        <span className="text-[10px] text-secondary font-bold">₺{item.unit_price} x {item.quantity}</span>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div className="flex items-center gap-3">
-                                                {item.unit_price > 0 && (
+                                                <div className="flex items-center gap-3">
+                                                    {item.unit_price > 0 && (
+                                                        <button 
+                                                            onClick={() => {
+                                                                setConfirmState({
+                                                                    isOpen: true,
+                                                                    title: "Ürünü İkram Et",
+                                                                    message: `"${item.name}" ürününü ikram olarak kaydetmek istediğinize emin misiniz? (Fiyat 0₺ olarak güncellenecek)`,
+                                                                    onConfirm: () => {
+                                                                        setTableOrders(tableOrders.map((o, i) => i === idx ? { ...o, unit_price: 0, name: `(İKRAM) ${o.name}` } : o));
+                                                                        setConfirmState(prev => ({...prev, isOpen: false}));
+                                                                    }
+                                                                });
+                                                            }}
+                                                            className="p-1.5 text-secondary hover:text-amber-400 hover:bg-amber-400/10 rounded-lg transition-all focus:outline-none"
+                                                            title="İkram Et"
+                                                        >
+                                                            <Gift className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+                                                    <div className="flex items-center gap-2 bg-background/50 rounded-lg border border-border/20 p-1">
+                                                        <button 
+                                                            onClick={() => setTableOrders(tableOrders.map((o, i) => i === idx ? { ...o, quantity: Math.max(0.5, o.quantity - 1) } : o))}
+                                                            className="w-6 h-6 flex items-center justify-center hover:bg-white/5 rounded text-secondary"
+                                                        >-</button>
+                                                        <span className="text-xs font-black text-primary w-6 text-center">{item.quantity}</span>
+                                                        <button 
+                                                            onClick={() => setTableOrders(tableOrders.map((o, i) => i === idx ? { ...o, quantity: o.quantity + 1 } : o))}
+                                                            className="w-6 h-6 flex items-center justify-center hover:bg-white/5 rounded text-secondary"
+                                                        >+</button>
+                                                    </div>
                                                     <button 
                                                         onClick={() => {
                                                             setConfirmState({
                                                                 isOpen: true,
-                                                                title: "Ürünü İkram Et",
-                                                                message: `"${item.name}" ürününü ikram olarak kaydetmek istediğinize emin misiniz? (Fiyat 0₺ olarak güncellenecek)`,
+                                                                title: "Ürünü İptal Et",
+                                                                message: `"${item.name}" adlı ürünü adisyondan tamamen çıkarmak istediğinize emin misiniz?`,
                                                                 onConfirm: () => {
-                                                                    setTableOrders(tableOrders.map((o, i) => i === idx ? { ...o, unit_price: 0, name: `(İKRAM) ${o.name}` } : o));
+                                                                    setTableOrders(tableOrders.filter((_, i) => i !== idx));
                                                                     setConfirmState(prev => ({...prev, isOpen: false}));
                                                                 }
                                                             });
                                                         }}
-                                                        className="p-1.5 text-secondary hover:text-amber-400 hover:bg-amber-400/10 rounded-lg transition-all focus:outline-none"
-                                                        title="İkram Et"
+                                                        className="p-1.5 text-secondary hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all focus:outline-none"
+                                                        title="İptal Et"
                                                     >
-                                                        <Gift className="w-4 h-4" />
+                                                        <Trash2 className="w-4 h-4" />
                                                     </button>
-                                                )}
-                                                <div className="flex items-center gap-2 bg-background/50 rounded-lg border border-border/20 p-1">
-                                                    <button 
-                                                        onClick={() => setTableOrders(tableOrders.map((o, i) => i === idx ? { ...o, quantity: Math.max(0.5, o.quantity - 1) } : o))}
-                                                        className="w-6 h-6 flex items-center justify-center hover:bg-white/5 rounded text-secondary"
-                                                    >-</button>
-                                                    <span className="text-xs font-black text-primary w-6 text-center">{item.quantity}</span>
-                                                    <button 
-                                                        onClick={() => setTableOrders(tableOrders.map((o, i) => i === idx ? { ...o, quantity: o.quantity + 1 } : o))}
-                                                        className="w-6 h-6 flex items-center justify-center hover:bg-white/5 rounded text-secondary"
-                                                    >+</button>
                                                 </div>
-                                                <button 
-                                                    onClick={() => {
-                                                        setConfirmState({
-                                                            isOpen: true,
-                                                            title: "Ürünü İptal Et",
-                                                            message: `"${item.name}" adlı ürünü adisyondan tamamen çıkarmak istediğinize emin misiniz?`,
-                                                            onConfirm: () => {
-                                                                setTableOrders(tableOrders.filter((_, i) => i !== idx));
-                                                                setConfirmState(prev => ({...prev, isOpen: false}));
-                                                            }
-                                                        });
-                                                    }}
-                                                    className="p-1.5 text-secondary hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all focus:outline-none"
-                                                    title="İptal Et"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
                                             </div>
+                                        ))
+                                    ) : (
+                                        <div className="h-24 flex flex-col items-center justify-center text-secondary/10 border-2 border-dashed border-white/5 rounded-2xl">
+                                            <Coffee className="w-6 h-6 mb-2" />
+                                            <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Adisyon Boş</p>
                                         </div>
-                                    ))
-                                ) : (
-                                    <div className="h-full flex flex-col items-center justify-center text-secondary/20 p-10 text-center">
-                                        <Coffee className="w-16 h-16 mb-4" />
-                                        <p className="text-xs font-black uppercase tracking-widest">Adisyon Henüz Boş</p>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Product Quick Add View (Filtered) */}
-                            {searchQuery && (
-                                <div className="absolute inset-x-0 bottom-[140px] top-[140px] bg-card/95 backdrop-blur-2xl p-4 overflow-y-auto z-20 border-t border-border/20 shadow-2xl">
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {filteredProducts.map((p: any) => (
-                                            <button
-                                                key={p.id}
-                                                onClick={() => {
-                                                    addToOrder(p);
-                                                    setSearchQuery("");
-                                                }}
-                                                className="p-3 bg-white/5 border border-border/10 rounded-xl text-left hover:bg-primary/10 hover:border-primary/40 transition-all group"
-                                            >
-                                                <div className="text-[10px] font-black text-white truncate uppercase mb-1">{p.name}</div>
-                                                <div className="text-xs font-black text-primary">₺{p.sale_price}</div>
-                                            </button>
-                                        ))}
-                                    </div>
+                                    )}
                                 </div>
-                            )}
+
+                                {/* 2. Product Catalog / Selection Grid (Bottom Flex) */}
+                                <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-black/20">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <span className="text-[10px] font-black text-secondary uppercase tracking-[0.2em] opacity-60">Ürün Seçimi</span>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                            <span className="text-[10px] font-bold text-emerald-400">{filteredProducts.length} Mevcut Ürün</span>
+                                        </div>
+                                    </div>
+                                    
+                                    {displayedProducts.length > 0 ? (
+                                        <div className="flex flex-col gap-2 pb-10">
+                                            <div className="grid grid-cols-2 gap-2">
+                                                {displayedProducts.map((p: any) => (
+                                                    <motion.button
+                                                        key={p.id}
+                                                        whileHover={{ scale: 1.02 }}
+                                                        whileTap={{ scale: 0.98 }}
+                                                        onClick={() => addToOrder(p)}
+                                                        className="p-3 bg-white/[0.03] border border-white/[0.07] rounded-xl text-left hover:bg-primary/20 hover:border-primary/40 transition-all group flex flex-col gap-2 relative overflow-hidden"
+                                                    >
+                                                        <div className="absolute top-0 right-0 p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <Plus className="w-4 h-4 text-primary" />
+                                                        </div>
+                                                        <div className="text-[10px] font-black text-white truncate uppercase leading-tight pr-4 whitespace-normal break-words h-7 overflow-hidden line-clamp-2">
+                                                            {p.name}
+                                                        </div>
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-xs font-black text-primary">₺{p.sale_price}</span>
+                                                            <span className="text-[8px] bg-white/5 px-1.5 py-0.5 rounded font-bold text-secondary uppercase whitespace-nowrap">Seç</span>
+                                                        </div>
+                                                    </motion.button>
+                                                ))}
+                                            </div>
+                                            
+                                            {filteredProducts.length > visibleCount && (
+                                                <button 
+                                                    onClick={() => setVisibleCount(prev => prev + 40)}
+                                                    className="w-full py-3 mt-2 bg-white/5 hover:bg-white/10 border border-border/20 rounded-xl text-[10px] font-black text-secondary hover:text-white transition-all flex items-center justify-center gap-2 uppercase tracking-widest"
+                                                >
+                                                    <ChevronDown className="w-4 h-4" />
+                                                    Daha Fazla Ürün Göster ({filteredProducts.length - visibleCount} ürün daha var)
+                                                </button>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="h-full flex flex-col items-center justify-center p-10 text-center opacity-20">
+                                            <Search className="w-12 h-12 mb-3" />
+                                            <p className="text-xs font-black uppercase tracking-widest">Ürün Bulunamadı</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
 
                             {/* Panel Footer */}
                             <div className="p-4 bg-background/50 border-t border-border/40 space-y-4">

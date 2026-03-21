@@ -319,6 +319,61 @@ export default function Pricing() {
                         </motion.div>
                     ))}
                 </div>
+                
+                {/* Custom Package CTA */}
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6, delay: 0.3 }}
+                    style={{
+                        marginTop: "4rem",
+                        maxWidth: "1100px",
+                        margin: "4rem auto 0",
+                        padding: "2rem",
+                        borderRadius: "1.5rem",
+                        background: "rgba(37,99,235,0.05)",
+                        border: "1px dashed rgba(37,99,235,0.3)",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        textAlign: "center",
+                        gap: "1.5rem"
+                    }}
+                >
+                    <div>
+                        <h3 style={{ fontSize: "1.5rem", fontWeight: 800, color: "white", marginBottom: "0.5rem" }}>
+                            Aradığınız paketi bulamadınız mı?
+                        </h3>
+                        <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.95rem" }}>
+                            İhtiyacın olan özellikleri kendin seç, sana özel paketi oluştur ve anında teklif al.
+                        </p>
+                    </div>
+                    <Link href="/paket-olustur" style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "0.75rem",
+                        background: "#2563eb",
+                        color: "white",
+                        padding: "0.875rem 2rem",
+                        borderRadius: "1rem",
+                        fontWeight: 700,
+                        textDecoration: "none",
+                        transition: "all 0.3s"
+                    }}
+                    onMouseEnter={e => {
+                        e.currentTarget.style.transform = "scale(1.05)";
+                        e.currentTarget.style.boxShadow = "0 10px 30px rgba(37,99,235,0.4)";
+                    }}
+                    onMouseLeave={e => {
+                        e.currentTarget.style.transform = "scale(1)";
+                        e.currentTarget.style.boxShadow = "none";
+                    }}
+                    >
+                        <Zap style={{ width: "1.25rem", height: "1.25rem" }} />
+                        Kendi Paketini Oluştur
+                    </Link>
+                </motion.div>
 
                 {/* All plans link */}
                 <motion.div

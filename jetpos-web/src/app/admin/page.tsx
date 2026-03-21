@@ -63,7 +63,7 @@ export default function AdminPage() {
     const [authed, setAuthed] = useState(false);
     const [password, setPassword] = useState("");
     const [passwordError, setPasswordError] = useState(false);
-    const [activeTab, setActiveTab] = useState<"dashboard" | "requests" | "licenses" | "blog" | "about">("dashboard");
+    const [activeTab, setActiveTab] = useState<"dashboard" | "requests" | "licenses" | "blog" | "guides" | "about">("dashboard");
     const [blogPosts, setBlogPosts] = useState<any[]>([]);
     const [aboutContent, setAboutContent] = useState<Record<string, any>>({});
     const [showNewPost, setShowNewPost] = useState(false);
@@ -73,15 +73,21 @@ export default function AdminPage() {
     const [savingAbout, setSavingAbout] = useState(false);
     const [requests, setRequests] = useState<DemoRequest[]>([]);
     const [licenses, setLicenses] = useState<any[]>([]);
-    const [guides, setGuides] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState("");
     const [filterStatus, setFilterStatus] = useState<string>("all");
     const [selectedRequest, setSelectedRequest] = useState<DemoRequest | null>(null);
     const [selectedLicense, setSelectedLicense] = useState<any | null>(null);
     const [updatingId, setUpdatingId] = useState<string | null>(null);
-    const [stats, setStats] = useState({ totalRequests: 0, activeLicenses: 0, pendingCalls: 0 });
+    const [stats, setStats] = useState({ totalRequests: 0, activeLicenses: 0, activeGuides: 0, pendingCalls: 0 });
     const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+    // Guide state
+    const [guides, setGuides] = useState<any[]>([]);
+    const [showNewGuide, setShowNewGuide] = useState(false);
+    const [editingGuide, setEditingGuide] = useState<any | null>(null);
+    const [guideForm, setGuideForm] = useState({ title: "", content: "", order_index: 0, is_active: true });
+    const [savingGuide, setSavingGuide] = useState(false);
 
     // Form states for new license
     const [showNewLicense, setShowNewLicense] = useState(false);
@@ -90,7 +96,16 @@ export default function AdminPage() {
         user_email: "",
         plan_type: "PRO",
         license_key: "",
-        total_days: 365
+        total_days: 365,
+        download_link: "https://github.com/Sahinord/jetpos-app/releases/latest/download/JetPOS-Setup.exe",
+        features: {
+            adisyon: true,
+            mobile_app: true,
+            trendyol_go: false,
+            getir: false,
+            qnb_invoice: false,
+            ai_features: true
+        }
     });
 
     useEffect(() => {
@@ -106,6 +121,37 @@ export default function AdminPage() {
         loadLicenses();
         loadBlogPosts();
         loadAboutContent();
+        loadGuides();
+    };
+
+    const loadGuides = async () => {
+        try {
+            const res = await adminFetch("/api/admin/guides");
+            if (res.ok) setGuides(await res.json());
+        } catch (e) { console.error(e); }
+    };
+
+    const saveGuide = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSavingGuide(true);
+        try {
+            const res = editingGuide
+                ? await adminFetch(`/api/admin/guides?id=${editingGuide.id}`, { method: "PATCH", body: JSON.stringify(guideForm) })
+                : await adminFetch("/api/admin/guides", { method: "POST", body: JSON.stringify(guideForm) });
+            if (res.ok) showToast(editingGuide ? "Rehber güncellendi" : "Rehber oluşturuldu");
+            else showToast("Hata oluştu", "error");
+            setShowNewGuide(false);
+            setEditingGuide(null);
+            setGuideForm({ title: "", content: "", order_index: 0, is_active: true });
+            loadGuides();
+        } finally { setSavingGuide(false); }
+    };
+
+    const deleteGuide = async (id: string) => {
+        if (!confirm("Bu rehberi silmek istediğinize emin misiniz?")) return;
+        const res = await adminFetch(`/api/admin/guides?id=${id}`, { method: "DELETE" });
+        if (res.ok) showToast("Rehber silindi");
+        loadGuides();
     };
 
     const loadBlogPosts = async () => {
@@ -171,6 +217,7 @@ export default function AdminPage() {
         setStats({
             totalRequests: requests.length,
             activeLicenses: licenses.length,
+            activeGuides: guides.length,
             pendingCalls: requests.filter(r => r.status === "new").length
         });
     };
@@ -220,7 +267,22 @@ export default function AdminPage() {
                 showToast("Lisans başarıyla oluşturuldu");
                 setShowNewLicense(false);
                 loadLicenses();
-                setNewLicenseData({ client_name: "", user_email: "", plan_type: "PRO", license_key: "", total_days: 365 });
+                setNewLicenseData({ 
+            client_name: "", 
+            user_email: "", 
+            plan_type: "PRO", 
+            license_key: "", 
+            total_days: 365,
+            download_link: "https://github.com/Sahinord/jetpos-app/releases/latest/download/JetPOS-Setup.exe",
+            features: {
+                adisyon: true,
+                mobile_app: true,
+                trendyol_go: false,
+                getir: false,
+                qnb_invoice: false,
+                ai_features: true
+            }
+        });
             } else {
                 const err = await res.json();
                 showToast(err.message || err.error || "Kaydetme başarısız", "error");
@@ -348,6 +410,7 @@ export default function AdminPage() {
                             { id: "requests", label: "Talepler", icon: PhoneCall },
                             { id: "licenses", label: "Lisanslar", icon: CheckCircle2 },
                             { id: "blog", label: "Blog", icon: FileText },
+                            { id: "guides", label: "Rehberler", icon: BookOpen },
                             { id: "about", label: "Hakkımızda", icon: Building2 },
                         ].map(t => (
                             <button key={t.id} onClick={() => setActiveTab(t.id as any)} style={{
@@ -387,9 +450,10 @@ export default function AdminPage() {
 
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "1.5rem", marginBottom: "2.5rem" }}>
                             {[
-                                { label: "Toplam Talep", value: stats.totalRequests, icon: Mail, color: "#3b82f6", trend: "+12%" },
+                                 { label: "Toplam Talep", value: stats.totalRequests, icon: Mail, color: "#3b82f6", trend: "+12%" },
+                                { label: "Aktif Lisanslar", value: stats.activeLicenses, icon: CheckCircle2, color: "#22c55e", trend: "Stabil" },
+                                { label: "Eğitim Rehberleri", value: stats.activeGuides, icon: BookOpen, color: "#a855f7", trend: "Yeni" },
                                 { label: "Bekleyen Aramalar", value: stats.pendingCalls, icon: PhoneCall, color: "#f59e0b", trend: "Acil" },
-                                { label: "Aktif Lisanslar", value: stats.activeLicenses, icon: CheckCircle2, color: "#22c55e", trend: "Stabil" }
                             ].map((s, i) => (
                                 <motion.div key={i} whileHover={{ y: -5, background: "rgba(255,255,255,0.05)" }} style={{
                                     background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
@@ -574,6 +638,23 @@ export default function AdminPage() {
                                             <option value="PRO">PRO</option>
                                             <option value="ENTERPRISE">ENTERPRISE</option>
                                         </select>
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                                            <div>
+                                                <label style={{ display: "block", fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", marginBottom: "0.5rem", fontWeight: 600 }}>Download Link</label>
+                                                <input value={newLicenseData.download_link} onChange={e => setNewLicenseData({ ...newLicenseData, download_link: e.target.value })} style={{ width: "100%", padding: "0.75rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }} />
+                                            </div>
+                                            <div style={{ padding: "0.5rem", background: "rgba(255,255,255,0.02)", borderRadius: "0.75rem", border: "1px solid rgba(255,255,255,0.05)" }}>
+                                                <label style={{ display: "block", fontSize: "0.7rem", color: "rgba(255,255,255,0.5)", marginBottom: "0.5rem", fontWeight: 800, textTransform: "uppercase" }}>Özellikler</label>
+                                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.4rem" }}>
+                                                    {Object.entries(newLicenseData.features).map(([f, val]) => (
+                                                        <label key={f} style={{ display: "flex", alignItems: "center", gap: "0.3rem", cursor: "pointer", fontSize: "0.7rem" }}>
+                                                            <input type="checkbox" checked={val} onChange={e => setNewLicenseData({ ...newLicenseData, features: { ...newLicenseData.features, [f]: e.target.checked } })} />
+                                                            {f.replace(/_/g, " ")}
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
                                         <input type="number" placeholder="Gün Sayısı" value={newLicenseData.total_days} onChange={e => setNewLicenseData({ ...newLicenseData, total_days: parseInt(e.target.value) })} style={{ padding: "0.75rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }} />
                                         <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
                                             <button type="button" onClick={() => setShowNewLicense(false)} style={{ flex: 1, padding: "0.75rem", borderRadius: "0.75rem", border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "white", cursor: "pointer" }}>İptal</button>
@@ -686,6 +767,84 @@ export default function AdminPage() {
                                             <button type="submit" disabled={savingPost} style={{ flex: 2, padding: "0.875rem", borderRadius: "0.75rem", background: "#2563eb", border: "none", color: "white", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
                                                 {savingPost ? "Kaydediliyor..." : (editingPost ? "Güncelle" : "Oluştur")}
                                             </button>
+                                        </div>
+                                    </form>
+                                </motion.div>
+                            </div>
+                        )}
+                    </>
+                )}
+
+                {activeTab === "guides" && (
+                    <>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
+                            <div>
+                                <h2 style={{ fontSize: "1.5rem", fontWeight: 900, marginBottom: "0.25rem" }}>Müşteri Rehberi Yönetimi</h2>
+                                <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.875rem" }}>Müşteri portalındaki rehberleri buradan düzenleyin</p>
+                            </div>
+                            <div style={{ display: "flex", gap: "0.75rem" }}>
+                                <a href="/portal" target="_blank" style={{ padding: "0.6rem 1rem", borderRadius: "0.6rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "white", textDecoration: "none", fontSize: "0.85rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                                    <Globe style={{ width: "0.85rem" }} /> Portal Gör
+                                </a>
+                                <button onClick={() => { setEditingGuide(null); setGuideForm({ title: "", content: "", order_index: (guides.length + 1), is_active: true }); setShowNewGuide(true); }} style={{ padding: "0.6rem 1.25rem", borderRadius: "0.6rem", background: "#2563eb", border: "none", color: "white", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem" }}>
+                                    <Plus style={{ width: "0.9rem" }} /> Yeni Rehber
+                                </button>
+                            </div>
+                        </div>
+
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(400px, 1fr))", gap: "1rem" }}>
+                            {guides.map((guide) => (
+                                <motion.div key={guide.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                                    style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "1rem", padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                                            <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "0.75rem", background: "rgba(168,85,247,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#a855f7" }}>
+                                                <BookOpen style={{ width: "1.1rem" }} />
+                                            </div>
+                                            <div>
+                                                <div style={{ fontWeight: 800, fontSize: "1.1rem" }}>{guide.title}</div>
+                                                <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.3)" }}>Sıra: {guide.order_index}</div>
+                                            </div>
+                                        </div>
+                                        <div style={{ display: "flex", gap: "0.5rem" }}>
+                                            <button onClick={() => { setEditingGuide(guide); setGuideForm({ title: guide.title, content: guide.content, order_index: guide.order_index, is_active: guide.is_active }); setShowNewGuide(true); }} style={{ padding: "0.5rem", borderRadius: "0.50rem", background: "rgba(59,130,246,0.1)", color: "#60a5fa", border: "none" }}><Edit style={{ width: "0.9rem" }} /></button>
+                                            <button onClick={() => deleteGuide(guide.id)} style={{ padding: "0.5rem", borderRadius: "0.50rem", background: "rgba(239,68,68,0.1)", color: "#f87171", border: "none" }}><Trash2 style={{ width: "0.9rem" }} /></button>
+                                        </div>
+                                    </div>
+                                    <p style={{ fontSize: "0.875rem", color: "rgba(255,255,255,0.45)", lineHeight: 1.5, margin: 0, height: "4.5em", overflow: "hidden" }}>{guide.content}</p>
+                                    {!guide.is_active && <div style={{ fontSize: "0.7rem", color: "rgba(239,68,68,1)", fontWeight: 800 }}>• PASİF</div>}
+                                </motion.div>
+                            ))}
+                        </div>
+
+                        {showNewGuide && (
+                            <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: "1rem" }}>
+                                <motion.div initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} style={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "1.5rem", padding: "2rem", width: "100%", maxWidth: "600px" }}>
+                                    <h2 style={{ marginBottom: "1.5rem", fontWeight: 800 }}>{editingGuide ? "Rehberi Düzenle" : "Yeni Rehber Ekle"}</h2>
+                                    <form onSubmit={saveGuide} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+                                        <div>
+                                            <label style={{ display: "block", fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", marginBottom: "0.5rem", fontWeight: 600 }}>Başlık</label>
+                                            <input value={guideForm.title} onChange={e => setGuideForm({ ...guideForm, title: e.target.value })} required style={{ width: "100%", padding: "0.75rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }} />
+                                        </div>
+                                        <div>
+                                            <label style={{ display: "block", fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", marginBottom: "0.5rem", fontWeight: 600 }}>İçerik</label>
+                                            <textarea value={guideForm.content} onChange={e => setGuideForm({ ...guideForm, content: e.target.value })} rows={6} required style={{ width: "100%", padding: "0.75rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }} />
+                                        </div>
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                                            <div>
+                                                <label style={{ display: "block", fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", marginBottom: "0.5rem", fontWeight: 600 }}>Sıra (Görünüm Sırası)</label>
+                                                <input type="number" value={guideForm.order_index} onChange={e => setGuideForm({ ...guideForm, order_index: parseInt(e.target.value) })} style={{ width: "100%", padding: "0.75rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }} />
+                                            </div>
+                                            <div style={{ display: "flex", alignItems: "flex-end", paddingBottom: "0.75rem" }}>
+                                                <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
+                                                    <input type="checkbox" checked={guideForm.is_active} onChange={e => setGuideForm({ ...guideForm, is_active: e.target.checked })} />
+                                                    Aktif mi?
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+                                            <button type="button" onClick={() => setShowNewGuide(false)} style={{ flex: 1, padding: "0.875rem", borderRadius: "0.75rem", border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "white" }}>İptal</button>
+                                            <button type="submit" disabled={savingGuide} style={{ flex: 2, padding: "0.875rem", borderRadius: "0.75rem", background: "#2563eb", color: "white", fontWeight: 700 }}>{savingGuide ? "Kaydediliyor..." : (editingGuide ? "Güncelle" : "Oluştur")}</button>
                                         </div>
                                     </form>
                                 </motion.div>
