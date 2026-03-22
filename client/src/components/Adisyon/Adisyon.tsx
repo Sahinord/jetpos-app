@@ -137,8 +137,46 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
             setSelectedTable(null); // Şube değişince seçili masayı temizle
             setIsSplitMode(false);
             setSelectedItemsForPayment([]);
+
+            // TABLE REALTIME: Tüm masaların durumunu canlı takip et
+            const tablesChannel = supabase
+                .channel(`adisyon_tables_${currentTenant.id}`)
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'restaurant_tables',
+                    filter: `tenant_id=eq.${currentTenant.id}`
+                }, () => {
+                    fetchTables();
+                })
+                .subscribe();
+
+            return () => {
+                supabase.removeChannel(tablesChannel);
+            };
         }
     }, [currentTenant, activeWarehouse]);
+
+    // ORDER REALTIME: Seçili masanın siparişlerini canlı takip et
+    useEffect(() => {
+        if (currentTenant && selectedTable) {
+            const ordersChannel = supabase
+                .channel(`adisyon_orders_${selectedTable.id}`)
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'table_orders',
+                    filter: `table_id=eq.${selectedTable.id}`
+                }, () => {
+                    fetchTableOrder(selectedTable.id);
+                })
+                .subscribe();
+
+            return () => {
+                supabase.removeChannel(ordersChannel);
+            };
+        }
+    }, [selectedTable?.id, currentTenant?.id]);
 
     const fetchTables = async () => {
         setLoading(true);

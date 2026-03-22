@@ -134,15 +134,53 @@ export default function AdisyonMobile() {
     useEffect(() => {
         fetchTables();
         fetchProducts();
+
+        const tenantId = localStorage.getItem('tenantId');
+        if (!tenantId) return;
+
+        // TABLE REALTIME
+        const tablesChannel = supabase
+            .channel(`adisyon_mobile_tables_${tenantId}`)
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'restaurant_tables',
+                filter: `tenant_id=eq.${tenantId}`
+            }, () => {
+                fetchTables();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(tablesChannel);
+        };
     }, []);
 
     useEffect(() => {
+        const tenantId = localStorage.getItem('tenantId');
         if (selectedTable && selectedTable.status === 'occupied') {
             fetchTableOrders(selectedTable.id);
+
+            // ORDER REALTIME (Masa bazlı)
+            const ordersChannel = supabase
+                .channel(`adisyon_mobile_orders_${selectedTable.id}`)
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'table_orders',
+                    filter: `table_id=eq.${selectedTable.id}`
+                }, () => {
+                    fetchTableOrders(selectedTable.id);
+                })
+                .subscribe();
+
+            return () => {
+                supabase.removeChannel(ordersChannel);
+            };
         } else if (selectedTable) {
             setTableOrders([]);
         }
-    }, [selectedTable]);
+    }, [selectedTable?.id]);
 
     const addToOrder = (product: any) => {
         const existing = tableOrders.find(item => item.product_id === product.id);
