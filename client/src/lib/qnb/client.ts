@@ -61,14 +61,14 @@ export class QNBClient {
         this.connectorBaseUrl = qnb.connectorBaseUrl || (this.isTest ? 'https://connectortest.qnbesolutions.com.tr' : 'https://connector.qnbesolutions.com.tr');
 
         if (this.isTest) {
-            this.vkn = qnb.testVkn || '';
-            this.password = qnb.testPassword || '';
-            this.earsivUsername = qnb.testEarsivUsername || qnb.earsivUsername || this.vkn;
+            this.vkn = qnb.testVkn || qnb.vkn || '';
+            this.password = qnb.testPassword || qnb.password || '';
+            this.earsivUsername = qnb.testEarsivUsername || qnb.earsivUsername || qnb.username || this.vkn;
         } else {
-            // CANLI MOD: Test bilgilerine fallback yapmıyoruz ki hata net anlaşılsın
+            // CANLI MOD: Sadece canlı alanları kullan
             this.vkn = qnb.vkn || '';
             this.password = qnb.password || '';
-            this.earsivUsername = qnb.earsivUsername || this.vkn;
+            this.earsivUsername = qnb.earsivUsername || qnb.username || this.vkn;
             
             if (!this.vkn || this.vkn === '7910101045') {
                console.error(`[QNB Client] KRİTİK HATA: Canlı moddasınız ama VKN eksik veya Test VKN (7910101045) girilmiş!`);

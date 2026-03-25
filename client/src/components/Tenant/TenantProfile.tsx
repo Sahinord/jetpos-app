@@ -122,7 +122,7 @@ export default function TenantProfile() {
                 </div>
 
                 {/* Form Section */}
-                <div className="lg:col-span-2">
+                <div className="lg:col-span-2 space-y-8">
                     <div className="glass-card p-8 space-y-8">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
@@ -156,13 +156,6 @@ export default function TenantProfile() {
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Lisans Anahtarı</label>
-                            <div className="p-4 bg-slate-950/50 border border-white/5 rounded-2xl font-mono text-sm text-slate-500 text-center tracking-widest">
-                                {currentTenant?.license_key}
-                            </div>
-                        </div>
-
                         {error && (
                             <div className="flex items-center gap-3 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl">
                                 <AlertCircle className="w-5 h-5 text-rose-500 flex-shrink-0" />
@@ -191,6 +184,69 @@ export default function TenantProfile() {
                                 </>
                             )}
                         </button>
+                    </div>
+
+                    {/* License Details Section */}
+                    <div className="glass-card p-8 space-y-6">
+                        <div className="flex items-center justify-between border-b border-white/5 pb-6">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                                    <Shield className="w-5 h-5 text-primary" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-white">Lisans & Özellikler</h3>
+                                    <p className="text-xs text-slate-500 tracking-wide uppercase font-black uppercase">Plan: <span className="text-primary">{currentTenant?.features?.enterprise ? 'ENTERPRISE' : (currentTenant?.features?.pro ? 'PRO' : 'BASIC')}</span></p>
+                                </div>
+                            </div>
+
+                            <div className="text-right">
+                                <div className="flex items-center gap-2 text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-full">
+                                    <Clock className="w-3.5 h-3.5" />
+                                    <span className="text-xs font-black">
+                                        {currentTenant?.expires_at ? 
+                                            Math.max(0, Math.ceil((new Date(currentTenant.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : 0
+                                        } GÜN KALDI
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            {[
+                                { key: 'adisyon', label: 'Adisyon Sistemi' },
+                                { key: 'mobile_app', label: 'Mobil Uygulama' },
+                                { key: 'trendyol_go', label: 'Trendyol Entegr.' },
+                                { key: 'getir', label: 'Getir Yemek' },
+                                { key: 'qnb_invoice', label: 'E-Fatura (QNB)' },
+                                { key: 'ai_features', label: 'AI Asistan' },
+                            ].map((f) => (
+                                <div key={f.key} className={`p-4 rounded-2xl border transition-all ${currentTenant?.features?.[f.key] ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-white/5 bg-slate-950/50 opacity-40'}`}>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        {currentTenant?.features?.[f.key] ? (
+                                            <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                                        ) : (
+                                            <AlertCircle className="w-3 h-3 text-slate-600" />
+                                        )}
+                                        <span className={`text-[10px] font-black uppercase tracking-widest ${currentTenant?.features?.[f.key] ? 'text-emerald-500' : 'text-slate-600'}`}>
+                                            {currentTenant?.features?.[f.key] ? 'Aktif' : 'Pasif'}
+                                        </span>
+                                    </div>
+                                    <div className="text-xs font-bold text-slate-300">{f.label}</div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="p-4 bg-primary/5 border border-primary/10 rounded-2xl space-y-2">
+                             <div className="flex items-center gap-2 text-primary">
+                                <AlertCircle className="w-4 h-4" />
+                                <span className="text-[10px] font-black uppercase tracking-widest">Lisans Bilgisi</span>
+                             </div>
+                             <p className="text-xs text-slate-400 font-medium">Bu özellikler JetPOS Super Admin personeli tarafından yönetilmektedir. Ekstra özellik talepleriniz için <span className="text-primary font-bold">@FiveredSupport</span> ile iletişime geçebilirsiniz.</p>
+                             <div className="pt-2 font-mono text-[10px] text-slate-600 flex justify-between">
+                                <span>Lisans Anahtarı: {currentTenant?.license_key}</span>
+                                <span>Sürüm: v2.5.0-Enterprise</span>
+                             </div>
+                        </div>
                     </div>
                 </div>
             </div>

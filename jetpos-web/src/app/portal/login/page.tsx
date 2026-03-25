@@ -27,7 +27,7 @@ export default function PortalLoginPage() {
             }
 
             const res = await fetch(
-                `${supabaseUrl}/rest/v1/licenses?license_key=eq.${licenseKey}&user_email=eq.${email}&select=*`,
+                `${supabaseUrl}/rest/v1/tenants?license_key=eq.${licenseKey}&contact_email=eq.${email}&select=*`,
                 {
                     headers: {
                         apikey: anonKey,
@@ -39,7 +39,13 @@ export default function PortalLoginPage() {
             if (res.ok) {
                 const data = await res.json();
                 if (data.length > 0) {
-                    sessionStorage.setItem("jetpos_customer_auth", JSON.stringify(data[0]));
+                    // Normalize data for the portal (company_name -> client_name, contact_email -> user_email)
+                    const normalized = {
+                        ...data[0],
+                        client_name: data[0].company_name,
+                        user_email: data[0].contact_email
+                    };
+                    sessionStorage.setItem("jetpos_customer_auth", JSON.stringify(normalized));
                     router.push("/portal");
                 } else {
                     setError("Geçersiz lisans anahtarı veya e-posta.");

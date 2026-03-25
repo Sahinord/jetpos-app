@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { QNBClient } from '@/lib/qnb/client';
+import { getInvoiceProvider } from '@/lib/invoice-providers';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getTenantSettings } from '@/lib/tenant-settings';
 
@@ -23,7 +23,7 @@ export async function GET(
         }
 
         const tenantSettings = await getTenantSettings(invoice.tenant_id);
-        const client = new QNBClient(tenantSettings);
+        const provider = getInvoiceProvider(tenantSettings);
 
         // E-Arşiv tespiti: service_oid EP- veya EARSIV ile başlıyorsa ya da is_e_invoice=true ise EARSIV
         const serviceOid = invoice.service_oid || invoice.invoice_number || '';
@@ -34,10 +34,8 @@ export async function GET(
             serviceOid.length > 15; // E-Arşiv numaraları genellikle uzundur (EAA20260000000001 gibi)
         const docType = isEArsiv ? 'EARSIV' : 'EFATURA';
 
-        // 2. QNB'den durum sorgula
-        // Not: checkDocumentStatus daha önce sadece EFATURA için yazılmış olabilir, 
-        // QNBClient içinde e-Arşiv desteğini kontrol etmeliyiz.
-        const status = await client.checkDocumentStatus(invoice.service_oid || invoice.invoice_number, docType);
+        // 2. Sağlayıcıdan durum sorgula
+        const status = await provider.checkStatus(serviceOid, docType);
 
         if (status) {
             // 3. Veritabanını güncelle

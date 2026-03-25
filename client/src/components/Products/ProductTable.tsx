@@ -31,7 +31,7 @@ import SmartScanner from "@/components/Tools/SmartScanner";
 import { useTenant } from "@/lib/tenant-context";
 
 
-export default function ProductTable({ products, onEdit, onDelete, onAdd, onManageCategories, onBulkImport, onClearAll, onToggleAllCampaign, campaignRate, hideFilters = false, limit, onRefresh, showToast, onViewChangeLogs, isPriceSyncEnabled = false, isStockSyncEnabled = false }: any) {
+export default function ProductTable({ products, onEdit, onDelete, onAdd, onManageCategories, onBulkImport, onClearAll, onToggleAllCampaign, campaignRate, hideFilters = false, limit, onRefresh, showToast, onViewChangeLogs, isPriceSyncEnabled = false, isStockSyncEnabled = false, lowStockThreshold = 10 }: any) {
     const [search, setSearch] = useState("");
     const [filter, setFilter] = useState("all"); // all, active, passive, campaign
     const [sortBy, setSortBy] = useState("name-asc"); // name-asc, name-desc, stock-asc, stock-desc, price-desc
@@ -764,7 +764,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <div className="flex flex-col items-center">
-                                                <span className={`text-base font-black tracking-tight ${currentStock <= 2 ? 'text-rose-500 animate-pulse' : 'text-foreground'}`}>
+                                                <span className={`text-base font-black tracking-tight ${currentStock <= lowStockThreshold ? 'text-rose-500 animate-pulse' : 'text-foreground'}`}>
                                                     {product.unit?.toLowerCase() === 'kg'
                                                         ? (currentStock >= 1
                                                             ? `${currentStock.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
@@ -774,8 +774,8 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                                 </span>
                                                 <div className={`mt-1 h-1 w-12 rounded-full bg-primary/10 overflow-hidden`}>
                                                     <div
-                                                        className={`h-full ${currentStock <= 2 ? 'bg-rose-500' : 'bg-emerald-500'}`}
-                                                        style={{ width: `${Math.min(100, (currentStock / 10) * 100)}%` }}
+                                                        className={`h-full ${currentStock <= lowStockThreshold ? 'bg-rose-500' : 'bg-emerald-500'}`}
+                                                        style={{ width: `${Math.min(100, (currentStock / (lowStockThreshold * 2)) * 100)}%` }}
                                                     />
                                                 </div>
                                             </div>

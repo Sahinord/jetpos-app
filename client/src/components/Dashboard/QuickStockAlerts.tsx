@@ -9,12 +9,13 @@ interface QuickStockAlertsProps {
     products: any[];
     saleItems: any[];
     onViewAll: () => void;
+    lowStockThreshold?: number;
 }
 
-export default function QuickStockAlerts({ products, saleItems, onViewAll }: QuickStockAlertsProps) {
+export default function QuickStockAlerts({ products, saleItems, onViewAll, lowStockThreshold = 10 }: QuickStockAlertsProps) {
     const alerts = useMemo(() => {
-        return calculateStockPredictions(products, saleItems);
-    }, [products, saleItems]);
+        return calculateStockPredictions(products, saleItems, lowStockThreshold);
+    }, [products, saleItems, lowStockThreshold]);
 
     if (alerts.length === 0) return null;
 
@@ -30,10 +31,10 @@ export default function QuickStockAlerts({ products, saleItems, onViewAll }: Qui
                             <Sparkles className="w-5 h-5 text-white animate-pulse" />
                         </div>
                         <div>
-                            <h3 className="text-sm font-black text-white uppercase tracking-[0.2em] leading-tight">Akıllı Stok Öngörüsü</h3>
+                            <h3 className="text-sm font-black text-foreground uppercase tracking-[0.2em] leading-tight">Akıllı Stok Öngörüsü</h3>
                             <div className="flex items-center gap-1.5 mt-1">
                                 <div className="w-1 h-1 rounded-full bg-emerald-500" />
-                                <span className="text-[10px] font-black text-secondary/40 uppercase tracking-widest">AI Destekli Analiz</span>
+                                <span className="text-[10px] font-black text-secondary/60 uppercase tracking-widest">AI Destekli Analiz</span>
                             </div>
                         </div>
                     </div>
@@ -71,7 +72,7 @@ export default function QuickStockAlerts({ products, saleItems, onViewAll }: Qui
                     >
                         <div className="flex flex-col min-w-0 flex-1 pr-4">
                             <div className="flex items-center gap-2">
-                                <p className="font-bold text-sm text-white uppercase tracking-tight truncate">{alert.name}</p>
+                                <p className="font-bold text-sm text-foreground uppercase tracking-tight truncate">{alert.name}</p>
                                 {alert.riskLevel === 'high' && <AlertTriangle className="w-3.5 h-3.5 text-rose-500 shrink-0" />}
                             </div>
 

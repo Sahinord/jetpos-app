@@ -78,6 +78,7 @@ export default function Home() {
   const [adisyonCart, setAdisyonCart] = useState<any[]>([]);
   const [isAdisyonStoreSpecificEnabled, setIsAdisyonStoreSpecificEnabled] = useState(true);
   const [isAdisyonAutoOpenReservationEnabled, setIsAdisyonAutoOpenReservationEnabled] = useState(true);
+  const [lowStockThreshold, setLowStockThreshold] = useState(10);
 
   const [toast, setToast] = useState({ isVisible: false, message: "", type: "success" as ToastType });
 
@@ -127,6 +128,9 @@ export default function Home() {
     const savedAdisyonAutoOpen = localStorage.getItem('isAdisyonAutoOpenReservationEnabled');
     if (savedAdisyonAutoOpen !== null) setIsAdisyonAutoOpenReservationEnabled(savedAdisyonAutoOpen === 'true');
 
+    const savedLowStockThreshold = localStorage.getItem('lowStockThreshold');
+    if (savedLowStockThreshold !== null) setLowStockThreshold(parseInt(savedLowStockThreshold));
+
     // Hash control for profile tab
     const handleHashChange = () => {
       if (window.location.hash === '#profile') {
@@ -152,7 +156,8 @@ export default function Home() {
     localStorage.setItem('cashDrawerPrinterName', cashDrawerPrinterName);
     localStorage.setItem('isAdisyonStoreSpecificEnabled', isAdisyonStoreSpecificEnabled.toString());
     localStorage.setItem('isAdisyonAutoOpenReservationEnabled', isAdisyonAutoOpenReservationEnabled.toString());
-  }, [theme, isBeepEnabled, showHelpIcons, isEmployeeModuleEnabled, isPriceSyncEnabled, isStockSyncEnabled, isWarehouseStockDeductionEnabled, isCashDrawerEnabled, cashDrawerPrinterName, isAdisyonStoreSpecificEnabled, isAdisyonAutoOpenReservationEnabled]);
+    localStorage.setItem('lowStockThreshold', lowStockThreshold.toString());
+  }, [theme, isBeepEnabled, showHelpIcons, isEmployeeModuleEnabled, isPriceSyncEnabled, isStockSyncEnabled, isWarehouseStockDeductionEnabled, isCashDrawerEnabled, cashDrawerPrinterName, isAdisyonStoreSpecificEnabled, isAdisyonAutoOpenReservationEnabled, lowStockThreshold]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -781,7 +786,7 @@ export default function Home() {
       <main className="flex-1 overflow-y-auto max-h-screen relative flex flex-col min-w-0">
         <TopBar activeTab={activeTab} onMenuClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)} />
 
-        <div className="p-2 lg:p-3 w-full flex-1 flex flex-col min-h-0">
+        <div className="responsive-container py-6 flex-1 flex flex-col min-h-0">
           {activeTab === "home" && (
             <HomePage onNavigate={setActiveTab} />
           )}
@@ -804,7 +809,7 @@ export default function Home() {
                   }))} />
                 </div>
                 <div>
-                  <QuickStockAlerts products={products} saleItems={saleItems} onViewAll={() => setActiveTab('alerts')} />
+                  <QuickStockAlerts products={products} saleItems={saleItems} onViewAll={() => setActiveTab('alerts')} lowStockThreshold={lowStockThreshold} />
                 </div>
 
               </div>
@@ -848,6 +853,7 @@ export default function Home() {
                   showToast={showToast}
                   isPriceSyncEnabled={isPriceSyncEnabled}
                   isStockSyncEnabled={isStockSyncEnabled}
+                  lowStockThreshold={lowStockThreshold}
                 />
               </section>
             </div>
@@ -902,6 +908,8 @@ export default function Home() {
                 setIsAdisyonAutoOpenReservationEnabled={setIsAdisyonAutoOpenReservationEnabled}
                 currentTenant={currentTenant}
                 showToast={showToast}
+                lowStockThreshold={lowStockThreshold}
+                setLowStockThreshold={setLowStockThreshold}
               />
             </div>
           )}
@@ -932,6 +940,7 @@ export default function Home() {
                 showToast={showToast}
                 isPriceSyncEnabled={isPriceSyncEnabled}
                 isStockSyncEnabled={isStockSyncEnabled}
+                lowStockThreshold={lowStockThreshold}
                 onViewChangeLogs={() => setActiveTab("product-logs")}
               />
             </div>
@@ -954,7 +963,11 @@ export default function Home() {
           )}
           {activeTab === "calculator" && (
             <div className="max-w-[1500px] mx-auto w-full">
-              <ProfitCalculator />
+              <ProfitCalculator 
+                products={products} 
+                onRefresh={fetchData} 
+                showToast={showToast} 
+              />
             </div>
           )}
           {activeTab === "simulation" && (

@@ -19,7 +19,7 @@ export default function InvoicePanel() {
     const [view, setView] = useState<'sales' | 'trendyol' | 'archive' | 'efatura' | 'irsaliye'>('sales');
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState<string | null>(null);
-    const [qnbConfig, setQnbConfig] = useState<any>(null);
+    const [invoiceConfig, setInvoiceConfig] = useState<any>(null);
     const [mounted, setMounted] = useState(false);
     const [successInvoice, setSuccessInvoice] = useState<any>(null);
 
@@ -129,7 +129,9 @@ export default function InvoicePanel() {
             setSales(salesRes.data || []);
             setTrendyolOrders(trendyolRes.data || []);
             setArchive(archiveRes.data || []);
-            if (qnbRes.data) setQnbConfig(qnbRes.data);
+            
+            // Ayarları tenants tablosundan veya RPC'den alabiliriz
+            if (qnbRes.data) setInvoiceConfig(qnbRes.data);
 
             // Veriler geldikten sonra yüklemeyi hemen kapat
             setLoading(false);
@@ -260,9 +262,6 @@ export default function InvoicePanel() {
     };
 
     const handleSend = async () => {
-        // if (!qnbConfig) return alert("Hata: QNB yapılandırması eksik (.env kontrol edin)."); 
-        // Backend .env'den okuyacak, o yüzden client-side config check'i esnetilebilir.
-
         setProcessing(editModal.id);
         try {
             // Fatura Tipi Belirleme (Basit Mantık)
@@ -278,8 +277,8 @@ export default function InvoicePanel() {
                 note: `Platform: ${editModal.platform}`,
 
                 supplier: {
-                    vkn: process.env.NEXT_PUBLIC_QNB_TEST_VKN || (currentTenant as any)?.tax_number || '1111111111',
-                    name: (currentTenant as any)?.company_name || 'Demo Şirket A.Ş.',
+                    vkn: (currentTenant as any)?.tax_number || process.env.NEXT_PUBLIC_QNB_TEST_VKN || '1111111111',
+                    name: (currentTenant as any)?.company_name || 'JetPOS İşletmesi',
                     city: (currentTenant as any)?.city || 'İstanbul',
                     district: (currentTenant as any)?.district || '',
                     taxOffice: (currentTenant as any)?.tax_office || ''
@@ -340,11 +339,11 @@ export default function InvoicePanel() {
                 fetchData();
                 setView('archive'); // Direk arşive geç
             } else {
-                throw new Error(result.error || 'Bilinmeyen hata');
+                alert(`Fatura Gönderim Hatası: ${result.error || 'Bilinmeyen bir hata oluştu.'}`);
             }
         } catch (err: any) {
-            console.error(err);
-            alert("Gönderim Hatası: " + err.message);
+            console.error('Send Fatal Error:', err);
+            alert(`Sistem Hatası: ${err.message}`);
         } finally {
             setProcessing(null);
         }

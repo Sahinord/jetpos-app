@@ -21,19 +21,27 @@
 
 :root:has(.theme-light),
 .theme-light {
-  --color-background: #ffffff !important;
-  --color-foreground: #1e3a8a !important;
-  --color-card: #ffffff !important;
-  --color-card-foreground: #1e3a8a !important;
-  --color-border: #dbeafe !important;
-  --color-primary: #2563eb !important;
-  --color-secondary: #3b82f6 !important;
-  --color-accent: #10b981 !important;
-  --color-sidebar: #ffffff !important;
-  --color-sidebar-foreground: #1e3a8a !important;
-  --color-sidebar-muted: #64748b !important;
-  --color-input-bg: #f8fafc !important;
-  --color-input-border: #dbeafe !important;
+  --color-background: #f8fafc;
+  --color-foreground: #020617;
+  --color-card: #ffffff;
+  --color-card-foreground: #020617;
+  --color-border: #e2e8f0;
+  --color-primary: #2563eb;
+  --color-secondary: #64748b;
+  --color-accent: #10b981;
+  --color-sidebar: #ffffff;
+  --color-sidebar-foreground: #0f172a;
+  --color-sidebar-muted: #64748b;
+  --color-input-bg: #ffffff;
+  --color-input-border: #e2e8f0;
+  --color-muted: #94a3b8;
+  --color-faded: #f1f5f9;
+}
+
+/* Dark mode (default) variable refinements */
+:root {
+  --color-muted: #64748b;
+  --color-faded: rgba(255, 255, 255, 0.05);
 }
 
 .theme-wood {
@@ -46,6 +54,8 @@
   --color-accent: #d4a017;
   --color-input-bg: #3d2b1f;
   --color-input-border: #5d4037;
+  --color-muted: #a1887f;
+  --color-faded: rgba(255, 255, 255, 0.05);
 }
 
 .theme-glass {
@@ -58,6 +68,8 @@
   --color-accent: #059669;
   --color-input-bg: rgba(255, 255, 255, 0.5);
   --color-input-border: rgba(255, 255, 255, 0.3);
+  --color-muted: #64748b;
+  --color-faded: rgba(255, 255, 255, 0.1);
 }
 
 @layer base {
@@ -68,7 +80,6 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-weight: 400;
-    /* Zarif ve temiz metinler ❄️ */
     line-height: 1.6;
     letter-spacing: normal;
     overflow-x: hidden;
@@ -82,7 +93,6 @@
   h6 {
     font-family: var(--font-jakarta), system-ui, -apple-system, sans-serif;
     font-weight: 800;
-    /* Güçlü ve Bold Başlıklar 🦾 */
     letter-spacing: -0.01em;
     line-height: 1.2;
     color: var(--color-foreground);
@@ -95,13 +105,18 @@
 
   ::selection {
     background-color: rgba(99, 102, 241, 0.2);
-    color: white;
+    color: inherit;
   }
 }
 
 @layer components {
 
-  /* Dynamic Background Glows - Subtle and minimal */
+  /* Responsive Main Container */
+  .responsive-container {
+    @apply w-full mx-auto px-4 md:px-6 lg:px-8 max-w-[1600px];
+  }
+
+  /* Dynamic Background Glows */
   .glow-container {
     position: fixed;
     inset: 0;
@@ -116,7 +131,7 @@
     left: -10%;
     width: 35%;
     height: 35%;
-    background: radial-gradient(circle, color-mix(in srgb, var(--color-primary), transparent 90%), transparent 70%);
+    background: radial-gradient(circle, color-mix(in srgb, var(--color-primary), transparent 92%), transparent 70%);
     filter: blur(100px);
     border-radius: 100%;
     animation: pulse 10s ease-in-out infinite alternate;
@@ -128,7 +143,7 @@
     right: -10%;
     width: 35%;
     height: 35%;
-    background: radial-gradient(circle, color-mix(in srgb, var(--color-primary), transparent 90%), transparent 70%);
+    background: radial-gradient(circle, color-mix(in srgb, var(--color-primary), transparent 92%), transparent 70%);
     filter: blur(100px);
     border-radius: 100%;
     animation: pulse 10s ease-in-out infinite alternate-reverse;
@@ -146,35 +161,35 @@
     }
   }
 
-  /* Glass card - Clean and minimal */
+  /* Glass card - High Fidelity */
   .glass-card {
-    background: color-mix(in srgb, var(--color-card), transparent 10%);
+    background: color-mix(in srgb, var(--color-card), transparent 15%);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     color: var(--color-foreground);
     border: 1px solid var(--color-border);
-    border-radius: 1rem;
+    border-radius: 1.25rem;
     padding: 1.5rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
   }
 
   .theme-light .glass-card {
-    background: #ffffff !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
-    border: 1px solid #e2e8f0 !important;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+    border: 1px solid #f1f5f9;
   }
 
   .glass-card:hover {
-    border-color: color-mix(in srgb, var(--color-primary), transparent 70%);
+    border-color: color-mix(in srgb, var(--color-primary), transparent 60%);
     transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.15);
   }
 
-  /* Premium sidebar - Clean minimal design */
+  /* Premium sidebar */
   .premium-sidebar {
-    background: var(--color-sidebar) !important;
-    color: var(--color-sidebar-foreground) !important;
+    background: var(--color-sidebar);
+    color: var(--color-sidebar-foreground);
     border-right: 1px solid var(--color-border);
     transition: all 0.2s ease;
   }
@@ -187,28 +202,39 @@
 
   .sidebar-item:hover {
     color: var(--color-sidebar-foreground);
-    background: color-mix(in srgb, var(--color-sidebar-foreground), transparent 95%);
+    background: color-mix(in srgb, var(--color-primary), transparent 95%);
   }
 
   .sidebar-item-active {
-    background: color-mix(in srgb, var(--color-primary), transparent 90%) !important;
-    color: var(--color-sidebar-foreground) !important;
-    border-left: 2px solid var(--color-primary);
-    box-shadow: inset 10px 0 20px -10px color-mix(in srgb, var(--color-primary), transparent 80%);
-    font-weight: 600;
+    background: color-mix(in srgb, var(--color-primary), transparent 92%);
+    color: var(--color-primary);
+    border-left: 3px solid var(--color-primary);
+    font-weight: 700;
   }
 
-  /* Mikro-Animasyonlar 🚀 */
+  .theme-light .sidebar-item-active {
+    background: #eff6ff;
+    color: #2563eb;
+  }
+
+  /* Responsive fixes for cards */
+  @media (max-width: 768px) {
+    .glass-card {
+      padding: 1rem;
+      border-radius: 1rem;
+    }
+  }
+
+  /* Mikro-Animasyonlar */
   .animate-in {
-    animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   }
 
   @keyframes slideUp {
     from {
       opacity: 0;
-      transform: translateY(10px);
+      transform: translateY(12px);
     }
-
     to {
       opacity: 1;
       transform: translateY(0);
@@ -222,113 +248,86 @@
   .interactive-button:active {
     transform: scale(0.96);
   }
-
-  /* Status Badge Animations */
-  .badge-pulse {
-    animation: statusPulse 2s infinite;
-  }
-
-  @keyframes statusPulse {
-    0% {
-      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
-    }
-
-    70% {
-      box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
-    }
-
-    100% {
-      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
-    }
-  }
 }
 
-/* Custom Scrollbar Styling - Modern Blue Design */
+/* Custom Scrollbar Styling */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.02);
-  border-radius: 10px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(to bottom, #3b82f6, #2563eb);
-  border-radius: 10px;
-  border: 3px solid transparent;
-  background-clip: content-box;
+  background: color-mix(in srgb, var(--color-primary), transparent 70%);
+  border-radius: 20px;
   transition: all 0.3s;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #1d4ed8;
-  border: 1px solid transparent;
-  background-clip: content-box;
+  background: var(--color-primary);
 }
 
-/* Specific design for light mode scrollbar */
 .theme-light ::-webkit-scrollbar-thumb {
-  background: linear-gradient(to bottom, #60a5fa, #3b82f6);
+  background: #cbd5e1;
 }
 
 .theme-light ::-webkit-scrollbar-thumb:hover {
-  background: #2563eb;
+  background: #94a3b8;
 }
 
 /* Firefox Support */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #3b82f6 transparent;
+  scrollbar-color: color-mix(in srgb, var(--color-primary), transparent 70%) transparent;
 }
 
 .theme-light {
-  scrollbar-color: #60a5fa transparent;
+  scrollbar-color: #cbd5e1 transparent;
 }
 
-/* Select/Dropdown Premium Styling */
-select {
-  background-color: var(--color-card) !important;
+/* Form Styles */
+input, select, textarea {
+  background-color: var(--color-input-bg) !important;
   color: var(--color-foreground) !important;
+  border: 1px solid var(--color-input-border) !important;
+  transition: all 0.2s ease;
 }
 
-select option {
-  background-color: var(--color-card);
-  color: var(--color-foreground);
-  padding: 8px 12px;
+input::placeholder {
+  color: var(--color-muted);
+  opacity: 0.5;
 }
 
-select option:hover,
-select option:focus,
-select option:checked {
-  background-color: var(--color-primary) !important;
-  color: white;
-}
-
-/* Input Focus States */
-input:focus,
-select:focus,
-textarea:focus {
+input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--color-primary) !important;
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary), transparent 80%);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary), transparent 90%);
+  background-color: var(--color-card) !important;
 }
 
-/* Checkbox Custom Style */
-input[type="checkbox"] {
-  accent-color: #3b82f6;
+/* Specific light mode fixes for invisibile text */
+.theme-light .text-white {
+  color: #0f172a !important;
 }
 
-/* Number input spinner hide */
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
-  appearance: none;
-  -webkit-appearance: none;
-  margin: 0;
+.theme-light .bg-white\/5,
+.theme-light .bg-primary\/5 {
+  background-color: #f1f5f9 !important;
 }
 
-input[type="number"] {
-  appearance: textfield;
-  -moz-appearance: textfield;
+.theme-light .border-white\/5 {
+  border-color: #e2e8f0 !important;
+}
+
+.theme-light .text-secondary\/40,
+.theme-light .text-secondary\/30 {
+  color: #64748b !important;
+}
+
+/* Utility to force visibility in light mode */
+.theme-light .force-visible {
+  color: #020617 !important;
 }

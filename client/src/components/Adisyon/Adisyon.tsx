@@ -1,16 +1,16 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { 
-    LayoutDashboard, 
-    Plus, 
-    Users, 
-    Clock, 
-    ChevronRight, 
-    Utensils, 
-    Trash2, 
-    Save, 
-    CreditCard, 
+import {
+    LayoutDashboard,
+    Plus,
+    Users,
+    Clock,
+    ChevronRight,
+    Utensils,
+    Trash2,
+    Save,
+    CreditCard,
     Banknote,
     Coffee,
     Pizza,
@@ -63,7 +63,7 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("all");
     const [visibleCount, setVisibleCount] = useState(40); // Performans için sınırlı başlat
-    const [sections, setSections] = useState<string[]>(["Genel", "Bahçe", "Teras", "VIP"]);
+    const [sections, setSections] = useState<string[]>(["Genel"]);
     const [activeSection, setActiveSection] = useState("Genel");
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isSettling, setIsSettling] = useState(false);
@@ -71,7 +71,7 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
     const [newTableName, setNewTableName] = useState("");
     const [newTableSection, setNewTableSection] = useState("Genel");
     const [newTableCapacity, setNewTableCapacity] = useState(4);
-    
+
     // Yeni Eklenen Gelişmiş Restaurant Özellikleri
     const [isSplitMode, setIsSplitMode] = useState(false);
     const [selectedItemsForPayment, setSelectedItemsForPayment] = useState<number[]>([]);
@@ -79,7 +79,7 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
     const [transferTargetId, setTransferTargetId] = useState("");
 
     // Custom Popups & Rezervasyon
-    const [confirmState, setConfirmState] = useState({ isOpen: false, title: "", message: "", onConfirm: () => {} });
+    const [confirmState, setConfirmState] = useState({ isOpen: false, title: "", message: "", onConfirm: () => { } });
     const [isReserveModalOpen, setIsReserveModalOpen] = useState(false);
     const [reserveName, setReserveName] = useState("");
     const [reserveTime, setReserveTime] = useState("");
@@ -112,12 +112,12 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                             const { error } = await supabase.from('restaurant_tables')
                                 .update({ status: 'occupied', reservation_name: null, reservation_time: null })
                                 .eq('id', table.id);
-                            
+
                             if (!error) {
                                 showToast(`🔔 ${table.reservation_name} müşterisi geldi! Masa (${table.name}) otomatik olarak 'Dolu' yapıldı.`, "success");
                                 fetchTables();
                             }
-                        } catch (error) {}
+                        } catch (error) { }
                     }
                 }
             });
@@ -186,7 +186,7 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                 .select('*')
                 .eq('tenant_id', currentTenant?.id)
                 .eq('is_active', true);
-            
+
             if (activeWarehouse?.id && isAdisyonStoreSpecificEnabled) {
                 query = query.eq('warehouse_id', activeWarehouse.id);
             }
@@ -194,9 +194,9 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
             const { data, error } = await query.order('name');
 
             if (error) throw error;
-            
+
             setTables(data || []);
-            
+
             // Extract unique sections
             if (data && data.length > 0) {
                 const uniqueSections = Array.from(new Set(data.map((t: any) => t.section)));
@@ -266,7 +266,7 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                         .from('restaurant_tables')
                         .update({ is_active: false })
                         .eq('id', id);
-                    
+
                     if (error) throw error;
                     showToast("Masa silindi", "success");
                     setSelectedTable(null);
@@ -287,7 +287,7 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                 .eq('tenant_id', currentTenant?.id);
 
             if (error) throw error;
-            
+
             setTableOrders(data.map((item: any) => ({
                 id: item.id,
                 product_id: item.product_id,
@@ -314,26 +314,26 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
 
         const existing = tableOrders.find(item => item.product_id === product.id);
         if (existing) {
-            setTableOrders(tableOrders.map(item => 
+            setTableOrders(tableOrders.map(item =>
                 item.product_id === product.id ? { ...item, quantity: item.quantity + 1 } : item
             ));
         } else {
-            setTableOrders([...tableOrders, { 
-                product_id: product.id, 
-                name: product.name, 
-                quantity: 1, 
-                unit_price: product.sale_price 
+            setTableOrders([...tableOrders, {
+                product_id: product.id,
+                name: product.name,
+                quantity: 1,
+                unit_price: product.sale_price
             }]);
         }
     };
 
     const saveOrder = async () => {
         if (!selectedTable || tableOrders.length === 0) return;
-        
+
         try {
             // 1. Delete existing orders for this table to overwrite (simple approach for now)
             await supabase.from('table_orders').delete().eq('table_id', selectedTable.id).eq('tenant_id', currentTenant?.id);
-            
+
             // 2. Insert new orders
             const payload = tableOrders.map(item => ({
                 table_id: selectedTable.id,
@@ -342,18 +342,18 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                 quantity: item.quantity,
                 unit_price: item.unit_price
             }));
-            
+
             const { error: orderError } = await supabase.from('table_orders').insert(payload);
             if (orderError) throw orderError;
-            
+
             // 3. Update table status and remove reservation_name if reserved
             const { error: tableError } = await supabase
                 .from('restaurant_tables')
                 .update({ status: 'occupied', reservation_name: null })
                 .eq('id', selectedTable.id);
-            
+
             if (tableError) throw tableError;
-            
+
             showToast("Adisyon kaydedildi", "success");
             setSelectedTable(null);
             fetchTables();
@@ -370,7 +370,7 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                 .update({ table_id: transferTargetId })
                 .eq('table_id', selectedTable.id)
                 .eq('tenant_id', currentTenant?.id);
-            
+
             await supabase.from('restaurant_tables')
                 .update({ status: 'occupied' })
                 .eq('id', transferTargetId);
@@ -403,10 +403,10 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                 try {
                     const { error: orderError } = await supabase.from('table_orders').delete().eq('table_id', selectedTable.id);
                     if (orderError) throw orderError;
-                    
+
                     const { error: tableError } = await supabase.from('restaurant_tables').update({ status: 'empty', reservation_name: null, reservation_time: null }).eq('id', selectedTable.id);
                     if (tableError) throw tableError;
-                    
+
                     showToast("Masa başarıyla boşaltıldı", "success");
                     setTableOrders([]);
                     setSelectedTable(null);
@@ -427,13 +427,13 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
         if (!reserveName || !reserveTableId || !reserveTime) return;
         setLoading(true);
         try {
-            const { error } = await supabase.from('restaurant_tables').update({ 
-                status: 'reserved', 
+            const { error } = await supabase.from('restaurant_tables').update({
+                status: 'reserved',
                 reservation_name: reserveName,
                 reservation_time: new Date(reserveTime).toISOString()
             }).eq('id', reserveTableId);
             if (error) throw error;
-            
+
             showToast(`Masa rezerve edildi`, "success");
             setIsReserveModalOpen(false);
             setReserveName("");
@@ -457,13 +457,13 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                 setConfirmState(prev => ({ ...prev, isOpen: false }));
                 setLoading(true);
                 try {
-                    const { error } = await supabase.from('restaurant_tables').update({ 
-                        status: 'empty', 
+                    const { error } = await supabase.from('restaurant_tables').update({
+                        status: 'empty',
                         reservation_name: null,
-                        reservation_time: null 
+                        reservation_time: null
                     }).eq('id', selectedTable.id);
                     if (error) throw error;
-                    
+
                     showToast("Rezervasyon iptal edildi", "success");
                     setSelectedTable(null);
                     fetchTables();
@@ -481,12 +481,12 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
         const target = new Date(timeStr).getTime();
         const now = currentTime.getTime();
         const diff = target - now;
-        
+
         if (diff < 0) return "SÜRESİ DOLDU";
-        
+
         const hours = Math.floor(diff / (1000 * 60 * 60));
         const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        
+
         if (hours > 0) return `${hours}sa ${mins}dk Kaldı`;
         return `${mins}dk Kaldı`;
     };
@@ -497,13 +497,13 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
             showToast("Ödenecek ürün seçilmedi!", "error");
             return;
         }
-        
+
         setIsSettling(true);
         try {
-            const itemsToProcess = isSplitMode 
+            const itemsToProcess = isSplitMode
                 ? tableOrders.filter((_, idx) => selectedItemsForPayment.includes(idx))
                 : tableOrders;
-            const remainingItems = isSplitMode 
+            const remainingItems = isSplitMode
                 ? tableOrders.filter((_, idx) => !selectedItemsForPayment.includes(idx))
                 : [];
 
@@ -575,7 +575,7 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
         setVisibleCount(40);
     }, [searchQuery, selectedCategory]);
 
-    const subtotal = isSplitMode 
+    const subtotal = isSplitMode
         ? tableOrders.filter((_, idx) => selectedItemsForPayment.includes(idx)).reduce((sum, item) => sum + (item.unit_price * item.quantity), 0)
         : tableOrders.reduce((sum, item) => sum + (item.unit_price * item.quantity), 0);
 
@@ -599,16 +599,15 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                         <button
                             key={section}
                             onClick={() => setActiveSection(section)}
-                            className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
-                                activeSection === section 
-                                ? 'bg-primary text-white shadow-lg shadow-primary/20' 
-                                : 'bg-white/5 text-secondary hover:bg-white/10'
-                            }`}
+                            className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${activeSection === section
+                                    ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                                    : 'bg-white/5 text-secondary hover:bg-white/10'
+                                }`}
                         >
                             {section.toUpperCase()}
                         </button>
                     ))}
-                    <button 
+                    <button
                         onClick={() => {
                             setEditingTable(null);
                             setNewTableName("");
@@ -634,31 +633,27 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                                 onClick={() => handleTableSelect(table)}
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
-                                className={`relative p-6 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-3 ${
-                                    table.status === 'reserved' ? 'h-48' : 'h-40'
-                                } ${
-                                    table.status === 'occupied' 
-                                    ? 'bg-rose-500/10 border-rose-500/40 shadow-lg shadow-rose-500/5' 
-                                    : table.status === 'reserved'
-                                    ? 'bg-purple-500/10 border-purple-500/40 shadow-lg shadow-purple-500/5'
-                                    : table.status === 'dirty'
-                                    ? 'bg-amber-500/10 border-amber-500/40'
-                                    : 'bg-card/40 border-border/40 hover:border-primary/40'
-                                }`}
+                                className={`relative p-6 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-3 ${table.status === 'reserved' ? 'h-48' : 'h-40'
+                                    } ${table.status === 'occupied'
+                                        ? 'bg-rose-500/10 border-rose-500/40 shadow-lg shadow-rose-500/5'
+                                        : table.status === 'reserved'
+                                            ? 'bg-purple-500/10 border-purple-500/40 shadow-lg shadow-purple-500/5'
+                                            : table.status === 'dirty'
+                                                ? 'bg-amber-500/10 border-amber-500/40'
+                                                : 'bg-card/40 border-border/40 hover:border-primary/40'
+                                    }`}
                             >
-                                <div className={`p-3 rounded-xl ${
-                                    table.status === 'occupied' ? 'bg-rose-500/20 text-rose-500' 
-                                    : table.status === 'reserved' ? 'bg-purple-500/20 text-purple-400'
-                                    : 'bg-primary/10 text-primary'
-                                }`}>
+                                <div className={`p-3 rounded-xl ${table.status === 'occupied' ? 'bg-rose-500/20 text-rose-500'
+                                        : table.status === 'reserved' ? 'bg-purple-500/20 text-purple-400'
+                                            : 'bg-primary/10 text-primary'
+                                    }`}>
                                     <Grid3X3 className="w-6 h-6" />
                                 </div>
-                                <span className={`text-sm font-black uppercase ${
-                                    table.status === 'occupied' ? 'text-rose-500' 
-                                    : table.status === 'reserved' ? 'text-purple-400'
-                                    : 'text-foreground'
-                                }`}>{table.name}</span>
-                                
+                                <span className={`text-sm font-black uppercase ${table.status === 'occupied' ? 'text-rose-500'
+                                        : table.status === 'reserved' ? 'text-purple-400'
+                                            : 'text-foreground'
+                                    }`}>{table.name}</span>
+
                                 {table.status === 'occupied' && (
                                     <div className="absolute top-2 right-2 px-2 py-0.5 bg-rose-500 text-[10px] font-black text-white rounded-md animate-pulse">
                                         DOLU
@@ -676,11 +671,10 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                                             {table.reservation_name}
                                         </div>
                                         {table.reservation_time && (
-                                            <div className={`text-[9px] font-black px-1.5 py-0.5 rounded string ${
-                                                new Date(table.reservation_time).getTime() < currentTime.getTime()
-                                                ? "bg-rose-500/20 text-rose-500 animate-pulse"
-                                                : "bg-purple-500/20 text-purple-300"
-                                            }`}>
+                                            <div className={`text-[9px] font-black px-1.5 py-0.5 rounded string ${new Date(table.reservation_time).getTime() < currentTime.getTime()
+                                                    ? "bg-rose-500/20 text-rose-500 animate-pulse"
+                                                    : "bg-purple-500/20 text-purple-300"
+                                                }`}>
                                                 {getReservationCountdown(table.reservation_time)}
                                             </div>
                                         )}
@@ -707,7 +701,7 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                                     <p className="text-[10px] text-secondary font-bold uppercase tracking-widest">{selectedTable.section}</p>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <button 
+                                    <button
                                         onClick={() => {
                                             setEditingTable(selectedTable);
                                             setNewTableName(selectedTable.name);
@@ -720,16 +714,16 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                                     >
                                         <Edit2 className="w-5 h-5" />
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={() => setIsTransferModalOpen(true)}
                                         className="p-2 text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-all"
                                         title="Masayı Taşı / Birleştir"
                                     >
                                         <ArrowRightLeft className="w-5 h-5" />
                                     </button>
-                                    
+
                                     {selectedTable.status === 'empty' && (
-                                        <button 
+                                        <button
                                             onClick={() => {
                                                 setReserveTableId(selectedTable.id);
                                                 setReserveTime(getLocalDateTimeString());
@@ -743,7 +737,7 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                                     )}
 
                                     {selectedTable.status === 'occupied' && (
-                                        <button 
+                                        <button
                                             onClick={handleClearTable}
                                             className="p-2 text-amber-500 hover:bg-amber-500/10 rounded-lg transition-all"
                                             title="Masayı Boşalt (Sıfırla)"
@@ -752,7 +746,7 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                                         </button>
                                     )}
                                     {selectedTable.status === 'reserved' && (
-                                        <button 
+                                        <button
                                             onClick={handleCancelReservation}
                                             className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all"
                                             title="Rezervasyonu İptal Et"
@@ -761,7 +755,7 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                                         </button>
                                     )}
 
-                                    <button 
+                                    <button
                                         onClick={() => handleDeleteTable(selectedTable.id)}
                                         className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all"
                                         title="Masayı Sil"
@@ -769,12 +763,12 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                                         <Trash2 className="w-5 h-5" />
                                     </button>
                                     <div className="w-px h-6 bg-border/20 mx-1" />
-                                    <button 
+                                    <button
                                         onClick={() => {
                                             setSelectedTable(null);
                                             setIsSplitMode(false);
                                             setSelectedItemsForPayment([]);
-                                        }} 
+                                        }}
                                         className="p-2 hover:bg-white/5 rounded-lg text-secondary hover:text-white transition-all bg-white/5"
                                         title="Kapat"
                                     >
@@ -789,8 +783,8 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                                 <div className="flex items-center gap-2">
                                     <div className="relative flex-1 group">
                                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary group-focus-within:text-primary transition-colors" />
-                                        <input 
-                                            type="text" 
+                                        <input
+                                            type="text"
                                             placeholder="Ürün veya Barkod ara..."
                                             className="w-full bg-white/5 border border-border/40 rounded-xl pl-10 pr-4 py-2.5 text-xs outline-none focus:border-primary/40 transition-all font-bold"
                                             value={searchQuery}
@@ -802,7 +796,7 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                                             }}
                                         />
                                     </div>
-                                    <button 
+                                    <button
                                         onClick={() => {
                                             // Arama tetikleyici - live arama olduğu için şimdilik sadece görsel geri bildirim
                                             showToast(`${searchQuery || 'Tüm'} ürünler listeleniyor`, "info");
@@ -814,21 +808,19 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                                     </button>
                                 </div>
                                 <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-                                    <button 
+                                    <button
                                         onClick={() => setSelectedCategory("all")}
-                                        className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase whitespace-nowrap transition-all border ${
-                                            selectedCategory === "all" ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' : 'bg-white/5 border-border/40 text-secondary hover:bg-white/10'
-                                        }`}
+                                        className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase whitespace-nowrap transition-all border ${selectedCategory === "all" ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' : 'bg-white/5 border-border/40 text-secondary hover:bg-white/10'
+                                            }`}
                                     >
                                         Hepsi
                                     </button>
                                     {categories.map((cat: any) => (
-                                        <button 
+                                        <button
                                             key={cat.id}
                                             onClick={() => setSelectedCategory(cat.id)}
-                                            className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase whitespace-nowrap transition-all border ${
-                                                selectedCategory === cat.id ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' : 'bg-white/5 border-border/40 text-secondary hover:bg-white/10'
-                                            }`}
+                                            className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase whitespace-nowrap transition-all border ${selectedCategory === cat.id ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' : 'bg-white/5 border-border/40 text-secondary hover:bg-white/10'
+                                                }`}
                                         >
                                             {cat.name}
                                         </button>
@@ -838,7 +830,7 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
 
                             {/* Main Content: Current Order (Upper) & Product Catalog (Lower) */}
                             <div className="flex-1 flex flex-col min-h-0 bg-black/5">
-                                
+
                                 {/* 1. Current Order Items List (Scrollable, limited initial height) */}
                                 <div className="h-[280px] overflow-y-auto p-4 space-y-2 custom-scrollbar border-b border-border/10 shadow-inner">
                                     <div className="flex items-center justify-between mb-2">
@@ -850,7 +842,7 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                                             <div key={idx} className={`flex items-center justify-between p-3 border rounded-xl group transition-all ${isSplitMode && selectedItemsForPayment.includes(idx) ? 'bg-primary/20 border-primary shadow-lg shadow-primary/10' : 'bg-white/5 border-border/10 hover:bg-white/10'}`}>
                                                 <div className="flex items-center gap-3">
                                                     {isSplitMode && (
-                                                        <button 
+                                                        <button
                                                             onClick={() => {
                                                                 if (selectedItemsForPayment.includes(idx)) {
                                                                     setSelectedItemsForPayment(prev => prev.filter(i => i !== idx));
@@ -870,7 +862,7 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                                                 </div>
                                                 <div className="flex items-center gap-3">
                                                     {item.unit_price > 0 && (
-                                                        <button 
+                                                        <button
                                                             onClick={() => {
                                                                 setConfirmState({
                                                                     isOpen: true,
@@ -878,7 +870,7 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                                                                     message: `"${item.name}" ürününü ikram olarak kaydetmek istediğinize emin misiniz? (Fiyat 0₺ olarak güncellenecek)`,
                                                                     onConfirm: () => {
                                                                         setTableOrders(tableOrders.map((o, i) => i === idx ? { ...o, unit_price: 0, name: `(İKRAM) ${o.name}` } : o));
-                                                                        setConfirmState(prev => ({...prev, isOpen: false}));
+                                                                        setConfirmState(prev => ({ ...prev, isOpen: false }));
                                                                     }
                                                                 });
                                                             }}
@@ -889,17 +881,17 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                                                         </button>
                                                     )}
                                                     <div className="flex items-center gap-2 bg-background/50 rounded-lg border border-border/20 p-1">
-                                                        <button 
+                                                        <button
                                                             onClick={() => setTableOrders(tableOrders.map((o, i) => i === idx ? { ...o, quantity: Math.max(0.5, o.quantity - 1) } : o))}
                                                             className="w-6 h-6 flex items-center justify-center hover:bg-white/5 rounded text-secondary"
                                                         >-</button>
                                                         <span className="text-xs font-black text-primary w-6 text-center">{item.quantity}</span>
-                                                        <button 
+                                                        <button
                                                             onClick={() => setTableOrders(tableOrders.map((o, i) => i === idx ? { ...o, quantity: o.quantity + 1 } : o))}
                                                             className="w-6 h-6 flex items-center justify-center hover:bg-white/5 rounded text-secondary"
                                                         >+</button>
                                                     </div>
-                                                    <button 
+                                                    <button
                                                         onClick={() => {
                                                             setConfirmState({
                                                                 isOpen: true,
@@ -907,7 +899,7 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                                                                 message: `"${item.name}" adlı ürünü adisyondan tamamen çıkarmak istediğinize emin misiniz?`,
                                                                 onConfirm: () => {
                                                                     setTableOrders(tableOrders.filter((_, i) => i !== idx));
-                                                                    setConfirmState(prev => ({...prev, isOpen: false}));
+                                                                    setConfirmState(prev => ({ ...prev, isOpen: false }));
                                                                 }
                                                             });
                                                         }}
@@ -936,7 +928,7 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                                             <span className="text-[10px] font-bold text-emerald-400">{filteredProducts.length} Mevcut Ürün</span>
                                         </div>
                                     </div>
-                                    
+
                                     {displayedProducts.length > 0 ? (
                                         <div className="flex flex-col gap-2 pb-10">
                                             <div className="grid grid-cols-2 gap-2">
@@ -961,9 +953,9 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                                                     </motion.button>
                                                 ))}
                                             </div>
-                                            
+
                                             {filteredProducts.length > visibleCount && (
-                                                <button 
+                                                <button
                                                     onClick={() => setVisibleCount(prev => prev + 40)}
                                                     className="w-full py-3 mt-2 bg-white/5 hover:bg-white/10 border border-border/20 rounded-xl text-[10px] font-black text-secondary hover:text-white transition-all flex items-center justify-center gap-2 uppercase tracking-widest"
                                                 >
@@ -986,7 +978,7 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                                 <div className="flex justify-between items-center px-2">
                                     <div className="flex flex-col">
                                         <span className="text-xs font-black text-secondary uppercase tracking-widest">{isSplitMode ? 'Seçilen Tutar' : 'Toplam Tutar'}</span>
-                                        {isSplitMode && <span className="text-[9px] text-primary mt-1 font-bold bg-primary/10 px-2 py-0.5 rounded-md w-fit hover:bg-primary/20 cursor-pointer transition-colors" onClick={() => {setIsSplitMode(false); setSelectedItemsForPayment([])}}>PARÇALI ÖDEMEYİ İPTAL ET</span>}
+                                        {isSplitMode && <span className="text-[9px] text-primary mt-1 font-bold bg-primary/10 px-2 py-0.5 rounded-md w-fit hover:bg-primary/20 cursor-pointer transition-colors" onClick={() => { setIsSplitMode(false); setSelectedItemsForPayment([]) }}>PARÇALI ÖDEMEYİ İPTAL ET</span>}
                                     </div>
                                     <div className="flex items-center gap-3">
                                         {!isSplitMode && tableOrders.length > 0 && (
@@ -999,7 +991,7 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-3 gap-2">
-                                    <button 
+                                    <button
                                         onClick={saveOrder}
                                         disabled={isSettling}
                                         className="flex flex-col items-center justify-center gap-1 py-3 bg-white/5 hover:bg-white/10 border border-border/40 rounded-xl text-[10px] font-black text-white transition-all active:scale-95 disabled:opacity-50"
@@ -1007,7 +999,7 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                                         <Save size={16} />
                                         KAYDET
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={() => handleSettle('NAKİT')}
                                         disabled={isSettling || tableOrders.length === 0}
                                         className="flex flex-col items-center justify-center gap-1 py-3 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/40 text-emerald-500 rounded-xl text-[10px] font-black transition-all active:scale-95 disabled:opacity-50"
@@ -1015,7 +1007,7 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                                         <Banknote size={16} />
                                         NAKİT
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={() => handleSettle('KREDİ KARTI')}
                                         disabled={isSettling || tableOrders.length === 0}
                                         className="flex flex-col items-center justify-center gap-1 py-3 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/40 text-blue-500 rounded-xl text-[10px] font-black transition-all active:scale-95 disabled:opacity-50"
@@ -1051,8 +1043,8 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                                 <form onSubmit={handleSaveTable} className="space-y-6">
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-secondary ml-1">Masa Adı</label>
-                                        <input 
-                                            type="text" 
+                                        <input
+                                            type="text"
                                             value={newTableName}
                                             onChange={(e) => setNewTableName(e.target.value)}
                                             placeholder="Örn: Masa 12"
@@ -1063,7 +1055,7 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
 
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-secondary ml-1">Bölüm</label>
-                                        <select 
+                                        <select
                                             value={newTableSection}
                                             onChange={(e) => setNewTableSection(e.target.value)}
                                             className="w-full bg-black/20 border border-border/40 rounded-2xl p-4 text-white outline-none focus:border-primary/40 transition-all font-bold appearance-none"
@@ -1078,9 +1070,9 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-secondary ml-1">Kapasite</label>
                                         <div className="flex items-center gap-4">
-                                            <input 
-                                                type="range" 
-                                                min="1" 
+                                            <input
+                                                type="range"
+                                                min="1"
                                                 max="20"
                                                 value={newTableCapacity}
                                                 onChange={(e) => setNewTableCapacity(parseInt(e.target.value))}
@@ -1091,14 +1083,14 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                                     </div>
 
                                     <div className="flex gap-4 pt-4">
-                                        <button 
+                                        <button
                                             type="button"
                                             onClick={() => setIsSettingsOpen(false)}
                                             className="flex-1 py-4 bg-white/5 hover:bg-white/10 text-secondary font-black rounded-2xl transition-all uppercase tracking-widest text-xs"
                                         >
                                             İptal
                                         </button>
-                                        <button 
+                                        <button
                                             type="submit"
                                             disabled={loading}
                                             className="flex-1 py-4 bg-primary hover:bg-primary/90 text-white font-black rounded-2xl shadow-xl shadow-primary/20 transition-all uppercase tracking-widest text-xs"
@@ -1132,10 +1124,10 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                                     </button>
                                 </div>
                                 <p className="text-xs text-secondary font-bold mb-4 uppercase">Aktarılacak Masayı Seçin:</p>
-                                
+
                                 <div className="max-h-[300px] overflow-y-auto pr-2 custom-scrollbar grid grid-cols-2 gap-3 mb-6">
                                     {tables.filter(t => t.id !== selectedTable?.id).map(t => (
-                                        <button 
+                                        <button
                                             key={t.id}
                                             onClick={() => setTransferTargetId(t.id)}
                                             className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-2 ${transferTargetId === t.id ? 'bg-indigo-500/20 border-indigo-500 shadow-lg shadow-indigo-500/20' : t.status === 'occupied' ? 'bg-rose-500/10 border-rose-500/20 opacity-70' : 'bg-white/5 border-border/20 hover:border-border/60'}`}
@@ -1147,14 +1139,14 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                                 </div>
 
                                 <div className="flex gap-4">
-                                    <button 
+                                    <button
                                         type="button"
                                         onClick={() => { setIsTransferModalOpen(false); setTransferTargetId(""); }}
                                         className="flex-1 py-4 bg-white/5 hover:bg-white/10 text-secondary font-black rounded-2xl transition-all uppercase tracking-widest text-xs"
                                     >
                                         İptal
                                     </button>
-                                    <button 
+                                    <button
                                         type="button"
                                         onClick={handleTransferTable}
                                         disabled={!transferTargetId || loading}
@@ -1191,8 +1183,8 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                                     <div className="space-y-4">
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-black uppercase tracking-widest text-secondary ml-1">İsim Soyisim</label>
-                                            <input 
-                                                type="text" 
+                                            <input
+                                                type="text"
                                                 value={reserveName}
                                                 onChange={(e) => setReserveName(e.target.value)}
                                                 placeholder="Örn: Ahmet Yılmaz"
@@ -1203,8 +1195,8 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-black uppercase tracking-widest text-secondary ml-1">Tarih ve Saat</label>
-                                            <input 
-                                                type="datetime-local" 
+                                            <input
+                                                type="datetime-local"
                                                 value={reserveTime}
                                                 onChange={(e) => setReserveTime(e.target.value)}
                                                 className="w-full bg-black/20 border border-border/40 rounded-2xl p-4 text-white outline-none focus:border-purple-500/40 transition-all font-bold"
@@ -1213,14 +1205,14 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                                         </div>
                                     </div>
                                     <div className="flex gap-4 pt-4">
-                                        <button 
+                                        <button
                                             type="button"
                                             onClick={() => { setIsReserveModalOpen(false); setReserveName(""); setReserveTime(""); }}
                                             className="flex-1 py-4 bg-white/5 hover:bg-white/10 text-secondary font-black rounded-2xl transition-all uppercase tracking-widest text-xs"
                                         >
                                             İptal
                                         </button>
-                                        <button 
+                                        <button
                                             type="submit"
                                             disabled={!reserveName || !reserveTime || loading}
                                             className="flex-1 py-4 bg-purple-500 hover:bg-purple-600 disabled:opacity-50 text-white font-black rounded-2xl shadow-xl shadow-purple-500/20 transition-all uppercase tracking-widest text-xs"
@@ -1254,13 +1246,13 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                                     {confirmState.message}
                                 </p>
                                 <div className="flex w-full gap-3">
-                                    <button 
-                                        onClick={() => setConfirmState(prev => ({...prev, isOpen: false}))}
+                                    <button
+                                        onClick={() => setConfirmState(prev => ({ ...prev, isOpen: false }))}
                                         className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-secondary font-black rounded-xl transition-all uppercase tracking-widest text-xs"
                                     >
                                         Vazgeç
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={confirmState.onConfirm}
                                         className="flex-1 py-3 bg-rose-500 hover:bg-rose-600 text-white font-black rounded-xl shadow-lg shadow-rose-500/20 transition-all uppercase tracking-widest text-xs"
                                     >

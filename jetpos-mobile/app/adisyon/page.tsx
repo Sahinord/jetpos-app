@@ -69,12 +69,20 @@ export default function AdisyonMobile() {
         if (!tenantId) return;
 
         try {
-            const { data, error } = await supabase
+            const activeWarehouseId = localStorage.getItem('activeWarehouseId');
+            
+            let query = supabase
                 .from('restaurant_tables')
                 .select('*')
                 .eq('tenant_id', tenantId)
-                .eq('is_active', true)
-                .order('name');
+                .eq('is_active', true);
+
+            // Eğer bir mağaza seçiliyse, sadece o mağazanın masalarını getir
+            if (activeWarehouseId) {
+                query = query.eq('warehouse_id', activeWarehouseId);
+            }
+
+            const { data, error } = await query.order('name');
 
             if (error) throw error;
             setTables(data || []);
@@ -139,13 +147,19 @@ export default function AdisyonMobile() {
         if (!tenantId) return;
 
         // TABLE REALTIME
+        const activeWarehouseId = localStorage.getItem('activeWarehouseId');
+        let filterStr = `tenant_id=eq.${tenantId}`;
+        if (activeWarehouseId) {
+            filterStr += `,warehouse_id=eq.${activeWarehouseId}`;
+        }
+
         const tablesChannel = supabase
             .channel(`adisyon_mobile_tables_${tenantId}`)
             .on('postgres_changes', {
                 event: '*',
                 schema: 'public',
                 table: 'restaurant_tables',
-                filter: `tenant_id=eq.${tenantId}`
+                filter: filterStr
             }, () => {
                 fetchTables();
             })

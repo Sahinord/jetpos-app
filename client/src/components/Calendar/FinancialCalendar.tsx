@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
     ChevronLeft,
     ChevronRight,
@@ -13,6 +13,7 @@ import {
     Trash2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "@/lib/supabase";
 
 const daysOfWeek = ["PZT", "SAL", "ÇAR", "PER", "CUM", "CMT", "PAZ"];
 
@@ -44,17 +45,53 @@ export default function FinancialCalendar() {
         color: '#ef4444'
     });
 
-    // Gerçek Mali Takvim Verileri
-    const [events, setEvents] = useState<CalendarEvent[]>([
-        { id: '1', date: 14, title: 'Muhtasar Beyanname', type: 'tax', amount: 0, color: '#f59e0b' },
-        { id: '2', date: 17, title: 'SGK Primleri', type: 'tax', amount: 0, color: '#f59e0b' },
-        { id: '3', date: 26, title: 'KDV Beyanı', type: 'tax', amount: 0, color: '#f59e0b' },
-        { id: '4', date: 27, title: 'KDV Ödemesi', type: 'payment', amount: 0, color: '#ef4444' },
-        { id: '5', date: 1, title: 'Maaş Ödemeleri', type: 'payroll', amount: 0, color: '#6366f1' },
-    ]);
+    // Real DB State
+    const [events, setEvents] = useState<CalendarEvent[]>([]);
+    const [loading, setLoading] = useState(true);
 
     const monthName = currentDate.toLocaleString('tr-TR', { month: 'long' }).toUpperCase();
     const year = currentDate.getFullYear();
+
+    const fetchEvents = useCallback(async () => {
+        const tenantId = localStorage.getItem('currentTenantId');
+        if (!tenantId) return;
+
+        setLoading(true);
+        try {
+            // Get first and last day of the current visible month
+            const firstDate = new Date(year, currentDate.getMonth(), 1);
+            const lastDate = new Date(year, currentDate.getMonth() + 1, 0);
+
+            const { data, error } = await supabase
+                .from('financial_calendar_events')
+                .select('*')
+                .eq('tenant_id', tenantId)
+                .gte('event_date', firstDate.toISOString())
+                .lte('event_date', lastDate.toISOString());
+
+            if (error) throw error;
+
+            // Map DB format to UI format
+            const mappedEvents: CalendarEvent[] = (data || []).map(ev => ({
+                id: ev.id,
+                date: new Date(ev.event_date).getDate(),
+                title: ev.title,
+                type: ev.event_type as any,
+                amount: ev.amount,
+                color: ev.color
+            }));
+
+            setEvents(mappedEvents);
+        } catch (error) {
+            console.error("Takvim verileri yüklenemedi:", error);
+        } finally {
+            setLoading(false);
+        }
+    }, [currentDate, year]);
+
+    useEffect(() => {
+        fetchEvents();
+    }, [fetchEvents]);
 
     const getDaysInMonth = (year: number, month: number) => {
         return new Date(year, month + 1, 0).getDate();
@@ -84,26 +121,49 @@ export default function FinancialCalendar() {
         setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
     };
 
-    const handleAddEvent = () => {
-        if (selectedDay && newEvent.title) {
-            const event: CalendarEvent = {
-                id: Math.random().toString(36).substr(2, 9),
-                date: selectedDay,
-                title: newEvent.title,
-                type: newEvent.type,
-                amount: parseFloat(newEvent.amount) || 0,
-                color: newEvent.color
-            };
-            setEvents([...events, event]);
+    const handleAddEvent = async () => {
+        const tenantId = localStorage.getItem('currentTenantId');
+        if (!tenantId || !selectedDay || !newEvent.title) return;
+
+        try {
+            // Create a formal date string
+            const eventDate = new Date(year, currentDate.getMonth(), selectedDay);
+            
+            const { error } = await supabase
+                .from('financial_calendar_events')
+                .insert([{
+                    tenant_id: tenantId,
+                    title: newEvent.title,
+                    event_date: eventDate.toISOString().split('T')[0],
+                    event_type: newEvent.type,
+                    amount: parseFloat(newEvent.amount) || 0,
+                    color: newEvent.color
+                }]);
+
+            if (error) throw error;
+
             setIsModalOpen(false);
             setNewEvent({ title: '', type: 'payment', amount: '', color: '#ef4444' });
+            fetchEvents();
+        } catch (error: any) {
+            alert("Etkinlik eklenemedi: " + error.message);
         }
     };
 
-    const handleDeleteEvent = (id: string, e: React.MouseEvent) => {
+    const handleDeleteEvent = async (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
-        if (confirm("Bu etkinliği silmek istediğinize emin misiniz?")) {
-            setEvents(events.filter(event => event.id !== id));
+        if (!confirm("Bu etkinliği silmek istediğinize emin misiniz?")) return;
+
+        try {
+            const { error } = await supabase
+                .from('financial_calendar_events')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+            fetchEvents();
+        } catch (error: any) {
+            alert("Silme hatası: " + error.message);
         }
     };
 

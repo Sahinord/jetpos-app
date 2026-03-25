@@ -93,7 +93,7 @@ export const calculateStockMetrics = (products: any[]) => {
 /**
  * Smart Stock Predictions and Velocity Analysis
  */
-export const calculateStockPredictions = (products: any[], saleItems: any[]) => {
+export const calculateStockPredictions = (products: any[], saleItems: any[], threshold: number = 10) => {
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
@@ -123,7 +123,7 @@ export const calculateStockPredictions = (products: any[], saleItems: any[]) => 
       riskLevel = 'high';
     } else if (dailyVelocity > 0 && daysRemaining <= 7) {
       riskLevel = 'medium';
-    } else if (stock < (product.min_stock || 10)) {
+    } else if (stock < (product.min_stock || threshold)) {
       riskLevel = 'low';
     }
 

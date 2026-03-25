@@ -472,7 +472,7 @@ export default function AlisFaturasi() {
 
                 <div className="space-y-4">
                     {/* Fatura Bilgileri */}
-                    <div className="glass-card p-5 space-y-5 bg-white/[0.01]">
+                    <div className="glass-card p-5 space-y-5 bg-white/[0.01] relative z-50">
                         <h2 className="text-[10px] font-bold text-primary uppercase tracking-[0.25em] flex items-center gap-2 border-b border-white/5 pb-3">
                             <Receipt className="w-4 h-4" />
                             Fatura Bilgileri

@@ -24,6 +24,15 @@ export interface TenantSettings {
         branchCode?: string;
         counterCode?: string;
     };
+    parasut?: {
+        clientId?: string;
+        clientSecret?: string;
+        username?: string;
+        email?: string;
+        password?: string;
+        companyId?: string;
+    };
+    invoice_provider?: 'qnb' | 'parasut' | null;
     trendyolGo?: {
         sellerId?: string;
         storeId?: string;

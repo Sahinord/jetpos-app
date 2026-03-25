@@ -81,17 +81,7 @@ export default function PriceSimulator({ products, onApplyChanges, showToast }: 
         <div ref={containerRef} className="space-y-8 animate-in fade-in duration-500 transition-transform duration-200" style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top center' }}>
             {/* Control Panel */}
             <div className="flex flex-col lg:flex-row gap-6 bg-card/20 p-6 rounded-3xl border border-border/50 backdrop-blur-xl">
-                <div className="flex items-center space-x-4 flex-1">
-                    <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shadow-inner border border-primary/20">
-                        <TrendingUp className="w-7 h-7" />
-                    </div>
-                    <div>
-                        <h2 className="text-xl font-black text-[var(--color-foreground)] uppercase tracking-tight">Akıllı Fiyat Simülatörü</h2>
-                        <p className="text-xs text-secondary font-medium">Global maliyet artışlarını tek tıkla fiyatlara yansıtın. <span className="text-primary">Ctrl+Wheel ile yakınlaştır</span></p>
-                    </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-4">
+                <div className="flex flex-wrap items-center gap-4 flex-1">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary" />
                         <input

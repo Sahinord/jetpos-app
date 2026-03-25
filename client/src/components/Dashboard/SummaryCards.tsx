@@ -164,7 +164,7 @@ export default function SummaryCards({
                 <div className="relative">
                     <button
                         onClick={() => setIsTimeMenuOpen(!isTimeMenuOpen)}
-                        className="flex items-center gap-2 px-4 py-2 bg-black/20 hover:bg-black/30 backdrop-blur-md rounded-xl border border-white/10 text-xs font-black text-white transition-all focus:outline-none"
+                        className="flex items-center gap-2 px-4 py-2 bg-card hover:bg-[var(--color-faded)] backdrop-blur-md rounded-xl border border-[var(--color-border)] text-xs font-black text-foreground transition-all focus:outline-none"
                     >
                         <span>{timeFilter === 'today' ? 'BUGÜN' : timeFilter === 'week' ? 'BU HAFTA' : 'BU AY'}</span>
                         <ChevronDown className={`w-4 h-4 transition-transform ${isTimeMenuOpen ? 'rotate-180' : ''}`} />
@@ -176,13 +176,13 @@ export default function SummaryCards({
                                 initial={{ opacity: 0, y: -10, scale: 0.95 }}
                                 animate={{ opacity: 1, y: 0, scale: 1 }}
                                 exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                                className="absolute right-0 top-full mt-2 w-48 bg-[#1a1f2c]/95 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-2xl z-50 p-1 space-y-1"
+                                className="absolute right-0 top-full mt-2 w-48 bg-card border border-[var(--color-border)] rounded-xl overflow-hidden shadow-2xl z-50 p-1 space-y-1"
                             >
                                 {(['today', 'week', 'month'] as const).map((filter) => (
                                     <button
                                         key={filter}
                                         onClick={() => handleTimeFilter(filter)}
-                                        className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-black transition-all flex items-center justify-between group ${timeFilter === filter ? 'bg-primary/20 text-primary' : 'text-secondary hover:text-white hover:bg-white/5'}`}
+                                        className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-black transition-all flex items-center justify-between group ${timeFilter === filter ? 'bg-primary/20 text-primary' : 'text-secondary hover:text-foreground hover:bg-[var(--color-faded)]'}`}
                                     >
                                         <span>{filter === 'today' ? 'Bugün' : filter === 'week' ? 'Bu Hafta' : 'Bu Ay'}</span>
                                         {timeFilter === filter && (
@@ -316,7 +316,7 @@ export default function SummaryCards({
                                                     <c.icon className={`w-4 h-4 ${isAlreadyAssigned ? 'text-secondary/50' : c.iconColor}`} />
                                                 </div>
                                                 <div className="flex flex-col gap-0.5">
-                                                    <span className={`text-sm font-bold transition-colors ${isAlreadyAssigned ? 'text-secondary/50' : isSelected ? 'text-white' : 'text-secondary'}`}>{c.title}</span>
+                                                    <span className={`text-sm font-bold transition-colors ${isAlreadyAssigned ? 'text-secondary/50' : isSelected ? 'text-foreground' : 'text-secondary'}`}>{c.title}</span>
                                                     {isAlreadyAssigned && <span className="text-[9px] text-red-500/80 font-black uppercase tracking-wider">Bu Kutu Zaten Ekli</span>}
                                                 </div>
                                             </div>

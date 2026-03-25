@@ -5,7 +5,8 @@ import {
     Volume2, VolumeX, Monitor,
     Palette, CheckCircle2,
     Shield, Bell, Database,
-    Info, ExternalLink, Users, Tag
+    Info, ExternalLink, Users, Tag, AlertTriangle,
+    BookOpen, PlayCircle, Zap
 } from "lucide-react";
 
 export default function AppSettings({ 
@@ -21,7 +22,9 @@ export default function AppSettings({
     isAdisyonStoreSpecificEnabled, setIsAdisyonStoreSpecificEnabled,
     isAdisyonAutoOpenReservationEnabled, setIsAdisyonAutoOpenReservationEnabled,
     currentTenant,
-    showToast 
+    showToast,
+    lowStockThreshold,
+    setLowStockThreshold
 }: any) {
     const themes = [
         { id: 'modern', name: 'MODERN DARK', color: 'bg-primary', desc: 'Sleek ve modern bir arayüz' },
@@ -52,13 +55,7 @@ export default function AppSettings({
 
     return (
         <div className="space-y-8 pb-10">
-            {/* Header */}
-            <div>
-                <h1 className="text-3xl font-black tracking-widest uppercase mb-2 text-foreground">UYGULAMA AYARLARI</h1>
-                <p className="text-secondary font-bold text-sm uppercase tracking-wider">Terminal ve kullanıcı tercihlerinizi yönetin</p>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-4">
                 {/* Visual Settings */}
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card space-y-6">
                     <div className="flex items-center gap-3 border-b border-border pb-4">
@@ -340,6 +337,33 @@ export default function AppSettings({
                                 <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all duration-300 shadow-lg ${isStockSyncEnabled ? 'left-9' : 'left-1'}`} />
                             </button>
                         </div>
+
+                        {/* Stok Uyarı Sınırı */}
+                        <div className="p-4 bg-primary/5 rounded-2xl border border-border space-y-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <div className="p-3 bg-rose-500/10 rounded-xl">
+                                        <AlertTriangle className="text-rose-500" />
+                                    </div>
+                                    <div>
+                                        <div className="font-black text-sm uppercase tracking-wider text-foreground">STOK UYARI SINIRI</div>
+                                        <div className="text-[10px] text-secondary font-bold text-rose-500/70">Ürün bu sayının altına düşünce "tehlikeli" alanı yanar</div>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <input 
+                                        type="number"
+                                        value={lowStockThreshold}
+                                        onChange={(e) => setLowStockThreshold(parseInt(e.target.value) || 0)}
+                                        className="w-20 bg-card border border-border rounded-xl px-3 py-2 text-center font-black text-primary outline-none focus:border-primary transition-all"
+                                    />
+                                    <span className="text-[10px] font-black text-secondary tracking-widest uppercase">ADET</span>
+                                </div>
+                            </div>
+                            <p className="text-[9px] text-secondary/60 italic font-medium leading-relaxed uppercase">
+                                * Bu ayar, ana ekrandaki "Kritik Stok" listesini ve ürün tablosundaki renkli uyarıları dinamik olarak değiştirir.
+                            </p>
+                        </div>
                     </div>
                 </motion.div>
 
@@ -379,20 +403,40 @@ export default function AppSettings({
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass-card space-y-6 bg-primary/5 border-primary/20">
                     <div className="flex items-center gap-3 border-b border-primary/10 pb-4">
                         <Info className="text-primary" />
-                        <h2 className="font-black tracking-widest uppercase text-primary">DESTEK VE BİLGİ</h2>
+                        <h2 className="font-black tracking-widest uppercase text-primary">DESTEK VE AKADEMİ</h2>
                     </div>
 
-                    <p className="text-sm font-bold text-secondary leading-relaxed uppercase tracking-wider">
-                        Kardeşler Kasap Muhasebe ve POS terminali, yerel işletmeler için özel olarak geliştirilmiştir. Teknik destek için bizimle iletişime geçebilirsiniz.
+                    <p className="text-[10px] font-black text-secondary leading-relaxed uppercase tracking-[0.2em]">
+                        JetPOS'u en verimli şekilde kullanmanız için hazırladığımız kılavuzlar ve eğitim materyallerine buradan ulaşabilirsiniz.
                     </p>
 
-                    <div className="flex flex-col gap-3">
-                        <a href="#" className="flex items-center justify-between p-4 bg-primary/5 rounded-2xl border border-border group hover:border-primary/50 transition-all">
-                            <span className="text-xs font-black uppercase tracking-widest text-foreground">Kullanım Klavuzu</span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <a href="https://jetpos.pro/kilavuzlar" target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-4 bg-card border border-border rounded-2xl group hover:border-primary/50 transition-all">
+                            <div className="flex items-center gap-3">
+                                <BookOpen size={18} className="text-primary" />
+                                <span className="text-xs font-black uppercase tracking-widest text-foreground">Kullanım Kılavuzları</span>
+                            </div>
                             <ExternalLink size={14} className="group-hover:text-primary transition-colors" />
                         </a>
-                        <a href="#" className="flex items-center justify-between p-4 bg-primary/5 rounded-2xl border border-border group hover:border-primary/50 transition-all">
-                            <span className="text-xs font-black uppercase tracking-widest text-foreground">Hata Bildirimi</span>
+                        <a href="https://jetpos.pro/kilavuzlar#video" target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-4 bg-card border border-border rounded-2xl group hover:border-primary/50 transition-all text-purple-500">
+                            <div className="flex items-center gap-3">
+                                <PlayCircle size={18} />
+                                <span className="text-xs font-black uppercase tracking-widest">Video Eğitimler</span>
+                            </div>
+                            <ExternalLink size={14} className="group-hover:text-primary transition-colors" />
+                        </a>
+                        <a href="#" onClick={(e) => { e.preventDefault(); showToast("Destek bileti modülü açılıyor..."); }} className="flex items-center justify-between p-4 bg-card border border-border rounded-2xl group hover:border-rose-500/50 transition-all text-rose-500">
+                            <div className="flex items-center gap-3">
+                                <AlertTriangle size={18} />
+                                <span className="text-xs font-black uppercase tracking-widest">Hata Bildirimi</span>
+                            </div>
+                            <ExternalLink size={14} className="group-hover:text-primary transition-colors" />
+                        </a>
+                        <a href="https://jetpos.pro/blog" target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-4 bg-card border border-border rounded-2xl group hover:border-indigo-500/50 transition-all text-indigo-500">
+                            <div className="flex items-center gap-3">
+                                <Zap size={18} />
+                                <span className="text-xs font-black uppercase tracking-widest">Yenilikler (v1.5)</span>
+                            </div>
                             <ExternalLink size={14} className="group-hover:text-primary transition-colors" />
                         </a>
                     </div>

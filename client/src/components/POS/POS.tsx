@@ -754,7 +754,7 @@ export default function POS({
                                         <div className="p-4 relative z-10 h-full flex flex-col">
                                             <div className="flex-1">
                                                 {/* Product Name */}
-                                                <div className="font-bold text-sm text-white/90 group-hover:text-white leading-tight transition-colors break-words">
+                                                <div className="font-bold text-sm text-foreground group-hover:text-primary leading-tight transition-colors break-words">
                                                     {p.name}
                                                 </div>
                                             </div>
@@ -769,7 +769,7 @@ export default function POS({
                                                         const price = (!isPriceSyncEnabled && wsData?.sale_price !== null && wsData?.sale_price !== undefined) ? wsData.sale_price : p.sale_price;
                                                         const qty = (isStockSyncEnabled || !activeWarehouse) ? (p.stock_quantity || 0) : (wsData?.quantity || 0);
                                                         return <>
-                                                                 <div className="text-xl font-bold text-white tracking-tight">
+                                                                 <div className="text-xl font-bold text-foreground tracking-tight">
                                                                     ₺{price.toFixed(2)}
                                                                  </div>
                                                                  <div className="flex items-center gap-2 mt-1">

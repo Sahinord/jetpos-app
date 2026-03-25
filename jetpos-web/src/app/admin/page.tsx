@@ -7,8 +7,10 @@ import {
     Search, Mail, Plus, Globe,
     RefreshCw, Sparkles, TrendingUp, AlertCircle, Eye,
     LayoutDashboard, Trash2, Edit, BookOpen, ExternalLink, Calendar,
-    FileText, Building2
+    FileText, Building2, ShieldCheck, Clock, MessageSquare, Bell, Menu, X
 } from "lucide-react";
+
+import { supabase } from "@/lib/supabase";
 
 const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "jetpos2025";
 
@@ -63,7 +65,7 @@ export default function AdminPage() {
     const [authed, setAuthed] = useState(false);
     const [password, setPassword] = useState("");
     const [passwordError, setPasswordError] = useState(false);
-    const [activeTab, setActiveTab] = useState<"dashboard" | "requests" | "licenses" | "blog" | "guides" | "about">("dashboard");
+    const [activeTab, setActiveTab] = useState<"dashboard" | "requests" | "licenses" | "blog" | "guides" | "about" | "tickets" | "announcements">("dashboard");
     const [blogPosts, setBlogPosts] = useState<any[]>([]);
     const [aboutContent, setAboutContent] = useState<Record<string, any>>({});
     const [showNewPost, setShowNewPost] = useState(false);
@@ -89,6 +91,13 @@ export default function AdminPage() {
     const [guideForm, setGuideForm] = useState({ title: "", content: "", order_index: 0, is_active: true });
     const [savingGuide, setSavingGuide] = useState(false);
 
+    // Support Tickets & Announcements
+    const [tickets, setTickets] = useState<any[]>([]);
+    const [announcements, setAnnouncements] = useState<any[]>([]);
+    const [showNewAnnounce, setShowNewAnnounce] = useState(false);
+    const [announceForm, setAnnounceForm] = useState({ title: "", message: "", type: "info" });
+    const [savingAnnounce, setSavingAnnounce] = useState(false);
+
     // Form states for new license
     const [showNewLicense, setShowNewLicense] = useState(false);
     const [newLicenseData, setNewLicenseData] = useState({
@@ -105,14 +114,31 @@ export default function AdminPage() {
             getir: false,
             qnb_invoice: false,
             ai_features: true
-        }
+        },
+        custom_logo_url: "",
+        branding_config: { primary_color: "#3b82f6", hide_jetpos_badge: false }
     });
+
+    // Edit license state
+    const [showEditLicense, setShowEditLicense] = useState(false);
+    const [editingLicense, setEditingLicense] = useState<any>(null);
 
     useEffect(() => {
         const saved = sessionStorage.getItem("jetpos_admin_auth");
         if (saved === "true") {
             setAuthed(true);
             loadAll();
+
+            const channel = supabase
+                .channel('admin_licenses_realtime')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'tenants' }, () => { loadLicenses(); })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'support_tickets' }, () => { loadTickets(); })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, () => { loadAnnouncements(); })
+                .subscribe();
+
+            return () => {
+                supabase.removeChannel(channel);
+            };
         }
     }, []);
 
@@ -122,6 +148,8 @@ export default function AdminPage() {
         loadBlogPosts();
         loadAboutContent();
         loadGuides();
+        loadTickets();
+        loadAnnouncements();
     };
 
     const loadGuides = async () => {
@@ -231,6 +259,51 @@ export default function AdminPage() {
         setTimeout(() => setToast(null), 3000);
     };
 
+    const loadTickets = async () => {
+        try {
+            const res = await adminFetch("/api/admin/tickets");
+            if (res.ok) setTickets(await res.json());
+        } catch (e) { console.error(e); }
+    };
+
+    const loadAnnouncements = async () => {
+        try {
+            const res = await adminFetch("/api/admin/announcements");
+            if (res.ok) setAnnouncements(await res.json());
+        } catch (e) { console.error(e); }
+    };
+
+    const saveAnnounce = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSavingAnnounce(true);
+        try {
+            const res = await adminFetch("/api/admin/announcements", { method: "POST", body: JSON.stringify(announceForm) });
+            if (res.ok) {
+                showToast("Duyuru yayınlandı");
+                setShowNewAnnounce(false);
+                setAnnounceForm({ title: "", message: "", type: "info" });
+                loadAnnouncements();
+            }
+        } finally { setSavingAnnounce(false); }
+    };
+
+    const updateTicketStatus = async (id: string, status: string) => {
+        try {
+            await adminFetch(`/api/admin/tickets?id=${id}`, { method: "PATCH", body: JSON.stringify({ status }) });
+            loadTickets();
+            showToast("Talep güncellendi");
+        } catch (e) { console.error(e); }
+    };
+
+    const deleteAnnounce = async (id: string) => {
+        if (!confirm("Bu duyuruyu silmek istediğinize emin misiniz?")) return;
+        try {
+            await adminFetch(`/api/admin/announcements?id=${id}`, { method: "DELETE" });
+            loadAnnouncements();
+            showToast("Duyuru silindi");
+        } catch (e) { console.error(e); }
+    };
+
     const loadRequests = async () => {
         setLoading(true);
         try {
@@ -267,28 +340,50 @@ export default function AdminPage() {
                 showToast("Lisans başarıyla oluşturuldu");
                 setShowNewLicense(false);
                 loadLicenses();
-                setNewLicenseData({ 
-            client_name: "", 
-            user_email: "", 
-            plan_type: "PRO", 
-            license_key: "", 
-            total_days: 365,
-            download_link: "https://github.com/Sahinord/jetpos-app/releases/latest/download/JetPOS-Setup.exe",
-            features: {
-                adisyon: true,
-                mobile_app: true,
-                trendyol_go: false,
-                getir: false,
-                qnb_invoice: false,
-                ai_features: true
-            }
-        });
+                setNewLicenseData({
+                    client_name: "",
+                    user_email: "",
+                    plan_type: "PRO",
+                    license_key: "",
+                    total_days: 365,
+                    download_link: "https://github.com/Sahinord/jetpos-app/releases/latest/download/JetPOS-Setup.exe",
+                    features: {
+                        adisyon: true,
+                        mobile_app: true,
+                        trendyol_go: false,
+                        getir: false,
+                        qnb_invoice: false,
+                        ai_features: true
+                    },
+                    custom_logo_url: "",
+                    branding_config: { primary_color: "#3b82f6", hide_jetpos_badge: false }
+                });
             } else {
                 const err = await res.json();
                 showToast(err.message || err.error || "Kaydetme başarısız", "error");
             }
         } catch (e) {
             showToast("Sunucuya erişilemedi", "error");
+        } finally { setLoading(false); }
+    };
+
+    const updateLicense = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            const res = await adminFetch(`/api/admin/licenses?id=${editingLicense.id}`, {
+                method: "PATCH",
+                body: JSON.stringify(editingLicense),
+            });
+            if (res.ok) {
+                showToast("Lisans güncellendi");
+                setShowEditLicense(false);
+                loadLicenses();
+            } else {
+                showToast("Güncelleme başarısız", "error");
+            }
+        } catch (e) {
+            showToast("Bağlantı hatası", "error");
         } finally { setLoading(false); }
     };
 
@@ -330,8 +425,6 @@ export default function AdminPage() {
         setAuthed(false);
         sessionStorage.removeItem("jetpos_admin_auth");
         sessionStorage.removeItem("jetpos_admin_token");
-        setRequests([]);
-        setLicenses([]);
     };
 
     const filteredRequests = requests.filter(r => {
@@ -348,93 +441,102 @@ export default function AdminPage() {
             (l.license_key?.toLowerCase() || "").includes(s);
     });
 
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    const sidebarContent = (
+        <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+            <div style={{ padding: "2.5rem 2rem", display: "flex", alignItems: "center", gap: "1rem" }}>
+                <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "10px", background: "#2563eb", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <ShieldCheck style={{ width: "1.2rem", color: "white" }} />
+                </div>
+                <div>
+                    <h1 style={{ fontSize: "1.1rem", fontWeight: 900, margin: 0 }}>Super Admin</h1>
+                    <span style={{ fontSize: "0.6rem", color: "#3b82f6", fontWeight: 800 }}>V2.0 PRO</span>
+                </div>
+            </div>
+
+            <nav style={{ flex: 1, padding: "0 1rem" }}>
+                {[
+                    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+                    { id: "requests", label: "Yeni Talepler", icon: PhoneCall },
+                    { id: "licenses", label: "Lisans Yönetimi", icon: ShieldCheck },
+                    { id: "tickets", label: "Destek Talepleri", icon: MessageSquare },
+                    { id: "announcements", label: "Duyurular", icon: Bell },
+                    { id: "blog", label: "Blog Yazıları", icon: FileText },
+                    { id: "guides", label: "Rehberler", icon: BookOpen },
+                    { id: "about", label: "Hakkımızda", icon: Building2 },
+                ].map(item => (
+                    <button key={item.id} onClick={() => { setActiveTab(item.id as any); setIsMobileMenuOpen(false); }} style={{
+                        width: "100%", display: "flex", alignItems: "center", gap: "0.8rem", padding: "0.8rem 1.25rem", borderRadius: "12px", border: "none",
+                        background: activeTab === item.id ? "rgba(37,99,235,0.1)" : "transparent",
+                        color: activeTab === item.id ? "#3b82f6" : "rgba(255,255,255,0.4)",
+                        fontSize: "0.85rem", fontWeight: activeTab === item.id ? 800 : 500, cursor: "pointer", transition: "all 0.2s", textAlign: "left", marginBottom: "4px"
+                    }}>
+                        <item.icon style={{ width: "1.1rem" }} /> {item.label}
+                    </button>
+                ))}
+            </nav>
+
+            <div style={{ padding: "1.5rem", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                <button onClick={handleLogout} style={{ width: "100%", padding: "0.75rem", borderRadius: "10px", background: "rgba(239,68,68,0.1)", border: "none", color: "#ef4444", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem" }}>
+                    <LogOut style={{ width: "0.9rem" }} /> Çıkış Yap
+                </button>
+            </div>
+        </div>
+    );
+
     // Login screen
     if (!authed) {
         return (
-            <div style={{
-                minHeight: "100vh", background: "#060914",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                padding: "1rem"
-            }}>
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ width: "100%", maxWidth: "380px" }}>
-                    <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-                        <div style={{
-                            width: "3.5rem", height: "3.5rem", borderRadius: "1rem",
-                            background: "linear-gradient(135deg, #2563eb, #3b82f6)",
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            margin: "0 auto 1rem",
-                            boxShadow: "0 0 30px rgba(37,99,235,0.4)"
-                        }}>
-                            <Sparkles style={{ width: "1.5rem", height: "1.5rem", color: "white" }} />
-                        </div>
-                        <h1 style={{ fontSize: "1.5rem", fontWeight: 800, color: "white", margin: 0 }}>JetPOS Admin</h1>
-                        <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.875rem", marginTop: "0.25rem" }}>Panel yönetimi</p>
+            <div style={{ height: "100vh", background: "#060914", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Inter, sans-serif" }}>
+                <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} style={{ width: "100%", maxWidth: "400px", padding: "3rem", background: "rgba(15,23,42,0.8)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "2rem", backdropFilter: "blur(20px)" }}>
+                    <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
+                        <div style={{ width: "3.5rem", height: "3.5rem", borderRadius: "1rem", background: "#2563eb", color: "white", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1.5rem" }}><ShieldCheck style={{ width: "1.8rem" }} /></div>
+                        <h1 style={{ fontSize: "1.75rem", fontWeight: 900, marginBottom: "0.5rem" }}>Güvenli Giriş</h1>
+                        <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.85rem" }}>Super Admin yönetim paneline erişim</p>
                     </div>
-
-                    <motion.div animate={passwordError ? { x: [-8, 8, -8, 8, 0] } : { x: 0 }} style={{
-                        background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
-                        borderRadius: "1.25rem", padding: "2rem"
-                    }}>
-                        <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-                            <div>
-                                <label style={{ display: "block", color: "rgba(255,255,255,0.6)", fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.5rem" }}>Şifre</label>
-                                <div style={{ position: "relative" }}>
-                                    <Lock style={{ position: "absolute", left: "0.875rem", top: "50%", transform: "translateY(-50%)", width: "1rem", height: "1rem", color: "rgba(255,255,255,0.3)" }} />
-                                    <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Admin şifresi" style={{ width: "100%", padding: "0.875rem 1rem 0.875rem 2.75rem", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.75rem", color: "white", outline: "none" }} autoFocus />
-                                </div>
-                                {passwordError && <p style={{ color: "#f87171", fontSize: "0.8rem", marginTop: "0.5rem" }}>Hatalı şifre!</p>}
-                            </div>
-                            <button type="submit" style={{ padding: "0.875rem", borderRadius: "0.75rem", border: "none", background: "linear-gradient(135deg, #2563eb, #1d4ed8)", color: "white", fontWeight: 700, cursor: "pointer" }}>Giriş Yap</button>
-                        </form>
-                    </motion.div>
+                    <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+                        <div style={{ position: "relative" }}>
+                            <Lock style={{ position: "absolute", top: "1rem", left: "1rem", width: "1rem", color: "rgba(255,255,255,0.3)" }} />
+                            <input type="password" placeholder="Admin Şifresi" value={password} onChange={e => setPassword(e.target.value)} style={{ width: "100%", padding: "1rem 1rem 1rem 3rem", background: "rgba(255,255,255,0.05)", border: passwordError ? "1px solid #ef4444" : "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", color: "white", outline: "none" }} />
+                        </div>
+                        <button type="submit" style={{ padding: "1rem", borderRadius: "14px", background: "#2563eb", color: "white", fontWeight: 800, border: "none", cursor: "pointer", fontSize: "1rem" }}>Sisteme Giriş Yap</button>
+                        {passwordError && <p style={{ color: "#ef4444", fontSize: "0.8rem", textAlign: "center", margin: 0 }}>Yanlış şifre! Lütfen tekrar deneyin.</p>}
+                    </form>
                 </motion.div>
             </div>
         );
     }
 
     return (
-        <div style={{ minHeight: "100vh", background: "#060914", color: "white" }}>
-            <div style={{
-                background: "rgba(255,255,255,0.02)", borderBottom: "1px solid rgba(255,255,255,0.07)",
-                padding: "1rem 2rem", display: "flex", alignItems: "center", justifyContent: "space-between",
-                position: "sticky", top: 0, zIndex: 20, backdropFilter: "blur(16px)"
-            }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                        <Sparkles style={{ width: "1.25rem", height: "1.25rem", color: "#3b82f6" }} />
-                        <h1 style={{ fontSize: "1.1rem", fontWeight: 800, color: "white", margin: 0 }}>JetPOS Admin</h1>
-                    </div>
-                    <div style={{ display: "flex", gap: "0.25rem", flexWrap: "wrap" }}>
-                        {[
-                            { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-                            { id: "requests", label: "Talepler", icon: PhoneCall },
-                            { id: "licenses", label: "Lisanslar", icon: CheckCircle2 },
-                            { id: "blog", label: "Blog", icon: FileText },
-                            { id: "guides", label: "Rehberler", icon: BookOpen },
-                            { id: "about", label: "Hakkımızda", icon: Building2 },
-                        ].map(t => (
-                            <button key={t.id} onClick={() => setActiveTab(t.id as any)} style={{
-                                padding: "0.5rem 0.875rem", borderRadius: "0.6rem", border: "none",
-                                background: activeTab === t.id ? "rgba(37,99,235,0.12)" : "transparent",
-                                color: activeTab === t.id ? "#60a5fa" : "rgba(255,255,255,0.45)",
-                                fontWeight: 700, fontSize: "0.85rem", cursor: "pointer",
-                                display: "flex", alignItems: "center", gap: "0.5rem",
-                                transition: "all 0.2s"
-                            }}>
-                                <t.icon style={{ width: "0.9rem", height: "0.9rem" }} />
-                                {t.label}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-                <div style={{ display: "flex", gap: "0.75rem" }}>
-                    <button onClick={loadAll} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "0.6rem", padding: "0.5rem 1rem", color: "white", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                        <RefreshCw style={{ width: "0.9rem", height: "0.9rem" }} />
-                    </button>
-                    <button onClick={handleLogout} style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: "0.6rem", padding: "0.5rem 1rem", color: "#fca5a5", cursor: "pointer" }}>Çıkış</button>
-                </div>
-            </div>
+        <div style={{ minHeight: "100vh", background: "#060914", color: "white", display: "flex", flexDirection: "column", fontFamily: "'Inter', sans-serif" }}>
 
+            {/* --- RESPONSIVE SIDEBAR --- */}
+            <aside className="admin-sidebar" style={{ width: "280px", background: "rgba(11,14,26,0.9)", borderRight: "1px solid rgba(255,255,255,0.06)", position: "fixed", height: "100vh", zIndex: 100, backdropFilter: "blur(40px)" }}>
+                {sidebarContent}
+            </aside>
+
+            {/* --- MOBILE HEADER --- */}
+            <header className="admin-mobile-header" style={{ position: "sticky", top: 0, zIndex: 90, background: "rgba(11,14,26,0.8)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.06)", padding: "1rem 1.5rem", display: "none", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                    <ShieldCheck style={{ width: "1.2rem", color: "#3b82f6" }} />
+                    <span style={{ fontWeight: 800 }}>Admin Panel</span>
+                </div>
+                <button onClick={() => setIsMobileMenuOpen(true)} style={{ background: "none", border: "none", color: "white", cursor: "pointer" }}><Menu /></button>
+            </header>
+
+            <AnimatePresence>
+                {isMobileMenuOpen && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(5px)" }}>
+                        <motion.div initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }} transition={{ type: "spring", damping: 25 }} style={{ width: "80%", maxWidth: "300px", background: "#0b0e1a", height: "100%", position: "relative" }}>
+                            <button onClick={() => setIsMobileMenuOpen(false)} style={{ position: "absolute", right: "1rem", top: "1.5rem", background: "none", border: "none", color: "white" }}><X /></button>
+                            {sidebarContent}
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            <main className="admin-main-content" style={{ flex: 1, marginLeft: "280px", padding: "3rem" }}>
             <div style={{ padding: "2rem", maxWidth: "1400px", margin: "0 auto" }}>
                 {activeTab === "dashboard" && (
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -605,6 +707,18 @@ export default function AdminPage() {
                                             </div>
                                         </div>
                                         <div style={{ display: "flex", gap: "0.5rem" }}>
+                                            <button 
+                                                onClick={() => {
+                                                    setEditingLicense({
+                                                        ...l,
+                                                        features: l.features || {}
+                                                    });
+                                                    setShowEditLicense(true);
+                                                }}
+                                                style={{ padding: "0.5rem", borderRadius: "0.5rem", background: "rgba(37,99,235,0.1)", color: "#60a5fa", border: "none", cursor: "pointer" }}
+                                            >
+                                                <Edit style={{ width: "0.9rem" }} />
+                                            </button>
                                             <button onClick={() => deleteLicense(l.id)} style={{ padding: "0.5rem", borderRadius: "0.5rem", background: "rgba(239,68,68,0.1)", color: "#f87171", border: "none", cursor: "pointer" }}><Trash2 style={{ width: "0.9rem" }} /></button>
                                         </div>
                                     </div>
@@ -616,8 +730,18 @@ export default function AdminPage() {
                                         </div>
                                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                             <code style={{ fontSize: "1.1rem", color: "white", letterSpacing: "1px" }}>{l.license_key}</code>
-                                            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.8rem", color: "rgba(255,255,255,0.5)" }}>
-                                                <Calendar style={{ width: "0.8rem" }} /> {l.total_days} Gün
+                                            <div style={{ 
+                                                display: "flex", 
+                                                alignItems: "center", 
+                                                gap: "0.4rem", 
+                                                fontSize: "0.85rem", 
+                                                fontWeight: 700,
+                                                color: l.total_days < 7 ? "#f87171" : (l.total_days < 30 ? "#f59e0b" : "#4ade80"),
+                                                background: l.total_days < 7 ? "rgba(239,68,68,0.1)" : (l.total_days < 30 ? "rgba(245,158,11,0.1)" : "rgba(34,197,94,0.1)"),
+                                                padding: "0.25rem 0.6rem",
+                                                borderRadius: "0.5rem"
+                                            }}>
+                                                <Clock style={{ width: "0.9rem" }} /> {l.total_days} Gün Kalan
                                             </div>
                                         </div>
                                     </div>
@@ -643,6 +767,7 @@ export default function AdminPage() {
                                                 <label style={{ display: "block", fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", marginBottom: "0.5rem", fontWeight: 600 }}>Download Link</label>
                                                 <input value={newLicenseData.download_link} onChange={e => setNewLicenseData({ ...newLicenseData, download_link: e.target.value })} style={{ width: "100%", padding: "0.75rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }} />
                                             </div>
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
                                             <div style={{ padding: "0.5rem", background: "rgba(255,255,255,0.02)", borderRadius: "0.75rem", border: "1px solid rgba(255,255,255,0.05)" }}>
                                                 <label style={{ display: "block", fontSize: "0.7rem", color: "rgba(255,255,255,0.5)", marginBottom: "0.5rem", fontWeight: 800, textTransform: "uppercase" }}>Özellikler</label>
                                                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.4rem" }}>
@@ -654,11 +779,75 @@ export default function AdminPage() {
                                                     ))}
                                                 </div>
                                             </div>
+                                            <div style={{ padding: "0.5rem", background: "rgba(255,255,255,0.02)", borderRadius: "0.75rem", border: "1px solid rgba(255,255,255,0.05)" }}>
+                                                <label style={{ display: "block", fontSize: "0.7rem", color: "rgba(255,255,255,0.5)", marginBottom: "0.5rem", fontWeight: 800, textTransform: "uppercase" }}>Enterprise (Beyaz Etiket)</label>
+                                                <input placeholder="Logo URL" value={newLicenseData.custom_logo_url} onChange={e => setNewLicenseData({ ...newLicenseData, custom_logo_url: e.target.value })} style={{ width: "100%", padding: "0.4rem", background: "rgba(30,41,59,0.5)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.4rem", color: "white", fontSize: "0.7rem", marginBottom: "0.4rem" }} />
+                                                <input placeholder="Renk (Hex)" value={newLicenseData.branding_config.primary_color} onChange={e => setNewLicenseData({ ...newLicenseData, branding_config: { ...newLicenseData.branding_config, primary_color: e.target.value } })} style={{ width: "100%", padding: "0.4rem", background: "rgba(30,41,59,0.5)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.4rem", color: "white", fontSize: "0.7rem" }} />
+                                            </div>
+                                        </div>
                                         </div>
                                         <input type="number" placeholder="Gün Sayısı" value={newLicenseData.total_days} onChange={e => setNewLicenseData({ ...newLicenseData, total_days: parseInt(e.target.value) })} style={{ padding: "0.75rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }} />
                                         <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
                                             <button type="button" onClick={() => setShowNewLicense(false)} style={{ flex: 1, padding: "0.75rem", borderRadius: "0.75rem", border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "white", cursor: "pointer" }}>İptal</button>
                                             <button type="submit" style={{ flex: 1, padding: "0.75rem", borderRadius: "0.75rem", background: "#2563eb", border: "none", color: "white", fontWeight: 700, cursor: "pointer" }}>Kaydet</button>
+                                        </div>
+                                    </form>
+                                </motion.div>
+                            </div>
+                        )}
+
+                        {showEditLicense && (
+                            <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
+                                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} style={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "1.5rem", padding: "2rem", width: "100%", maxWidth: "450px" }}>
+                                    <h2 style={{ marginBottom: "1.5rem" }}>Lisansı Düzenle</h2>
+                                    <form onSubmit={updateLicense} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                                        <input type="text" placeholder="Müşteri Adı" required value={editingLicense.client_name} onChange={e => setEditingLicense({ ...editingLicense, client_name: e.target.value })} style={{ padding: "0.75rem", background: "rgba(30,41,59,0.5)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }} />
+                                        <input type="email" placeholder="E-posta" required value={editingLicense.user_email} onChange={e => setEditingLicense({ ...editingLicense, user_email: e.target.value })} style={{ padding: "0.75rem", background: "rgba(30,41,59,0.5)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }} />
+                                        <input type="text" placeholder="Lisans Anahtarı" required value={editingLicense.license_key} onChange={e => setEditingLicense({ ...editingLicense, license_key: e.target.value.toUpperCase() })} style={{ padding: "0.75rem", background: "rgba(30,41,59,0.5)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }} />
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                                            <div>
+                                                <label style={{ display: "block", fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", marginBottom: "0.35rem", fontWeight: 600 }}>Plan</label>
+                                                <select value={editingLicense.plan_type} onChange={e => setEditingLicense({ ...editingLicense, plan_type: e.target.value })} style={{ width: "100%", padding: "0.7rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }}>
+                                                    <option value="BASIC">BASIC</option>
+                                                    <option value="PRO">PRO</option>
+                                                    <option value="ENTERPRISE">ENTERPRISE</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label style={{ display: "block", fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", marginBottom: "0.35rem", fontWeight: 600 }}>Bitiş Tarihi</label>
+                                                <input type="date" value={editingLicense.expires_at ? new Date(editingLicense.expires_at).toISOString().split('T')[0] : ""} onChange={e => setEditingLicense({ ...editingLicense, expires_at: new Date(e.target.value).toISOString() })} style={{ width: "100%", padding: "0.7rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }} />
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                                            <div style={{ padding: "0.75rem", background: "rgba(255,255,255,0.02)", borderRadius: "0.75rem", border: "1px solid rgba(255,255,255,0.05)" }}>
+                                                <label style={{ display: "block", fontSize: "0.7rem", color: "rgba(255,255,255,0.5)", marginBottom: "0.75rem", fontWeight: 800, textTransform: "uppercase" }}>Özellik Paketi</label>
+                                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+                                                    {Object.entries({
+                                                        adisyon: "Adisyon",
+                                                        mobile_app: "Mobil",
+                                                        trendyol_go: "Trendyol",
+                                                        getir: "GetirYemek",
+                                                        qnb_invoice: "QNB Fatura",
+                                                        ai_features: "AI Asistan"
+                                                    }).map(([f, label]) => (
+                                                        <label key={f} style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer", fontSize: "0.75rem", color: editingLicense.features[f] ? "#60a5fa" : "rgba(255,255,255,0.4)" }}>
+                                                            <input type="checkbox" checked={editingLicense.features[f] || false} onChange={e => setEditingLicense({ ...editingLicense, features: { ...editingLicense.features, [f]: e.target.checked } })} />
+                                                            {label}
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div style={{ padding: "0.75rem", background: "rgba(255,255,255,0.02)", borderRadius: "0.75rem", border: "1px solid rgba(255,255,255,0.05)" }}>
+                                                <label style={{ display: "block", fontSize: "0.7rem", color: "rgba(255,255,255,0.5)", marginBottom: "0.75rem", fontWeight: 800, textTransform: "uppercase" }}>Enterprise (Markalama)</label>
+                                                <input placeholder="Logo URL" value={editingLicense.custom_logo_url || ""} onChange={e => setEditingLicense({ ...editingLicense, custom_logo_url: e.target.value })} style={{ width: "100%", padding: "0.5rem", background: "rgba(30,41,59,0.5)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white", fontSize: "0.8rem", marginBottom: "0.5rem" }} />
+                                                <input placeholder="Birincil Renk" value={editingLicense.branding_config?.primary_color || ""} onChange={e => setEditingLicense({ ...editingLicense, branding_config: { ...editingLicense.branding_config, primary_color: e.target.value } })} style={{ width: "100%", padding: "0.5rem", background: "rgba(30,41,59,0.5)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white", fontSize: "0.8rem" }} />
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+                                            <button type="button" onClick={() => setShowEditLicense(false)} style={{ flex: 1, padding: "0.75rem", borderRadius: "0.75rem", border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "white", cursor: "pointer" }}>İptal</button>
+                                            <button type="submit" style={{ flex: 1, padding: "0.75rem", borderRadius: "0.75rem", background: "#2563eb", border: "none", color: "white", fontWeight: 700, cursor: "pointer" }}>Güncelle</button>
                                         </div>
                                     </form>
                                 </motion.div>
@@ -853,6 +1042,101 @@ export default function AdminPage() {
                     </>
                 )}
 
+                {activeTab === "tickets" && (
+                    <div style={{ animation: "fadeIn 0.3s ease-out" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
+                            <div>
+                                <h2 style={{ fontSize: "1.5rem", fontWeight: 900, marginBottom: "0.25rem" }}>Destek Talepleri</h2>
+                                <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.875rem" }}>Müşterilerden gelen yardım talepleri</p>
+                            </div>
+                        </div>
+
+                        <div style={{ display: "grid", gap: "1rem" }}>
+                            {tickets.length > 0 ? tickets.map(t => (
+                                <div key={t.id} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "1rem", padding: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                    <div style={{ display: "flex", gap: "1.5rem", alignItems: "center" }}>
+                                        <div style={{ width: "3rem", height: "3rem", borderRadius: "1rem", background: t.status === 'open' ? 'rgba(34,197,94,0.1)' : 'rgba(255,255,255,0.05)', color: t.status === 'open' ? '#4ade80' : 'rgba(255,255,255,0.4)', display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                            <MessageSquare style={{ width: "1.5rem" }} />
+                                        </div>
+                                        <div>
+                                            <div style={{ fontWeight: 800, fontSize: "1.1rem", marginBottom: "0.25rem" }}>{t.subject}</div>
+                                            <div style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.4)" }}>
+                                                <span style={{ fontWeight: 700, color: "white" }}>{(t.tenants as any)?.company_name}</span> • {new Date(t.created_at).toLocaleString('tr-TR')}
+                                            </div>
+                                            <p style={{ marginTop: "0.5rem", fontSize: "0.9rem", color: "rgba(255,255,255,0.7)", maxWidth: "600px" }}>{t.message}</p>
+                                        </div>
+                                    </div>
+                                    <div style={{ display: "flex", gap: "0.75rem" }}>
+                                        {t.status === 'open' ? (
+                                            <button onClick={() => updateTicketStatus(t.id, 'closed')} style={{ padding: "0.6rem 1rem", borderRadius: "0.6rem", background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.2)", color: "#4ade80", fontWeight: 700, cursor: "pointer" }}>Çözüldü Olarak İşaretle</button>
+                                        ) : (
+                                            <button onClick={() => updateTicketStatus(t.id, 'open')} style={{ padding: "0.6rem 1rem", borderRadius: "0.6rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.5)", fontWeight: 700, cursor: "pointer" }}>Geri Aç</button>
+                                        )}
+                                    </div>
+                                </div>
+                            )) : (
+                                <div style={{ textAlign: "center", padding: "4rem", color: "rgba(255,255,255,0.2)" }}>Henüz destek talebi bulunmuyor.</div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === "announcements" && (
+                    <div style={{ animation: "fadeIn 0.3s ease-out" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
+                            <div>
+                                <h2 style={{ fontSize: "1.5rem", fontWeight: 900, marginBottom: "0.25rem" }}>Sistem Duyuruları</h2>
+                                <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.875rem" }}>Tüm müşterilere gidecek global mesajlar</p>
+                            </div>
+                            <button onClick={() => setShowNewAnnounce(true)} style={{ padding: "0.75rem 1.5rem", borderRadius: "0.75rem", background: "#f59e0b", color: "#000", fontWeight: 800, border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                                <Plus style={{ width: "1.1rem" }} /> Yeni Duyuru
+                            </button>
+                        </div>
+
+                        <div style={{ display: "grid", gap: "1rem" }}>
+                            {announcements.map(a => (
+                                <div key={a.id} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "1.5rem", padding: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                                    <div style={{ display: "flex", gap: "1.25rem" }}>
+                                        <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "0.75rem", background: "rgba(245,158,11,0.1)", color: "#f59e0b", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                            <Bell style={{ width: "1.25rem" }} />
+                                        </div>
+                                        <div>
+                                            <div style={{ fontWeight: 800, fontSize: "1.1rem", marginBottom: "0.25rem" }}>{a.title}</div>
+                                            <p style={{ fontSize: "0.95rem", color: "rgba(255,255,255,0.5)", margin: 0, lineHeight: 1.6 }}>{a.message}</p>
+                                            <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.2)", marginTop: "0.75rem" }}>{new Date(a.created_at).toLocaleString('tr-TR')}</div>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => deleteAnnounce(a.id)} style={{ padding: "0.5rem", borderRadius: "0.5rem", background: "rgba(239,68,68,0.1)", border: "none", color: "#ef4444", cursor: "pointer" }}><Trash2 style={{ width: "1.1rem" }} /></button>
+                                </div>
+                            ))}
+                        </div>
+
+                        {showNewAnnounce && (
+                            <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(10px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+                                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} style={{ background: "#111827", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "2rem", padding: "2.5rem", width: "100%", maxWidth: "500px" }}>
+                                    <h3 style={{ fontSize: "1.5rem", fontWeight: 900, marginBottom: "2rem" }}>Yeni Duyuru Yayınla</h3>
+                                    <form onSubmit={saveAnnounce} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+                                        <div>
+                                            <label style={{ display: "block", fontSize: "0.75rem", color: "rgba(255,255,255,0.4)", marginBottom: "0.5rem", fontWeight: 700, textTransform: "uppercase" }}>Başlık</label>
+                                            <input required value={announceForm.title} onChange={e => setAnnounceForm({ ...announceForm, title: e.target.value })} style={{ width: "100%", padding: "0.875rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.75rem", color: "white" }} />
+                                        </div>
+                                        <div>
+                                            <label style={{ display: "block", fontSize: "0.75rem", color: "rgba(255,255,255,0.4)", marginBottom: "0.5rem", fontWeight: 700, textTransform: "uppercase" }}>Mesaj</label>
+                                            <textarea required value={announceForm.message} onChange={e => setAnnounceForm({ ...announceForm, message: e.target.value })} rows={4} style={{ width: "100%", padding: "0.875rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.75rem", color: "white", resize: "none" }} />
+                                        </div>
+                                        <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+                                            <button type="button" onClick={() => setShowNewAnnounce(false)} style={{ flex: 1, padding: "1rem", borderRadius: "1rem", background: "transparent", border: "1px solid rgba(255,255,255,0.1)", color: "white", fontWeight: 700, cursor: "pointer" }}>İptal</button>
+                                            <button type="submit" disabled={savingAnnounce} style={{ flex: 2, padding: "1rem", borderRadius: "1rem", background: "#f59e0b", color: "#000", fontWeight: 800, border: "none", cursor: "pointer" }}>
+                                                {savingAnnounce ? "Yayınlanıyor..." : "Duyuruyu Yayınla"}
+                                            </button>
+                                        </div>
+                                    </form>
+                                </motion.div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 {activeTab === "about" && (
                     <>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
@@ -919,8 +1203,8 @@ export default function AdminPage() {
                     </>
                 )}
             </div>
+            </main>
 
-            {/* Toast Notifications */}
             <AnimatePresence>
                 {toast && (
                     <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }} style={{
@@ -936,8 +1220,25 @@ export default function AdminPage() {
                 )}
             </AnimatePresence>
 
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            <style>{`
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+                
+                @media (max-width: 1024px) {
+                    .admin-sidebar { display: none !important; }
+                    .admin-mobile-header { display: flex !important; }
+                    .admin-main-content { margin-left: 0 !important; padding: 2rem 1.5rem !important; }
+                }
+
+                @media (max-width: 640px) {
+                    .stats-grid { grid-template-columns: 1fr !important; }
+                    .admin-main-content { padding: 1.5rem 1rem !important; }
+                }
+
+                @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+                ::-webkit-scrollbar { width: 6px; }
+                ::-webkit-scrollbar-track { background: transparent; }
+                ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 10px; }
+            `}</style>
         </div>
     );
 }
-

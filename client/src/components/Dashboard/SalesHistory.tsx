@@ -11,7 +11,9 @@ import {
     Filter,
     CreditCard,
     Banknote,
-    FileText
+    FileText,
+    Trash2,
+    AlertTriangle
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
@@ -37,7 +39,9 @@ export default function SalesHistory() {
                 .select(`
                     id, 
                     total_amount, 
+                    total_profit,
                     payment_method, 
+                    notes,
                     created_at,
                     sale_items (
                         quantity,
@@ -250,7 +254,55 @@ export default function SalesHistory() {
                             </div>
 
                             {/* Modal Footer (Actions) */}
-                            <div className="p-6 border-t border-border bg-primary/5 flex gap-4">
+                            <div className="p-6 border-t border-border bg-primary/5 flex flex-wrap gap-4">
+                                {selectedSale.notes !== "İPTAL EDİLDİ" && (
+                                    <button
+                                        onClick={async () => {
+                                            if (!confirm("BU SATIŞI İPTAL ETMEK İSTEDİĞİNİZDEN EMİN MİSİNİZ? \n\n* Tüm ürünler stoğa geri eklenecek. \n* Kasa toplamından düşülecek.")) return;
+                                            
+                                            try {
+                                                // 1. İptal Durumunu Güncelle (SQL'e yeni sütun ekleme riskine girmemek için NOTES kısmını kullanıyoruz)
+                                                // Tutar ve Kar sıfırlanır ki dashboardlardan otomatik düşsün
+                                                const { error: cancelError } = await supabase
+                                                    .from('sales')
+                                                    .update({ 
+                                                        notes: "İPTAL EDİLDİ", 
+                                                        total_amount: 0, 
+                                                        total_profit: 0 
+                                                    })
+                                                    .eq('id', selectedSale.id);
+
+                                                if (cancelError) throw cancelError;
+
+                                                // 2. Stokları Geri Al
+                                                for (const item of selectedSale.sale_items) {
+                                                    await supabase.rpc('increment_stock', {
+                                                        p_product_id: item.product_id,
+                                                        p_qty: item.quantity
+                                                    });
+                                                }
+
+                                                alert("Satış başarıyla iptal edildi ve stoklar güncellendi.");
+                                                setIsDetailModalOpen(false);
+                                                fetchSales(); // Listeyi yenile
+                                            } catch (err: any) {
+                                                alert("İptal sırasında bir hata oluştu: " + err.message);
+                                            }
+                                        }}
+                                        className="py-4 px-6 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2 border border-rose-500/20"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                        SATIŞI İPTAL ET
+                                    </button>
+                                )}
+
+                                {selectedSale.notes === "İPTAL EDİLDİ" && (
+                                    <div className="flex-1 flex items-center justify-center gap-2 text-rose-500 font-black uppercase text-sm bg-rose-500/5 rounded-xl border border-rose-500/20 py-4">
+                                        <AlertTriangle size={18} />
+                                        BU İŞLEM İPTAL EDİLMİŞTİR
+                                    </div>
+                                )}
+
                                 <button
                                     onClick={() => {
                                         // Trigger duplicate receipt print by passing sale data formatted for receipt component
@@ -266,9 +318,6 @@ export default function SalesHistory() {
                                             total: selectedSale.total_amount,
                                             method: selectedSale.payment_method
                                         };
-                                        // We need a way to trigger the print. 
-                                        // For simplicity in this structure, we can just log or show a toast, 
-                                        // or ideally use a hidden print button ref.
                                         alert("Fiş yazdırma tetiklendi (Demo)");
                                     }}
                                     className="flex-1 py-4 bg-primary/5 hover:bg-primary/10 text-foreground font-bold rounded-xl transition-all flex items-center justify-center gap-2"

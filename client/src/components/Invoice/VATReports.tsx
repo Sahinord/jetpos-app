@@ -43,7 +43,7 @@ export default function VATReports({ type }: Props) {
                 .lte('invoice_date', dateRange.end);
 
             if (filterType === 'Gelen Faturalar') {
-                query = query.in('invoice_type', ['alis', 'alinan_hizmet']);
+                query = query.in('invoice_type', ['alis', 'alinan_hizmet', 'purchase']);
             } else if (filterType === 'Giden Faturalar') {
                 query = query.in('invoice_type', ['satis', 'perakende_satis', 'yapilan_hizmet']);
             }
@@ -59,9 +59,26 @@ export default function VATReports({ type }: Props) {
                 let v1 = 0, v10 = 0, v20 = 0;
                 data.forEach(inv => {
                     inv.invoice_items?.forEach((item: any) => {
-                        if (item.vat_rate === 1) v1 += item.vat_amount || 0;
-                        if (item.vat_rate === 10) v10 += item.vat_amount || 0;
-                        if (item.vat_rate === 20) v20 += item.vat_amount || 0;
+                        const rate = Number(item.vat_rate || 0);
+                        let amount = Number(item.vat_amount);
+                        
+                        // Eğer vat_amount veritabanında kayıtlı değilse (örneğin bazı alış faturalarında) dinamik hesapla
+                        if (!amount || isNaN(amount)) {
+                            const qty = Number(item.quantity || 0);
+                            const price = Number(item.unit_price || 0);
+                            const discount = Number(item.discount_rate || 0);
+                            // line total
+                            const lineTotal = (qty * price) - ((qty * price * discount) / 100);
+                            amount = (lineTotal * rate) / 100;
+                        }
+
+                        // Alış faturaları (Gelen) için KDV'yi negatif / pozitif ayırmaya gerek var mı? 
+                        // Şu anki mantıkta "Seçili filtrenin Toplam KDV Hacmi" gösteriliyor. 
+                        // İsteğe bağlı olarak Gelen vs Giden için net KDV hesaplanabilir ama mevcut sum işlemini koruyoruz.
+
+                        if (rate === 1) v1 += amount;
+                        if (rate === 10) v10 += amount;
+                        if (rate === 20) v20 += amount;
                     });
                 });
                 setAnalysis({ vat1: v1, vat10: v10, vat20: v20 });

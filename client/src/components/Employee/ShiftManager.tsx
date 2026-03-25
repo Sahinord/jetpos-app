@@ -167,17 +167,6 @@ export default function ShiftManager({ showToast }: any) {
 
     return (
         <div className="space-y-6">
-            {/* Header */}
-            <div>
-                <h1 className="text-3xl font-black tracking-widest uppercase flex items-center gap-3">
-                    <Clock className="text-primary" />
-                    VARDİYA YÖNETİMİ
-                </h1>
-                <p className="text-secondary font-bold text-sm uppercase tracking-wider mt-1">
-                    Çalışan giriş/çıkış ve performans takibi
-                </p>
-            </div>
-
             {/* Date Selector & Stats */}
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
                 <div className="glass-card p-4">

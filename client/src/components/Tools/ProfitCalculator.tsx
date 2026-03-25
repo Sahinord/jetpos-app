@@ -1,8 +1,18 @@
-"use client";
-
-import { useState, useEffect, useRef } from "react";
-import { X, Calculator, TrendingUp, AlertCircle, Percent, Coins, Truck, Megaphone, Tag, Save, History, Trash2, Clock } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { 
+    X, Calculator, TrendingUp, AlertCircle, Percent, Coins, 
+    Truck, Megaphone, Tag, Save, History, Trash2, Clock, 
+    Search, CheckCircle2, Globe, ShoppingCart, Zap
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "@/lib/supabase";
+
+const INITIAL_PLATFORMS = [
+    { id: 'trendyol', name: 'Trendyol', commission: 21, shipping: 48, color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
+    { id: 'hepsiburada', name: 'Hepsiburada', commission: 19.5, shipping: 42, color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
+    { id: 'amazon', name: 'Amazon', commission: 14.5, shipping: 55, color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
+    { id: 'trendyol_go', name: 'Trendyol Go (Yemek)', commission: 28, shipping: 0, color: 'text-rose-500', bg: 'bg-rose-500/10', border: 'border-rose-500/20' },
+];
 
 const InputField = ({ label, icon: Icon, value, onChange, placeholder = "0.00", suffix = "₺" }: any) => (
     <div className="space-y-1.5">
@@ -27,7 +37,12 @@ const InputField = ({ label, icon: Icon, value, onChange, placeholder = "0.00", 
     </div>
 );
 
-export default function ProfitCalculatorPage() {
+export default function ProfitCalculatorPage({ products = [], onRefresh, showToast }: any) {
+    const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+    const [productSearch, setProductSearch] = useState("");
+    const [activePlatforms, setActivePlatforms] = useState(INITIAL_PLATFORMS);
+    const [editingPlatform, setEditingPlatform] = useState<any>(null);
+    
     const [values, setValues] = useState({
         title: "",
         cost: 0,
@@ -36,7 +51,7 @@ export default function ProfitCalculatorPage() {
         ads: 0,
         salePrice: 0,
         vat: 1,
-        withholding: 1, // %1 Stopaj sabit
+        withholding: 0, // %1 Stopaj opsiyonel
     });
 
     const [dimensions, setDimensions] = useState({
@@ -54,6 +69,66 @@ export default function ProfitCalculatorPage() {
     });
 
     const [history, setHistory] = useState<any[]>([]);
+
+    // Filter products for search
+    const filteredProducts = useMemo(() => {
+        if (!productSearch) return [];
+        const lowQuery = productSearch.toLowerCase();
+        return products.filter((p: any) => 
+            p.name.toLowerCase().includes(lowQuery) || 
+            p.barcode?.includes(lowQuery)
+        ).slice(0, 5);
+    }, [products, productSearch]);
+
+    const handleSelectProduct = (p: any) => {
+        setSelectedProductId(p.id);
+        setValues({
+            ...values,
+            title: p.name,
+            cost: p.purchase_price || 0,
+            salePrice: p.sale_price || 0
+        });
+        setProductSearch("");
+        if (showToast) showToast(`${p.name} verileri çekildi.`, "info");
+    };
+
+    const applyPlatformPreset = (platform: any) => {
+        setValues({
+            ...values,
+            commission: platform.commission,
+            shipping: platform.shipping
+        });
+        if (showToast) showToast(`${platform.name} ayarları uygulandı.`, "info");
+    };
+
+    const handleApplyToProduct = async () => {
+        if (!selectedProductId) return;
+        
+        try {
+            const { error } = await supabase
+                .from('products')
+                .update({
+                    purchase_price: values.cost,
+                    sale_price: values.salePrice
+                })
+                .eq('id', selectedProductId);
+
+            if (error) throw error;
+            
+            if (showToast) showToast("Ürün fiyatları başarıyla güncellendi!", "success");
+            if (onRefresh) onRefresh();
+        } catch (error: any) {
+            if (showToast) showToast("Güncelleme hatası: " + error.message, "error");
+        }
+    };
+
+    const handleSavePlatformEdit = () => {
+        if (!editingPlatform) return;
+        const updated = activePlatforms.map(p => p.id === editingPlatform.id ? editingPlatform : p);
+        setActivePlatforms(updated);
+        setEditingPlatform(null);
+        if (showToast) showToast(`${editingPlatform.name} oranları güncellendi.`, "success");
+    };
 
     useEffect(() => {
         // 1. Gelir (KDV Hariç)
@@ -110,6 +185,92 @@ export default function ProfitCalculatorPage() {
 
     return (
         <div className="space-y-8 pb-20">
+            {/* Upper Tools */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Product Connection */}
+                <div className="glass-card p-6 border-primary/20 bg-primary/5">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="p-2 bg-primary rounded-lg text-white">
+                            <ShoppingCart size={18} />
+                        </div>
+                        <h3 className="text-sm font-black text-foreground uppercase tracking-widest">Ürün Bağlantısı</h3>
+                    </div>
+                    <div className="relative">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-secondary w-4 h-4" />
+                        <input
+                            type="text"
+                            placeholder="Bir ürünü isminden veya barkodundan seçin..."
+                            className="w-full bg-background border border-border rounded-xl py-3 pl-10 pr-4 text-sm focus:border-primary outline-none transition-all"
+                            value={productSearch}
+                            onChange={(e) => setProductSearch(e.target.value)}
+                        />
+                        <AnimatePresence>
+                            {filteredProducts.length > 0 && (
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 5 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 5 }}
+                                    className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-2xl z-50 overflow-hidden"
+                                >
+                                    {filteredProducts.map((p: any) => (
+                                        <button
+                                            key={p.id}
+                                            onClick={() => handleSelectProduct(p)}
+                                            className="w-full p-4 flex items-center justify-between hover:bg-primary/5 transition-all text-left border-b border-border/50 last:border-0"
+                                        >
+                                            <div>
+                                                <p className="font-bold text-sm text-foreground">{p.name}</p>
+                                                <p className="text-[10px] text-secondary font-bold uppercase">{p.barcode || 'Barksodsuz'}</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-[10px] text-secondary font-black uppercase">Mevcut</p>
+                                                <p className="text-xs font-black text-primary">₺{p.sale_price?.toFixed(2)}</p>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+                    {selectedProductId && (
+                        <div className="mt-4 p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-xl flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <CheckCircle2 className="text-emerald-500" size={16} />
+                                <span className="text-xs font-bold text-emerald-600">Ürün Başarıyla Bağlandı</span>
+                            </div>
+                            <button onClick={() => setSelectedProductId(null)} className="text-[10px] font-black underline text-secondary hover:text-rose-500 uppercase tracking-widest">Bağlantıyı Kes</button>
+                        </div>
+                    )}
+                </div>
+
+                {/* Platform Presets */}
+                <div className="glass-card p-6 border-indigo-500/20 bg-indigo-500/5">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="p-2 bg-indigo-500 rounded-lg text-white">
+                            <Globe size={18} />
+                        </div>
+                        <h3 className="text-sm font-black text-foreground uppercase tracking-widest">Platform Presetleri</h3>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        {activePlatforms.map((plat) => (
+                            <button
+                                key={plat.id}
+                                onClick={() => applyPlatformPreset(plat)}
+                                onDoubleClick={() => setEditingPlatform({ ...plat })}
+                                className={`flex flex-col items-center justify-center p-3 rounded-2xl border ${plat.bg} ${plat.border} hover:scale-[1.05] transition-all group relative active:scale-95`}
+                                title="Çift tıkla oranları düzenle"
+                            >
+                                <span className={`text-[10px] font-black uppercase tracking-widest mb-1 ${plat.color}`}>{plat.name}</span>
+                                <span className="text-[8px] font-bold text-secondary/60 uppercase">%{plat.commission} Kom.</span>
+                                <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Zap size={8} className={plat.color} />
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Left Form */}
                 <div className="lg:col-span-2 glass-card !p-8 space-y-8">
@@ -151,13 +312,25 @@ export default function ProfitCalculatorPage() {
                         </div>
                     </div>
 
-                    <button
-                        onClick={saveToHistory}
-                        className="w-full bg-primary hover:bg-primary/90 text-white py-4 rounded-xl font-black text-lg flex items-center justify-center space-x-3 transition-all active:scale-[0.98] shadow-xl shadow-primary/20"
-                    >
-                        <Save className="w-6 h-6" />
-                        <span>HESAPLAMAYI KAYDET</span>
-                    </button>
+                    <div className="flex gap-4">
+                        <button
+                            onClick={saveToHistory}
+                            className="flex-1 bg-primary/10 hover:bg-primary/20 text-primary py-4 rounded-xl font-black text-lg flex items-center justify-center space-x-3 transition-all active:scale-[0.98] border border-primary/20"
+                        >
+                            <Save className="w-6 h-6" />
+                            <span>KAYDET</span>
+                        </button>
+                        
+                        {selectedProductId && (
+                            <button
+                                onClick={handleApplyToProduct}
+                                className="flex-[1.5] bg-emerald-500 hover:bg-emerald-600 text-white py-4 rounded-xl font-black text-lg flex items-center justify-center space-x-3 transition-all active:scale-[0.98] shadow-xl shadow-emerald-500/20"
+                            >
+                                <Zap className="w-6 h-6" />
+                                <span>ÜRÜNE UYGULA</span>
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Right Results */}
@@ -317,6 +490,73 @@ export default function ProfitCalculatorPage() {
                     )}
                 </div>
             </div>
+
+            {/* Platform Edit Modal */}
+            <AnimatePresence>
+                {editingPlatform && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setEditingPlatform(null)}
+                            className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="w-full max-w-sm bg-card border border-border rounded-3xl shadow-2xl overflow-hidden relative z-10 p-8"
+                        >
+                            <div className="flex items-center justify-between mb-8">
+                                <div>
+                                    <h3 className="text-xl font-black text-foreground uppercase tracking-tight">{editingPlatform.name}</h3>
+                                    <p className="text-[10px] font-bold text-secondary uppercase tracking-widest mt-1">Varsayılan Oranları Düzenle</p>
+                                </div>
+                                <button onClick={() => setEditingPlatform(null)} className="p-2 hover:bg-secondary/10 rounded-xl transition-all">
+                                    <X size={20} className="text-secondary" />
+                                </button>
+                            </div>
+
+                            <div className="space-y-6">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-secondary tracking-widest uppercase ml-1">KOMİSYON (%)</label>
+                                    <input
+                                        type="number"
+                                        className="w-full bg-secondary/5 border border-border rounded-xl px-4 py-3 font-bold text-lg focus:border-primary outline-none transition-all"
+                                        value={editingPlatform.commission}
+                                        onChange={(e) => setEditingPlatform({ ...editingPlatform, commission: parseFloat(e.target.value) || 0 })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-secondary tracking-widest uppercase ml-1">KARGO MALİYETİ (₺)</label>
+                                    <input
+                                        type="number"
+                                        className="w-full bg-secondary/5 border border-border rounded-xl px-4 py-3 font-bold text-lg focus:border-primary outline-none transition-all"
+                                        value={editingPlatform.shipping}
+                                        onChange={(e) => setEditingPlatform({ ...editingPlatform, shipping: parseFloat(e.target.value) || 0 })}
+                                    />
+                                </div>
+
+                                <div className="pt-4 flex gap-4">
+                                    <button
+                                        onClick={() => setEditingPlatform(null)}
+                                        className="flex-1 px-6 py-4 rounded-xl border border-border font-black text-sm hover:bg-secondary/5 transition-all uppercase"
+                                    >
+                                        İPTAL
+                                    </button>
+                                    <button
+                                        onClick={handleSavePlatformEdit}
+                                        className="flex-1 px-6 py-4 rounded-xl bg-primary text-white font-black text-sm shadow-xl shadow-primary/20 hover:opacity-90 transition-all uppercase"
+                                    >
+                                        GÜNCELLE
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

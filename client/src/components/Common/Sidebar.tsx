@@ -530,12 +530,12 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                             onChange={(e) => setSearchQuery(e.target.value)}
                             onFocus={() => setIsSearchFocused(true)}
                             onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
-                            className="w-full bg-primary/5 border border-white/5 focus:border-primary/30 rounded-xl pl-10 pr-4 py-2.5 text-xs font-bold text-white placeholder:text-secondary/30 outline-none transition-all"
+                            className="w-full bg-[var(--color-faded)] border border-[var(--color-border)] focus:border-primary/50 rounded-xl pl-10 pr-4 py-2.5 text-xs font-bold text-[var(--color-sidebar-foreground)] placeholder:text-[var(--color-muted)] outline-none transition-all"
                         />
                         {searchQuery && (
                             <button
                                 onClick={() => setSearchQuery("")}
-                                className="absolute right-3 p-1 hover:bg-white/10 rounded-lg text-secondary/40 hover:text-white transition-all"
+                                className="absolute right-3 p-1 hover:bg-white/10 rounded-lg text-[var(--color-muted)] hover:text-primary transition-all"
                             >
                                 <X className="w-3 h-3" />
                             </button>
@@ -549,7 +549,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                                 initial={{ opacity: 0, y: -10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -10 }}
-                                className="absolute left-4 right-4 mt-2 bg-card/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl z-[110] max-h-[300px] overflow-y-auto custom-scrollbar p-2 space-y-1"
+                                className="absolute left-4 right-4 mt-2 bg-card border border-[var(--color-border)] rounded-2xl shadow-2xl z-[110] max-h-[300px] overflow-y-auto custom-scrollbar p-2 space-y-1"
                             >
                                 {searchResults.length > 0 ? (
                                     searchResults.map(item => (
@@ -559,15 +559,15 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                                                 handleTabChange(item.id);
                                                 setSearchQuery("");
                                             }}
-                                            className="w-full flex items-center gap-3 p-2.5 hover:bg-white/5 rounded-xl transition-all group group-hover:translate-x-1"
+                                            className="w-full flex items-center gap-3 p-2.5 hover:bg-[var(--color-faded)] rounded-xl transition-all group group-hover:translate-x-1"
                                         >
                                             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20">
                                                 <item.icon className="w-4 h-4 text-primary" />
                                             </div>
                                             <div className="flex flex-col items-start min-w-0">
-                                                <span className="text-xs font-black text-white">{item.label}</span>
+                                                <span className="text-xs font-black text-[var(--color-sidebar-foreground)]">{item.label}</span>
                                                 {item.description && (
-                                                    <span className="text-[10px] text-secondary/60 truncate w-full text-left">{item.description}</span>
+                                                    <span className="text-[10px] text-[var(--color-muted)] truncate w-full text-left">{item.description}</span>
                                                 )}
                                             </div>
                                         </button>
@@ -752,9 +752,9 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                                                                             <div className="absolute right-4 top-full w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[8px] border-t-white/10" />
                                                                             <div className="flex items-center gap-2 mb-2">
                                                                                 <div className="w-1 h-3 bg-primary rounded-full" />
-                                                                                <span className="text-[10px] font-black text-secondary tracking-widest uppercase">Nedir?</span>
+                                                                                <span className="text-[10px] font-black text-[var(--color-muted)] tracking-widest uppercase">Nedir?</span>
                                                                             </div>
-                                                                            <p className="text-xs text-white/90 leading-relaxed font-medium">
+                                                                            <p className="text-xs text-[var(--color-card-foreground)] leading-relaxed font-medium">
                                                                                 {item.description}
                                                                             </p>
                                                                         </div>

@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { QNBClient } from '@/lib/qnb/client';
+import { getInvoiceProvider } from '@/lib/invoice-providers';
 import { getTenantSettings } from '@/lib/tenant-settings';
 import crypto from 'crypto';
 
@@ -27,17 +27,19 @@ export async function POST(req: NextRequest) {
             if (maskedSettings.qnb.password) maskedSettings.qnb.password = '***';
             if (maskedSettings.qnb.testPassword) maskedSettings.qnb.testPassword = '***';
         }
-        console.log(`[Invoice API] Settings:`, JSON.stringify(maskedSettings, null, 2));
+        if (maskedSettings.parasut) {
+            if (maskedSettings.parasut.password) maskedSettings.parasut.password = '***';
+            if (maskedSettings.parasut.clientSecret) maskedSettings.parasut.clientSecret = '***';
+        }
+        console.log(`[Invoice API] Provider: ${tenantSettings.invoice_provider || 'qnb'}, Settings:`, JSON.stringify(maskedSettings, null, 2));
 
-        const client = new QNBClient(tenantSettings);
+        const provider = getInvoiceProvider(tenantSettings);
         const docType = invoiceData.docType || 'EFATURA';
 
-        console.log(`[Invoice API] Sending invoice to QNB (${docType})...`);
+        console.log(`[Invoice API] Sending invoice to ${provider.name} (${docType})...`);
+        const result = await provider.sendInvoice(invoiceData);
         
-        // BURADA TAKILIYOR OLABİLİR - Zaman aşımı ekleyelim mi? 
-        const result = await client.sendInvoice(invoiceData, docType);
-        
-        console.log(`[Invoice API] QNB Response received:`, JSON.stringify(result));
+        console.log(`[Invoice API] ${provider.name} Response received:`, JSON.stringify(result));
 
         if (result.success && tenantId) {
             try {
@@ -140,10 +142,10 @@ export async function POST(req: NextRequest) {
                 ettn: (result as any).ettn
             });
         } else {
-            console.error(`[Invoice API] QNB Error:`, result.error);
+            console.error(`[Invoice API] ${provider.name} Error:`, result.error);
             return NextResponse.json({
                 success: false,
-                error: result.error || 'QNB Fatura gönderimi başarısız oldu.'
+                error: result.error || 'Fatura gönderimi başarısız oldu.'
             }, { status: 400 });
         }
 

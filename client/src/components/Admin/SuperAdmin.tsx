@@ -30,7 +30,7 @@ const AVAILABLE_FEATURES = [
     { id: 'employee_module', label: 'Çalışan Yönetimi & Vardiya' },
     { id: 'label_designer', label: 'Ürün Etiket Tasarımı' },
     { id: 'trendyol_go', label: 'Trendyol GO' },
-    { id: 'invoice', label: 'E-Fatura Entegrasyonu (QNB)' },
+    { id: 'invoice', label: 'E-Fatura Entegrasyonu' },
     { id: 'invoice_management', label: 'Fatura ve İrsaliye Yönetimi' },
     { id: 'ai_features', label: 'JetPos AI (Öngörüler & Asistan)' },
     { id: 'adisyon', label: 'Adisyon (Masa Yönetimi)' },
@@ -69,9 +69,11 @@ export default function SuperAdmin() {
     const [aiModal, setAiModal] = useState<{ tenantId: string; tenantName: string; currentKey: string } | null>(null);
     const [tenantAiKey, setTenantAiKey] = useState('');
 
-    // QNB states
-    const [qnbModal, setQnbModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
+    // Invoice Provider states
+    const [invoiceModal, setInvoiceModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
+    const [invoiceProvider, setInvoiceProvider] = useState<'qnb' | 'parasut'>('qnb');
     const [qnbSettings, setQnbSettings] = useState({ vkn: '', username: '', password: '', erpCode: 'JET31270', isTest: true, branchCode: '', counterCode: '' });
+    const [parasutSettings, setParasutSettings] = useState({ email: '', password: '', companyId: '', clientId: '', clientSecret: '' });
 
     // Trendyol GO states
     const [trendyolModal, setTrendyolModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
@@ -385,19 +387,19 @@ export default function SuperAdmin() {
         }
     };
 
-    const handleSaveQnbSettings = async () => {
-        if (!qnbModal) return;
+    const handleSaveInvoiceSettings = async () => {
+        if (!invoiceModal) return;
 
         setSaving(true);
         try {
-            const tenantObj = tenants.find(t => t.id === qnbModal.tenantId);
+            const tenantObj = tenants.find(t => t.id === invoiceModal.tenantId);
             const currentSettings = tenantObj?.settings || {};
 
-            // Veritabanına tenants -> settings olarak update işlemi gönder
             const updatedSettings = {
                 ...currentSettings,
+                invoice_provider: invoiceProvider,
                 qnb: {
-                    ...currentSettings.qnb, // Eski diğer ayarları (varsa URL'ler vb.) koru
+                    ...currentSettings.qnb,
                     vkn: !qnbSettings.isTest ? qnbSettings.vkn : (currentSettings.qnb?.vkn || ''),
                     password: !qnbSettings.isTest ? qnbSettings.password : (currentSettings.qnb?.password || ''),
                     testVkn: qnbSettings.isTest ? qnbSettings.vkn : (currentSettings.qnb?.testVkn || qnbSettings.vkn),
@@ -407,19 +409,27 @@ export default function SuperAdmin() {
                     isTest: qnbSettings.isTest,
                     branchCode: qnbSettings.branchCode,
                     counterCode: qnbSettings.counterCode
+                },
+                parasut: {
+                    ...currentSettings.parasut,
+                    email: parasutSettings.email,
+                    password: parasutSettings.password,
+                    companyId: parasutSettings.companyId,
+                    clientId: parasutSettings.clientId,
+                    clientSecret: parasutSettings.clientSecret
                 }
             };
 
             const { error } = await supabase
                 .from('tenants')
                 .update({ settings: updatedSettings })
-                .eq('id', qnbModal.tenantId);
+                .eq('id', invoiceModal.tenantId);
 
             if (error) throw error;
 
-            alert(`✅ ${qnbModal.tenantName} için QNB Ayarları güncellendi!`);
-            setQnbModal(null);
-            await fetchTenants(); // State yenilemesi için verileri tekrar çek
+            alert(`✅ ${invoiceModal.tenantName} için E-Fatura Ayarları güncellendi!`);
+            setInvoiceModal(null);
+            await fetchTenants();
         } catch (err: any) {
             alert('❌ Hata: ' + err.message);
         } finally {
@@ -645,11 +655,15 @@ export default function SuperAdmin() {
                                         </button>
                                         <button
                                             onClick={() => {
-                                                const currentQnb = tenant.settings?.qnb || {};
-                                                setQnbModal({
+                                                const settings = tenant.settings || {};
+                                                const currentQnb = settings.qnb || {};
+                                                const currentParasut = settings.parasut || {};
+                                                
+                                                setInvoiceModal({
                                                     tenantId: tenant.id,
                                                     tenantName: tenant.company_name || tenant.license_key
                                                 });
+                                                setInvoiceProvider(settings.invoice_provider || 'qnb');
                                                 setQnbSettings({
                                                     vkn: currentQnb.vkn || currentQnb.testVkn || '',
                                                     username: currentQnb.earsivUsername || '',
@@ -659,9 +673,16 @@ export default function SuperAdmin() {
                                                     branchCode: currentQnb.branchCode || '',
                                                     counterCode: currentQnb.counterCode || ''
                                                 });
+                                                setParasutSettings({
+                                                    email: currentParasut.email || currentParasut.username || '',
+                                                    password: currentParasut.password || '',
+                                                    companyId: currentParasut.companyId || '',
+                                                    clientId: currentParasut.clientId || '',
+                                                    clientSecret: currentParasut.clientSecret || ''
+                                                });
                                             }}
                                             className="p-3 bg-white/5 hover:bg-emerald-500/20 rounded-xl text-slate-400 hover:text-emerald-500 transition-all font-bold"
-                                            title="QNB e-Fatura Ayarları"
+                                            title="E-Fatura Sağlayıcı Ayarları"
                                         >
                                             <FileText className="w-5 h-5" />
                                         </button>
@@ -1060,8 +1081,8 @@ export default function SuperAdmin() {
                 </div>
             )}
 
-            {/* QNB Modal */}
-            {qnbModal && (
+            {/* Invoice Provider Modal */}
+            {invoiceModal && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
                     <div className="bg-slate-900 border border-white/10 rounded-[2.5rem] max-w-md w-full shadow-2xl max-h-[90vh] overflow-y-auto">
                         <div className="p-8 border-b border-white/10 sticky top-0 bg-slate-900 z-10">
@@ -1070,95 +1091,164 @@ export default function SuperAdmin() {
                                     <FileText className="w-6 h-6 text-emerald-500" />
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-black text-white">QNB e-Fatura Ayarları</h3>
-                                    <p className="text-xs text-slate-500 mt-1">{qnbModal.tenantName}</p>
+                                    <h3 className="text-xl font-black text-white">E-Fatura Ayarları</h3>
+                                    <p className="text-xs text-slate-500 mt-1">{invoiceModal.tenantName}</p>
                                 </div>
                             </div>
                         </div>
-                        <div className="p-8 space-y-4">
+                        <div className="p-8 space-y-6">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">VKN / TCKN</label>
-                                <input
-                                    type="text"
-                                    value={qnbSettings.vkn}
-                                    onChange={(e) => setQnbSettings({ ...qnbSettings, vkn: e.target.value })}
-                                    placeholder="1234567890"
-                                    className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-emerald-500/50"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Web Servis Kullanıcı Adı</label>
-                                <input
-                                    type="text"
-                                    value={qnbSettings.username}
-                                    onChange={(e) => setQnbSettings({ ...qnbSettings, username: e.target.value })}
-                                    placeholder="webservis.xxxxx"
-                                    className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-emerald-500/50"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Web Servis Şifresi</label>
-                                <input
-                                    type="password"
-                                    value={qnbSettings.password}
-                                    onChange={(e) => setQnbSettings({ ...qnbSettings, password: e.target.value })}
-                                    className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-emerald-500/50"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">ERP Kodu</label>
-                                <input
-                                    type="text"
-                                    value={qnbSettings.erpCode}
-                                    onChange={(e) => setQnbSettings({ ...qnbSettings, erpCode: e.target.value })}
-                                    placeholder="JET31270"
-                                    className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-emerald-500/50"
-                                />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Şube Kodu</label>
-                                    <input
-                                        type="text"
-                                        value={qnbSettings.branchCode}
-                                        onChange={(e) => setQnbSettings({ ...qnbSettings, branchCode: e.target.value })}
-                                        placeholder="DFLT veya Merkez"
-                                        className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-emerald-500/50"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Kasa Kodu</label>
-                                    <input
-                                        type="text"
-                                        value={qnbSettings.counterCode}
-                                        onChange={(e) => setQnbSettings({ ...qnbSettings, counterCode: e.target.value })}
-                                        placeholder="DFLT veya Form"
-                                        className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-emerald-500/50"
-                                    />
-                                </div>
-                            </div>
-                            <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
-                                <span className="text-sm font-bold text-white">Test Modu</span>
-                                <button
-                                    onClick={() => setQnbSettings({ ...qnbSettings, isTest: !qnbSettings.isTest })}
-                                    className={`w-12 h-6 rounded-full transition-all relative ${qnbSettings.isTest ? 'bg-amber-500' : 'bg-slate-700'}`}
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Fatura Sağlayıcı</label>
+                                <select 
+                                    value={invoiceProvider} 
+                                    onChange={(e) => setInvoiceProvider(e.target.value as any)}
+                                    className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl text-white focus:border-emerald-500/50 outline-none appearance-none font-bold"
                                 >
-                                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${qnbSettings.isTest ? 'right-1' : 'left-1'}`} />
-                                </button>
+                                    <option value="qnb">QNB eFinans</option>
+                                    <option value="parasut">Paraşüt</option>
+                                </select>
                             </div>
+
+                            {invoiceProvider === 'qnb' ? (
+                                <div className="space-y-4 pt-2 border-t border-white/5">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">VKN / TCKN</label>
+                                        <input
+                                            type="text"
+                                            value={qnbSettings.vkn}
+                                            onChange={(e) => setQnbSettings({ ...qnbSettings, vkn: e.target.value })}
+                                            placeholder="1234567890"
+                                            className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-emerald-500/50"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Web Servis Kullanıcı Adı</label>
+                                        <input
+                                            type="text"
+                                            value={qnbSettings.username}
+                                            onChange={(e) => setQnbSettings({ ...qnbSettings, username: e.target.value })}
+                                            placeholder="webservis.xxxxx"
+                                            className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-emerald-500/50"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Web Servis Şifresi</label>
+                                        <input
+                                            type="password"
+                                            value={qnbSettings.password}
+                                            onChange={(e) => setQnbSettings({ ...qnbSettings, password: e.target.value })}
+                                            className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-emerald-500/50"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">ERP Kodu</label>
+                                        <input
+                                            type="text"
+                                            value={qnbSettings.erpCode}
+                                            onChange={(e) => setQnbSettings({ ...qnbSettings, erpCode: e.target.value })}
+                                            placeholder="JET31270"
+                                            className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-emerald-500/50"
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Şube Kodu</label>
+                                            <input
+                                                type="text"
+                                                value={qnbSettings.branchCode}
+                                                onChange={(e) => setQnbSettings({ ...qnbSettings, branchCode: e.target.value })}
+                                                placeholder="DFLT veya Merkez"
+                                                className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-emerald-500/50"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Kasa Kodu</label>
+                                            <input
+                                                type="text"
+                                                value={qnbSettings.counterCode}
+                                                onChange={(e) => setQnbSettings({ ...qnbSettings, counterCode: e.target.value })}
+                                                placeholder="DFLT veya Form"
+                                                className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-emerald-500/50"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                                        <span className="text-sm font-bold text-white">Test Modu</span>
+                                        <button
+                                            onClick={() => setQnbSettings({ ...qnbSettings, isTest: !qnbSettings.isTest })}
+                                            className={`w-12 h-6 rounded-full transition-all relative ${qnbSettings.isTest ? 'bg-amber-500' : 'bg-slate-700'}`}
+                                        >
+                                            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${qnbSettings.isTest ? 'right-1' : 'left-1'}`} />
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="space-y-4 pt-2 border-t border-white/5">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">E-Posta (Paraşüt Giriş)</label>
+                                        <input
+                                            type="email"
+                                            value={parasutSettings.email}
+                                            onChange={(e) => setParasutSettings({ ...parasutSettings, email: e.target.value })}
+                                            placeholder="ornek@firma.com"
+                                            className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-emerald-500/50"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Şifre</label>
+                                        <input
+                                            type="password"
+                                            value={parasutSettings.password}
+                                            onChange={(e) => setParasutSettings({ ...parasutSettings, password: e.target.value })}
+                                            className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-emerald-500/50"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Firma ID (Company ID)</label>
+                                        <input
+                                            type="text"
+                                            value={parasutSettings.companyId}
+                                            onChange={(e) => setParasutSettings({ ...parasutSettings, companyId: e.target.value })}
+                                            placeholder="123456"
+                                            className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-emerald-500/50"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Client ID (Opsiyonel)</label>
+                                        <input
+                                            type="password"
+                                            value={parasutSettings.clientId}
+                                            onChange={(e) => setParasutSettings({ ...parasutSettings, clientId: e.target.value })}
+                                            placeholder="Varsayılan kullanılacak"
+                                            className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-emerald-500/50"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Client Secret (Opsiyonel)</label>
+                                        <input
+                                            type="password"
+                                            value={parasutSettings.clientSecret}
+                                            onChange={(e) => setParasutSettings({ ...parasutSettings, clientSecret: e.target.value })}
+                                            placeholder="Varsayılan kullanılacak"
+                                            className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-emerald-500/50"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="flex gap-3 pt-4">
                                 <button
-                                    onClick={() => setQnbModal(null)}
+                                    onClick={() => setInvoiceModal(null)}
                                     className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold transition-all"
                                 >
                                     İptal
                                 </button>
                                 <button
-                                    onClick={handleSaveQnbSettings}
+                                    onClick={handleSaveInvoiceSettings}
                                     disabled={saving}
                                     className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black shadow-lg shadow-emerald-500/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                                 >
-                                    {saving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><Save className="w-4 h-4" /> Kaydet</>}
+                                    {saving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><Save className="w-4 h-4" /> Ayarları Kaydet</>}
                                 </button>
                             </div>
                         </div>
