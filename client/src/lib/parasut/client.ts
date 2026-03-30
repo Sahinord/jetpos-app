@@ -3,8 +3,8 @@ import { ParasutAuthResponse, ParasutContact, ParasutProduct, ParasutTrackableJo
 import { InvoiceData, InvoiceResult } from '../invoice-providers/types';
 
 export class ParasutClient {
-    private baseUrl = 'https://api.parasut.com/v4';
-    private authUrl = 'https://api.parasut.com/oauth/token';
+    private baseUrl: string;
+    private authUrl: string;
     private clientId: string;
     private clientSecret: string;
     private username?: string;
@@ -18,9 +18,20 @@ export class ParasutClient {
         username?: string;
         password?: string;
         companyId?: string;
+        baseUrl?: string;
+        authUrl?: string;
     }) {
-        this.clientId = config.clientId || 'G8n2ld8G-TE4kVnzTK0cylHRZvmjTuUHdS0Bcgep140';
-        this.clientSecret = config.clientSecret || 'Ki0EAUrF6hZjXW3_V48EpE5Hxux5ULrkX0R_jQ1Ysx8';
+        const isStaging = (config.baseUrl || '').includes('heroku-staging');
+        
+        this.baseUrl = config.baseUrl || 'https://api.parasut.com/v4';
+        this.authUrl = config.authUrl || (isStaging ? 'https://api.heroku-staging.parasut.com/oauth/token' : 'https://api.parasut.com/oauth/token');
+        
+        // Use staging defaults if it's staging and no keys provided
+        const defaultClientId = isStaging ? 'GuH3gTsP2sA26JkeDI1Ce3lqGQwL-kbrVTK9Um_4TgI' : 'G8n2ld8G-TE4kVnzTK0cylHRZvmjTuUHdS0Bcgep140';
+        const defaultClientSecret = isStaging ? 'UL43BfbUOw0qukpflyZQeDZVQjbVzPNTc44iwxywsYU' : 'Ki0EAUrF6hZjXW3_V48EpE5Hxux5ULrkX0R_jQ1Ysx8';
+
+        this.clientId = config.clientId || defaultClientId;
+        this.clientSecret = config.clientSecret || defaultClientSecret;
         this.username = config.username;
         this.password = config.password;
         this.companyId = config.companyId;
@@ -40,7 +51,11 @@ export class ParasutClient {
         const response = await fetch(this.authUrl, {
             method: 'POST',
             body: formData,
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+            headers: { 
+                'Content-Type': 'application/x-www-form-urlencoded',
+                // Many OAuth servers prefer Basic auth for client credentials
+                'Authorization': 'Basic ' + Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64')
+            }
         });
 
         if (!response.ok) {
@@ -55,7 +70,18 @@ export class ParasutClient {
 
     private async request(path: string, options: any = {}) {
         const token = await this.authenticate();
-        const url = `${this.baseUrl}/${this.companyId}${path}`;
+        
+        // Ensure baseUrl has /v4 if missing
+        let finalBase = this.baseUrl;
+        if (!finalBase.endsWith('/v4')) {
+            finalBase = finalBase.replace(/\/$/, '') + '/v4';
+        }
+
+        // Remove double slashes when joining path
+        const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+        const url = `${finalBase}/${this.companyId}/${cleanPath}`;
+
+        console.log(`[Paraşüt API] Request: ${options.method || 'GET'} ${url}`);
 
         const headers = {
             'Authorization': `Bearer ${token}`,
@@ -65,9 +91,20 @@ export class ParasutClient {
 
         const res = await fetch(url, { ...options, headers });
         if (!res.ok) {
+            console.error(`[Paraşüt API Error] ${res.status}: ${res.statusText}`);
             if (res.status === 204) return null;
-            const err = await res.json().catch(() => ({ errors: [{ detail: 'Bilinmeyen Hata' }] }));
-            throw new Error(`Paraşüt API Error: ${err.errors?.[0]?.detail || res.statusText}`);
+            const text = await res.text(); // Get raw response to debug non-JSON errors
+            console.error(`[Paraşüt API Response]: ${text.substring(0, 500)}`);
+            
+            let errMsg = res.statusText;
+            try {
+                const err = JSON.parse(text);
+                errMsg = err.errors?.[0]?.detail || errMsg;
+            } catch (pErr) {
+                // Not JSON (probably HTML 404/500)
+                errMsg = `Sunucu hatası (${res.status})`;
+            }
+            throw new Error(`Paraşüt API Error: ${errMsg}`);
         }
 
         if (res.status === 204) return null;
@@ -93,7 +130,8 @@ export class ParasutClient {
                         tax_number: customer.vkn,
                         tax_office: 'İSTANBUL', // Default veya dinamik
                         address: 'Türkiye',
-                        contact_type: customer.vkn.length === 11 ? 'person' : 'company'
+                        contact_type: customer.vkn.length === 11 ? 'person' : 'company',
+                        account_type: 'customer'
                     }
                 }
             })
@@ -159,7 +197,8 @@ export class ParasutClient {
                         billing_address: invoiceData.customer.address || '',
                         billing_city: invoiceData.customer.city || '',
                         billing_town: invoiceData.customer.district || '',
-                        currency: 'TRL'
+                        currency: 'TRL',
+                        item_type: 'invoice'
                     },
                     relationships: {
                         contact: { data: { id: contactId, type: 'contacts' } },
@@ -197,7 +236,7 @@ export class ParasutClient {
                 data: {
                     type: type,
                     relationships: {
-                        sales_invoice: { data: { id: salesInvoiceId, type: 'sales_invoices' } }
+                        invoice: { data: { id: salesInvoiceId, type: 'sales_invoices' } }
                     }
                 }
             };
@@ -224,17 +263,22 @@ export class ParasutClient {
             // 5. Job Takibi (Polling)
             let jobStatus: ParasutTrackableJob = { id: jobId, status: 'pending' };
             let retryCount = 0;
-            const maxRetries = 15; // Max ~30 sn
-            while (jobStatus.status === 'pending' || jobStatus.status === 'running') {
+            const maxRetries = 30; // Max ~60 sn (Staging yavaş olabilir)
+            
+            // Bekleme listesine 'queued' eklendi
+            while (['pending', 'running', 'queued'].includes(jobStatus.status)) {
                 if (retryCount > maxRetries) {
                     console.warn(`[Paraşüt] Job polling timed out after ${maxRetries} retries`);
                     break;
                 }
+                
                 await new Promise(r => setTimeout(r, 2000));
+                
                 try {
                     const trackRes = await this.request(`/trackable_jobs/${jobId}`);
                     if (trackRes?.data?.attributes) {
                         jobStatus = trackRes.data.attributes;
+                        console.log(`[Paraşüt] Job ${jobId} Status: ${jobStatus.status}`);
                     }
                 } catch (trackErr) {
                     console.warn(`[Paraşüt] Job tracking error (retry ${retryCount}):`, trackErr);

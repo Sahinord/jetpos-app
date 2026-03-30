@@ -13,7 +13,9 @@ export class ParasutProvider implements InvoiceProvider {
             clientSecret: parasut.clientSecret,
             username: parasut.username || parasut.email,
             password: parasut.password,
-            companyId: parasut.companyId
+            companyId: parasut.companyId,
+            baseUrl: parasut.baseUrl,
+            authUrl: parasut.authUrl
         });
     }
 

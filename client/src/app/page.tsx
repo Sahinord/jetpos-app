@@ -48,6 +48,7 @@ import ProductLabelDesigner from '@/components/Tools/ProductLabelDesigner';
 import FinancialCalendar from '@/components/Calendar/FinancialCalendar';
 import InvoiceWaybillPage from '@/components/Waybill/InvoiceWaybillPage';
 import WarehousePage from '@/components/Warehouse/WarehousePage';
+import QRMenuManager from '@/components/Admin/QRMenuManager';
 import { createTrendyolGoClient } from "@/lib/trendyol-go-client";
 
 export default function Home() {
@@ -949,6 +950,16 @@ export default function Home() {
           {activeTab === "expenses" && (
             <div className="max-w-[1500px] mx-auto w-full">
               <Expenses />
+            </div>
+          )}
+          {activeTab === "qrmenu" && (
+            <div className="max-w-[1500px] mx-auto w-full">
+              <QRMenuManager 
+                products={products}
+                categories={categories}
+                showToast={showToast}
+                onRefresh={fetchData}
+              />
             </div>
           )}
           {activeTab === "adisyon" && (

@@ -56,6 +56,7 @@ import {
     X,
     Utensils,
     Grid3X3,
+    QrCode,
     type LucideIcon
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -147,6 +148,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
             feature: "adisyon",
             items: [
                 { id: "adisyon", label: "Masa Yönetimi", icon: Grid3X3, feature: null, description: "Restoran ve kafeler için masa bazlı sipariş takip ve adisyon ekranı." },
+                { id: "qrmenu", label: "QR Menü Yönetimi", icon: QrCode, feature: null, description: "Dijital menü ayarları, QR kod üretimi ve tema özelleştirme." },
             ]
         },
         {

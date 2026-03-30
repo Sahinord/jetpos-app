@@ -73,7 +73,7 @@ export default function SuperAdmin() {
     const [invoiceModal, setInvoiceModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
     const [invoiceProvider, setInvoiceProvider] = useState<'qnb' | 'parasut'>('qnb');
     const [qnbSettings, setQnbSettings] = useState({ vkn: '', username: '', password: '', erpCode: 'JET31270', isTest: true, branchCode: '', counterCode: '' });
-    const [parasutSettings, setParasutSettings] = useState({ email: '', password: '', companyId: '', clientId: '', clientSecret: '' });
+    const [parasutSettings, setParasutSettings] = useState({ email: '', password: '', companyId: '', clientId: '', clientSecret: '', baseUrl: '', authUrl: '', isTest: false });
 
     // Trendyol GO states
     const [trendyolModal, setTrendyolModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
@@ -416,7 +416,10 @@ export default function SuperAdmin() {
                     password: parasutSettings.password,
                     companyId: parasutSettings.companyId,
                     clientId: parasutSettings.clientId,
-                    clientSecret: parasutSettings.clientSecret
+                    clientSecret: parasutSettings.clientSecret,
+                    baseUrl: parasutSettings.baseUrl,
+                    authUrl: parasutSettings.authUrl,
+                    isTest: parasutSettings.isTest
                 }
             };
 
@@ -678,7 +681,10 @@ export default function SuperAdmin() {
                                                     password: currentParasut.password || '',
                                                     companyId: currentParasut.companyId || '',
                                                     clientId: currentParasut.clientId || '',
-                                                    clientSecret: currentParasut.clientSecret || ''
+                                                    clientSecret: currentParasut.clientSecret || '',
+                                                    baseUrl: currentParasut.baseUrl || '',
+                                                    authUrl: currentParasut.authUrl || '',
+                                                    isTest: currentParasut.isTest === true
                                                 });
                                             }}
                                             className="p-3 bg-white/5 hover:bg-emerald-500/20 rounded-xl text-slate-400 hover:text-emerald-500 transition-all font-bold"
@@ -1232,6 +1238,27 @@ export default function SuperAdmin() {
                                             placeholder="Varsayılan kullanılacak"
                                             className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-emerald-500/50"
                                         />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Paraşüt API Base URL</label>
+                                            <input
+                                                type="text"
+                                                value={parasutSettings.baseUrl}
+                                                onChange={(e) => setParasutSettings({ ...parasutSettings, baseUrl: e.target.value })}
+                                                placeholder="https://api.parasut.com/v4"
+                                                className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-emerald-500/50 text-xs"
+                                            />
+                                        </div>
+                                        <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                                            <span className="text-xs font-bold text-white">Test Modu</span>
+                                            <button
+                                                onClick={() => setParasutSettings({ ...parasutSettings, isTest: !parasutSettings.isTest })}
+                                                className={`w-10 h-5 rounded-full transition-all relative ${parasutSettings.isTest ? 'bg-amber-500' : 'bg-slate-700'}`}
+                                            >
+                                                <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${parasutSettings.isTest ? 'right-0.5' : 'left-0.5'}`} />
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             )}
