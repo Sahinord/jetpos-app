@@ -117,8 +117,18 @@ export default function BarcodeScanner() {
             const reader = new BrowserMultiFormatReader();
             readerRef.current = reader;
 
+            // Get available devices
+            const videoDevices = await BrowserMultiFormatReader.listVideoInputDevices();
+            const backCamera = videoDevices.find(device => 
+                device.label.toLowerCase().includes('back') || 
+                device.label.toLowerCase().includes('rear') ||
+                device.label.toLowerCase().includes('çevre')
+            );
+            
+            const deviceId = backCamera ? backCamera.deviceId : undefined;
+
             const controls = await reader.decodeFromVideoDevice(
-                undefined,
+                deviceId,
                 videoEl,
                 (result, error) => {
                     if (!scannerActive.current || isProcessing.current) return;

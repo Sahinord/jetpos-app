@@ -98,8 +98,18 @@ export default function InventoryCounter({ countId, warehouseId, onClose }: Inve
             const reader = new BrowserMultiFormatReader();
             readerRef.current = reader;
 
+            // Get available devices
+            const videoDevices = await BrowserMultiFormatReader.listVideoInputDevices();
+            const backCamera = videoDevices.find(device => 
+                device.label.toLowerCase().includes('back') || 
+                device.label.toLowerCase().includes('rear') ||
+                device.label.toLowerCase().includes('çevre')
+            );
+            
+            const deviceId = backCamera ? backCamera.deviceId : undefined;
+
             const controls = await reader.decodeFromVideoDevice(
-                undefined,
+                deviceId,
                 videoEl,
                 (result) => {
                     if (!scannerActive.current || isProcessing.current) return;
