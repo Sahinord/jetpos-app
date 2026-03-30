@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, Package, ScanLine, Wallet, ClipboardCheck, Menu, X, Utensils, LogOut, ArrowLeftRight } from 'lucide-react';
+import { LayoutDashboard, Package, ScanLine, Wallet, ClipboardCheck, Menu, X, Utensils, LogOut, ArrowLeftRight, Users, CreditCard, Calculator } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
@@ -62,6 +62,9 @@ export default function BottomNav() {
         { name: 'Hızlı Satış (POS)', icon: Wallet, path: '/pos', show: true },
         { name: 'Barkod Okuyucu', icon: ScanLine, path: '/scanner', show: true },
         { name: 'Ürün Yönetimi', icon: Package, path: '/products', show: true },
+        { name: 'Cari Hesaplar', icon: Users, path: '/cari', show: true },
+        { name: 'Banka Hesapları', icon: CreditCard, path: '/banka', show: true },
+        { name: 'Kasa İşlemleri', icon: Calculator, path: '/kasa', show: true },
         { name: 'Envanter Sayımı', icon: ClipboardCheck, path: '/inventory-count', show: true },
         { name: 'Depo Transferi', icon: ArrowLeftRight, path: '/warehouse-transfer', show: true },
         { 

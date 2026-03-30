@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { TrendingUp, Package, AlertTriangle, DollarSign, Plus, ClipboardList, FileText, LogOut, SlidersHorizontal, ClipboardCheck, Store, ChevronDown, Send } from 'lucide-react';
+import { TrendingUp, Package, AlertTriangle, DollarSign, Plus, ClipboardList, FileText, LogOut, SlidersHorizontal, ClipboardCheck, Store, ChevronDown, Send, Users, CreditCard, Calculator } from 'lucide-react';
 import { toast } from 'sonner';
 import BottomNav from '@/components/BottomNav';
 
@@ -292,9 +292,12 @@ export default function DashboardPage() {
                     <div className="space-y-4">
                         {[
                             { label: 'Ürünleri Yönet', icon: Package, path: '/products', desc: 'Stok ve fiyatları güncelle' },
-                            { label: 'Mağazalar Arası Transfer', icon: Send, path: '/warehouse-transfer', desc: 'Diğer mağazalara stok gönder' },
+                            { label: 'Cari Hesaplar', icon: Users, path: '/cari', desc: 'Borç/alacak takibi yap' },
+                            { label: 'Banka Hesapları', icon: CreditCard, path: '/banka', desc: 'Mevduat durumunu gör' },
+                            { label: 'Kasa İşlemleri', icon: Calculator, path: '/kasa', desc: 'Nakit akışını yönet' },
+                            { label: 'Barkod Okut', icon: ClipboardList, path: '/scanner', desc: 'Ürün bul veya yeni ekle' },
                             { label: 'Envanter Sayımı', icon: ClipboardCheck, path: '/inventory-count', desc: 'Barkod ile hızlı sayım yap' },
-                            { label: 'Barkod Okut', icon: ClipboardList, path: '/scanner', desc: 'Ürün bul veya yeni ekle' }
+                            { label: 'Mağazalar Arası Transfer', icon: Send, path: '/warehouse-transfer', desc: 'Diğer mağazalara stok gönder' },
                         ].map((action, idx) => (
                             <button key={idx} onClick={() => router.push(action.path)} className="w-full glass-dark border border-white/10 rounded-3xl p-5 flex items-center gap-5 group active:scale-[0.98] transition-all shadow-xl text-left">
                                 <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">

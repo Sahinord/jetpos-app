@@ -16,12 +16,15 @@ export default function TransfersPage() {
     const [selectedToId, setSelectedToId] = useState('');
     const [activeTransfer, setActiveTransfer] = useState<any>(null);
 
+    const [fromWhName, setFromWhName] = useState('');
+
     useEffect(() => {
         const tenantId = localStorage.getItem('tenantId');
         if (!tenantId) {
             router.push('/');
             return;
         }
+        setFromWhName(localStorage.getItem('activeWarehouseName') || '');
         supabase.rpc('set_current_tenant', { tenant_id: tenantId }).then(() => {
             fetchWarehouses();
             fetchTransfers();
@@ -124,7 +127,7 @@ export default function TransfersPage() {
                         <div className="flex items-center justify-between px-2">
                             <div className="text-center">
                                 <p className="text-[9px] font-bold text-secondary uppercase mb-1">NEREDEN</p>
-                                <p className="text-sm font-black text-white">{localStorage.getItem('activeWarehouseName')}</p>
+                                <p className="text-sm font-black text-white">{fromWhName || 'Mağaza Seçilmedi'}</p>
                             </div>
                             <ArrowRight className="text-emerald-500" />
                             <div className="text-center">
