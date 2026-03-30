@@ -32,6 +32,18 @@ export default function RootLayout({
   return (
     <html lang="tr" className="scroll-smooth">
       <body className="antialiased">
+        {/* Google Analytics - Placeholder */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-XXXXXXXXXX');
+            `,
+          }}
+        />
         {children}
       </body>
     </html>

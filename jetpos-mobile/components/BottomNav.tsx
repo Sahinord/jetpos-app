@@ -53,17 +53,16 @@ export default function BottomNav() {
     const navItems = [
         { name: 'Panel', icon: LayoutDashboard, path: '/dashboard' },
         { name: 'Satış', icon: Wallet, path: '/pos' },
+        { name: 'Barkod', icon: ScanLine, path: '/scanner' },
         { name: 'Ürünler', icon: Package, path: '/products' },
-        { name: 'Sayım', icon: ClipboardCheck, path: '/inventory-count' },
-        // Instead of Barkod on Nav, we use Menu
     ];
 
     const sidebarItems = [
         { name: 'Pano', icon: LayoutDashboard, path: '/dashboard', show: true },
         { name: 'Hızlı Satış (POS)', icon: Wallet, path: '/pos', show: true },
-        { name: 'Ürün Yönetimi', icon: Package, path: '/products', show: true },
-        { name: 'Depo & Sayım', icon: ClipboardCheck, path: '/inventory-count', show: true },
         { name: 'Barkod Okuyucu', icon: ScanLine, path: '/scanner', show: true },
+        { name: 'Ürün Yönetimi', icon: Package, path: '/products', show: true },
+        { name: 'Envanter Sayımı', icon: ClipboardCheck, path: '/inventory-count', show: true },
         { name: 'Depo Transferi', icon: ArrowLeftRight, path: '/warehouse-transfer', show: true },
         { 
             name: 'Adisyon Sistemi', 
@@ -164,7 +163,7 @@ export default function BottomNav() {
                                         strokeWidth={isActive ? 2.5 : 2}
                                         className={`w-6 h-6 transition-colors duration-300 ${isActive ? 'text-blue-400' : 'text-slate-500'}`}
                                     />
-                                    {item.name === 'Satış' && !isActive && (
+                                    {(item.name === 'Satış' || item.name === 'Barkod') && !isActive && (
                                         <div className="absolute top-2 right-2 w-2 h-2 bg-blue-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
                                     )}
                                 </div>
@@ -175,7 +174,7 @@ export default function BottomNav() {
                         );
                     })}
 
-                    {/* Hamburger Menu Button (Replaces Barkod on bottom nav) */}
+                    {/* Hamburger Menu Button */}
                     <button
                         onClick={() => setIsSidebarOpen(true)}
                         className="relative flex flex-col items-center justify-center w-full h-full group"

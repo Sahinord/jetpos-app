@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 const navLinks = [
     { href: "/", label: "Anasayfa" },
     { href: "/fiyatlandirma", label: "Fiyatlandırma" },
+    { href: "/forum", label: "Forum" },
     { href: "/demo", label: "Ücretsiz Demo" },
     { href: "/#contact", label: "İletişim" },
 ];

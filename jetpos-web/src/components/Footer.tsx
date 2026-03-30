@@ -52,13 +52,13 @@ export default function Footer() {
                         </ul>
                     </div>
 
+                    {/* Kurumsal */}
                     <div>
-                        <h4 style={{ fontSize: "0.875rem", fontWeight: 700, color: "white", marginBottom: "1.25rem", textTransform: "uppercase", letterSpacing: "0.08em" }}>Platform</h4>
+                        <h4 style={{ fontSize: "0.875rem", fontWeight: 700, color: "white", marginBottom: "1.25rem", textTransform: "uppercase", letterSpacing: "0.08em" }}>Kurumsal</h4>
                         <ul style={{ display: "flex", flexDirection: "column", gap: "0.75rem", listStyle: "none" }}>
                             {([
-                                { label: "Özellikler", href: "/#features" },
-                                { label: "Demo Talebi", href: "/demo" },
-                                { label: "Entegrasyonlar", href: "/#integrations" },
+                                { label: "Hakkımızda", href: "/hakkimizda" },
+                                { label: "Forum / Topluluk", href: "/forum" },
                                 { label: "Gizlilik & KVKK", href: "/gizlilik" },
                                 { label: "İletişim", href: "/#contact" },
                             ] as { label: string; href: string }[]).map(({ label, href }) => (

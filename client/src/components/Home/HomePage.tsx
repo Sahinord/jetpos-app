@@ -59,6 +59,11 @@ export const ALL_PAGES: QuickAccessItem[] = [
     { id: "expenses", label: "Giderler", icon: Receipt, color: "from-red-500 to-red-600", gradient: "bg-gradient-to-br from-red-500/20 to-red-600/20" },
     { id: "alerts", label: "Stok Uyarıları", icon: AlertTriangle, color: "from-yellow-500 to-amber-600", gradient: "bg-gradient-to-br from-yellow-500/20 to-amber-600/20" },
     { id: "cari_liste", label: "Cari Hesaplar", icon: Users, color: "from-cyan-500 to-blue-600", gradient: "bg-gradient-to-br from-cyan-500/20 to-blue-600/20" },
+    { id: "bank_list", label: "Banka İşlemleri", icon: DollarSign, color: "from-emerald-500 to-teal-600", gradient: "bg-gradient-to-br from-emerald-500/20 to-teal-600/20" },
+    { id: "cash_list", label: "Kasa İşlemleri", icon: Calculator, color: "from-orange-500 to-amber-600", gradient: "bg-gradient-to-br from-orange-500/20 to-amber-600/20" },
+    { id: "warehouse", label: "Depo Yönetimi", icon: Boxes, color: "from-blue-600 to-indigo-700", gradient: "bg-gradient-to-br from-blue-600/20 to-indigo-700/20" },
+    { id: "adisyon", label: "Adisyon / Masa", icon: Star, color: "from-rose-500 to-pink-600", gradient: "bg-gradient-to-br from-rose-500/20 to-pink-600/20" },
+    { id: "qrmenu", label: "QR Menü Yönetimi", icon: Zap, color: "from-amber-400 to-orange-500", gradient: "bg-gradient-to-br from-amber-400/20 to-orange-500/20" },
     { id: "settings", label: "Ayarlar", icon: Settings, color: "from-slate-500 to-slate-600", gradient: "bg-gradient-to-br from-slate-500/20 to-slate-600/20" },
     { id: "profile", label: "Profil", icon: User, color: "from-sky-500 to-sky-600", gradient: "bg-gradient-to-br from-sky-500/20 to-sky-600/20" },
 ];
