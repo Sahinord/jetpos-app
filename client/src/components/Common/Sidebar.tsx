@@ -380,6 +380,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
             icon: Layers,
             items: [
                 { id: "label_designer", label: "Ürün Etiketleri", icon: Tags, feature: "label_designer", description: "Barkodlu fiyat etiketleri tasarla ve yazdır." },
+                { id: "receipt_designer", label: "Fiş Düzenleyicisi", icon: Receipt, feature: null, description: "Bilgi fişlerinizi özelleştirin: logo, mağaza adı, alt başlık, vergi bilgileri." },
             ]
         },
     ];

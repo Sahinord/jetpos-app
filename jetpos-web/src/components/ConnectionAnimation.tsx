@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { FileText, ShoppingCart, Package, CreditCard, BarChart3, User } from "lucide-react";
+import { FileText, ShoppingCart, Package, CreditCard, BarChart3, User, Zap } from "lucide-react";
 
 const leftItems = [
     { label: "E-Fatura", icon: FileText },
@@ -69,12 +69,22 @@ export default function ConnectionAnimation() {
                     >
                         <defs>
                             <filter id="ca-glow-v2" x="-50%" y="-50%" width="200%" height="200%">
-                                <feGaussianBlur stdDeviation="2.5" result="blur" />
+                                <feGaussianBlur stdDeviation="2" result="blur" />
                                 <feMerge>
                                     <feMergeNode in="blur" />
                                     <feMergeNode in="SourceGraphic" />
                                 </feMerge>
                             </filter>
+                            
+                            <radialGradient id="ca-logo-glow" cx="50%" cy="50%" r="50%">
+                                <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.4" />
+                                <stop offset="70%" stopColor="#3b82f6" stopOpacity="0.1" />
+                                <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
+                            </radialGradient>
+
+                            <clipPath id="logo-circle-clip">
+                                <circle cx={CX} cy={CY} r={LOGO_R - 1.5} />
+                            </clipPath>
 
                             <style>{`
                                 /* Total Cycle: 2.8s */
@@ -142,6 +152,11 @@ export default function ConnectionAnimation() {
                                 .ca-user-group {
                                     transform-origin: ${RIGHT_X}px ${CY}px;
                                     animation: ca-user-pulse-v2 2.8s ease-in-out infinite;
+                                }
+
+                                @keyframes spin {
+                                    from { transform: rotate(0deg); }
+                                    to { transform: rotate(360deg); }
                                 }
                             `}</style>
                         </defs>
@@ -219,12 +234,40 @@ export default function ConnectionAnimation() {
 
                         {/* ── Center logo ── */}
                         <g className="ca-logo-group">
-                            <circle cx={CX} cy={CY} r={LOGO_R} fill="#02040a" stroke="rgba(59,130,246,0.6)" strokeWidth="2.5" />
-                            <foreignObject x={CX - 24} y={CY - 24} width="48" height="48">
-                                <div style={{ width: 48, height: 48, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                    <Image src="/logo.png" alt="JetPOS" width={44} height={44} style={{ objectFit: "contain", imageRendering: "crisp-edges" }} />
-                                </div>
-                            </foreignObject>
+                            {/* Outer Glow Ring */}
+                            <circle cx={CX} cy={CY} r={LOGO_R + 12} fill="url(#ca-logo-glow)" />
+                            
+                            {/* Rotating Orbit Ring */}
+                            <circle 
+                                cx={CX} cy={CY} r={LOGO_R + 4} 
+                                fill="none" 
+                                stroke="#3b82f6" 
+                                strokeWidth="1" 
+                                strokeDasharray="10 20" 
+                                opacity="0.3"
+                                style={{ transformOrigin: "center", animation: "spin 12s linear infinite" }} 
+                            />
+
+                            {/* Main Circle Body (The border ring) */}
+                            <circle 
+                                cx={CX} cy={CY} r={LOGO_R} 
+                                fill="#040816" 
+                                stroke="rgba(59,130,246,0.5)" 
+                                strokeWidth="2" 
+                                filter="url(#ca-glow-v2)" 
+                            />
+                            
+                            {/* The Logo Image clipped to a perfect circle */}
+                            <image 
+                                href="/logo.png" 
+                                x={CX - LOGO_R + 2} 
+                                y={CY - LOGO_R + 2} 
+                                width={(LOGO_R - 2) * 2} 
+                                height={(LOGO_R - 2) * 2} 
+                                clipPath="url(#logo-circle-clip)"
+                                preserveAspectRatio="xMidYMid slice"
+                                style={{ filter: "drop-shadow(0 0 10px rgba(59, 130, 246, 0.4))" }}
+                            />
                         </g>
 
                         {/* ── Right user circle ── */}

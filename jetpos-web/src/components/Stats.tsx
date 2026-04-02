@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import { Users, ShoppingCart, TrendingUp, Star } from "lucide-react";
 
 function useCountUp(target: number, duration = 2000, start = false) {
@@ -232,114 +233,153 @@ function StatCard({ stat, index, visible }: { stat: typeof stats[0]; index: numb
             onMouseLeave={() => setHovered(false)}
             style={{
                 background: hovered
-                    ? `linear-gradient(145deg, ${stat.bg}, rgba(255,255,255,0.02))`
-                    : "linear-gradient(145deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01))",
-                border: `1px solid ${hovered ? stat.border : "rgba(255,255,255,0.07)"}`,
-                borderRadius: "1.5rem",
-                padding: "1.75rem",
+                    ? `linear-gradient(135deg, ${stat.bg}, rgba(255,255,255,0.01))`
+                    : "rgba(255,255,255,0.02)",
+                backdropFilter: "blur(24px)",
+                WebkitBackdropFilter: "blur(24px)",
+                border: `1px solid ${hovered ? stat.border : "rgba(255,255,255,0.06)"}`,
+                borderRadius: "2rem",
+                padding: "2.25rem",
                 position: "relative",
                 overflow: "hidden",
-                transition: "all 0.4s cubic-bezier(0.22,1,0.36,1)",
-                transform: hovered ? "translateY(-6px)" : "translateY(0)",
+                transition: "all 0.5s cubic-bezier(0.23, 1, 0.32, 1)",
+                transform: hovered ? "translateY(-8px) scale(1.02)" : "translateY(0) scale(1)",
                 boxShadow: hovered
-                    ? `0 20px 48px rgba(0,0,0,0.35), 0 0 0 1px ${stat.border}, 0 0 40px ${stat.glow}`
-                    : "0 4px 24px rgba(0,0,0,0.15)",
+                    ? `0 30px 60px -12px rgba(0,0,0,0.5), 0 0 0 1px ${stat.border}, 0 0 30px ${stat.glow}`
+                    : "0 10px 40px -10px rgba(0,0,0,0.3)",
                 cursor: "default",
-                animation: `statFadeUp 0.6s ${0.1 + index * 0.12}s both`,
+                animation: `statFadeUp 0.8s ${0.1 + index * 0.15}s cubic-bezier(0.23, 1, 0.32, 1) both`,
             }}
         >
-            {/* Corner glow */}
+            {/* Background Texture/Noise (Subtle) */}
             <div style={{
-                position: "absolute", top: 0, right: 0,
-                width: "80px", height: "80px",
-                background: `radial-gradient(circle, ${stat.bg} 0%, transparent 70%)`,
-                opacity: hovered ? 1 : 0.5,
-                transition: "opacity 0.4s",
+                position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+                backgroundImage: "url('https://www.transparenttextures.com/patterns/carbon-fibre.png')",
+                opacity: 0.03, pointerEvents: "none"
             }} />
 
-            {/* Top accent line */}
+            {/* Bloom/Glow Orb */}
             <div style={{
-                position: "absolute", top: 0, left: "15%", right: "15%", height: "1px",
-                background: `linear-gradient(90deg, transparent, ${stat.color}, transparent)`,
-                opacity: hovered ? 0.8 : 0.3,
-                transition: "opacity 0.4s",
+                position: "absolute", top: "-20%", right: "-20%",
+                width: "150px", height: "150px",
+                background: `radial-gradient(circle, ${stat.color}15 0%, transparent 70%)`,
+                opacity: hovered ? 1 : 0.4,
+                transition: "opacity 0.6s ease",
+                pointerEvents: "none",
             }} />
 
-            {/* Icon */}
+            {/* Icon Container */}
             <div style={{
-                width: "2.75rem", height: "2.75rem",
-                background: stat.bg,
+                width: "3.5rem", height: "3.5rem",
+                background: `linear-gradient(135deg, ${stat.bg}, rgba(255,255,255,0.05))`,
                 border: `1px solid ${stat.border}`,
-                borderRadius: "0.875rem",
+                borderRadius: "1.125rem",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                marginBottom: "1.25rem",
-                transition: "transform 0.3s",
-                transform: hovered ? "scale(1.1) rotate(-5deg)" : "scale(1) rotate(0deg)",
+                marginBottom: "1.75rem",
+                transition: "all 0.4s",
+                transform: hovered ? "scale(1.1) rotate(-8deg)" : "scale(1) rotate(0deg)",
+                boxShadow: hovered ? `0 0 20px ${stat.glow}` : "none",
             }}>
-                <stat.icon style={{ width: "1.25rem", height: "1.25rem", color: stat.color }} />
+                <stat.icon style={{ width: "1.5rem", height: "1.5rem", color: stat.color }} />
             </div>
 
-            {/* Number */}
+            {/* Value Display */}
             <div style={{
-                fontSize: "clamp(2rem, 4vw, 2.75rem)",
-                fontWeight: 900,
-                lineHeight: 1,
-                color: "white",
-                letterSpacing: "-0.04em",
-                marginBottom: "0.25rem",
+                marginBottom: "0.5rem",
                 display: "flex",
                 alignItems: "baseline",
-                gap: "0.1rem",
+                gap: "0.15rem",
             }}>
                 <span style={{
-                    background: `linear-gradient(135deg, white 0%, ${stat.color} 100%)`,
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
+                    fontSize: "clamp(2.5rem, 5vw, 3.5rem)",
+                    fontWeight: 900,
+                    lineHeight: 1,
+                    color: "white",
+                    letterSpacing: "-0.05em",
+                    background: hovered 
+                        ? `linear-gradient(135deg, #ffffff 30%, ${stat.color} 100%)`
+                        : "white",
+                    WebkitBackgroundClip: hovered ? "text" : "none",
+                    WebkitTextFillColor: hovered ? "transparent" : "none",
+                    filter: hovered ? `drop-shadow(0 0 12px ${stat.color}40)` : "none",
+                    transition: "all 0.4s ease",
                 }}>
                     {displayValue}
                 </span>
                 {stat.suffix && (
                     <span style={{
-                        fontSize: "1.25rem",
+                        fontSize: "1.5rem",
                         color: stat.color,
-                        fontWeight: 800,
+                        fontWeight: 900,
+                        opacity: 0.9,
+                        marginLeft: "2px"
                     }}>{stat.suffix}</span>
                 )}
             </div>
 
-            {/* Label */}
-            <p style={{
-                color: "white",
-                fontWeight: 700,
-                fontSize: "0.95rem",
-                margin: "0 0 0.25rem",
-            }}>
-                {stat.label}
-            </p>
-            <p style={{
-                color: "rgba(255,255,255,0.4)",
-                fontSize: "0.78rem",
-                margin: "0 0 1.25rem",
-            }}>
-                {stat.sublabel}
-            </p>
-
-            {/* Progress bar */}
-            <div style={{
-                height: "3px",
-                background: "rgba(255,255,255,0.06)",
-                borderRadius: "9999px",
-                overflow: "hidden",
-            }}>
-                <div style={{
-                    height: "100%",
-                    width: visible ? barWidths[0] : "0%",
-                    background: `linear-gradient(90deg, ${stat.color}88, ${stat.color})`,
-                    borderRadius: "9999px",
-                    transition: `width ${2 + index * 0.3}s cubic-bezier(0.22,1,0.36,1) ${0.3 + index * 0.1}s`,
-                    boxShadow: `0 0 8px ${stat.glow}`,
-                }} />
+            {/* Text Content */}
+            <div style={{ marginBottom: "2rem" }}>
+                <h3 style={{
+                    color: "white",
+                    fontWeight: 700,
+                    fontSize: "1.125rem",
+                    margin: "0 0 0.5rem",
+                    letterSpacing: "-0.01em",
+                }}>
+                    {stat.label}
+                </h3>
+                <p style={{
+                    color: "rgba(255,255,255,0.45)",
+                    fontSize: "0.875rem",
+                    margin: 0,
+                    lineHeight: 1.5,
+                }}>
+                    {stat.sublabel}
+                </p>
             </div>
+
+            {/* Enhanced Progress Indicator */}
+            <div style={{ position: "relative" }}>
+                <div style={{
+                    height: "4px",
+                    background: "rgba(255,255,255,0.06)",
+                    borderRadius: "9999px",
+                    overflow: "hidden",
+                    position: "relative"
+                }}>
+                    <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: visible ? barWidths[index] : 0 }}
+                        transition={{ 
+                            duration: 2.5, 
+                            delay: 0.5 + index * 0.2, 
+                            ease: [0.22, 1, 0.36, 1] 
+                        }}
+                        style={{
+                            height: "100%",
+                            background: `linear-gradient(90deg, ${stat.color}ee, white)`,
+                            borderRadius: "9999px",
+                            boxShadow: `0 0 10px ${stat.color}aa`,
+                        }}
+                    />
+                </div>
+                {/* Percentage label hidden but kept for accessibility/future use */}
+            </div>
+
+            {/* Decorative Edge Glow (Hover) */}
+            {hovered && (
+                <div style={{
+                    position: "absolute",
+                    inset: 0,
+                    borderRadius: "2rem",
+                    padding: "1px",
+                    background: `linear-gradient(135deg, ${stat.color}60, transparent 40%, ${stat.color}40)`,
+                    WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+                    WebkitMaskComposite: "xor",
+                    maskComposite: "exclude",
+                    pointerEvents: "none",
+                }} />
+            )}
         </div>
     );
 }

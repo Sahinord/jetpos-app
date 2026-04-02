@@ -43,8 +43,8 @@ export async function POST(req: NextRequest) {
                     Authorization: `Bearer ${resendKey}`,
                 },
                 body: JSON.stringify({
-                    from: "JetPOS Demo <demo@jetpos.com.tr>",
-                    to: ["info@jetpos.com.tr"],
+                    from: "JetPOS Demo <demo@jetpos.shop>",
+                    to: ["info@jetpos.shop"],
                     subject: `🚀 Yeni Demo Talebi: ${company} - ${name}`,
                     html: `
                         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0f172a; color: white; border-radius: 12px; overflow: hidden;">
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
                     Authorization: `Bearer ${resendKey}`,
                 },
                 body: JSON.stringify({
-                    from: "JetPOS <demo@jetpos.com.tr>",
+                    from: "JetPOS <demo@jetpos.shop>",
                     to: [email],
                     subject: "Demo Talebiniz Alındı! 🎉",
                     html: `

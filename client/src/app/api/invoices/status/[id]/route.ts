@@ -1,5 +1,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
+export const dynamic = 'force-static';
+export async function generateStaticParams() {
+    return [];
+}
 import { getInvoiceProvider } from '@/lib/invoice-providers';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getTenantSettings } from '@/lib/tenant-settings';

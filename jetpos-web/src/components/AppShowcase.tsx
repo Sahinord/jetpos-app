@@ -52,10 +52,12 @@ export default function AppShowcase() {
                             </div>
                             <div style={{ padding: "4px", background: "#0c111d", borderBottomLeftRadius: "1rem", borderBottomRightRadius: "1rem" }}>
                                 <Image
-                                    src="/appphoto.png"
-                                    alt="JetPOS Dashboard"
+                                    src="/appscreenshot.png"
+                                    alt="JetPOS Dashboard Full View"
                                     width={1200}
                                     height={750}
+                                    quality={100}
+                                    priority
                                     style={{
                                         borderRadius: "0.75rem",
                                         width: "100%",
@@ -88,10 +90,12 @@ export default function AppShowcase() {
                             className="mobile-mockup"
                         >
                             <Image
-                                src="/phone.png"
-                                alt="JetPOS Mobile App"
+                                src="/mobileapp.png"
+                                alt="JetPOS Mobile Dashboard"
                                 width={220}
                                 height={450}
+                                quality={100}
+                                priority
                                 style={{
                                     width: "100%",
                                     height: "auto",

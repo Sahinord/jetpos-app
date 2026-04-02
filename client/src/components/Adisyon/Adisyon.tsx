@@ -54,7 +54,7 @@ interface OrderItem {
     unit_price: number;
 }
 
-export default function Adisyon({ products = [], categories = [], onCheckout, showToast, isAdisyonStoreSpecificEnabled = true, isAdisyonAutoOpenReservationEnabled = true }: any) {
+export default function Adisyon({ products = [], categories = [], onCheckout, showToast, isAdisyonStoreSpecificEnabled = true, isAdisyonAutoOpenReservationEnabled = true, isCashDrawerEnabled = false, cashDrawerPrinterName = "" }: any) {
     const { currentTenant, activeWarehouse } = useTenant();
     const [tables, setTables] = useState<Table[]>([]);
     const [selectedTable, setSelectedTable] = useState<Table | null>(null);
@@ -540,10 +540,11 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                 setSelectedItemsForPayment([]);
             }
 
-            if (method === 'NAKİT' && typeof window !== 'undefined' && (window as any).require) {
+            // --- ÇEKMECE TETİKLEME (NAKİT VEYA KART) ---
+            if ((method === 'NAKİT' || method === 'KREDİ KARTI') && isCashDrawerEnabled && typeof window !== 'undefined' && (window as any).require) {
                 try {
                     const { ipcRenderer } = (window as any).require('electron');
-                    ipcRenderer.send('open-cash-drawer', { printerName: currentTenant?.settings?.cashDrawerPrinterName });
+                    ipcRenderer.send('open-cash-drawer', { printerName: cashDrawerPrinterName || currentTenant?.settings?.cashDrawerPrinterName });
                 } catch (err) { }
             }
 

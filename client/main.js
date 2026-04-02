@@ -104,6 +104,36 @@ function createWindow() {
         }
     });
 
+    // --- SESSİZ FİŞ YAZDIRMA (SILENT PRINT - DIŞ PENCERE AÇMAZ) ---
+    ipcMain.on('silent-print-receipt', (event, { html }) => {
+        const printWin = new BrowserWindow({
+            show: false,
+            width: 302, // 80mm ≈ 302px @ 96dpi
+            height: 800,
+            webPreferences: {
+                nodeIntegration: false,
+                contextIsolation: true,
+            }
+        });
+
+        printWin.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
+
+        printWin.webContents.on('did-finish-load', () => {
+            printWin.webContents.print({
+                silent: true,
+                printBackground: true,
+                margins: { marginType: 'none' },
+                pageSize: { width: 80000, height: 297000 }, // 80mm x ~300mm in microns
+            }, (success, failureReason) => {
+                event.sender.send('silent-print-result', { success });
+                if (!success) {
+                    console.error('Fiş yazdırma hatası:', failureReason);
+                }
+                printWin.close();
+            });
+        });
+    });
+
     // In production, we load the built static files via electron-serve
     // In development, we load the localhost:3000
     if (isDev) {

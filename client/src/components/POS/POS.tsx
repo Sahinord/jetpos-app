@@ -9,7 +9,7 @@ import {
     Wallet, Building2, Sparkles, TrendingUp, Camera
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { PrintReceiptButton } from "./Receipt";
+import { PrintReceiptButton, triggerManualPrint, ReceiptPreview } from "./Receipt";
 import { Html5QrcodeScanner } from "html5-qrcode";
 import { useTenant } from "@/lib/tenant-context";
 import { supabase } from "@/lib/supabase";
@@ -31,8 +31,14 @@ export default function POS({
     cashDrawerPrinterName = "",
     setActiveTab,
     initialCart = [],
-    onCartCleared
+    onCartCleared,
+    onRefresh,
+    receiptSettings = {}
 }: any) {
+    const [contextMenu, setContextMenu] = useState<{ x: number, y: number, product: any } | null>(null);
+    const [isQuickEditModalOpen, setIsQuickEditModalOpen] = useState(false);
+    const [quickEditingProduct, setQuickEditingProduct] = useState<any>(null);
+    const [isSaving, setIsSaving] = useState(false);
     // Audio Utility for "Beep"
     const playBeep = () => {
         if (!isBeepEnabled) return; // Respect global sound setting
@@ -66,7 +72,7 @@ export default function POS({
 
     // Core Sales State
     const [cart, setCart] = useState<any[]>([]);
-    
+
     // Sync with initialCart (for Adisyon integration)
     useEffect(() => {
         if (initialCart && initialCart.length > 0) {
@@ -103,26 +109,14 @@ export default function POS({
     // Performance Optimization: Visible products limit
     const [displayLimit, setDisplayLimit] = useState(24);
     const sentinelRef = useRef<HTMLDivElement>(null);
+    const gridContainerRef = useRef<HTMLDivElement>(null);
 
     // Reset limit on search/category change
     useEffect(() => {
         setDisplayLimit(24);
     }, [search, selectedCategory]);
 
-    // Intersection Observer for Infinite Scroll
-    useEffect(() => {
-        const observer = new IntersectionObserver((entries) => {
-            if (entries[0].isIntersecting) {
-                setDisplayLimit(prev => prev + 24);
-            }
-        }, { threshold: 0.1 });
 
-        if (sentinelRef.current) {
-            observer.observe(sentinelRef.current);
-        }
-
-        return () => observer.disconnect();
-    }, [search, selectedCategory]);
 
     // Barcode Map for O(1) Lookups
     const barcodeMap = useMemo(() => {
@@ -170,6 +164,24 @@ export default function POS({
 
         return products;
     }, [products, barcodeMap, selectedCategory, deferredSearch, activeWarehouse, isPriceSyncEnabled]);
+
+    // Intersection Observer for Infinite Scroll
+    useEffect(() => {
+        if (!sentinelRef.current) return;
+
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && filteredProducts.length > displayLimit) {
+                setDisplayLimit(prev => prev + 24);
+            }
+        }, {
+            root: gridContainerRef.current,
+            rootMargin: '200px',
+            threshold: 0.01
+        });
+
+        observer.observe(sentinelRef.current);
+        return () => observer.disconnect();
+    }, [filteredProducts.length, displayLimit]);
 
     // Scanner Logic
     useEffect(() => {
@@ -279,14 +291,14 @@ export default function POS({
 
         const qtyToAdd = manualQty || 1;
         const existing = cart.find(item => item.id === product.id);
-        
+
         const currentWarehouseId = activeWarehouse?.id || warehouses[0]?.id;
-        
+
         // Find warehouse specific price unless sync is enabled
-        const wsData = (!isPriceSyncEnabled && currentWarehouseId) 
+        const wsData = (!isPriceSyncEnabled && currentWarehouseId)
             ? product.warehouse_stock?.find((ws: any) => ws.warehouse_id === currentWarehouseId)
             : null;
-            
+
         const basePrice = wsData?.sale_price !== null && wsData?.sale_price !== undefined ? wsData.sale_price : product.sale_price;
         const adjustedPrice = product.is_campaign ? parseFloat((basePrice * campaignRate).toFixed(2)) : basePrice;
 
@@ -366,19 +378,20 @@ export default function POS({
         setLastTransaction({
             items: [...cart],
             total,
-            method,
+            paymentMethod: method,
             date: new Date(),
             saleId,
             receivedAmount: method === 'NAKİT' ? receivedAmount : 0,
-            changeAmount: method === 'NAKİT' ? changeAmount : 0
+            changeAmount: method === 'NAKİT' ? changeAmount : 0,
+            receiptSettings
         });
         setShowReceiptModal(true);
         setCart([]);
         setDiscount(0);
         setNumpadValue(""); // Clear numpad after checkout
 
-        // --- NAKİT ÇEKMECE TETİKLEME ---
-        if (method === 'NAKİT' && isCashDrawerEnabled && window.require) {
+        // --- ÇEKMECE TETİKLEME (NAKİT VEYA KART) ---
+        if ((method === 'NAKİT' || method === 'KART' || method === 'KREDİ KARTI') && isCashDrawerEnabled && window.require) {
             try {
                 const { ipcRenderer } = window.require('electron');
                 ipcRenderer.send('open-cash-drawer', { printerName: cashDrawerPrinterName });
@@ -423,7 +436,7 @@ export default function POS({
                     {warehouses.length > 0 && (
                         <div className="flex items-center gap-2 px-4 py-1.5 bg-indigo-500/10 rounded-xl border border-indigo-500/30 backdrop-blur-sm">
                             <Building2 size={16} className="text-indigo-400" />
-                            <select 
+                            <select
                                 value={activeWarehouse?.id || ""}
                                 onChange={(e) => {
                                     const selected = warehouses.find(w => w.id === e.target.value);
@@ -488,8 +501,8 @@ export default function POS({
 
             <div className="flex-1 flex gap-2 min-h-0">
                 {/* LEFT: Cart and Totals - Modern Premium Design */}
-                <div className="w-full lg:w-[35%] flex flex-col gap-2">
-                    <div className="flex-1 glass-card !p-0 overflow-hidden flex flex-col border-2 border-border/40 shadow-xl">
+                <div className="w-full lg:w-[35%] flex flex-col gap-2 min-h-0">
+                    <div className="glass-card !p-0 overflow-hidden flex flex-col border-2 border-border/40 shadow-xl h-[calc(100vh-200px)]">
                         {/* Modern Header with Gradient */}
                         <div className="relative p-4 border-b-2 border-border bg-gradient-to-r from-primary/10 via-primary/5 to-transparent overflow-hidden">
                             <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-50" />
@@ -579,69 +592,68 @@ export default function POS({
                             )}
                         </div>
 
-                        {/* Premium Totals Section */}
-                        <div className="relative p-6 bg-card border-t border-border space-y-4 overflow-hidden">
+                        {/* Premium Totals Section - Ultra Compact */}
+                        <div className="relative px-3 py-2 bg-card border-t border-border space-y-1.5 overflow-hidden shrink-0">
                             {/* Decorative Elements */}
-                            <div className="absolute -top-20 -left-20 w-40 h-40 bg-primary/5 rounded-full blur-3xl" />
-                            <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-emerald-500/5 rounded-full blur-3xl" />
+                            <div className="absolute -top-10 -left-10 w-20 h-20 bg-primary/5 rounded-full blur-2xl" />
+                            <div className="absolute -bottom-10 -right-10 w-20 h-20 bg-emerald-500/5 rounded-full blur-2xl" />
 
-                            <div className="relative space-y-3">
+                            <div className="relative space-y-2">
                                 {/* Subtotal */}
-                                <div className="flex justify-between items-center px-4 py-2 bg-primary/5 rounded-xl border border-primary/10">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-secondary flex items-center gap-2">
-                                        <Calculator size={12} className="text-primary/50" />
+                                <div className="flex justify-between items-center px-3 py-1.5 bg-primary/5 rounded-lg border border-primary/10">
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-secondary flex items-center gap-1.5">
+                                        <Calculator size={10} className="text-primary/50" />
                                         Ara Toplam
                                     </span>
-                                    <span className="font-bold text-foreground">₺{subtotal.toFixed(2)}</span>
+                                    <span className="text-xs font-bold text-foreground">₺{subtotal.toFixed(2)}</span>
                                 </div>
 
                                 {/* Discount */}
-                                <div className="flex justify-between items-center px-4 py-2 bg-rose-500/5 rounded-xl border border-rose-500/20">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-rose-500 flex items-center gap-2">
-                                        <BadgePercent size={12} className="text-rose-500" />
+                                <div className="flex justify-between items-center px-3 py-1.5 bg-rose-500/5 rounded-lg border border-rose-500/20">
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-rose-500 flex items-center gap-1.5">
+                                        <BadgePercent size={10} className="text-rose-500" />
                                         İndirim
                                     </span>
-                                    <span className="font-bold text-rose-500">- ₺{discount.toFixed(2)}</span>
+                                    <span className="text-xs font-bold text-rose-500">- ₺{discount.toFixed(2)}</span>
                                 </div>
 
                                 {/* Tax */}
-                                <div className="flex justify-between items-center px-4 py-2 bg-blue-500/5 rounded-xl border border-blue-500/20">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-blue-600 flex items-center gap-2">
-                                        <Hash size={12} className="text-blue-600" />
+                                <div className="flex justify-between items-center px-3 py-1.5 bg-blue-500/5 rounded-lg border border-blue-500/20">
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-blue-600 flex items-center gap-1.5">
+                                        <Hash size={10} className="text-blue-600" />
                                         KDV Dahil
                                     </span>
-                                    <span className="font-bold text-blue-600">₺{(total * 0.1).toFixed(2)}</span>
+                                    <span className="text-xs font-bold text-blue-600">₺{(total * 0.1).toFixed(2)}</span>
                                 </div>
 
                                 {/* Paid Amount (Cash) */}
-                                <div className="flex justify-between items-center px-4 py-2 bg-primary/5 rounded-xl border border-primary/10">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-secondary flex items-center gap-2">
-                                        <Banknote size={12} className="text-emerald-400/50" />
+                                <div className="flex justify-between items-center px-3 py-1.5 bg-primary/5 rounded-lg border border-primary/10">
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-secondary flex items-center gap-1.5">
+                                        <Banknote size={10} className="text-emerald-400/50" />
                                         Ödenen (Nakit)
                                     </span>
-                                    <span className="font-bold text-foreground">₺{parseFloat(numpadValue.replace(',', '.')) || 0}</span>
+                                    <span className="text-xs font-bold text-foreground">₺{parseFloat(numpadValue.replace(',', '.')) || 0}</span>
                                 </div>
 
                                 {/* Change */}
-                                <div className="flex justify-between items-center px-4 py-3 bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl border-2 border-primary/20">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
-                                        <Sparkles size={12} className="animate-pulse" />
+                                <div className="flex justify-between items-center px-3 py-2 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border border-primary/20">
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-primary flex items-center gap-1.5">
+                                        <Sparkles size={10} className="animate-pulse" />
                                         Para Üstü
                                     </span>
-                                    <span className="text-xl font-black text-primary">₺{Math.max(0, (parseFloat(numpadValue.replace(',', '.')) || 0) - total).toFixed(2)}</span>
+                                    <span className="text-lg font-black text-primary">₺{Math.max(0, (parseFloat(numpadValue.replace(',', '.')) || 0) - total).toFixed(2)}</span>
                                 </div>
 
-                                {/* Grand Total - Premium Card */}
-                                <div className="relative mt-4 p-5 bg-gradient-to-br from-emerald-500/20 via-emerald-500/10 to-transparent rounded-2xl border-2 border-emerald-500/30 overflow-hidden">
+                                {/* Grand Total - Ultra Compact Card */}
+                                <div className="relative mt-2 p-3 bg-gradient-to-br from-emerald-500/20 via-emerald-500/10 to-transparent rounded-xl border border-emerald-500/30 overflow-hidden">
                                     <div className="absolute inset-0 bg-gradient-to-t from-emerald-500/10 to-transparent" />
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-400/10 rounded-full blur-2xl" />
                                     <div className="relative flex justify-between items-center">
                                         <div>
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-300 block mb-1">Genel Toplam</span>
-                                            <span className="text-xs text-emerald-400/60 font-bold">{cart.length} Ürün</span>
+                                            <span className="text-[9px] font-black uppercase tracking-widest text-emerald-300 block mb-0.5">Genel Toplam</span>
+                                            <span className="text-[10px] text-emerald-400/60 font-bold">{cart.length} Ürün</span>
                                         </div>
                                         <div className="text-right">
-                                            <div className="text-4xl font-black bg-gradient-to-r from-emerald-400 to-emerald-300 bg-clip-text text-transparent">
+                                            <div className="text-2xl font-black bg-gradient-to-r from-emerald-400 to-emerald-300 bg-clip-text text-transparent">
                                                 ₺{total.toFixed(2)}
                                             </div>
                                         </div>
@@ -653,11 +665,11 @@ export default function POS({
                 </div>
 
                 {/* RIGHT: Grid & Actions */}
-                <div className="flex-1 flex flex-col gap-4 overflow-hidden">
+                <div className="flex-1 flex flex-col gap-3 overflow-hidden">
                     {/* Categories & Search - Enhanced */}
                     <div className="flex gap-4">
                         {/* Search Bar with Glow Effect */}
-                        <div className="relative flex-1 group">
+                        <div className="relative w-full max-w-[600px] group">
                             <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/5 rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300" />
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-secondary group-focus-within:text-primary w-5 h-5 transition-colors" />
                             <input
@@ -669,21 +681,6 @@ export default function POS({
                                 autoFocus
                             />
                             <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                                <button
-                                    onClick={() => setIsSmartScannerOpen(true)}
-                                    className="p-1.5 hover:bg-primary/10 rounded-lg transition-all text-primary group-hover:scale-110"
-                                    title="AI Akıllı Tara"
-                                >
-                                    <Sparkles size={20} className="animate-pulse" />
-                                </button>
-                                <button
-                                    onClick={() => setIsScannerOpen(true)}
-                                    className="p-1.5 hover:bg-white/10 rounded-lg transition-all text-primary"
-                                    title="Barkod Tara"
-                                >
-                                    <Camera size={20} />
-                                </button>
-
                                 {search && (
                                     <button
                                         onClick={() => setSearch("")}
@@ -694,48 +691,25 @@ export default function POS({
                                 )}
                             </div>
                         </div>
-
-                        {/* Category Pills - Premium Style */}
-                        <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar max-w-[400px]">
-                            <button
-                                onClick={() => setSelectedCategory("all")}
-                                className={`px-6 py-4 rounded-xl font-bold text-[10px] uppercase tracking-widest whitespace-nowrap transition-all border ${selectedCategory === "all"
-                                    ? 'bg-primary border-primary/50 text-white shadow-md shadow-primary/20'
-                                    : 'bg-card/50 border-border/50 text-secondary hover:border-primary/30 hover:bg-card/70 backdrop-blur-sm'
-                                    }`}
-                            >
-                                <span className="flex items-center gap-2">
-                                    <TrendingUp size={14} />
-                                    TÜMÜ
-                                </span>
-                            </button>
-                            {categories.map((cat: any) => (
-                                <button
-                                    key={cat.id}
-                                    onClick={() => setSelectedCategory(selectedCategory === cat.id ? "all" : cat.id)}
-                                    className={`px-6 py-4 rounded-xl font-bold text-[10px] uppercase tracking-widest whitespace-nowrap transition-all border ${selectedCategory === cat.id
-                                        ? 'bg-primary border-primary/50 text-white shadow-md shadow-primary/20'
-                                        : 'bg-card/50 border-border/50 text-secondary hover:border-primary/30 hover:bg-card/70 backdrop-blur-sm'
-                                        }`}
-                                >
-                                    {cat.name}
-                                </button>
-                            ))}
-                        </div>
                     </div>
 
                     <div className="flex-1 flex gap-4 min-h-0">
-                        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                        <div ref={gridContainerRef} className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
                             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 content-start">
                                 {filteredProducts.slice(0, displayLimit).map((p: any) => (
-                                    <motion.button
+                                    <motion.div
                                         key={p.id}
                                         onClick={() => addToCart(p)}
                                         initial={{ opacity: 0, scale: 0.9 }}
                                         animate={{ opacity: 1, scale: 1 }}
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
-                                        className="group relative text-left flex flex-col justify-between h-[180px] rounded-lg transition-all overflow-hidden bg-card/50 border border-border/30 hover:border-primary/30 hover:shadow-md backdrop-blur-sm"
+                                        onContextMenu={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            setContextMenu({ x: e.clientX, y: e.clientY, product: p });
+                                        }}
+                                        className="group cursor-pointer relative text-left flex flex-col justify-between h-[180px] rounded-lg transition-all overflow-hidden bg-card/50 border border-border/30 hover:border-primary/30 hover:shadow-md backdrop-blur-sm"
                                     >
                                         {/* Minimal glow */}
                                         <div className="absolute inset-0 bg-gradient-to-br from-primary/2 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -754,7 +728,7 @@ export default function POS({
                                         <div className="p-4 relative z-10 h-full flex flex-col">
                                             <div className="flex-1">
                                                 {/* Product Name */}
-                                                <div className="font-bold text-sm text-foreground group-hover:text-primary leading-tight transition-colors break-words">
+                                                <div className="font-bold text-[13px] text-foreground group-hover:text-primary leading-tight transition-colors [overflow-wrap:anywhere] pr-1">
                                                     {p.name}
                                                 </div>
                                             </div>
@@ -769,40 +743,31 @@ export default function POS({
                                                         const price = (!isPriceSyncEnabled && wsData?.sale_price !== null && wsData?.sale_price !== undefined) ? wsData.sale_price : p.sale_price;
                                                         const qty = (isStockSyncEnabled || !activeWarehouse) ? (p.stock_quantity || 0) : (wsData?.quantity || 0);
                                                         return <>
-                                                                 <div className="text-xl font-bold text-foreground tracking-tight">
-                                                                    ₺{price.toFixed(2)}
-                                                                 </div>
-                                                                 <div className="flex items-center gap-2 mt-1">
-                                                                     <span className="text-[9px] font-black text-secondary/40 uppercase tracking-[2px]">
-                                                                         {p.unit || 'ADET'}
-                                                                     </span>
-                                                                     <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md border backdrop-blur-md transition-all ${
-                                                                         qty > 10 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 
-                                                                         qty > 0 ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' : 
-                                                                         'bg-rose-500/10 border-rose-500/20 text-rose-400'
-                                                                     }`}>
-                                                                         <div className={`w-1.5 h-1.5 rounded-full ${
-                                                                             qty > 10 ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 
-                                                                             qty > 0 ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]' : 
-                                                                             'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]'
-                                                                         }`} />
-                                                                         <span className="text-[10px] font-black tracking-tight whitespace-nowrap uppercase">
-                                                                             {qty} STOK
-                                                                         </span>
-                                                                     </div>
-                                                                 </div>
-                                                             </>
-                                                        ;
+                                                            <div className="text-xl font-bold text-foreground tracking-tight">
+                                                                ₺{price.toFixed(2)}
+                                                            </div>
+                                                            <div className="flex items-center gap-2 mt-1">
+                                                                <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md border backdrop-blur-md transition-all ${qty > 10 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
+                                                                    qty > 0 ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' :
+                                                                        'bg-rose-500/10 border-rose-500/20 text-rose-400'
+                                                                    }`}>
+                                                                    <div className={`w-1.5 h-1.5 rounded-full ${qty > 10 ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' :
+                                                                        qty > 0 ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]' :
+                                                                            'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]'
+                                                                        }`} />
+                                                                    <span className="text-[10px] font-black tracking-tight whitespace-nowrap uppercase">
+                                                                        {qty} STOK
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </>
+                                                            ;
                                                     })()}
                                                 </div>
 
-                                                {/* Add Button - Smaller */}
-                                                <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center text-white group-hover:shadow-md group-hover:shadow-primary/30 transition-all duration-300">
-                                                    <Plus size={16} strokeWidth={2.5} />
-                                                </div>
                                             </div>
                                         </div>
-                                    </motion.button>
+                                    </motion.div>
                                 ))}
 
                                 {/* Sentinel element for infinite scroll */}
@@ -847,12 +812,46 @@ export default function POS({
                                     <button onClick={() => setCart([])} className="aspect-square rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-center justify-center hover:bg-rose-500/20 transition-all shadow-sm" title="Belge İptal">
                                         <X size={18} />
                                     </button>
+                                    <button
+                                        onClick={() => {
+                                            if (lastTransaction && lastTransaction.items) {
+                                                setCart([...lastTransaction.items]);
+                                                showToast("Son satıştaki ürünler sepete geri yüklendi", "success");
+                                            }
+                                        }}
+                                        className={`aspect-square rounded-xl flex items-center justify-center transition-all border ${lastTransaction ? 'bg-amber-500/10 border-amber-500/30 text-amber-500 hover:bg-amber-500/20 shadow-sm' : 'bg-primary/5 border-border text-secondary/20 cursor-not-allowed'}`}
+                                        title="Son Fişi Sepete Geri Yükle"
+                                        disabled={!lastTransaction}
+                                    >
+                                        <Clock size={18} />
+                                    </button>
                                 </div>
                             </div>
 
-                            {/* Minimal Numpad Display */}
-                            <div className="text-right text-2xl font-bold text-foreground font-mono py-2">
-                                {numpadValue || "0"}<span className="text-sm text-primary/70 ml-1">{activeInput === "quantity" ? "AD" : "₺"}</span>
+                            {/* Keyboard Input Box */}
+                            <div className="relative group/input text-right py-2 border-b border-primary/20 mb-2">
+                                <input
+                                    type="text"
+                                    value={numpadValue}
+                                    onChange={(e) => {
+                                        const val = e.target.value.replace(',', '.');
+                                        // Allow numbers and decimal point
+                                        if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                                            setNumpadValue(val);
+                                        }
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            applyNumpadAction();
+                                        }
+                                    }}
+                                    placeholder="0"
+                                    className="w-full bg-transparent text-right text-3xl font-black text-foreground font-mono outline-none focus:text-primary transition-all pr-12 placeholder:opacity-20"
+                                    autoFocus
+                                />
+                                <span className="absolute right-0 top-1/2 -translate-y-1/2 text-xs font-black text-primary uppercase tracking-[2px] pointer-events-none">
+                                    {activeInput === "quantity" ? "AD" : "₺"}
+                                </span>
                             </div>
 
                             {/* Numpad Buttons */}
@@ -1087,49 +1086,31 @@ export default function POS({
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="glass-card w-full max-w-md !p-8 text-center space-y-6 border-emerald-500/30 cursor-default"
+                            className="glass-card w-full max-w-lg !p-0 text-center border-emerald-500/30 cursor-default overflow-hidden max-h-[90vh] flex flex-col"
                         >
-                            <div className="w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/40">
-                                <Printer size={40} className="text-white" />
-                            </div>
-                            <div>
-                                <h3 className="text-2xl font-black text-white uppercase tracking-widest">SATIŞ TAMAMLANDI</h3>
-                                <p className="text-secondary font-bold mt-1 text-xs">FİŞ OTOMATİK OLARAK YAZDIRILIYOR</p>
-                            </div>
-
-                            <div className="bg-white/5 border border-white/5 rounded-2xl p-6 space-y-3">
-                                <div className="flex justify-between text-xs font-bold text-secondary uppercase tracking-widest">
-                                    <span>İŞLEM NO</span>
-                                    <span className="text-white">#{lastTransaction.saleId}</span>
+                            {/* Header */}
+                            <div className="p-6 bg-gradient-to-r from-emerald-500/20 to-emerald-600/10 border-b border-emerald-500/20 shrink-0">
+                                <div className="flex items-center justify-center gap-3 mb-2">
+                                    <div className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/40">
+                                        <Printer size={24} className="text-white" />
+                                    </div>
+                                    <div className="text-left">
+                                        <h3 className="text-xl font-black text-white uppercase tracking-widest">SATIŞ TAMAMLANDI</h3>
+                                        <p className="text-secondary font-bold text-[10px] tracking-widest uppercase">FİŞ OTOMATİK OLARAK YAZDIRILIYOR</p>
+                                    </div>
                                 </div>
-                                <div className="flex justify-between text-xs font-bold text-secondary uppercase tracking-widest">
-                                    <span>ÖDEME TİPİ</span>
-                                    <span className="text-white">{lastTransaction.method}</span>
-                                </div>
-                                <div className="pt-3 border-t border-white/5 flex justify-between items-center">
-                                    <span className="text-sm font-black text-white">TOPLAM</span>
-                                    <span className="text-3xl font-black text-emerald-400">₺{lastTransaction.total.toFixed(2)}</span>
-                                </div>
-
-                                {lastTransaction.method === 'NAKİT' && lastTransaction.receivedAmount > 0 && (
-                                    <>
-                                        <div className="flex justify-between text-xs font-bold text-secondary uppercase tracking-widest pt-2">
-                                            <span>ÖDENEN</span>
-                                            <span className="text-white">₺{lastTransaction.receivedAmount.toFixed(2)}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center bg-white/5 p-3 rounded-xl">
-                                            <span className="text-xs font-black text-secondary uppercase tracking-widest">PARA ÜSTÜ</span>
-                                            <span className="text-xl font-black text-primary">₺{lastTransaction.changeAmount.toFixed(2)}</span>
-                                        </div>
-                                    </>
-                                )}
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            {/* Scrollable Receipt Preview */}
+                            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                                <ReceiptPreview data={lastTransaction} />
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="grid grid-cols-2 gap-4 p-6 border-t border-white/5 shrink-0 bg-card/80">
                                 <button
-                                    onClick={() => {
-                                        const btn = document.getElementById('print-receipt-trigger');
-                                        if (btn) btn.click();
+                                    onClick={async () => {
+                                        await triggerManualPrint(lastTransaction);
                                     }}
                                     className="py-4 bg-white/5 hover:bg-white/10 text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-2"
                                 >
@@ -1171,6 +1152,165 @@ export default function POS({
                     setIsSmartScannerOpen(false);
                 }}
             />
+            {/* Right Click Context Menu */}
+            <AnimatePresence>
+                {contextMenu && (
+                    <>
+                        <div
+                            className="fixed inset-0 z-[199]"
+                            onClick={() => setContextMenu(null)}
+                            onContextMenu={(e) => { e.preventDefault(); setContextMenu(null); }}
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            style={{ left: contextMenu.x, top: contextMenu.y }}
+                            className="fixed z-[200] w-48 bg-card/90 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden p-1.5"
+                        >
+                            <button
+                                onClick={() => {
+                                    setQuickEditingProduct({ ...contextMenu.product });
+                                    setIsQuickEditModalOpen(true);
+                                    setContextMenu(null);
+                                }}
+                                className="w-full text-left px-4 py-2.5 hover:bg-primary/10 rounded-lg text-sm font-bold text-foreground flex items-center gap-3 transition-colors"
+                            >
+                                <Plus size={16} className="text-primary" /> Düzenle
+                            </button>
+                            <div className="h-[1px] bg-white/5 my-1" />
+                            <button
+                                onClick={() => setContextMenu(null)}
+                                className="w-full text-left px-4 py-2.5 hover:bg-rose-500/10 rounded-lg text-sm font-bold text-rose-400 flex items-center gap-3 transition-colors"
+                            >
+                                <X size={16} /> Vazgeç
+                            </button>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
+
+            {/* Quick Edit Modal */}
+            <AnimatePresence>
+                {isQuickEditModalOpen && (
+                    <div className="fixed inset-0 z-[210] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="glass-card max-w-sm w-full border border-white/10 shadow-2xl relative overflow-hidden"
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-50" />
+
+                            <div className="relative p-6 space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <h2 className="text-lg font-black text-white uppercase tracking-widest">Hızlı Düzenle</h2>
+                                    <button onClick={() => setIsQuickEditModalOpen(false)} className="p-2 hover:bg-white/5 rounded-xl transition-colors">
+                                        <X size={18} />
+                                    </button>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black text-secondary tracking-widest uppercase">Ürün Adı</label>
+                                        <input
+                                            type="text"
+                                            value={quickEditingProduct.name}
+                                            onChange={(e) => setQuickEditingProduct({ ...quickEditingProduct, name: e.target.value })}
+                                            className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm font-bold focus:border-primary/50 outline-none transition-all"
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black text-secondary tracking-widest uppercase">Satış Fiyatı</label>
+                                            <input
+                                                type="number"
+                                                value={quickEditingProduct.sale_price}
+                                                onChange={(e) => setQuickEditingProduct({ ...quickEditingProduct, sale_price: parseFloat(e.target.value) })}
+                                                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm font-bold focus:border-primary/50 outline-none transition-all"
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black text-secondary tracking-widest uppercase">Birim</label>
+                                            <input
+                                                type="text"
+                                                value={quickEditingProduct.unit}
+                                                onChange={(e) => setQuickEditingProduct({ ...quickEditingProduct, unit: e.target.value })}
+                                                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm font-bold focus:border-primary/50 outline-none transition-all"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black text-secondary tracking-widest uppercase">Barkod</label>
+                                            <input
+                                                type="text"
+                                                value={quickEditingProduct.barcode}
+                                                onChange={(e) => setQuickEditingProduct({ ...quickEditingProduct, barcode: e.target.value })}
+                                                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm font-bold focus:border-primary/50 outline-none transition-all"
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black text-secondary tracking-widest uppercase">Stok Miktarı</label>
+                                            <input
+                                                type="number"
+                                                value={quickEditingProduct.stock_quantity ?? 0}
+                                                onChange={(e) => setQuickEditingProduct({ ...quickEditingProduct, stock_quantity: parseFloat(e.target.value) })}
+                                                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm font-bold focus:border-primary/50 outline-none transition-all"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-3 pt-2">
+                                    <button
+                                        disabled={isSaving}
+                                        onClick={() => setIsQuickEditModalOpen(false)}
+                                        className="flex-1 py-3 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+                                    >
+                                        Vazgeç
+                                    </button>
+                                    <button
+                                        disabled={isSaving}
+                                        onClick={async () => {
+                                            if (!currentTenant) return;
+                                            try {
+                                                setIsSaving(true);
+                                                const { error } = await supabase
+                                                    .from('products')
+                                                    .update({
+                                                        name: quickEditingProduct.name,
+                                                        sale_price: quickEditingProduct.sale_price,
+                                                        barcode: quickEditingProduct.barcode,
+                                                        unit: quickEditingProduct.unit,
+                                                        stock_quantity: quickEditingProduct.stock_quantity
+                                                    })
+                                                    .eq('id', quickEditingProduct.id)
+                                                    .eq('tenant_id', currentTenant.id);
+
+                                                if (error) throw error;
+
+                                                showToast("Ürün güncellendi", "success");
+                                                setIsQuickEditModalOpen(false);
+                                                if (onRefresh) onRefresh();
+                                            } catch (err: any) {
+                                                showToast(err.message, "error");
+                                            } finally {
+                                                setIsSaving(false);
+                                            }
+                                        }}
+                                        className="flex-1 py-3 bg-primary text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-primary/20 active:scale-95 transition-all"
+                                    >
+                                        {isSaving ? "Kaydediliyor..." : "Kaydet"}
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
-import { PrintReceiptButton } from "@/components/POS/Receipt";
+import { triggerManualPrint } from "@/components/POS/Receipt";
 
 export default function SalesHistory() {
     const [sales, setSales] = useState<any[]>([]);
@@ -259,16 +259,16 @@ export default function SalesHistory() {
                                     <button
                                         onClick={async () => {
                                             if (!confirm("BU SATIŞI İPTAL ETMEK İSTEDİĞİNİZDEN EMİN MİSİNİZ? \n\n* Tüm ürünler stoğa geri eklenecek. \n* Kasa toplamından düşülecek.")) return;
-                                            
+
                                             try {
                                                 // 1. İptal Durumunu Güncelle (SQL'e yeni sütun ekleme riskine girmemek için NOTES kısmını kullanıyoruz)
                                                 // Tutar ve Kar sıfırlanır ki dashboardlardan otomatik düşsün
                                                 const { error: cancelError } = await supabase
                                                     .from('sales')
-                                                    .update({ 
-                                                        notes: "İPTAL EDİLDİ", 
-                                                        total_amount: 0, 
-                                                        total_profit: 0 
+                                                    .update({
+                                                        notes: "İPTAL EDİLDİ",
+                                                        total_amount: 0,
+                                                        total_profit: 0
                                                     })
                                                     .eq('id', selectedSale.id);
 
@@ -304,8 +304,7 @@ export default function SalesHistory() {
                                 )}
 
                                 <button
-                                    onClick={() => {
-                                        // Trigger duplicate receipt print by passing sale data formatted for receipt component
+                                    onClick={async () => {
                                         const receiptData = {
                                             saleId: selectedSale.id.slice(0, 8).toUpperCase(),
                                             date: new Date(selectedSale.created_at),
@@ -316,9 +315,9 @@ export default function SalesHistory() {
                                                 sale_price: i.unit_price
                                             })),
                                             total: selectedSale.total_amount,
-                                            method: selectedSale.payment_method
+                                            paymentMethod: selectedSale.payment_method
                                         };
-                                        alert("Fiş yazdırma tetiklendi (Demo)");
+                                        await triggerManualPrint(receiptData);
                                     }}
                                     className="flex-1 py-4 bg-primary/5 hover:bg-primary/10 text-foreground font-bold rounded-xl transition-all flex items-center justify-center gap-2"
                                 >

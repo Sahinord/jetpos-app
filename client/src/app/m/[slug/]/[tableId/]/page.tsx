@@ -1,10 +1,8 @@
+import React from "react";
 import PublicQRMenuClient from "@/components/QRMenu/PublicQRMenuClient";
 
-export const dynamic = 'force-static';
-export const dynamicParams = false;
-
 export async function generateStaticParams() {
-    return []; 
+    return []; // Statik dışa aktarma için boş parametreler
 }
 
 export default function TableQRMenuPage({ params }: { params: Promise<{ slug: string, tableId: string }> }) {

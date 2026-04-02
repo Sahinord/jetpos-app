@@ -6,7 +6,7 @@ import {
     Palette, CheckCircle2,
     Shield, Bell, Database,
     Info, ExternalLink, Users, Tag, AlertTriangle,
-    BookOpen, PlayCircle, Zap
+    BookOpen, PlayCircle, Zap, Printer, Phone, MapPin, FileText, Building
 } from "lucide-react";
 
 export default function AppSettings({ 
@@ -24,7 +24,9 @@ export default function AppSettings({
     currentTenant,
     showToast,
     lowStockThreshold,
-    setLowStockThreshold
+    setLowStockThreshold,
+    receiptSettings,
+    setReceiptSettings
 }: any) {
     const themes = [
         { id: 'modern', name: 'MODERN DARK', color: 'bg-primary', desc: 'Sleek ve modern bir arayüz' },

@@ -14,7 +14,7 @@ interface Product {
     id: string; name: string; barcode: string;
     sale_price: number; purchase_price: number; vat_rate: number;
 }
-type TemplateId = 'raf' | 'fiyat' | 'yanyan' | 'market' | 'standard' | 'mini' | 'large' | 'price-only';
+type TemplateId = 'raf' | 'fiyat' | 'yanyan' | 'market' | 'standard' | 'mini' | 'large' | 'square-40' | 'vertical-30-50' | 'price-only';
 type ElemId = 'brand' | 'name' | 'price' | 'barcode' | 'logo';
 interface Pos { xMm: number; yMm: number; }
 interface LabelConfig {
@@ -24,6 +24,7 @@ interface LabelConfig {
     showBarcode: boolean; showPrice: boolean; showVat: boolean;
     nameFontMm: number; priceFontMm: number; brandFontMm: number; barcodeHMm: number;
     defaultPos: Partial<Record<ElemId, Pos>>;
+    isRotated?: boolean;
 }
 
 const PS = 3.5; // preview px per mm
@@ -109,6 +110,20 @@ const TEMPLATES: LabelConfig[] = [
         defaultPos: { brand: { xMm: 2, yMm: 2 }, name: { xMm: 2, yMm: 9 }, logo: { xMm: 2, yMm: 40 }, barcode: { xMm: 40, yMm: 2 }, price: { xMm: 40, yMm: 22 } },
     },
     {
+        id: 'square-40', name: '🔲 Kare (40×40mm)',
+        widthMm: 40, heightMm: 40,
+        showLogo: false, showBrand: true, showName: true, showBarcode: true, showPrice: true, showVat: false,
+        nameFontMm: 7, priceFontMm: 10, brandFontMm: 4, barcodeHMm: 10,
+        defaultPos: { name: { xMm: 2, yMm: 2 }, barcode: { xMm: 2, yMm: 15 }, price: { xMm: 2, yMm: 28 }, brand: { xMm: 2, yMm: 35 } },
+    },
+    {
+        id: 'vertical-30-50', name: '📐 Dikey (30×50mm)',
+        widthMm: 30, heightMm: 50,
+        showLogo: false, showBrand: true, showName: true, showBarcode: true, showPrice: true, showVat: false,
+        nameFontMm: 6, priceFontMm: 9, brandFontMm: 4, barcodeHMm: 8,
+        defaultPos: { name: { xMm: 2, yMm: 2 }, barcode: { xMm: 2, yMm: 15 }, price: { xMm: 2, yMm: 30 }, brand: { xMm: 2, yMm: 42 } },
+    },
+    {
         id: 'price-only', name: 'Sadece Fiyat (30×20mm)',
         widthMm: 30, heightMm: 20,
         showLogo: false, showBrand: false, showName: true, showBarcode: false, showPrice: true, showVat: false,
@@ -170,6 +185,7 @@ export default function ProductLabelDesigner({ products, showToast }: { products
 
     /* ─ element config overrides ─ */
     const [cfgOverrides, setCfgOverrides] = useState<Partial<LabelConfig>>({});
+    const [isRotated, setIsRotated] = useState(false);
 
     /* ─ canva positions ─ */
     const [positions, setPositions] = useState<Partial<Record<ElemId, Pos>>>({});
@@ -332,21 +348,21 @@ export default function ProductLabelDesigner({ products, showToast }: { products
             const parts: string[] = [];
             if (cfg.showBrand && brandName) {
                 const s = sty('brand');
-                parts.push(`<div style="position:absolute;left:${getPos('brand').xMm}mm;top:${getPos('brand').yMm}mm;font-size:${fsMm('brand', cfg.brandFontMm)}mm;font-weight:${s.b ? '900' : 'bold'};font-style:${s.i ? 'italic' : 'normal'};color:${clr('brand', '#1565C0')};text-transform:uppercase;text-align:${aln('brand')};max-width:${wMm('brand', cfg.widthMm * 0.45)}mm;word-wrap:break-word;line-height:1.2;">${getTxt('brand', brandName)}</div>`);
+                parts.push(`<div style="position:absolute;left:${getPos('brand').xMm}mm;top:${getPos('brand').yMm}mm;font-size:${fsMm('brand', cfg.brandFontMm)}mm;font-weight:900;font-style:${s.i ? 'italic' : 'normal'};color:${clr('brand', '#000')}!important;text-transform:uppercase;text-align:${aln('brand')};max-width:${wMm('brand', cfg.widthMm * 0.45)}mm;word-wrap:break-word;line-height:1.2;">${getTxt('brand', brandName)}</div>`);
             }
             if (cfg.showName) {
                 const s = sty('name');
-                parts.push(`<div style="position:absolute;left:${getPos('name').xMm}mm;top:${getPos('name').yMm}mm;font-size:${fsMm('name', cfg.nameFontMm)}mm;font-weight:${s.b ? '900' : '800'};font-style:${s.i ? 'italic' : 'normal'};color:${clr('name', '#111')};text-align:${aln('name')};max-width:${wMm('name', cfg.widthMm * 0.58)}mm;word-wrap:break-word;line-height:1.2;">${getTxt('name', p.name)}</div>`);
+                parts.push(`<div style="position:absolute;left:${getPos('name').xMm}mm;top:${getPos('name').yMm}mm;font-size:${fsMm('name', cfg.nameFontMm)}mm;font-weight:900;font-style:${s.i ? 'italic' : 'normal'};color:#000!important;text-align:${aln('name')};max-width:${wMm('name', cfg.widthMm * 0.58)}mm;word-wrap:break-word;line-height:1.2;">${getTxt('name', p.name)}</div>`);
             }
             if (cfg.showPrice) {
                 const s = sty('price');
                 const [int, dec] = p.sale_price.toFixed(2).split('.');
-                parts.push(`<div style="position:absolute;left:${getPos('price').xMm}mm;top:${getPos('price').yMm}mm;color:${clr('price', '#111')};font-weight:${s.b ? '900' : 'normal'};font-style:${s.i ? 'italic' : 'normal'};display:flex;align-items:flex-start;gap:1.5mm;zoom:${fontScales['price'] ?? 1};transform-origin:top left;">
-                    <span style="font-size:${cfg.priceFontMm}mm;font-weight:900;line-height:1;">${int}</span>
+                parts.push(`<div style="position:absolute;left:${getPos('price').xMm}mm;top:${getPos('price').yMm}mm;color:#000!important;font-weight:900;font-style:${s.i ? 'italic' : 'normal'};display:flex;align-items:flex-start;gap:1.5mm;zoom:${fontScales['price'] ?? 1};transform-origin:top left;">
+                    <span style="font-size:${cfg.priceFontMm}mm;font-weight:900;line-height:1;color:#000!important;">${int}</span>
                     <div style="display:flex;flex-direction:column;margin-top:0.5mm;">
-                        <span style="font-size:${cfg.priceFontMm * 0.55}mm;font-weight:900;line-height:1;">,${dec}</span>
-                        <span style="font-size:${cfg.brandFontMm * 0.9}mm;font-weight:700;">TL</span>
-                        ${cfg.showVat ? `<span style="font-size:${cfg.brandFontMm * 0.6}mm;color:#666;font-style:italic;white-space:nowrap;">KDV Dahil</span>` : ''}
+                        <span style="font-size:${cfg.priceFontMm * 0.55}mm;font-weight:900;line-height:1;color:#000!important;">,${dec}</span>
+                        <span style="font-size:${cfg.brandFontMm * 0.9}mm;font-weight:900;color:#000!important;">TL</span>
+                        ${cfg.showVat ? `<span style="font-size:${cfg.brandFontMm * 0.6}mm;color:#000!important;font-style:italic;white-space:nowrap;">KDV Dahil</span>` : ''}
                     </div>
                 </div>`);
             }
@@ -354,14 +370,16 @@ export default function ProductLabelDesigner({ products, showToast }: { products
                 parts.push(`<div style="position:absolute;left:${getPos('barcode').xMm}mm;top:${getPos('barcode').yMm}mm;"><canvas id="${bc}"></canvas></div>`);
             if (cfg.showLogo && logoUrl)
                 parts.push(`<div style="position:absolute;left:${getPos('logo').xMm}mm;top:${getPos('logo').yMm}mm;"><img src="${logoUrl}" style="height:${imgH}mm;object-fit:contain;" /></div>`);
-            return `<div style="position:relative;width:${cfg.widthMm}mm;height:${cfg.heightMm}mm;border:1.5px solid #999;background:#fff;font-family:Arial,sans-serif;overflow:hidden;box-sizing:border-box;">${parts.join('')}</div>`;
+            const rotStyle = isRotated ? `transform: rotate(90deg) translate(0, -${cfg.widthMm}mm); transform-origin: top left; width: ${cfg.heightMm}mm; height: ${cfg.widthMm}mm;` : `width: ${cfg.widthMm}mm; height: ${cfg.heightMm}mm;`;
+            
+            return `<div style="position:relative; ${rotStyle} border:0.5px solid #ccc;background:#fff!important;font-family:Arial,sans-serif;overflow:hidden;box-sizing:border-box;page-break-inside:avoid;">${parts.join('')}</div>`;
         };
 
         const barcodeScripts = selectedProducts.flatMap(pid => {
             const pr = products.find(p => p.id === pid);
             if (!pr?.barcode) return [];
             return Array.from({ length: labelCount[pid] || 1 }, (_, i) =>
-                `try{JsBarcode(document.getElementById('bc-print-${pid}-${i}'),'${pr.barcode}',{format:'CODE128',width:1.2,height:${Math.round(cfg.barcodeHMm * 3.78)},displayValue:true,fontSize:8,margin:2,textMargin:1});}catch(e){}`
+                `try{JsBarcode(document.getElementById('bc-print-${pid}-${i}'),'${pr.barcode}',{format:'CODE128',width:1.5,height:${Math.round(cfg.barcodeHMm * 3.78)},displayValue:true,fontSize:10,margin:2,textMargin:1,lineColor:'#000'});}catch(e){}`
             );
         });
 
@@ -371,10 +389,54 @@ export default function ProductLabelDesigner({ products, showToast }: { products
             return Array.from({ length: labelCount[pid] || 1 }, (_, i) => toLabel(pr, i));
         }).join('');
 
-        const win = window.open('', '_blank');
-        if (!win) return;
-        win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Etiket Bas</title><style>@page{margin:5mm}body{margin:0;font-family:Arial,sans-serif;background:#fff;padding:5mm}*{box-sizing:border-box}.grid{display:flex;flex-wrap:wrap;gap:3mm}canvas{max-width:100%;height:auto!important;display:block}</style></head><body><div class="grid">${labelsHtml}</div><script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script><script>window.onload=function(){${barcodeScripts.join('\n')}setTimeout(function(){window.print();window.onafterprint=function(){window.close();};},600);};<\/script></body></html>`);
-        win.document.close();
+        const gridGap = isRotated ? '10mm' : '3mm';
+        const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Etiket Bas</title><style>
+@page{margin:5mm;size:auto}
+*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;color-adjust:exact}
+body{margin:0;font-family:Arial,sans-serif;background:#fff!important;padding:5mm;color:#000!important}
+.grid{display:flex;flex-wrap:wrap;gap:${gridGap}}
+div,span,p{color:#000!important}
+canvas{display:block}
+</style></head><body><div class="grid">${labelsHtml}</div>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>
+<script>
+window.onload=function(){
+${barcodeScripts.join('\n')}
+setTimeout(function(){window.print();},600);
+};
+<\/script></body></html>`;
+
+        // iframe ile yazdır (harici sayfa açılmaz)
+        try {
+            const iframe = document.createElement('iframe');
+            iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:none;opacity:0;pointer-events:none;';
+            document.body.appendChild(iframe);
+
+            const doc = iframe.contentDocument || iframe.contentWindow?.document;
+            if (doc) {
+                doc.open();
+                doc.write(fullHtml);
+                doc.close();
+
+                // JsBarcode CDN yüklenmesi + render için bekle
+                setTimeout(() => {
+                    try {
+                        iframe.contentWindow?.print();
+                    } catch (e) {
+                        console.error('Print error:', e);
+                        showToast('Yazdırma hatası oluştu', 'error');
+                    }
+                    showToast('Etiket yazdırma penceresi açıldı');
+                    setTimeout(() => {
+                        try { document.body.removeChild(iframe); } catch {}
+                    }, 5000);
+                }, 1500);
+            } else {
+                showToast('İframe oluşturulamadı', 'error');
+            }
+        } catch {
+            showToast('Yazdırma hatası oluştu', 'error');
+        }
     };
 
     /* ─ utils ─ */
@@ -526,6 +588,16 @@ export default function ProductLabelDesigner({ products, showToast }: { products
                                     </button>
                                 </div>
                             ))}
+
+                            <div className="flex items-center justify-between p-2 bg-white/5 rounded-lg border border-primary/20">
+                                <span className="text-xs font-black text-primary uppercase">Dikey Yazdır (90° Döndür)</span>
+                                <button
+                                    onClick={() => setIsRotated(!isRotated)}
+                                    className={`w-10 h-5 rounded-full relative transition-all ${isRotated ? 'bg-amber-500' : 'bg-white/10'}`}
+                                >
+                                    <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${isRotated ? 'left-5' : 'left-0.5'}`} />
+                                </button>
+                            </div>
                         </div>
                         <div className="mt-3 space-y-2">
                             <label className="block text-xs font-bold text-secondary uppercase">Ürün adı: {cfg.nameFontMm}mm</label>

@@ -179,17 +179,17 @@ export default function GizlilikPage() {
 
                     <H2 id="veri-sorumlusu">1. Veri Sorumlusu</H2>
                     <P>
-                        6698 sayılı Kişisel Verilerin Korunması Kanunu (&quot;KVKK&quot;) kapsamında veri sorumlusu sıfatını taşıyan kuruluş JetPOS Yazılım Hizmetleri olup iletişim bilgileri aşağıda yer almaktadır:
+                        6698 sayılı Kişisel Verilerin Korunması Kanunu (&quot;KVKK&quot;) kapsamında veri sorumlusu sıfatını taşıyan kuruluş Jetsoft olup iletişim bilgileri aşağıda yer almaktadır:
                     </P>
                     <div style={{
                         background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
                         borderRadius: "0.875rem", padding: "1.25rem 1.5rem", marginBottom: "1.5rem"
                     }}>
                         <ul style={{ margin: 0, padding: 0 }}>
-                            <Li><strong style={{ color: "white" }}>Ticari Unvan:</strong> JetPOS Yazılım Hizmetleri</Li>
-                            <Li><strong style={{ color: "white" }}>E-posta:</strong> kvkk@jetpos.com.tr</Li>
-                            <Li><strong style={{ color: "white" }}>Telefon:</strong> +90 500 123 45 67</Li>
-                            <Li><strong style={{ color: "white" }}>Adres:</strong> Teknoloji Caddesi No: 123, Şişli / İstanbul</Li>
+                            <Li><strong style={{ color: "white" }}>Ticari Unvan:</strong> Jetsoft</Li>
+                            <Li><strong style={{ color: "white" }}>E-posta:</strong> kvkk@jetpos.shop</Li>
+                            <Li><strong style={{ color: "white" }}>Telefon:</strong> 0536 661 0169</Li>
+                            <Li><strong style={{ color: "white" }}>Adres:</strong> Su Yolu Cad Turgut Özal Mah No 31/A</Li>
                         </ul>
                     </div>
 
@@ -311,7 +311,7 @@ export default function GizlilikPage() {
                         <Li>Kanuna aykırı işlenmesi sebebiyle zarara uğramanız halinde tazminat talep etme</Li>
                     </ul>
                     <InfoBox>
-                        Haklarınızı kullanmak için <strong>kvkk@jetpos.com.tr</strong> adresine kimliğinizi doğrulayan bilgilerle yazılı başvuru yapabilirsiniz. Talebiniz en geç 30 gün içinde yanıtlanacaktır.
+                        Haklarınızı kullanmak için <strong>kvkk@jetpos.shop</strong> adresine kimliğinizi doğrulayan bilgilerle yazılı başvuru yapabilirsiniz. Talebiniz en geç 30 gün içinde yanıtlanacaktır.
                     </InfoBox>
 
                     <H2 id="cerezler">8. Çerezler (Cookies)</H2>
@@ -342,9 +342,9 @@ export default function GizlilikPage() {
                     <H2 id="iletisim">11. İletişim</H2>
                     <P>Gizlilik politikamız veya kişisel verilerinizle ilgili sorularınız için:</P>
                     <ul style={{ margin: 0, padding: 0, marginBottom: "2rem" }}>
-                        <Li><strong style={{ color: "white" }}>KVKK Başvuruları:</strong> kvkk@jetpos.com.tr</Li>
-                        <Li><strong style={{ color: "white" }}>Genel İletişim:</strong> info@jetpos.com.tr</Li>
-                        <Li><strong style={{ color: "white" }}>Telefon:</strong> +90 500 123 45 67</Li>
+                        <Li><strong style={{ color: "white" }}>KVKK Başvuruları:</strong> kvkk@jetpos.shop</Li>
+                        <Li><strong style={{ color: "white" }}>Genel İletişim:</strong> info@jetpos.shop</Li>
+                        <Li><strong style={{ color: "white" }}>Telefon:</strong> 0536 661 0169</Li>
                     </ul>
 
                     <div style={{

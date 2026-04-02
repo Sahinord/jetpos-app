@@ -1,5 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
+export const dynamic = 'force-static';
 import { createTrendyolGoClient } from '@/lib/trendyol-go-client';
 
 export async function GET(req: NextRequest) {

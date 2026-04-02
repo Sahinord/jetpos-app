@@ -1,16 +1,17 @@
 "use client";
 
-import { Zap, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 
 const navLinks = [
     { href: "/", label: "Anasayfa" },
     { href: "/fiyatlandirma", label: "Fiyatlandırma" },
-    { href: "/forum", label: "Forum" },
+    { href: "/fiyatlandirma/ozellestir", label: "Paketini Oluştur" },
     { href: "/demo", label: "Ücretsiz Demo" },
-    { href: "/#contact", label: "İletişim" },
+    { href: "/iletisim", label: "İletişim" },
 ];
 
 export default function Navbar() {
@@ -64,20 +65,29 @@ export default function Navbar() {
                     }}>
 
                         {/* Logo */}
-                        <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.625rem", textDecoration: "none" }}>
+                        <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.75rem", textDecoration: "none" }}>
                             <div style={{
-                                width: "2rem", height: "2rem",
-                                background: "linear-gradient(135deg, #2563eb, #3b82f6)",
+                                width: "2.5rem", height: "2.5rem",
                                 borderRadius: "50%",
+                                border: scrolled ? "1px solid rgba(59, 130, 246, 0.3)" : "1px solid rgba(255,255,255,0.15)",
+                                background: "rgba(255,255,255,0.03)",
                                 display: "flex", alignItems: "center", justifyContent: "center",
-                                boxShadow: "0 0 12px rgba(37,99,235,0.5)",
+                                overflow: "hidden",
+                                boxShadow: "0 0 15px rgba(37,99,235,0.25)",
                                 flexShrink: 0,
+                                transition: "all 0.4s"
                             }}>
-                                <Zap style={{ width: "1rem", height: "1rem", color: "white", fill: "white" }} />
+                                <Image 
+                                    src="/logo.png" 
+                                    alt="JetPOS Logo" 
+                                    width={40} 
+                                    height={40} 
+                                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                />
                             </div>
                             <span style={{
-                                fontSize: "1.2rem", fontWeight: 800, color: "white",
-                                letterSpacing: "-0.02em"
+                                fontSize: "1.3rem", fontWeight: 800, color: scrolled ? "white" : "white",
+                                letterSpacing: "-0.04em"
                             }}>
                                 Jet<span style={{ color: "#60a5fa" }}>POS</span>
                             </span>

@@ -45,6 +45,7 @@ import BankaPage from '@/components/Banka/BankaPage';
 import EmployeeManager from '@/components/Employee/EmployeeManager';
 import ShiftManager from '@/components/Employee/ShiftManager';
 import ProductLabelDesigner from '@/components/Tools/ProductLabelDesigner';
+import ReceiptDesigner from '@/components/Tools/ReceiptDesigner';
 import FinancialCalendar from '@/components/Calendar/FinancialCalendar';
 import InvoiceWaybillPage from '@/components/Waybill/InvoiceWaybillPage';
 import WarehousePage from '@/components/Warehouse/WarehousePage';
@@ -81,6 +82,21 @@ export default function Home() {
   const [isAdisyonAutoOpenReservationEnabled, setIsAdisyonAutoOpenReservationEnabled] = useState(true);
   const [lowStockThreshold, setLowStockThreshold] = useState(10);
 
+  // Fiş Özelleştirme Ayarları
+  const [receiptSettings, setReceiptSettings] = useState({
+    storeName: 'JETPOS MARKET',
+    subtitle1: 'MODERN PERAKENDE SİSTEMLERİ',
+    subtitle2: 'GÜVENLİ VE HIZLI SATIŞ SİSTEMİ',
+    footerMessage: 'BİZİ TERCİH ETTİĞİNİZ İÇİN TEŞEKKÜRLER',
+    footerNote1: 'MALİ DEĞERİ YOKTUR',
+    footerNote2: 'BİLGİ FİŞİDİR',
+    showLogo: false,
+    phone: '',
+    address: '',
+    taxOffice: '',
+    taxNumber: '',
+  });
+
   const [toast, setToast] = useState({ isVisible: false, message: "", type: "success" as ToastType });
 
   const stats = calculateStockMetrics(products);
@@ -92,6 +108,14 @@ export default function Home() {
   useEffect(() => {
     if (!tenantLoading && currentTenant) {
       fetchData();
+      // Eğer localStorage'da receiptSettings yoksa, tenant adını default olarak ata
+      const saved = localStorage.getItem('receiptSettings');
+      if (!saved) {
+        setReceiptSettings((prev: any) => ({
+          ...prev,
+          storeName: currentTenant.company_name?.toUpperCase() || prev.storeName,
+        }));
+      }
     }
   }, [tenantLoading, currentTenant, activeWarehouse]);
 
@@ -132,6 +156,11 @@ export default function Home() {
     const savedLowStockThreshold = localStorage.getItem('lowStockThreshold');
     if (savedLowStockThreshold !== null) setLowStockThreshold(parseInt(savedLowStockThreshold));
 
+    const savedReceiptSettings = localStorage.getItem('receiptSettings');
+    if (savedReceiptSettings) {
+      try { setReceiptSettings(JSON.parse(savedReceiptSettings)); } catch (e) {}
+    }
+
     // Hash control for profile tab
     const handleHashChange = () => {
       if (window.location.hash === '#profile') {
@@ -158,7 +187,8 @@ export default function Home() {
     localStorage.setItem('isAdisyonStoreSpecificEnabled', isAdisyonStoreSpecificEnabled.toString());
     localStorage.setItem('isAdisyonAutoOpenReservationEnabled', isAdisyonAutoOpenReservationEnabled.toString());
     localStorage.setItem('lowStockThreshold', lowStockThreshold.toString());
-  }, [theme, isBeepEnabled, showHelpIcons, isEmployeeModuleEnabled, isPriceSyncEnabled, isStockSyncEnabled, isWarehouseStockDeductionEnabled, isCashDrawerEnabled, cashDrawerPrinterName, isAdisyonStoreSpecificEnabled, isAdisyonAutoOpenReservationEnabled, lowStockThreshold]);
+    localStorage.setItem('receiptSettings', JSON.stringify(receiptSettings));
+  }, [theme, isBeepEnabled, showHelpIcons, isEmployeeModuleEnabled, isPriceSyncEnabled, isStockSyncEnabled, isWarehouseStockDeductionEnabled, isCashDrawerEnabled, cashDrawerPrinterName, isAdisyonStoreSpecificEnabled, isAdisyonAutoOpenReservationEnabled, lowStockThreshold, receiptSettings]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -245,19 +275,19 @@ export default function Home() {
       // UUID Debug & Validation Checks
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       const catId = !formData.category_id || formData.category_id === "undefined" ? null : formData.category_id;
-      
+
       if (catId !== null && !uuidRegex.test(catId)) {
-          throw new Error(`category_id geçersiz UUID: ${catId}`);
+        throw new Error(`category_id geçersiz UUID: ${catId}`);
       }
       if (!currentTenant.id || !uuidRegex.test(currentTenant.id)) {
-          throw new Error(`tenant_id geçersiz UUID: ${currentTenant.id}`);
+        throw new Error(`tenant_id geçersiz UUID: ${currentTenant.id}`);
       }
       if (editingProduct && (!(editingProduct as any).id || !uuidRegex.test((editingProduct as any).id))) {
-          throw new Error(`editingProduct.id geçersiz UUID: ${(editingProduct as any).id}`);
+        throw new Error(`editingProduct.id geçersiz UUID: ${(editingProduct as any).id}`);
       }
 
       const productId = editingProduct ? (editingProduct as any).id : null;
-      
+
       const productPayload: any = {
         name: formData.name,
         barcode: formData.barcode,
@@ -275,7 +305,7 @@ export default function Home() {
         productPayload.sale_price = formData.sale_price;
         productPayload.purchase_price = formData.purchase_price;
       }
-      
+
       // Handle master stock quantity
       if (isStockSyncEnabled || !activeWarehouse) {
         productPayload.stock_quantity = formData.stock_quantity;
@@ -357,7 +387,7 @@ export default function Home() {
         .delete()
         .eq('id', id)
         .eq('tenant_id', currentTenant.id);
-      
+
       if (error) throw error;
 
       showToast("Ürün ve ilişkili tüm veriler silindi", "info");
@@ -396,7 +426,7 @@ export default function Home() {
 
   const handleClearAllProducts = async () => {
     if (!currentTenant) return;
-    
+
     // If modal is not open, open it
     if (!isClearAllModalOpen) {
       setIsClearAllModalOpen(true);
@@ -413,7 +443,7 @@ export default function Home() {
     try {
       setLoading(true);
       setIsClearAllModalOpen(false);
-      
+
       // 1. Delete Warehouse Stock (references products and warehouses)
       const { error: wsError } = await supabase.from('warehouse_stock').delete().eq('tenant_id', currentTenant.id);
       if (wsError) console.warn("Warehouse stock delete error:", wsError.message);
@@ -433,7 +463,7 @@ export default function Home() {
       // 5. Delete Sale Items and Sales
       const { error: siError } = await supabase.from('sale_items').delete().eq('tenant_id', currentTenant.id);
       if (siError) console.warn("Sale items delete error:", siError.message);
-      
+
       const { error: sError } = await supabase.from('sales').delete().eq('tenant_id', currentTenant.id);
       if (sError) console.warn("Sales delete error:", sError.message);
 
@@ -445,7 +475,7 @@ export default function Home() {
       const { error: productsError } = await supabase.from('products')
         .delete()
         .eq('tenant_id', currentTenant.id);
-      
+
       if (productsError) throw productsError;
 
       showToast("Tüm veri tabanı başarıyla sıfırlandı", "info");
@@ -765,20 +795,20 @@ export default function Home() {
   return (
     <div className={`flex min-h-screen bg-background text-foreground theme-${theme}`}>
       <StoreSelectionOverlay />
-      <Sidebar 
-        activeTab={activeTab} 
+      <Sidebar
+        activeTab={activeTab}
         onTabChange={(tab) => {
           setActiveTab(tab);
           setIsMobileSidebarOpen(false); // Sekme seçince menüyü kapat
-        }} 
-        showHelpIcons={showHelpIcons} 
+        }}
+        showHelpIcons={showHelpIcons}
         showToast={showToast}
         isMobileOpen={isMobileSidebarOpen}
       />
 
       {/* Mobile Sidebar Overlay */}
       {isMobileSidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm"
           onClick={() => setIsMobileSidebarOpen(false)}
         />
@@ -787,7 +817,7 @@ export default function Home() {
       <main className="flex-1 overflow-y-auto max-h-screen relative flex flex-col min-w-0">
         <TopBar activeTab={activeTab} onMenuClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)} />
 
-        <div className="responsive-container py-6 flex-1 flex flex-col min-h-0">
+        <div className="responsive-container pt-3 pb-12 flex-1 flex flex-col min-h-0">
           {activeTab === "home" && (
             <HomePage onNavigate={setActiveTab} />
           )}
@@ -832,7 +862,7 @@ export default function Home() {
                   products={products}
                   hideFilters={true}
                   limit={5}
-                  onEdit={(p: any) => { 
+                  onEdit={(p: any) => {
                     const wsData = p.warehouse_stock?.find((ws: any) => ws.warehouse_id === activeWarehouse?.id);
                     const contextProduct = {
                       ...p,
@@ -840,8 +870,8 @@ export default function Home() {
                       purchase_price: (!isPriceSyncEnabled && wsData?.purchase_price !== null && wsData?.purchase_price !== undefined) ? wsData.purchase_price : p.purchase_price,
                       stock_quantity: activeWarehouse ? (wsData?.quantity || 0) : (p.stock_quantity || 0)
                     };
-                    setEditingProduct(contextProduct); 
-                    setIsModalOpen(true); 
+                    setEditingProduct(contextProduct);
+                    setIsModalOpen(true);
                   }}
                   onDelete={handleDelete}
                   onAdd={(data?: any) => { setEditingProduct(data && !data.nativeEvent ? data : null); setIsModalOpen(true); }}
@@ -878,6 +908,8 @@ export default function Home() {
                 setActiveTab={setActiveTab}
                 initialCart={adisyonCart}
                 onCartCleared={() => setAdisyonCart([])}
+                onRefresh={fetchData}
+                receiptSettings={receiptSettings}
               />
             </div>
           )}
@@ -911,6 +943,8 @@ export default function Home() {
                 showToast={showToast}
                 lowStockThreshold={lowStockThreshold}
                 setLowStockThreshold={setLowStockThreshold}
+                receiptSettings={receiptSettings}
+                setReceiptSettings={setReceiptSettings}
               />
             </div>
           )}
@@ -919,7 +953,7 @@ export default function Home() {
             <div className="max-w-[1500px] mx-auto w-full">
               <ProductTable
                 products={products}
-                onEdit={(p: any) => { 
+                onEdit={(p: any) => {
                   const wsData = p.warehouse_stock?.find((ws: any) => ws.warehouse_id === activeWarehouse?.id);
                   const contextProduct = {
                     ...p,
@@ -927,8 +961,8 @@ export default function Home() {
                     purchase_price: (!isPriceSyncEnabled && wsData?.purchase_price !== null && wsData?.purchase_price !== undefined) ? wsData.purchase_price : p.purchase_price,
                     stock_quantity: activeWarehouse ? (wsData?.quantity || 0) : (p.stock_quantity || 0)
                   };
-                  setEditingProduct(contextProduct); 
-                  setIsModalOpen(true); 
+                  setEditingProduct(contextProduct);
+                  setIsModalOpen(true);
                 }}
                 onDelete={handleDelete}
                 onAdd={(data?: any) => { setEditingProduct(data && !data.nativeEvent ? data : null); setIsModalOpen(true); }}
@@ -954,7 +988,7 @@ export default function Home() {
           )}
           {activeTab === "qrmenu" && (
             <div className="max-w-[1500px] mx-auto w-full">
-              <QRMenuManager 
+              <QRMenuManager
                 products={products}
                 categories={categories}
                 showToast={showToast}
@@ -964,20 +998,22 @@ export default function Home() {
           )}
           {activeTab === "adisyon" && (
             <div className="max-w-[1500px] mx-auto w-full flex-1 flex flex-col min-h-0">
-              <Adisyon 
+              <Adisyon
                 products={products}
                 categories={categories}
                 showToast={showToast}
                 onCheckout={handleCheckout}
+                isCashDrawerEnabled={isCashDrawerEnabled}
+                cashDrawerPrinterName={cashDrawerPrinterName}
               />
             </div>
           )}
           {activeTab === "calculator" && (
             <div className="max-w-[1500px] mx-auto w-full">
-              <ProfitCalculator 
-                products={products} 
-                onRefresh={fetchData} 
-                showToast={showToast} 
+              <ProfitCalculator
+                products={products}
+                onRefresh={fetchData}
+                showToast={showToast}
               />
             </div>
           )}
@@ -1066,6 +1102,17 @@ export default function Home() {
           {activeTab === "label_designer" && (
             <div className="max-w-[1500px] mx-auto w-full">
               <ProductLabelDesigner products={products} showToast={showToast} />
+            </div>
+          )}
+
+          {/* Fiş Düzenleyicisi */}
+          {activeTab === "receipt_designer" && (
+            <div className="max-w-[1500px] mx-auto w-full">
+              <ReceiptDesigner
+                receiptSettings={receiptSettings}
+                setReceiptSettings={setReceiptSettings}
+                showToast={showToast}
+              />
             </div>
           )}
 
@@ -1222,7 +1269,7 @@ export default function Home() {
                   <h2 className="text-xl font-black text-white tracking-widest uppercase">TEHLİKELİ ALAN</h2>
                   <p className="text-[10px] font-bold text-rose-500 tracking-[0.2em] uppercase">Tüm Veritabanını Sıfırla</p>
                 </div>
-                <button 
+                <button
                   onClick={() => setIsClearAllModalOpen(false)}
                   className="ml-auto p-2 text-secondary hover:text-white hover:bg-white/5 rounded-xl transition-all"
                 >
@@ -1279,11 +1326,10 @@ export default function Home() {
                   <button
                     disabled={clearAllConfirmationText !== "ONAYLIYORUM" || loading}
                     onClick={handleClearAllProducts}
-                    className={`py-4 flex items-center justify-center gap-2 rounded-2xl font-black transition-all uppercase tracking-widest text-xs shadow-lg ${
-                      clearAllConfirmationText === "ONAYLIYORUM"
-                        ? 'bg-rose-500 text-white shadow-rose-500/20 active:scale-95'
-                        : 'bg-rose-500/10 text-rose-500/30 cursor-not-allowed border border-rose-500/10'
-                    }`}
+                    className={`py-4 flex items-center justify-center gap-2 rounded-2xl font-black transition-all uppercase tracking-widest text-xs shadow-lg ${clearAllConfirmationText === "ONAYLIYORUM"
+                      ? 'bg-rose-500 text-white shadow-rose-500/20 active:scale-95'
+                      : 'bg-rose-500/10 text-rose-500/30 cursor-not-allowed border border-rose-500/10'
+                      }`}
                   >
                     {loading ? (
                       <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
