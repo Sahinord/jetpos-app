@@ -4,7 +4,7 @@ export const dynamic = 'force-static';
 export const dynamicParams = false;
 
 export async function generateStaticParams() {
-    return []; 
+    return [{ slug: 'demo', tableId: '1' }]; 
 }
 
 export default function TableQRMenuPage({ params }: { params: Promise<{ slug: string, tableId: string }> }) {

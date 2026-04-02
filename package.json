@@ -8,6 +8,7 @@
         "electron-build": "npm run electron-build --prefix client"
     },
     "dependencies": {
+        "next": "^16.2.2",
         "react-markdown": "^10.1.0"
     }
 }

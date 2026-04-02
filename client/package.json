@@ -12,7 +12,8 @@
     "start": "next start",
     "lint": "next lint",
     "electron-dev": "concurrently \"npm run dev\" \"wait-on -t 60000 http://127.0.0.1:3005 && electron .\"",
-    "electron-build": "next build && electron-builder"
+    "electron-build": "next build && electron-builder",
+    "electron-publish": "next build && electron-builder -p always"
   },
   "build": {
     "appId": "com.jetpos.app",

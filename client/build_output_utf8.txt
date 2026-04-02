@@ -1,0 +1,69 @@
+﻿
+> jetpos@1.1.0 build
+> next build
+
+   Ôû▓ Next.js 15.1.9
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ Ô£ô Compiled successfully
+   Skipping validation of types
+   Skipping linting
+   Collecting page data ...
+   Generating static pages (0/13) ...
+npm : Trendyol Sync Error: Error: Route /api/trendyol/sync-orders wit
+h `dynamic = "error"` couldn't be rendered statically because it used
+ `request.url`.
+At line:1 char:1
++ npm run build > build_output.txt 2>&1
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Trendyol Sync E...     `
+request.url`.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+    at u (C:\Users\stixc\Videos\NVIDIA\Desktop\jetpos-app\client\.nex
+t\server\app\api\trendyol\sync-orders\route.js:1:908) {
+  code: 'NEXT_STATIC_GEN_BAILOUT'
+}
+   Generating static pages (3/13) 
+   Generating static pages (6/13) 
+   Generating static pages (9/13) 
+ Ô£ô Generating static pages (13/13)
+   Finalizing page optimization ...
+   Collecting build traces ...
+ ÔÜá Statically exporting a Next.js application via `next export` dis
+ables API routes and middleware.
+This command is meant for static-only hosts, and is not necessary to 
+make your application static.
+Pages in your application without server-side data dependencies will 
+be automatically statically exported by `next build`, including pages
+ powered by `getStaticProps`.
+Learn more: https://nextjs.org/docs/messages/api-routes-static-export
+   Exporting (0/3) ...
+ Ô£ô Exporting (3/3)
+
+Route (app)                              Size     First Load JS
+Ôöî Ôùï /                                    855 kB         1.05 MB
+Ôö£ Ôùï /_not-found                          986 B           107 kB
+Ôö£ ãÆ /api/analyze-invoice                 152 B           106 kB
+Ôö£ ãÆ /api/invoices/archive                152 B           106 kB
+Ôö£ ãÆ /api/invoices/send                   152 B           106 kB
+Ôö£ ãÆ /api/invoices/status                 152 B           106 kB
+Ôö£ ãÆ /api/qnb                             152 B           106 kB
+Ôö£ ãÆ /api/trendyol/sync-orders            152 B           106 kB
+Ôö£ ÔùÅ /m/[slug]                            138 B           200 kB
+Ôö£   Ôöö /m/demo
+Ôöö ÔùÅ /m/[slug]/[tableId]                  138 B           200 kB
+    Ôöö /m/demo/1
++ First Load JS shared by all            106 kB
+  Ôö£ chunks/4bd1b696-8c05d6c855177599.js  53 kB
+  Ôö£ chunks/517-46a56129863b36ce.js       50.9 kB
+  Ôöö other shared chunks (total)          2.1 kB
+
+
+ãÆ Middleware                             32.1 kB
+
+Ôùï  (Static)   prerendered as static content
+ÔùÅ  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ãÆ  (Dynamic)  server-rendered on demand
+

@@ -1,19 +1,15 @@
-
 import { NextRequest, NextResponse } from 'next/server';
-export const dynamic = 'force-static';
-export async function generateStaticParams() {
-    return [];
-}
+
 import { getInvoiceProvider } from '@/lib/invoice-providers';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getTenantSettings } from '@/lib/tenant-settings';
 
-export async function GET(
-    req: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(req: NextRequest) {
     try {
-        const { id } = await params;
+        const id = req.nextUrl.searchParams.get('id');
+        if (!id) {
+            return NextResponse.json({ success: false, error: 'ID gerekli' }, { status: 400 });
+        }
 
         // 1. Veritabanından faturayı çek
         const { data: invoice, error: fetchErr } = await supabaseAdmin

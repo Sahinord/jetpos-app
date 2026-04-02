@@ -1,9 +1,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-export const dynamic = 'force-static';
 import { createTrendyolGoClient } from '@/lib/trendyol-go-client';
 
-export async function GET(req: NextRequest) {
+export async function POST(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
         const tenantId = searchParams.get('tenantId');

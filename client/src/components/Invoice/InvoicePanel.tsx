@@ -115,7 +115,7 @@ export default function InvoicePanel() {
             if (isFirstLoad) setLoading(true);
 
             // Arka planda senkronizasyonu başlat (await etmiyoruz, arkada çalışsın)
-            const syncPromise = fetch(`/api/trendyol/sync-orders?tenantId=${currentTenant.id}&days=5`)
+            const syncPromise = fetch(`/api/trendyol/sync-orders?tenantId=${currentTenant.id}&days=5`, { method: 'POST' })
                 .catch(err => console.error('Sync Error:', err));
 
             // Ana verileri hızlıca çek (Supabase ve Archive API)
@@ -123,7 +123,7 @@ export default function InvoicePanel() {
                 supabase.from('sales').select('*').eq('tenant_id', currentTenant.id).order('created_at', { ascending: false }).limit(50),
                 supabase.from('trendyol_go_orders').select('*').order('created_at', { ascending: false }).limit(200),
                 supabase.rpc('get_integration_settings', { p_tenant_id: currentTenant.id, p_type: 'qnb_efinans' }),
-                fetch(`/api/invoices/archive?tenantId=${currentTenant.id}`).then(r => r.json()).catch(() => ({ success: false, data: [] }))
+                fetch(`/api/invoices/archive?tenantId=${currentTenant.id}`, { method: 'POST' }).then(r => r.json()).catch(() => ({ success: false, data: [] }))
             ]);
 
             setSales(salesRes.data || []);
@@ -522,7 +522,7 @@ export default function InvoicePanel() {
                                                 <button
                                                     onClick={async () => {
                                                         try {
-                                                            const res = await fetch(`/api/invoices/status/${item.id}`);
+                                                            const res = await fetch(`/api/invoices/status?id=${item.id}`, { method: 'POST' });
                                                             const data = await res.json();
                                                             if (data.success) {
                                                                 fetchData();
