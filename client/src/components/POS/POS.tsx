@@ -6,7 +6,7 @@ import {
     Plus, Minus, Printer, Pause, Play, Delete,
     ChevronLeft, ChevronRight, Hash, BadgePercent,
     Calculator, MousePointer2, User, Clock, Monitor, X,
-    Wallet, Building2, Sparkles, TrendingUp, Camera
+    Wallet, Building2, Sparkles, TrendingUp, Camera, Users
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PrintReceiptButton, triggerManualPrint, ReceiptPreview } from "./Receipt";
@@ -100,6 +100,14 @@ export default function POS({
 
     const [isScannerOpen, setIsScannerOpen] = useState(false);
     const [isSmartScannerOpen, setIsSmartScannerOpen] = useState(false);
+
+    // CRM / Müşteri States
+    const [selectedCari, setSelectedCari] = useState<any>(null);
+    const [isCariModalOpen, setIsCariModalOpen] = useState(false);
+    const [cariSearch, setCariSearch] = useState("");
+    const [cariList, setCariList] = useState<any[]>([]);
+    const [isListingCari, setIsListingCari] = useState(false);
+
     const scannerRef = useRef<Html5QrcodeScanner | null>(null);
     const { currentTenant, activeWarehouse, warehouses, setActiveWarehouse } = useTenant();
 
@@ -335,6 +343,31 @@ export default function POS({
         playBeep();
     };
 
+    const searchCari = async (term: string = "") => {
+        if (!currentTenant) return;
+        setIsListingCari(true);
+        try {
+            let query = supabase
+                .from('cari_hesaplar')
+                .select('*')
+                .eq('tenant_id', currentTenant.id)
+                .eq('status', 'active');
+
+            if (term) {
+                query = query.or(`unvani.ilike.%${term}%,cari_kodu.ilike.%${term}%`);
+            }
+
+            const { data, error } = await query.limit(20);
+            if (error) throw error;
+            setCariList(data || []);
+        } catch (err: any) {
+            console.error("Cari arama hatası:", err);
+            if (showToast) showToast("Müşteri listesi alınamadı", "error");
+        } finally {
+            setIsListingCari(false);
+        }
+    };
+
     const applyNumpadAction = () => {
         const val = parseFloat(numpadValue.replace(',', '.'));
         if (isNaN(val)) return;
@@ -374,21 +407,25 @@ export default function POS({
         const receivedAmount = parseFloat(numpadValue.replace(',', '.')) || 0;
         const changeAmount = Math.max(0, receivedAmount - total);
 
-        onCheckout(cart, method);
+        // CRM Integration: Pass selected customer id
+        onCheckout(cart, method, selectedCari?.id);
+
         setLastTransaction({
             items: [...cart],
             total,
             paymentMethod: method,
             date: new Date(),
             saleId,
+            customer: selectedCari,
             receivedAmount: method === 'NAKİT' ? receivedAmount : 0,
             changeAmount: method === 'NAKİT' ? changeAmount : 0,
             receiptSettings
         });
         setShowReceiptModal(true);
         setCart([]);
+        setSelectedCari(null); // Reset customer
         setDiscount(0);
-        setNumpadValue(""); // Clear numpad after checkout
+        setNumpadValue("");
 
         // --- ÇEKMECE TETİKLEME (NAKİT VEYA KART) ---
         if ((method === 'NAKİT' || method === 'KART' || method === 'KREDİ KARTI') && isCashDrawerEnabled && window.require) {
@@ -430,6 +467,33 @@ export default function POS({
                     <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl border border-primary/20 backdrop-blur-sm">
                         <User size={16} className="text-primary" />
                         <span className="text-xs font-black text-foreground uppercase tracking-wider">GENEL MÜDÜR</span>
+                    </div>
+
+                    {/* Müşteri Seçimi (CRM) */}
+                    <div className="flex items-center gap-2">
+                        {!selectedCari ? (
+                            <button
+                                onClick={() => { setIsCariModalOpen(true); searchCari(); }}
+                                className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-primary/10 text-secondary hover:text-primary rounded-xl border border-border hover:border-primary/30 transition-all font-black text-xs uppercase tracking-wider"
+                            >
+                                <Users size={16} />
+                                MÜŞTERİ SEÇ
+                            </button>
+                        ) : (
+                            <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-500 border-emerald-500/30 rounded-xl border backdrop-blur-sm group">
+                                <Users size={16} />
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-black uppercase tracking-widest">{selectedCari.unvani}</span>
+                                    <span className="text-[8px] opacity-70">Puan: {selectedCari.loyalty_points_total || 0}</span>
+                                </div>
+                                <button
+                                    onClick={() => setSelectedCari(null)}
+                                    className="ml-2 hover:bg-rose-500/20 p-1 rounded-full text-rose-500/50 hover:text-rose-500 transition-all"
+                                >
+                                    <X size={14} />
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {/* Warehouse/Store Selector */}
@@ -1068,6 +1132,59 @@ export default function POS({
                                     SEPETE EKLE
                                 </button>
                                 <button onClick={() => setPriceCheckProduct(null)} className="text-secondary font-bold hover:text-white transition-colors">KAPAT (ESC)</button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Müşteri Seçim Modalı */}
+            <AnimatePresence>
+                {isCariModalOpen && (
+                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-background/95 backdrop-blur-2xl">
+                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="glass-card w-full max-w-2xl !p-0 overflow-hidden shadow-2xl border-primary/20">
+                            <div className="p-6 border-b border-border bg-primary/10 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <Users className="text-primary" />
+                                    <h3 className="font-black uppercase tracking-widest">MÜŞTERİ SEÇİMİ (CRM)</h3>
+                                </div>
+                                <button onClick={() => setIsCariModalOpen(false)} className="p-2 hover:bg-white/5 rounded-xl transition-all"><X /></button>
+                            </div>
+                            <div className="p-6 space-y-6">
+                                <div className="relative">
+                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-secondary" />
+                                    <input
+                                        type="text" autoFocus
+                                        placeholder="Müşteri adı, unvanı veya kodu ile ara..."
+                                        className="w-full bg-white/5 border border-border focus:border-primary/40 rounded-2xl py-4 pl-12 pr-4 outline-none font-medium transition-all"
+                                        value={cariSearch}
+                                        onChange={(e) => { setCariSearch(e.target.value); searchCari(e.target.value); }}
+                                    />
+                                </div>
+                                <div className="max-h-[40vh] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                                    {isListingCari ? (
+                                        <div className="flex justify-center py-10"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
+                                    ) : cariList.length === 0 ? (
+                                        <div className="text-center py-10 text-secondary opacity-30 font-bold uppercase tracking-widest">SONUÇ BULUNAMADI</div>
+                                    ) : (
+                                        cariList.map((c) => (
+                                            <button
+                                                key={c.id}
+                                                onClick={() => { setSelectedCari(c); setIsCariModalOpen(false); }}
+                                                className="w-full p-4 bg-white/5 border border-white/5 rounded-xl flex items-center justify-between hover:bg-primary/10 hover:border-primary/20 transition-all group text-left"
+                                            >
+                                                <div>
+                                                    <div className="font-bold text-white group-hover:text-primary transition-colors">{c.unvani}</div>
+                                                    <div className="text-[10px] text-secondary font-black uppercase tracking-widest mt-1">{c.cari_kodu} • {c.para_birimi}</div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <div className="text-xs font-black text-emerald-400">₺{c.bakiye?.toFixed(2) || '0.00'}</div>
+                                                    <div className="text-[10px] text-emerald-600 font-bold tracking-widest uppercase">PUAN: {c.loyalty_points_total || 0}</div>
+                                                </div>
+                                            </button>
+                                        ))
+                                    )}
+                                </div>
                             </div>
                         </motion.div>
                     </div>

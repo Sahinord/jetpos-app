@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { 
     X, Calculator, TrendingUp, AlertCircle, Percent, Coins, 
     Truck, Megaphone, Tag, Save, History, Trash2, Clock, 
-    Search, CheckCircle2, Globe, ShoppingCart, Zap
+    Search, CheckCircle2, Globe, ShoppingCart, Zap, Weight, ArrowUpDown, Scale
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
@@ -58,7 +58,8 @@ export default function ProfitCalculatorPage({ products = [], onRefresh, showToa
         width: 0,
         height: 0,
         length: 0,
-        desi: 0
+        desi: 0,
+        actualWeight: 0
     });
 
     const [results, setResults] = useState({
@@ -163,6 +164,12 @@ export default function ProfitCalculatorPage({ products = [], onRefresh, showToa
         const desi = (dimensions.width * dimensions.height * dimensions.length) / 3000;
         setDimensions({ ...dimensions, desi: parseFloat(desi.toFixed(2)) });
     };
+
+    // Kargo ücretlendirme: KG vs Desi → hangisi büyükse o geçerli
+    const chargeableWeight = Math.max(dimensions.desi, dimensions.actualWeight);
+    const chargeType: 'desi' | 'kg' | null = (dimensions.desi > 0 || dimensions.actualWeight > 0)
+        ? (dimensions.desi >= dimensions.actualWeight ? 'desi' : 'kg')
+        : null;
 
     const saveToHistory = () => {
         if (results.netProfit === 0 && values.salePrice === 0) return;
@@ -367,11 +374,13 @@ export default function ProfitCalculatorPage({ products = [], onRefresh, showToa
                         </div>
                     </div>
 
-                    {/* Desi Calculator Box */}
+                    {/* Desi & Ağırlık Karşılaştırma */}
                     <div className="mt-8 pt-8 border-t border-border space-y-4">
                         <h3 className="text-xs font-black text-secondary uppercase tracking-[2px] mb-4 flex items-center">
-                            <Truck className="w-4 h-4 mr-2" /> Desi Hesaplama
+                            <Truck className="w-4 h-4 mr-2" /> Desi & Ağırlık Hesaplama
                         </h3>
+
+                        {/* Boyut Girdileri */}
                         <div className="grid grid-cols-3 gap-2">
                             <div>
                                 <label className="text-[8px] font-black text-secondary uppercase block mb-1">En (cm)</label>
@@ -401,16 +410,98 @@ export default function ProfitCalculatorPage({ products = [], onRefresh, showToa
                                 />
                             </div>
                         </div>
+
+                        {/* Gerçek Ağırlık Girdisi */}
+                        <div>
+                            <label className="text-[8px] font-black text-secondary uppercase block mb-1 flex items-center">
+                                <Scale className="w-3 h-3 mr-1" /> Gerçek Ağırlık (KG)
+                            </label>
+                            <input
+                                type="number"
+                                className="w-full bg-background border border-border rounded-lg px-2 py-2 outline-none text-sm text-foreground"
+                                value={dimensions.actualWeight === 0 ? "" : dimensions.actualWeight}
+                                placeholder="Tartıdaki ağırlık"
+                                onChange={(e) => setDimensions({ ...dimensions, actualWeight: e.target.value === "" ? 0 : parseFloat(e.target.value) })}
+                            />
+                        </div>
+
                         <button
                             onClick={calculateDesi}
                             className="w-full bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 py-2 rounded-lg font-bold text-xs transition-all"
                         >
-                            HESAPLA
+                            DESİ HESAPLA
                         </button>
-                        {dimensions.desi > 0 && (
-                            <div className="flex justify-between items-center p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                                <span className="text-xs font-bold text-blue-400">SONUÇ:</span>
-                                <span className="text-xl font-black text-blue-400">{dimensions.desi} Desi</span>
+
+                        {/* Sonuçlar */}
+                        {(dimensions.desi > 0 || dimensions.actualWeight > 0) && (
+                            <div className="space-y-2">
+                                {/* Desi vs KG Karşılaştırma */}
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div className={`p-3 rounded-lg border transition-all ${
+                                        chargeType === 'desi'
+                                            ? 'bg-blue-500/15 border-blue-500/40 ring-2 ring-blue-500/20'
+                                            : 'bg-background border-border opacity-60'
+                                    }`}>
+                                        <p className="text-[8px] font-black text-secondary uppercase mb-0.5">Hacimsel (Desi)</p>
+                                        <p className={`text-lg font-black ${chargeType === 'desi' ? 'text-blue-400' : 'text-foreground/50'}`}>
+                                            {dimensions.desi > 0 ? dimensions.desi : '—'}
+                                        </p>
+                                    </div>
+                                    <div className={`p-3 rounded-lg border transition-all ${
+                                        chargeType === 'kg'
+                                            ? 'bg-amber-500/15 border-amber-500/40 ring-2 ring-amber-500/20'
+                                            : 'bg-background border-border opacity-60'
+                                    }`}>
+                                        <p className="text-[8px] font-black text-secondary uppercase mb-0.5">Gerçek Ağırlık</p>
+                                        <p className={`text-lg font-black ${chargeType === 'kg' ? 'text-amber-400' : 'text-foreground/50'}`}>
+                                            {dimensions.actualWeight > 0 ? `${dimensions.actualWeight} kg` : '—'}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Ücretlendirme Sonucu */}
+                                {chargeType && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 5 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className={`p-4 rounded-xl border-2 ${
+                                            chargeType === 'desi'
+                                                ? 'bg-blue-500/10 border-blue-500/30'
+                                                : 'bg-amber-500/10 border-amber-500/30'
+                                        }`}
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <ArrowUpDown className={`w-4 h-4 ${
+                                                    chargeType === 'desi' ? 'text-blue-400' : 'text-amber-400'
+                                                }`} />
+                                                <div>
+                                                    <p className="text-[8px] font-black text-secondary uppercase tracking-widest">Kargo Ücreti Hesabı</p>
+                                                    <p className={`text-[10px] font-bold mt-0.5 ${
+                                                        chargeType === 'desi' ? 'text-blue-400' : 'text-amber-400'
+                                                    }`}>
+                                                        {chargeType === 'desi'
+                                                            ? '📦 Hafif ama büyük → Desi üzerinden'
+                                                            : '🏋️ Ağır ama küçük → KG üzerinden'
+                                                        }
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className={`text-2xl font-black ${
+                                                    chargeType === 'desi' ? 'text-blue-400' : 'text-amber-400'
+                                                }`}>
+                                                    {chargeableWeight}
+                                                </p>
+                                                <p className={`text-[8px] font-black uppercase ${
+                                                    chargeType === 'desi' ? 'text-blue-400/60' : 'text-amber-400/60'
+                                                }`}>
+                                                    {chargeType === 'desi' ? 'Desi' : 'KG'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )}
                             </div>
                         )}
                     </div>

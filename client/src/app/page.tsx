@@ -50,6 +50,7 @@ import FinancialCalendar from '@/components/Calendar/FinancialCalendar';
 import InvoiceWaybillPage from '@/components/Waybill/InvoiceWaybillPage';
 import WarehousePage from '@/components/Warehouse/WarehousePage';
 import QRMenuManager from '@/components/Admin/QRMenuManager';
+import CRMPage from '@/components/CRM/CRMPage';
 import { createTrendyolGoClient } from "@/lib/trendyol-go-client";
 
 export default function Home() {
@@ -610,7 +611,7 @@ export default function Home() {
     }
   };
 
-  const handleCheckout = async (cartItems: any[], paymentMethod: string) => {
+  const handleCheckout = async (cartItems: any[], paymentMethod: string, customerId?: string) => {
     if (!currentTenant) return;
     try {
       const totalAmount = cartItems.reduce((sum, item) => sum + (item.sale_price * item.quantity), 0);
@@ -622,7 +623,8 @@ export default function Home() {
           total_amount: totalAmount,
           total_profit: totalAmount - totalCost,
           payment_method: paymentMethod,
-          tenant_id: currentTenant!.id
+          tenant_id: currentTenant!.id,
+          customer_id: customerId || null
         }])
         .select()
         .single();
@@ -1081,6 +1083,13 @@ export default function Home() {
           {activeTab.startsWith("bank_") && (
             <div className="max-w-[1500px] mx-auto w-full">
               <BankaPage pageId={activeTab} showToast={showToast} />
+            </div>
+          )}
+
+          {/* CRM & Sadakat Sayfaları */}
+          {activeTab.startsWith("crm_") && (
+            <div className="max-w-[1500px] mx-auto w-full">
+              <CRMPage pageId={activeTab} showToast={showToast} />
             </div>
           )}
 

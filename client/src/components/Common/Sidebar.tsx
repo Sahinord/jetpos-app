@@ -57,6 +57,9 @@ import {
     Utensils,
     Grid3X3,
     QrCode,
+    Heart,
+    Target,
+    Gift,
     type LucideIcon
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -201,6 +204,17 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                         { id: "cari_analiz", label: "Cari Analizi", icon: PieChart, feature: null, description: "Cari bazlı karlılık ve işlem yoğunluğu analizi." },
                     ]
                 },
+            ]
+        },
+        {
+            id: "crm",
+            label: "CRM & Sadakat",
+            icon: Heart,
+            items: [
+                { id: "crm_overview", label: "CRM Özeti", icon: Brain, description: "Yapay zeka destekli müşteri analizi ve sadakat programı özeti." },
+                { id: "crm_segments", label: "Segmentler", icon: Users, description: "Müşteri grupları (VIP, Risk, Yeni)." },
+                { id: "crm_campaigns", label: "Kampanyalar", icon: Target, description: "Aktif ve planlanmış reklam/indirim kampanyaları." },
+                { id: "crm_loyalty", label: "Puan Sistemi", icon: Gift, description: "Sadakat puanı ayarları ve müşteri puan takibi." },
             ]
         },
         {

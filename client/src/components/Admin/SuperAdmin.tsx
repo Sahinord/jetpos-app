@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Building2, Key, Check, X, Save, Edit, Trash2, Plus, MessageSquare, Bell, LifeBuoy, Send, User, Trash, Sparkles, FileText, Home, MapPin, Store } from 'lucide-react';
+import { Building2, Key, Check, X, Save, Edit, Trash2, Plus, MessageSquare, Bell, LifeBuoy, Send, User, Trash, Sparkles, FileText, Home, MapPin, Store, Heart } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 interface Tenant {
@@ -44,7 +44,7 @@ const MOBILE_FEATURES = [
 ];
 
 export default function SuperAdmin() {
-    const [activeTab, setActiveTab] = useState<'tenants' | 'tickets' | 'notifications'>('tenants');
+    const [activeTab, setActiveTab] = useState<'tenants' | 'tickets' | 'notifications' | 'crm'>('tenants');
     const [tenants, setTenants] = useState<Tenant[]>([]);
     const [tickets, setTickets] = useState<any[]>([]);
     const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
@@ -88,7 +88,32 @@ export default function SuperAdmin() {
     useEffect(() => {
         if (activeTab === 'tenants') fetchTenants();
         if (activeTab === 'tickets') fetchTickets();
+        if (activeTab === 'crm') fetchCRMStats();
     }, [activeTab]);
+
+    const [crmStats, setCrmStats] = useState<any[]>([]);
+    const fetchCRMStats = async () => {
+        setLoading(true);
+        try {
+            const { data, error } = await supabase
+                .from('tenants')
+                .select(`
+                    id, 
+                    company_name, 
+                    license_key,
+                    cari_hesaplar(count),
+                    loyalty_points(count)
+                `)
+                .order('company_name');
+
+            if (error) throw error;
+            setCrmStats(data || []);
+        } catch (err: any) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const fetchTenants = async () => {
         setLoading(true);
@@ -572,6 +597,13 @@ export default function SuperAdmin() {
                     <Bell className="w-5 h-5" />
                     Bildirim Merkezi
                 </button>
+                <button
+                    onClick={() => setActiveTab('crm')}
+                    className={`flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all font-bold ${activeTab === 'crm' ? 'bg-primary text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                >
+                    <Heart className="w-5 h-5" />
+                    CRM Takip
+                </button>
             </div>
 
             {loading && activeTab !== 'notifications' ? (
@@ -749,6 +781,37 @@ export default function SuperAdmin() {
                                             <Trash2 className="w-5 h-5" />
                                         </button>
                                     </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </>
+            ) : activeTab === 'crm' ? (
+                <>
+                    <div>
+                        <h2 className="text-3xl font-black text-white">Global CRM Analizi</h2>
+                        <p className="text-sm text-secondary mt-1">Tüm mağazaların sadakat programı performansı</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {crmStats.filter(t => t.license_key !== 'ADM257SA67').map((t) => (
+                            <div key={t.id} className="glass-card p-6 border-l-4 border-l-pink-500">
+                                <h3 className="text-xl font-bold text-white mb-4">{t.company_name || t.license_key}</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="p-4 bg-white/5 rounded-2xl">
+                                        <div className="text-2xl font-black text-white mb-1">{t.cari_hesaplar?.[0]?.count || 0}</div>
+                                        <div className="text-[10px] text-secondary font-black uppercase tracking-widest">Müşteri</div>
+                                    </div>
+                                    <div className="p-4 bg-white/5 rounded-2xl">
+                                        <div className="text-2xl font-black text-pink-400 mb-1">{t.loyalty_points?.[0]?.count || 0}</div>
+                                        <div className="text-[10px] text-secondary font-black uppercase tracking-widest">Puan İşlemi</div>
+                                    </div>
+                                </div>
+                                <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
+                                    <span className="text-[10px] text-secondary font-bold uppercase tracking-widest">Aktiflik Durumu</span>
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${t.loyalty_points?.[0]?.count > 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-500/10 text-slate-400'}`}>
+                                        {t.loyalty_points?.[0]?.count > 0 ? 'KULLANILIYOR' : 'BOŞ'}
+                                    </span>
                                 </div>
                             </div>
                         ))}

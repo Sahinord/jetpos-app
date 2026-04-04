@@ -7,14 +7,14 @@ import {
     Search, Mail, Plus, Globe,
     RefreshCw, Sparkles, TrendingUp, AlertCircle, Eye,
     LayoutDashboard, Trash2, Edit, BookOpen, ExternalLink, Calendar,
-    FileText, Building2, ShieldCheck, Clock, MessageSquare, Bell, Menu, X
+    FileText, Building2, ShieldCheck, Clock, MessageSquare, Bell, Menu, X, Heart
 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
 
 const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "jetpos2025";
 
-// Güvenli admin fetch – service role key server'da kalır
+// Güvenli admin fetch â€“ service role key server'da kalÄ±r
 async function adminFetch(path: string, options: RequestInit = {}) {
     const token = sessionStorage.getItem("jetpos_admin_token") || "";
     return fetch(path, {
@@ -65,7 +65,7 @@ export default function AdminPage() {
     const [authed, setAuthed] = useState(false);
     const [password, setPassword] = useState("");
     const [passwordError, setPasswordError] = useState(false);
-    const [activeTab, setActiveTab] = useState<"dashboard" | "requests" | "licenses" | "blog" | "guides" | "about" | "tickets" | "announcements">("dashboard");
+    const [activeTab, setActiveTab] = useState<"dashboard" | "requests" | "licenses" | "blog" | "guides" | "about" | "tickets" | "announcements" | "crm">("dashboard");
     const [blogPosts, setBlogPosts] = useState<any[]>([]);
     const [aboutContent, setAboutContent] = useState<Record<string, any>>({});
     const [showNewPost, setShowNewPost] = useState(false);
@@ -133,7 +133,7 @@ export default function AdminPage() {
                 .channel('admin_licenses_realtime')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'tenants' }, () => { loadLicenses(); })
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'support_tickets' }, () => { loadTickets(); })
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, () => { loadAnnouncements(); })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, () => { loadAnnouncements(); loadCrmStats(); })
                 .subscribe();
 
             return () => {
@@ -150,6 +150,7 @@ export default function AdminPage() {
         loadGuides();
         loadTickets();
         loadAnnouncements();
+        loadCrmStats();
     };
 
     const loadGuides = async () => {
@@ -166,8 +167,8 @@ export default function AdminPage() {
             const res = editingGuide
                 ? await adminFetch(`/api/admin/guides?id=${editingGuide.id}`, { method: "PATCH", body: JSON.stringify(guideForm) })
                 : await adminFetch("/api/admin/guides", { method: "POST", body: JSON.stringify(guideForm) });
-            if (res.ok) showToast(editingGuide ? "Rehber güncellendi" : "Rehber oluşturuldu");
-            else showToast("Hata oluştu", "error");
+            if (res.ok) showToast(editingGuide ? "Rehber güncellendi" : "Rehber oluÅŸturuldu");
+            else showToast("Hata oluÅŸtu", "error");
             setShowNewGuide(false);
             setEditingGuide(null);
             setGuideForm({ title: "", content: "", order_index: 0, is_active: true });
@@ -176,7 +177,7 @@ export default function AdminPage() {
     };
 
     const deleteGuide = async (id: string) => {
-        if (!confirm("Bu rehberi silmek istediğinize emin misiniz?")) return;
+        if (!confirm("Bu rehberi silmek istediÄŸinize emin misiniz?")) return;
         const res = await adminFetch(`/api/admin/guides?id=${id}`, { method: "DELETE" });
         if (res.ok) showToast("Rehber silindi");
         loadGuides();
@@ -186,7 +187,7 @@ export default function AdminPage() {
         try {
             const res = await adminFetch("/api/admin/blog");
             if (res.ok) setBlogPosts(await res.json());
-            else if (res.status === 401) showToast("Yetki hatası", "error");
+            else if (res.status === 401) showToast("Yetki hatasÄ±", "error");
         } catch (e) { console.error(e); }
     };
 
@@ -204,8 +205,8 @@ export default function AdminPage() {
             const res = editingPost
                 ? await adminFetch(`/api/admin/blog?id=${editingPost.id}`, { method: "PATCH", body: JSON.stringify(postForm) })
                 : await adminFetch("/api/admin/blog", { method: "POST", body: JSON.stringify(postForm) });
-            if (res.ok) showToast(editingPost ? "Yazı güncellendi" : "Yazı oluşturuldu");
-            else showToast("Hata oluştu", "error");
+            if (res.ok) showToast(editingPost ? "YazÄ± güncellendi" : "YazÄ± oluÅŸturuldu");
+            else showToast("Hata oluÅŸtu", "error");
             setShowNewPost(false);
             setEditingPost(null);
             setPostForm({ title: "", slug: "", excerpt: "", content: "", category: "Genel", author: "JetPOS Ekibi", read_time: 5, published: false, featured: false });
@@ -214,9 +215,9 @@ export default function AdminPage() {
     };
 
     const deletePost = async (id: string) => {
-        if (!confirm("Bu yazıyı silmek istediğinize emin misiniz?")) return;
+        if (!confirm("Bu yazÄ±yÄ± silmek istediÄŸinize emin misiniz?")) return;
         const res = await adminFetch(`/api/admin/blog?id=${id}`, { method: "DELETE" });
-        if (res.ok) showToast("Yazı silindi");
+        if (res.ok) showToast("YazÄ± silindi");
         loadBlogPosts();
     };
 
@@ -273,16 +274,34 @@ export default function AdminPage() {
         } catch (e) { console.error(e); }
     };
 
+    const [crmGlobalStats, setCrmGlobalStats] = useState<any[]>([]);
+    const loadCrmStats = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('tenants')
+                .select(`
+                    id, 
+                    company_name, 
+                    license_key,
+                    cari_hesaplar(count),
+                    loyalty_points(count)
+                `)
+                .order('company_name');
+
+            if (data) setCrmGlobalStats(data);
+        } catch (e) { console.error(e); }
+    };
+
     const saveAnnounce = async (e: React.FormEvent) => {
         e.preventDefault();
         setSavingAnnounce(true);
         try {
             const res = await adminFetch("/api/admin/announcements", { method: "POST", body: JSON.stringify(announceForm) });
             if (res.ok) {
-                showToast("Duyuru yayınlandı");
+                showToast("Duyuru yayÄ±nlandÄ±");
                 setShowNewAnnounce(false);
                 setAnnounceForm({ title: "", message: "", type: "info" });
-                loadAnnouncements();
+                loadAnnouncements(); loadCrmStats();
             }
         } finally { setSavingAnnounce(false); }
     };
@@ -296,10 +315,10 @@ export default function AdminPage() {
     };
 
     const deleteAnnounce = async (id: string) => {
-        if (!confirm("Bu duyuruyu silmek istediğinize emin misiniz?")) return;
+        if (!confirm("Bu duyuruyu silmek istediÄŸinize emin misiniz?")) return;
         try {
             await adminFetch(`/api/admin/announcements?id=${id}`, { method: "DELETE" });
-            loadAnnouncements();
+            loadAnnouncements(); loadCrmStats();
             showToast("Duyuru silindi");
         } catch (e) { console.error(e); }
     };
@@ -309,7 +328,7 @@ export default function AdminPage() {
         try {
             const res = await adminFetch("/api/admin/requests");
             if (res.ok) setRequests(await res.json());
-            else if (res.status === 401) showToast("Yetki hatası", "error");
+            else if (res.status === 401) showToast("Yetki hatasÄ±", "error");
         } catch (e) { console.error(e); } finally { setLoading(false); }
     };
 
@@ -320,11 +339,11 @@ export default function AdminPage() {
                 const data = await res.json();
                 setLicenses(data);
             } else {
-                showToast(`Lisanslar alınamadı: ${res.status}`, "error");
+                showToast(`Lisanslar alÄ±namadÄ±: ${res.status}`, "error");
             }
         } catch (e) {
             console.error("License load error:", e);
-            showToast("Bağlantı hatası", "error");
+            showToast("BaÄŸlantÄ± hatasÄ±", "error");
         }
     };
 
@@ -337,7 +356,7 @@ export default function AdminPage() {
                 body: JSON.stringify(newLicenseData),
             });
             if (res.ok) {
-                showToast("Lisans başarıyla oluşturuldu");
+                showToast("Lisans baÅŸarÄ±yla oluÅŸturuldu");
                 setShowNewLicense(false);
                 loadLicenses();
                 setNewLicenseData({
@@ -360,10 +379,10 @@ export default function AdminPage() {
                 });
             } else {
                 const err = await res.json();
-                showToast(err.message || err.error || "Kaydetme başarısız", "error");
+                showToast(err.message || err.error || "Kaydetme baÅŸarÄ±sÄ±z", "error");
             }
         } catch (e) {
-            showToast("Sunucuya erişilemedi", "error");
+            showToast("Sunucuya eriÅŸilemedi", "error");
         } finally { setLoading(false); }
     };
 
@@ -380,15 +399,15 @@ export default function AdminPage() {
                 setShowEditLicense(false);
                 loadLicenses();
             } else {
-                showToast("Güncelleme başarısız", "error");
+                showToast("Güncelleme baÅŸarÄ±sÄ±z", "error");
             }
         } catch (e) {
-            showToast("Bağlantı hatası", "error");
+            showToast("BaÄŸlantÄ± hatasÄ±", "error");
         } finally { setLoading(false); }
     };
 
     const deleteLicense = async (id: string) => {
-        if (!confirm("Bu lisansı silmek istediğinize emin misiniz?")) return;
+        if (!confirm("Bu lisansÄ± silmek istediÄŸinize emin misiniz?")) return;
         const res = await adminFetch(`/api/admin/licenses?id=${id}`, { method: "DELETE" });
         if (res.ok) { showToast("Lisans silindi"); loadLicenses(); }
     };
@@ -411,7 +430,7 @@ export default function AdminPage() {
         e.preventDefault();
         if (password === ADMIN_PASSWORD) {
             setAuthed(true);
-            // Token'ı session'a kaydet – API route'lar bunu x-admin-token ile kullanacak
+            // Token'Ä± session'a kaydet â€“ API route'lar bunu x-admin-token ile kullanacak
             sessionStorage.setItem("jetpos_admin_auth", "true");
             sessionStorage.setItem("jetpos_admin_token", ADMIN_PASSWORD);
             loadAll();
@@ -459,12 +478,13 @@ export default function AdminPage() {
                 {[
                     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
                     { id: "requests", label: "Yeni Talepler", icon: PhoneCall },
-                    { id: "licenses", label: "Lisans Yönetimi", icon: ShieldCheck },
+                    { id: "licenses", label: "Lisans YÃ¶netimi", icon: ShieldCheck },
                     { id: "tickets", label: "Destek Talepleri", icon: MessageSquare },
                     { id: "announcements", label: "Duyurular", icon: Bell },
-                    { id: "blog", label: "Blog Yazıları", icon: FileText },
+                    { id: "crm", label: "CRM Analizi", icon: Heart },
+                    { id: "blog", label: "Blog YazÄ±larÄ±", icon: FileText },
                     { id: "guides", label: "Rehberler", icon: BookOpen },
-                    { id: "about", label: "Hakkımızda", icon: Building2 },
+                    { id: "about", label: "HakkÄ±mÄ±zda", icon: Building2 },
                 ].map(item => (
                     <button key={item.id} onClick={() => { setActiveTab(item.id as any); setIsMobileMenuOpen(false); }} style={{
                         width: "100%", display: "flex", alignItems: "center", gap: "0.8rem", padding: "0.8rem 1.25rem", borderRadius: "12px", border: "none",
@@ -479,7 +499,7 @@ export default function AdminPage() {
 
             <div style={{ padding: "1.5rem", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
                 <button onClick={handleLogout} style={{ width: "100%", padding: "0.75rem", borderRadius: "10px", background: "rgba(239,68,68,0.1)", border: "none", color: "#ef4444", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem" }}>
-                    <LogOut style={{ width: "0.9rem" }} /> Çıkış Yap
+                    <LogOut style={{ width: "0.9rem" }} /> Ã‡Ä±kÄ±ÅŸ Yap
                 </button>
             </div>
         </div>
@@ -492,16 +512,16 @@ export default function AdminPage() {
                 <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} style={{ width: "100%", maxWidth: "400px", padding: "3rem", background: "rgba(15,23,42,0.8)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "2rem", backdropFilter: "blur(20px)" }}>
                     <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
                         <div style={{ width: "3.5rem", height: "3.5rem", borderRadius: "1rem", background: "#2563eb", color: "white", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1.5rem" }}><ShieldCheck style={{ width: "1.8rem" }} /></div>
-                        <h1 style={{ fontSize: "1.75rem", fontWeight: 900, marginBottom: "0.5rem" }}>Güvenli Giriş</h1>
-                        <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.85rem" }}>Super Admin yönetim paneline erişim</p>
+                        <h1 style={{ fontSize: "1.75rem", fontWeight: 900, marginBottom: "0.5rem" }}>Güvenli GiriÅŸ</h1>
+                        <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.85rem" }}>Super Admin yÃ¶netim paneline eriÅŸim</p>
                     </div>
                     <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
                         <div style={{ position: "relative" }}>
                             <Lock style={{ position: "absolute", top: "1rem", left: "1rem", width: "1rem", color: "rgba(255,255,255,0.3)" }} />
-                            <input type="password" placeholder="Admin Şifresi" value={password} onChange={e => setPassword(e.target.value)} style={{ width: "100%", padding: "1rem 1rem 1rem 3rem", background: "rgba(255,255,255,0.05)", border: passwordError ? "1px solid #ef4444" : "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", color: "white", outline: "none" }} />
+                            <input type="password" placeholder="Admin Åifresi" value={password} onChange={e => setPassword(e.target.value)} style={{ width: "100%", padding: "1rem 1rem 1rem 3rem", background: "rgba(255,255,255,0.05)", border: passwordError ? "1px solid #ef4444" : "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", color: "white", outline: "none" }} />
                         </div>
-                        <button type="submit" style={{ padding: "1rem", borderRadius: "14px", background: "#2563eb", color: "white", fontWeight: 800, border: "none", cursor: "pointer", fontSize: "1rem" }}>Sisteme Giriş Yap</button>
-                        {passwordError && <p style={{ color: "#ef4444", fontSize: "0.8rem", textAlign: "center", margin: 0 }}>Yanlış şifre! Lütfen tekrar deneyin.</p>}
+                        <button type="submit" style={{ padding: "1rem", borderRadius: "14px", background: "#2563eb", color: "white", fontWeight: 800, border: "none", cursor: "pointer", fontSize: "1rem" }}>Sisteme GiriÅŸ Yap</button>
+                        {passwordError && <p style={{ color: "#ef4444", fontSize: "0.8rem", textAlign: "center", margin: 0 }}>YanlÄ±ÅŸ ÅŸifre! LÃ¼tfen tekrar deneyin.</p>}
                     </form>
                 </motion.div>
             </div>
@@ -538,12 +558,12 @@ export default function AdminPage() {
 
             <main className="admin-main-content" style={{ flex: 1, marginLeft: "280px", padding: "3rem" }}>
             <div style={{ padding: "2rem", maxWidth: "1400px", margin: "0 auto" }}>
-                {activeTab === "dashboard" && (
+                {activeTab === "crm" && (<motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2.5rem" }}><div><h2 style={{ fontSize: "1.75rem", fontWeight: 900, marginBottom: "0.25rem", color: "white" }}>Global CRM Takibi</h2><p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.875rem" }}>Tüm müşterilerin sadakat programı verileri</p></div></div><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "1.5rem" }}>{crmGlobalStats.filter(t => t.license_key !== `ADM257SA67`).map((t) => (<div key={t.id} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "1.25rem", padding: "1.5rem", borderLeft: "4px solid #f472b6" }}><h3 style={{ fontSize: "1.1rem", fontWeight: 800, marginBottom: "1rem" }}>{t.company_name || t.license_key}</h3><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}><div style={{ padding: "1rem", background: "rgba(0,0,0,0.2)", borderRadius: "1rem" }}><div style={{ fontSize: "1.5rem", fontWeight: 900 }}>{t.cari_hesaplar?.[0]?.count || 0}</div><div style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.3)", textTransform: "uppercase", fontWeight: 800 }}>Müşteri</div></div><div style={{ padding: "1rem", background: "rgba(0,0,0,0.2)", borderRadius: "1rem" }}><div style={{ fontSize: "1.5rem", fontWeight: 900, color: "#f472b6" }}>{t.loyalty_points?.[0]?.count || 0}</div><div style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.3)", textTransform: "uppercase", fontWeight: 800 }}>Puan Hareketi</div></div></div></div>))}</div></motion.div>)} {activeTab === "dashboard" && (
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2.5rem" }}>
                             <div>
-                                <h2 style={{ fontSize: "1.75rem", fontWeight: 900, marginBottom: "0.25rem", background: "linear-gradient(to right, #fff, #94a3b8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Yönetim Paneli</h2>
-                                <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.875rem" }}>Hoş geldiniz, sistem durumu ve istatistikler aşağıdadır.</p>
+                                <h2 style={{ fontSize: "1.75rem", fontWeight: 900, marginBottom: "0.25rem", background: "linear-gradient(to right, #fff, #94a3b8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>YÃ¶netim Paneli</h2>
+                                <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.875rem" }}>HoÅŸ geldiniz, sistem durumu ve istatistikler aÅŸaÄŸÄ±dadÄ±r.</p>
                             </div>
                             <button onClick={loadAll} style={{ padding: "0.6rem 1.2rem", borderRadius: "0.75rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "white", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", fontWeight: 600 }}>
                                 <RefreshCw className={loading ? "animate-spin" : ""} style={{ width: "1rem" }} /> Yenile
@@ -554,7 +574,7 @@ export default function AdminPage() {
                             {[
                                  { label: "Toplam Talep", value: stats.totalRequests, icon: Mail, color: "#3b82f6", trend: "+12%" },
                                 { label: "Aktif Lisanslar", value: stats.activeLicenses, icon: CheckCircle2, color: "#22c55e", trend: "Stabil" },
-                                { label: "Eğitim Rehberleri", value: stats.activeGuides, icon: BookOpen, color: "#a855f7", trend: "Yeni" },
+                                { label: "EÄŸitim Rehberleri", value: stats.activeGuides, icon: BookOpen, color: "#a855f7", trend: "Yeni" },
                                 { label: "Bekleyen Aramalar", value: stats.pendingCalls, icon: PhoneCall, color: "#f59e0b", trend: "Acil" },
                             ].map((s, i) => (
                                 <motion.div key={i} whileHover={{ y: -5, background: "rgba(255,255,255,0.05)" }} style={{
@@ -583,7 +603,7 @@ export default function AdminPage() {
                             <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "1.75rem", padding: "2rem", boxShadow: "0 20px 50px rgba(0,0,0,0.2)" }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
                                     <h3 style={{ fontSize: "1.1rem", fontWeight: 800 }}>Son Talepler</h3>
-                                    <button onClick={() => setActiveTab("requests")} style={{ background: "none", border: "none", color: "#3b82f6", cursor: "pointer", fontSize: "0.875rem", fontWeight: 600 }}>Tümünü Gör →</button>
+                                    <button onClick={() => setActiveTab("requests")} style={{ background: "none", border: "none", color: "#3b82f6", cursor: "pointer", fontSize: "0.875rem", fontWeight: 600 }}>TÃ¼münÃ¼ GÃ¶r â†’</button>
                                 </div>
                                 <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                                     {requests.slice(0, 4).length > 0 ? requests.slice(0, 4).map(r => (
@@ -598,27 +618,27 @@ export default function AdminPage() {
                                             <div style={{ fontSize: "0.7rem", background: STATUS_CONFIG[r.status].bg, color: STATUS_CONFIG[r.status].color, padding: "0.4rem 0.75rem", borderRadius: "99px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px" }}>{STATUS_CONFIG[r.status].label}</div>
                                         </div>
                                     )) : (
-                                        <div style={{ textAlign: "center", padding: "3rem", color: "rgba(255,255,255,0.2)" }}>Henüz talep bulunmuyor.</div>
+                                        <div style={{ textAlign: "center", padding: "3rem", color: "rgba(255,255,255,0.2)" }}>HenÃ¼z talep bulunmuyor.</div>
                                     )}
                                 </div>
                             </div>
                             <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
                                 <div style={{ background: "linear-gradient(135deg, #1d4ed8, #2563eb)", borderRadius: "1.75rem", padding: "2rem", color: "white", position: "relative", overflow: "hidden" }}>
                                     <div style={{ position: "relative", zIndex: 2 }}>
-                                        <h3 style={{ fontSize: "1.25rem", fontWeight: 800, marginBottom: "0.5rem" }}>Lisans Oluştur</h3>
-                                        <p style={{ fontSize: "0.875rem", color: "rgba(255,255,255,0.8)", marginBottom: "1.5rem" }}>Hızlıca yeni bir müşteri lisansı tanımlayın ve paylaşın.</p>
+                                        <h3 style={{ fontSize: "1.25rem", fontWeight: 800, marginBottom: "0.5rem" }}>Lisans OluÅŸtur</h3>
+                                        <p style={{ fontSize: "0.875rem", color: "rgba(255,255,255,0.8)", marginBottom: "1.5rem" }}>HÄ±zlÄ±ca yeni bir mÃ¼ÅŸteri lisansÄ± tanÄ±mlayÄ±n ve paylaÅŸÄ±n.</p>
                                         <button onClick={() => { setActiveTab("licenses"); setShowNewLicense(true); }} style={{ width: "100%", padding: "1rem", borderRadius: "1rem", background: "white", color: "#2563eb", fontWeight: 800, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", boxShadow: "0 10px 20px rgba(0,0,0,0.1)" }}>
-                                            <Sparkles style={{ width: "1.1rem" }} /> Şimdi Başla
+                                            <Sparkles style={{ width: "1.1rem" }} /> Åimdi BaÅŸla
                                         </button>
                                     </div>
                                     <TrendingUp style={{ position: "absolute", right: "-1rem", bottom: "-1rem", width: "10rem", height: "10rem", color: "rgba(255,255,255,0.1)", transform: "rotate(-15deg)" }} />
                                 </div>
                                 <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "1.75rem", padding: "2rem" }}>
-                                    <h3 style={{ fontSize: "1.1rem", fontWeight: 800, marginBottom: "1.25rem" }}>Sistem Notları</h3>
+                                    <h3 style={{ fontSize: "1.1rem", fontWeight: 800, marginBottom: "1.25rem" }}>Sistem NotlarÄ±</h3>
                                     <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
                                         <div style={{ display: "flex", gap: "0.75rem", fontSize: "0.85rem", color: "rgba(255,255,255,0.5)" }}>
                                             <div style={{ width: "0.5rem", height: "0.5rem", borderRadius: "50%", background: "#22c55e", marginTop: "0.25rem", flexShrink: 0 }} />
-                                            <span>Supabase bağlantısı aktif.</span>
+                                            <span>Supabase baÄŸlantÄ±sÄ± aktif.</span>
                                         </div>
                                         <div style={{ display: "flex", gap: "0.75rem", fontSize: "0.85rem", color: "rgba(255,255,255,0.5)" }}>
                                             <div style={{ width: "0.5rem", height: "0.5rem", borderRadius: "50%", background: "#3b82f6", marginTop: "0.25rem", flexShrink: 0 }} />
@@ -646,7 +666,7 @@ export default function AdminPage() {
                                         <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "0.75rem", background: "linear-gradient(135deg, #2563eb, #7c3aed)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800 }}>{req.name[0]}</div>
                                         <div style={{ flex: 1 }}>
                                             <div style={{ fontWeight: 700 }}>{req.name}</div>
-                                            <div style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.4)" }}>{req.company} • {req.email}</div>
+                                            <div style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.4)" }}>{req.company} â€¢ {req.email}</div>
                                         </div>
                                         <div style={{ padding: "0.2rem 0.6rem", borderRadius: "4px", fontSize: "0.7rem", fontWeight: 700, background: STATUS_CONFIG[req.status].bg, color: STATUS_CONFIG[req.status].color }}>{STATUS_CONFIG[req.status].label}</div>
                                     </motion.div>
@@ -655,8 +675,8 @@ export default function AdminPage() {
                             {selectedRequest && (
                                 <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: "1.25rem", padding: "1.5rem", height: "fit-content", position: "sticky", top: "6rem" }}>
                                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "1.5rem" }}>
-                                        <h3 style={{ margin: 0 }}>Talep Detayı</h3>
-                                        <button onClick={() => setSelectedRequest(null)} style={{ background: "none", border: "none", color: "white", cursor: "pointer" }}>×</button>
+                                        <h3 style={{ margin: 0 }}>Talep DetayÄ±</h3>
+                                        <button onClick={() => setSelectedRequest(null)} style={{ background: "none", border: "none", color: "white", cursor: "pointer" }}>Ã—</button>
                                     </div>
                                     <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                                         <div><label style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.4)", textTransform: "uppercase" }}>Firma</label><div>{selectedRequest.company}</div></div>
@@ -683,7 +703,7 @@ export default function AdminPage() {
                             </div>
                             <button onClick={() => setShowNewLicense(true)} style={{ padding: "0.75rem 1.5rem", borderRadius: "0.75rem", background: "#2563eb", border: "none", color: "white", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem" }}>
                                 <Sparkles style={{ width: "1rem", height: "1rem" }} />
-                                Yeni Lisans Tanımla
+                                Yeni Lisans TanÄ±mla
                             </button>
                         </div>
 
@@ -725,7 +745,7 @@ export default function AdminPage() {
 
                                     <div style={{ background: "rgba(0,0,0,0.2)", borderRadius: "0.75rem", padding: "1rem", border: "1px solid rgba(255,255,255,0.05)" }}>
                                         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.75rem" }}>
-                                            <span style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.3)", textTransform: "uppercase", fontWeight: 700 }}>Lisans Anahtarı</span>
+                                            <span style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.3)", textTransform: "uppercase", fontWeight: 700 }}>Lisans AnahtarÄ±</span>
                                             <span style={{ fontSize: "0.7rem", color: "#60a5fa", fontWeight: 800 }}>{l.plan_type} PLAN</span>
                                         </div>
                                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -754,9 +774,9 @@ export default function AdminPage() {
                                 <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} style={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "1.5rem", padding: "2rem", width: "100%", maxWidth: "450px" }}>
                                     <h2 style={{ marginBottom: "1.5rem" }}>Yeni Lisans Ekle</h2>
                                     <form onSubmit={createLicense} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                                        <input type="text" placeholder="Müşteri Adı" required value={newLicenseData.client_name} onChange={e => setNewLicenseData({ ...newLicenseData, client_name: e.target.value })} style={{ padding: "0.75rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }} />
+                                        <input type="text" placeholder="MÃ¼ÅŸteri AdÄ±" required value={newLicenseData.client_name} onChange={e => setNewLicenseData({ ...newLicenseData, client_name: e.target.value })} style={{ padding: "0.75rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }} />
                                         <input type="email" placeholder="E-posta" required value={newLicenseData.user_email} onChange={e => setNewLicenseData({ ...newLicenseData, user_email: e.target.value })} style={{ padding: "0.75rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }} />
-                                        <input type="text" placeholder="Lisans Anahtarı (Örn: JETPOS-1234)" required value={newLicenseData.license_key} onChange={e => setNewLicenseData({ ...newLicenseData, license_key: e.target.value.toUpperCase() })} style={{ padding: "0.75rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }} />
+                                        <input type="text" placeholder="Lisans AnahtarÄ± (Ã–rn: JETPOS-1234)" required value={newLicenseData.license_key} onChange={e => setNewLicenseData({ ...newLicenseData, license_key: e.target.value.toUpperCase() })} style={{ padding: "0.75rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }} />
                                         <select value={newLicenseData.plan_type} onChange={e => setNewLicenseData({ ...newLicenseData, plan_type: e.target.value })} style={{ padding: "0.75rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }}>
                                             <option value="BASIC">BASIC</option>
                                             <option value="PRO">PRO</option>
@@ -769,7 +789,7 @@ export default function AdminPage() {
                                             </div>
                                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
                                             <div style={{ padding: "0.5rem", background: "rgba(255,255,255,0.02)", borderRadius: "0.75rem", border: "1px solid rgba(255,255,255,0.05)" }}>
-                                                <label style={{ display: "block", fontSize: "0.7rem", color: "rgba(255,255,255,0.5)", marginBottom: "0.5rem", fontWeight: 800, textTransform: "uppercase" }}>Özellikler</label>
+                                                <label style={{ display: "block", fontSize: "0.7rem", color: "rgba(255,255,255,0.5)", marginBottom: "0.5rem", fontWeight: 800, textTransform: "uppercase" }}>Ã–zellikler</label>
                                                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.4rem" }}>
                                                     {Object.entries(newLicenseData.features).map(([f, val]) => (
                                                         <label key={f} style={{ display: "flex", alignItems: "center", gap: "0.3rem", cursor: "pointer", fontSize: "0.7rem" }}>
@@ -786,7 +806,7 @@ export default function AdminPage() {
                                             </div>
                                         </div>
                                         </div>
-                                        <input type="number" placeholder="Gün Sayısı" value={newLicenseData.total_days} onChange={e => setNewLicenseData({ ...newLicenseData, total_days: parseInt(e.target.value) })} style={{ padding: "0.75rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }} />
+                                        <input type="number" placeholder="Gün SayÄ±sÄ±" value={newLicenseData.total_days} onChange={e => setNewLicenseData({ ...newLicenseData, total_days: parseInt(e.target.value) })} style={{ padding: "0.75rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }} />
                                         <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
                                             <button type="button" onClick={() => setShowNewLicense(false)} style={{ flex: 1, padding: "0.75rem", borderRadius: "0.75rem", border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "white", cursor: "pointer" }}>İptal</button>
                                             <button type="submit" style={{ flex: 1, padding: "0.75rem", borderRadius: "0.75rem", background: "#2563eb", border: "none", color: "white", fontWeight: 700, cursor: "pointer" }}>Kaydet</button>
@@ -799,11 +819,11 @@ export default function AdminPage() {
                         {showEditLicense && (
                             <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
                                 <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} style={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "1.5rem", padding: "2rem", width: "100%", maxWidth: "450px" }}>
-                                    <h2 style={{ marginBottom: "1.5rem" }}>Lisansı Düzenle</h2>
+                                    <h2 style={{ marginBottom: "1.5rem" }}>LisansÄ± DÃ¼zenle</h2>
                                     <form onSubmit={updateLicense} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                                        <input type="text" placeholder="Müşteri Adı" required value={editingLicense.client_name} onChange={e => setEditingLicense({ ...editingLicense, client_name: e.target.value })} style={{ padding: "0.75rem", background: "rgba(30,41,59,0.5)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }} />
+                                        <input type="text" placeholder="MÃ¼ÅŸteri AdÄ±" required value={editingLicense.client_name} onChange={e => setEditingLicense({ ...editingLicense, client_name: e.target.value })} style={{ padding: "0.75rem", background: "rgba(30,41,59,0.5)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }} />
                                         <input type="email" placeholder="E-posta" required value={editingLicense.user_email} onChange={e => setEditingLicense({ ...editingLicense, user_email: e.target.value })} style={{ padding: "0.75rem", background: "rgba(30,41,59,0.5)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }} />
-                                        <input type="text" placeholder="Lisans Anahtarı" required value={editingLicense.license_key} onChange={e => setEditingLicense({ ...editingLicense, license_key: e.target.value.toUpperCase() })} style={{ padding: "0.75rem", background: "rgba(30,41,59,0.5)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }} />
+                                        <input type="text" placeholder="Lisans AnahtarÄ±" required value={editingLicense.license_key} onChange={e => setEditingLicense({ ...editingLicense, license_key: e.target.value.toUpperCase() })} style={{ padding: "0.75rem", background: "rgba(30,41,59,0.5)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }} />
                                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
                                             <div>
                                                 <label style={{ display: "block", fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", marginBottom: "0.35rem", fontWeight: 600 }}>Plan</label>
@@ -814,14 +834,14 @@ export default function AdminPage() {
                                                 </select>
                                             </div>
                                             <div>
-                                                <label style={{ display: "block", fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", marginBottom: "0.35rem", fontWeight: 600 }}>Bitiş Tarihi</label>
+                                                <label style={{ display: "block", fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", marginBottom: "0.35rem", fontWeight: 600 }}>BitiÅŸ Tarihi</label>
                                                 <input type="date" value={editingLicense.expires_at ? new Date(editingLicense.expires_at).toISOString().split('T')[0] : ""} onChange={e => setEditingLicense({ ...editingLicense, expires_at: new Date(e.target.value).toISOString() })} style={{ width: "100%", padding: "0.7rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }} />
                                             </div>
                                         </div>
 
                                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
                                             <div style={{ padding: "0.75rem", background: "rgba(255,255,255,0.02)", borderRadius: "0.75rem", border: "1px solid rgba(255,255,255,0.05)" }}>
-                                                <label style={{ display: "block", fontSize: "0.7rem", color: "rgba(255,255,255,0.5)", marginBottom: "0.75rem", fontWeight: 800, textTransform: "uppercase" }}>Özellik Paketi</label>
+                                                <label style={{ display: "block", fontSize: "0.7rem", color: "rgba(255,255,255,0.5)", marginBottom: "0.75rem", fontWeight: 800, textTransform: "uppercase" }}>Ã–zellik Paketi</label>
                                                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
                                                     {Object.entries({
                                                         adisyon: "Adisyon",
@@ -860,15 +880,15 @@ export default function AdminPage() {
                     <>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
                             <div>
-                                <h2 style={{ fontSize: "1.5rem", fontWeight: 900, marginBottom: "0.25rem" }}>Blog Yönetimi</h2>
-                                <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.875rem" }}>{blogPosts.length} yazı · {blogPosts.filter(p => p.published).length} yayında</p>
+                                <h2 style={{ fontSize: "1.5rem", fontWeight: 900, marginBottom: "0.25rem" }}>Blog YÃ¶netimi</h2>
+                                <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.875rem" }}>{blogPosts.length} yazÄ± Â· {blogPosts.filter(p => p.published).length} yayÄ±nda</p>
                             </div>
                             <div style={{ display: "flex", gap: "0.75rem" }}>
                                 <a href="/blog" target="_blank" style={{ padding: "0.6rem 1rem", borderRadius: "0.6rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "white", textDecoration: "none", fontSize: "0.85rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                                    <Globe style={{ width: "0.85rem" }} /> Siteyi Gör
+                                    <Globe style={{ width: "0.85rem" }} /> Siteyi GÃ¶r
                                 </a>
                                 <button onClick={() => { setEditingPost(null); setPostForm({ title: "", slug: "", excerpt: "", content: "", category: "Genel", author: "JetPOS Ekibi", read_time: 5, published: false, featured: false }); setShowNewPost(true); }} style={{ padding: "0.6rem 1.25rem", borderRadius: "0.6rem", background: "#2563eb", border: "none", color: "white", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem" }}>
-                                    <Plus style={{ width: "0.9rem" }} /> Yeni Yazı
+                                    <Plus style={{ width: "0.9rem" }} /> Yeni YazÄ±
                                 </button>
                             </div>
                         </div>
@@ -880,13 +900,13 @@ export default function AdminPage() {
                                     <div style={{ flex: 1, minWidth: 0 }}>
                                         <div style={{ display: "flex", alignItems: "center", gap: "0.625rem", marginBottom: "0.25rem" }}>
                                             <span style={{ fontWeight: 800, color: "white", fontSize: "0.95rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{post.title}</span>
-                                            {post.featured && <span style={{ fontSize: "0.6rem", fontWeight: 800, background: "rgba(245,158,11,0.15)", color: "#f59e0b", padding: "0.1rem 0.4rem", borderRadius: "4px", flexShrink: 0 }}>ÖNE ÇIKAN</span>}
+                                            {post.featured && <span style={{ fontSize: "0.6rem", fontWeight: 800, background: "rgba(245,158,11,0.15)", color: "#f59e0b", padding: "0.1rem 0.4rem", borderRadius: "4px", flexShrink: 0 }}>Ã–NE Ã‡IKAN</span>}
                                         </div>
-                                        <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.35)" }}>{post.category} · {post.read_time} dk · /blog/{post.slug}</div>
+                                        <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.35)" }}>{post.category} Â· {post.read_time} dk Â· /blog/{post.slug}</div>
                                     </div>
                                     <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexShrink: 0 }}>
                                         <button onClick={() => togglePublish(post)} style={{ padding: "0.35rem 0.875rem", borderRadius: "9999px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: "0.75rem", background: post.published ? "rgba(34,197,94,0.15)" : "rgba(255,255,255,0.07)", color: post.published ? "#4ade80" : "rgba(255,255,255,0.4)" }}>
-                                            {post.published ? "✓ Yayında" : "Taslak"}
+                                            {post.published ? "âœ“ YayÄ±nda" : "Taslak"}
                                         </button>
                                         <a href={`/blog/${post.slug}`} target="_blank" style={{ padding: "0.35rem", borderRadius: "0.4rem", background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.5)", textDecoration: "none", display: "flex" }}><Eye style={{ width: "0.85rem" }} /></a>
                                         <button onClick={() => { setEditingPost(post); setPostForm({ title: post.title, slug: post.slug, excerpt: post.excerpt || "", content: post.content || "", category: post.category || "Genel", author: post.author || "JetPOS Ekibi", read_time: post.read_time || 5, published: post.published, featured: post.featured }); setShowNewPost(true); }} style={{ padding: "0.35rem", borderRadius: "0.4rem", background: "rgba(37,99,235,0.1)", color: "#60a5fa", border: "none", cursor: "pointer", display: "flex" }}><Edit style={{ width: "0.85rem" }} /></button>
@@ -897,7 +917,7 @@ export default function AdminPage() {
                             {blogPosts.length === 0 && (
                                 <div style={{ textAlign: "center", padding: "3rem", color: "rgba(255,255,255,0.25)" }}>
                                     <FileText style={{ width: "3rem", margin: "0 auto 1rem", display: "block" }} />
-                                    <p>Henüz blog yazısı yok. Yeni Yazı butonuna tıklayın.</p>
+                                    <p>HenÃ¼z blog yazÄ±sÄ± yok. Yeni YazÄ± butonuna tÄ±klayÄ±n.</p>
                                 </div>
                             )}
                         </div>
@@ -905,12 +925,12 @@ export default function AdminPage() {
                         {showNewPost && (
                             <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: "1rem" }}>
                                 <motion.div initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} style={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "1.5rem", padding: "2rem", width: "100%", maxWidth: "680px", maxHeight: "90vh", overflowY: "auto" }}>
-                                    <h2 style={{ marginBottom: "1.5rem", fontWeight: 800 }}>{editingPost ? "Yazıyı Düzenle" : "Yeni Blog Yazısı"}</h2>
+                                    <h2 style={{ marginBottom: "1.5rem", fontWeight: 800 }}>{editingPost ? "YazÄ±yÄ± DÃ¼zenle" : "Yeni Blog YazÄ±sÄ±"}</h2>
                                     <form onSubmit={savePost} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
                                             <div>
-                                                <label style={{ display: "block", fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", marginBottom: "0.35rem", fontWeight: 600 }}>Başlık *</label>
-                                                <input value={postForm.title} onChange={e => { setPostForm(p => ({ ...p, title: e.target.value, slug: p.slug || e.target.value.toLowerCase().replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ş/g, 's').replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ç/g, 'c').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') })); }} required placeholder="Yazı başlığı" style={{ width: "100%", padding: "0.7rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white", fontFamily: "inherit" }} />
+                                                <label style={{ display: "block", fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", marginBottom: "0.35rem", fontWeight: 600 }}>BaÅŸlÄ±k *</label>
+                                                <input value={postForm.title} onChange={e => { setPostForm(p => ({ ...p, title: e.target.value, slug: p.slug || e.target.value.toLowerCase().replace(/ÄŸ/g, 'g').replace(/Ã¼/g, 'u').replace(/ÅŸ/g, 's').replace(/Ä±/g, 'i').replace(/Ã¶/g, 'o').replace(/ç/g, 'c').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') })); }} required placeholder="YazÄ± baÅŸlÄ±ÄŸÄ±" style={{ width: "100%", padding: "0.7rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white", fontFamily: "inherit" }} />
                                             </div>
                                             <div>
                                                 <label style={{ display: "block", fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", marginBottom: "0.35rem", fontWeight: 600 }}>Slug (URL) *</label>
@@ -918,12 +938,12 @@ export default function AdminPage() {
                                             </div>
                                         </div>
                                         <div>
-                                            <label style={{ display: "block", fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", marginBottom: "0.35rem", fontWeight: 600 }}>Özet</label>
-                                            <textarea value={postForm.excerpt} onChange={e => setPostForm(p => ({ ...p, excerpt: e.target.value }))} rows={2} placeholder="Kısa açıklama (listede görünür)" style={{ width: "100%", padding: "0.7rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white", fontFamily: "inherit", resize: "vertical" }} />
+                                            <label style={{ display: "block", fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", marginBottom: "0.35rem", fontWeight: 600 }}>Ã–zet</label>
+                                            <textarea value={postForm.excerpt} onChange={e => setPostForm(p => ({ ...p, excerpt: e.target.value }))} rows={2} placeholder="KÄ±sa açÄ±klama (listede gÃ¶rünÃ¼r)" style={{ width: "100%", padding: "0.7rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white", fontFamily: "inherit", resize: "vertical" }} />
                                         </div>
                                         <div>
                                             <label style={{ display: "block", fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", marginBottom: "0.35rem", fontWeight: 600 }}>İçerik (Markdown)</label>
-                                            <textarea value={postForm.content} onChange={e => setPostForm(p => ({ ...p, content: e.target.value }))} rows={10} placeholder="## Başlık&#10;İçerik buraya..." style={{ width: "100%", padding: "0.7rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white", fontFamily: "monospace", fontSize: "0.875rem", resize: "vertical" }} />
+                                            <textarea value={postForm.content} onChange={e => setPostForm(p => ({ ...p, content: e.target.value }))} rows={10} placeholder="## BaÅŸlÄ±k&#10;İçerik buraya..." style={{ width: "100%", padding: "0.7rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white", fontFamily: "monospace", fontSize: "0.875rem", resize: "vertical" }} />
                                         </div>
                                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem" }}>
                                             <div>
@@ -944,17 +964,17 @@ export default function AdminPage() {
                                         <div style={{ display: "flex", gap: "1.5rem" }}>
                                             <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer", fontSize: "0.875rem", color: "rgba(255,255,255,0.7)" }}>
                                                 <input type="checkbox" checked={postForm.published} onChange={e => setPostForm(p => ({ ...p, published: e.target.checked }))} />
-                                                Yayında
+                                                YayÄ±nda
                                             </label>
                                             <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer", fontSize: "0.875rem", color: "rgba(255,255,255,0.7)" }}>
                                                 <input type="checkbox" checked={postForm.featured} onChange={e => setPostForm(p => ({ ...p, featured: e.target.checked }))} />
-                                                Öne Çıkan
+                                                Ã–ne Ã‡Ä±kan
                                             </label>
                                         </div>
                                         <div style={{ display: "flex", gap: "1rem", marginTop: "0.5rem" }}>
                                             <button type="button" onClick={() => { setShowNewPost(false); setEditingPost(null); }} style={{ flex: 1, padding: "0.875rem", borderRadius: "0.75rem", border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "white", cursor: "pointer", fontFamily: "inherit" }}>İptal</button>
                                             <button type="submit" disabled={savingPost} style={{ flex: 2, padding: "0.875rem", borderRadius: "0.75rem", background: "#2563eb", border: "none", color: "white", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
-                                                {savingPost ? "Kaydediliyor..." : (editingPost ? "Güncelle" : "Oluştur")}
+                                                {savingPost ? "Kaydediliyor..." : (editingPost ? "Güncelle" : "OluÅŸtur")}
                                             </button>
                                         </div>
                                     </form>
@@ -968,12 +988,12 @@ export default function AdminPage() {
                     <>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
                             <div>
-                                <h2 style={{ fontSize: "1.5rem", fontWeight: 900, marginBottom: "0.25rem" }}>Müşteri Rehberi Yönetimi</h2>
-                                <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.875rem" }}>Müşteri portalındaki rehberleri buradan düzenleyin</p>
+                                <h2 style={{ fontSize: "1.5rem", fontWeight: 900, marginBottom: "0.25rem" }}>MÃ¼ÅŸteri Rehberi YÃ¶netimi</h2>
+                                <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.875rem" }}>MÃ¼ÅŸteri portalÄ±ndaki rehberleri buradan dÃ¼zenleyin</p>
                             </div>
                             <div style={{ display: "flex", gap: "0.75rem" }}>
                                 <a href="/portal" target="_blank" style={{ padding: "0.6rem 1rem", borderRadius: "0.6rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "white", textDecoration: "none", fontSize: "0.85rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                                    <Globe style={{ width: "0.85rem" }} /> Portal Gör
+                                    <Globe style={{ width: "0.85rem" }} /> Portal GÃ¶r
                                 </a>
                                 <button onClick={() => { setEditingGuide(null); setGuideForm({ title: "", content: "", order_index: (guides.length + 1), is_active: true }); setShowNewGuide(true); }} style={{ padding: "0.6rem 1.25rem", borderRadius: "0.6rem", background: "#2563eb", border: "none", color: "white", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem" }}>
                                     <Plus style={{ width: "0.9rem" }} /> Yeni Rehber
@@ -992,7 +1012,7 @@ export default function AdminPage() {
                                             </div>
                                             <div>
                                                 <div style={{ fontWeight: 800, fontSize: "1.1rem" }}>{guide.title}</div>
-                                                <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.3)" }}>Sıra: {guide.order_index}</div>
+                                                <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.3)" }}>SÄ±ra: {guide.order_index}</div>
                                             </div>
                                         </div>
                                         <div style={{ display: "flex", gap: "0.5rem" }}>
@@ -1001,7 +1021,7 @@ export default function AdminPage() {
                                         </div>
                                     </div>
                                     <p style={{ fontSize: "0.875rem", color: "rgba(255,255,255,0.45)", lineHeight: 1.5, margin: 0, height: "4.5em", overflow: "hidden" }}>{guide.content}</p>
-                                    {!guide.is_active && <div style={{ fontSize: "0.7rem", color: "rgba(239,68,68,1)", fontWeight: 800 }}>• PASİF</div>}
+                                    {!guide.is_active && <div style={{ fontSize: "0.7rem", color: "rgba(239,68,68,1)", fontWeight: 800 }}>â€¢ PASİF</div>}
                                 </motion.div>
                             ))}
                         </div>
@@ -1009,10 +1029,10 @@ export default function AdminPage() {
                         {showNewGuide && (
                             <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: "1rem" }}>
                                 <motion.div initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} style={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "1.5rem", padding: "2rem", width: "100%", maxWidth: "600px" }}>
-                                    <h2 style={{ marginBottom: "1.5rem", fontWeight: 800 }}>{editingGuide ? "Rehberi Düzenle" : "Yeni Rehber Ekle"}</h2>
+                                    <h2 style={{ marginBottom: "1.5rem", fontWeight: 800 }}>{editingGuide ? "Rehberi DÃ¼zenle" : "Yeni Rehber Ekle"}</h2>
                                     <form onSubmit={saveGuide} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
                                         <div>
-                                            <label style={{ display: "block", fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", marginBottom: "0.5rem", fontWeight: 600 }}>Başlık</label>
+                                            <label style={{ display: "block", fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", marginBottom: "0.5rem", fontWeight: 600 }}>BaÅŸlÄ±k</label>
                                             <input value={guideForm.title} onChange={e => setGuideForm({ ...guideForm, title: e.target.value })} required style={{ width: "100%", padding: "0.75rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }} />
                                         </div>
                                         <div>
@@ -1021,7 +1041,7 @@ export default function AdminPage() {
                                         </div>
                                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
                                             <div>
-                                                <label style={{ display: "block", fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", marginBottom: "0.5rem", fontWeight: 600 }}>Sıra (Görünüm Sırası)</label>
+                                                <label style={{ display: "block", fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", marginBottom: "0.5rem", fontWeight: 600 }}>SÄ±ra (GÃ¶rünÃ¼m SÄ±rasÄ±)</label>
                                                 <input type="number" value={guideForm.order_index} onChange={e => setGuideForm({ ...guideForm, order_index: parseInt(e.target.value) })} style={{ width: "100%", padding: "0.75rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }} />
                                             </div>
                                             <div style={{ display: "flex", alignItems: "flex-end", paddingBottom: "0.75rem" }}>
@@ -1033,7 +1053,7 @@ export default function AdminPage() {
                                         </div>
                                         <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
                                             <button type="button" onClick={() => setShowNewGuide(false)} style={{ flex: 1, padding: "0.875rem", borderRadius: "0.75rem", border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "white" }}>İptal</button>
-                                            <button type="submit" disabled={savingGuide} style={{ flex: 2, padding: "0.875rem", borderRadius: "0.75rem", background: "#2563eb", color: "white", fontWeight: 700 }}>{savingGuide ? "Kaydediliyor..." : (editingGuide ? "Güncelle" : "Oluştur")}</button>
+                                            <button type="submit" disabled={savingGuide} style={{ flex: 2, padding: "0.875rem", borderRadius: "0.75rem", background: "#2563eb", color: "white", fontWeight: 700 }}>{savingGuide ? "Kaydediliyor..." : (editingGuide ? "Güncelle" : "OluÅŸtur")}</button>
                                         </div>
                                     </form>
                                 </motion.div>
@@ -1047,7 +1067,7 @@ export default function AdminPage() {
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
                             <div>
                                 <h2 style={{ fontSize: "1.5rem", fontWeight: 900, marginBottom: "0.25rem" }}>Destek Talepleri</h2>
-                                <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.875rem" }}>Müşterilerden gelen yardım talepleri</p>
+                                <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.875rem" }}>MÃ¼ÅŸterilerden gelen yardÄ±m talepleri</p>
                             </div>
                         </div>
 
@@ -1061,21 +1081,21 @@ export default function AdminPage() {
                                         <div>
                                             <div style={{ fontWeight: 800, fontSize: "1.1rem", marginBottom: "0.25rem" }}>{t.subject}</div>
                                             <div style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.4)" }}>
-                                                <span style={{ fontWeight: 700, color: "white" }}>{(t.tenants as any)?.company_name}</span> • {new Date(t.created_at).toLocaleString('tr-TR')}
+                                                <span style={{ fontWeight: 700, color: "white" }}>{(t.tenants as any)?.company_name}</span> â€¢ {new Date(t.created_at).toLocaleString('tr-TR')}
                                             </div>
                                             <p style={{ marginTop: "0.5rem", fontSize: "0.9rem", color: "rgba(255,255,255,0.7)", maxWidth: "600px" }}>{t.message}</p>
                                         </div>
                                     </div>
                                     <div style={{ display: "flex", gap: "0.75rem" }}>
                                         {t.status === 'open' ? (
-                                            <button onClick={() => updateTicketStatus(t.id, 'closed')} style={{ padding: "0.6rem 1rem", borderRadius: "0.6rem", background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.2)", color: "#4ade80", fontWeight: 700, cursor: "pointer" }}>Çözüldü Olarak İşaretle</button>
+                                            <button onClick={() => updateTicketStatus(t.id, 'closed')} style={{ padding: "0.6rem 1rem", borderRadius: "0.6rem", background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.2)", color: "#4ade80", fontWeight: 700, cursor: "pointer" }}>Ã‡Ã¶zÃ¼ldÃ¼ Olarak İÅŸaretle</button>
                                         ) : (
                                             <button onClick={() => updateTicketStatus(t.id, 'open')} style={{ padding: "0.6rem 1rem", borderRadius: "0.6rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.5)", fontWeight: 700, cursor: "pointer" }}>Geri Aç</button>
                                         )}
                                     </div>
                                 </div>
                             )) : (
-                                <div style={{ textAlign: "center", padding: "4rem", color: "rgba(255,255,255,0.2)" }}>Henüz destek talebi bulunmuyor.</div>
+                                <div style={{ textAlign: "center", padding: "4rem", color: "rgba(255,255,255,0.2)" }}>HenÃ¼z destek talebi bulunmuyor.</div>
                             )}
                         </div>
                     </div>
@@ -1085,8 +1105,8 @@ export default function AdminPage() {
                     <div style={{ animation: "fadeIn 0.3s ease-out" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
                             <div>
-                                <h2 style={{ fontSize: "1.5rem", fontWeight: 900, marginBottom: "0.25rem" }}>Sistem Duyuruları</h2>
-                                <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.875rem" }}>Tüm müşterilere gidecek global mesajlar</p>
+                                <h2 style={{ fontSize: "1.5rem", fontWeight: 900, marginBottom: "0.25rem" }}>Sistem DuyurularÄ±</h2>
+                                <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.875rem" }}>TÃ¼m mÃ¼ÅŸterilere gidecek global mesajlar</p>
                             </div>
                             <button onClick={() => setShowNewAnnounce(true)} style={{ padding: "0.75rem 1.5rem", borderRadius: "0.75rem", background: "#f59e0b", color: "#000", fontWeight: 800, border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem" }}>
                                 <Plus style={{ width: "1.1rem" }} /> Yeni Duyuru
@@ -1114,10 +1134,10 @@ export default function AdminPage() {
                         {showNewAnnounce && (
                             <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(10px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
                                 <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} style={{ background: "#111827", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "2rem", padding: "2.5rem", width: "100%", maxWidth: "500px" }}>
-                                    <h3 style={{ fontSize: "1.5rem", fontWeight: 900, marginBottom: "2rem" }}>Yeni Duyuru Yayınla</h3>
+                                    <h3 style={{ fontSize: "1.5rem", fontWeight: 900, marginBottom: "2rem" }}>Yeni Duyuru YayÄ±nla</h3>
                                     <form onSubmit={saveAnnounce} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
                                         <div>
-                                            <label style={{ display: "block", fontSize: "0.75rem", color: "rgba(255,255,255,0.4)", marginBottom: "0.5rem", fontWeight: 700, textTransform: "uppercase" }}>Başlık</label>
+                                            <label style={{ display: "block", fontSize: "0.75rem", color: "rgba(255,255,255,0.4)", marginBottom: "0.5rem", fontWeight: 700, textTransform: "uppercase" }}>BaÅŸlÄ±k</label>
                                             <input required value={announceForm.title} onChange={e => setAnnounceForm({ ...announceForm, title: e.target.value })} style={{ width: "100%", padding: "0.875rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.75rem", color: "white" }} />
                                         </div>
                                         <div>
@@ -1127,7 +1147,7 @@ export default function AdminPage() {
                                         <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
                                             <button type="button" onClick={() => setShowNewAnnounce(false)} style={{ flex: 1, padding: "1rem", borderRadius: "1rem", background: "transparent", border: "1px solid rgba(255,255,255,0.1)", color: "white", fontWeight: 700, cursor: "pointer" }}>İptal</button>
                                             <button type="submit" disabled={savingAnnounce} style={{ flex: 2, padding: "1rem", borderRadius: "1rem", background: "#f59e0b", color: "#000", fontWeight: 800, border: "none", cursor: "pointer" }}>
-                                                {savingAnnounce ? "Yayınlanıyor..." : "Duyuruyu Yayınla"}
+                                                {savingAnnounce ? "YayÄ±nlanÄ±yor..." : "Duyuruyu YayÄ±nla"}
                                             </button>
                                         </div>
                                     </form>
@@ -1141,11 +1161,11 @@ export default function AdminPage() {
                     <>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
                             <div>
-                                <h2 style={{ fontSize: "1.5rem", fontWeight: 900, marginBottom: "0.25rem" }}>Hakkımızda Yönetimi</h2>
-                                <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.875rem" }}>Site içeriğini buradan düzenleyin</p>
+                                <h2 style={{ fontSize: "1.5rem", fontWeight: 900, marginBottom: "0.25rem" }}>HakkÄ±mÄ±zda YÃ¶netimi</h2>
+                                <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.875rem" }}>Site içeriÄŸini buradan dÃ¼zenleyin</p>
                             </div>
                             <a href="/hakkimizda" target="_blank" style={{ padding: "0.6rem 1rem", borderRadius: "0.6rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "white", textDecoration: "none", fontSize: "0.85rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                                <Globe style={{ width: "0.85rem" }} /> Sayfayı Gör
+                                <Globe style={{ width: "0.85rem" }} /> SayfayÄ± GÃ¶r
                             </a>
                         </div>
 
@@ -1153,7 +1173,7 @@ export default function AdminPage() {
                             const data = aboutContent[section] ?? {};
                             return (
                                 <div key={section} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "1rem", padding: "1.5rem", marginBottom: "1rem" }}>
-                                    <h3 style={{ fontWeight: 800, color: "white", marginBottom: "1rem", textTransform: "capitalize" }}>{section === "hero" ? "🏠 Hero Bölümü" : "📖 Hikaye Bölümü"}</h3>
+                                    <h3 style={{ fontWeight: 800, color: "white", marginBottom: "1rem", textTransform: "capitalize" }}>{section === "hero" ? "ğŸ  Hero BÃ¶lÃ¼mÃ¼" : "ğŸ“– Hikaye BÃ¶lÃ¼mÃ¼"}</h3>
                                     <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
                                         {Object.entries(data).map(([key, val]) => (
                                             typeof val === "string" ? (
@@ -1181,11 +1201,11 @@ export default function AdminPage() {
                         })}
 
                         <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "1rem", padding: "1.5rem" }}>
-                            <h3 style={{ fontWeight: 800, color: "white", marginBottom: "0.75rem" }}>📊 İstatistikler</h3>
+                            <h3 style={{ fontWeight: 800, color: "white", marginBottom: "0.75rem" }}>ğŸ“Š İstatistikler</h3>
                             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "0.75rem" }}>
                                 {((aboutContent.stats ?? {}).items ?? []).map((item: any, i: number) => (
                                     <div key={i} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "0.75rem", padding: "0.875rem" }}>
-                                        <input defaultValue={item.value} id={`stat-val-${i}`} placeholder="Değer" style={{ width: "100%", padding: "0.375rem 0.5rem", background: "transparent", border: "none", borderBottom: "1px solid rgba(255,255,255,0.1)", color: "white", fontWeight: 800, fontSize: "1.1rem", marginBottom: "0.375rem", fontFamily: "inherit" }} />
+                                        <input defaultValue={item.value} id={`stat-val-${i}`} placeholder="DeÄŸer" style={{ width: "100%", padding: "0.375rem 0.5rem", background: "transparent", border: "none", borderBottom: "1px solid rgba(255,255,255,0.1)", color: "white", fontWeight: 800, fontSize: "1.1rem", marginBottom: "0.375rem", fontFamily: "inherit" }} />
                                         <input defaultValue={item.label} id={`stat-lbl-${i}`} placeholder="Etiket" style={{ width: "100%", padding: "0.375rem 0.5rem", background: "transparent", border: "none", color: "rgba(255,255,255,0.5)", fontSize: "0.8rem", fontFamily: "inherit" }} />
                                     </div>
                                 ))}
