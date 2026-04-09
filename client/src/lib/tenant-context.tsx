@@ -12,6 +12,8 @@ interface Tenant {
     status: string;
     features: any;
     settings?: any;
+    openrouter_api_key?: string;
+    expires_at?: string;
 }
 
 interface Warehouse {

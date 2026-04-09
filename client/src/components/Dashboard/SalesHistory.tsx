@@ -84,7 +84,7 @@ export default function SalesHistory() {
             setSales(data || []);
         } catch (error: any) {
             console.error("Fetch Data Error:", error);
-            toast.error("Veri çekme hatası: " + (error?.message || "Bilinmeyen hata"));
+            alert("Veri çekme hatası: " + (error?.message || "Bilinmeyen hata"));
         } finally {
             setLoading(false);
         }
@@ -114,12 +114,12 @@ export default function SalesHistory() {
                 if (stockError) throw stockError;
             }
 
-            toast.success(action === 'cancel' ? "Satış iptal edildi." : "İşlem geri alındı.");
+            alert(action === 'cancel' ? "Satış iptal edildi." : "İşlem geri alındı.");
             setIsDetailModalOpen(false);
             fetchSales();
         } catch (error: any) {
             console.error("Cancel/Restore Error:", error);
-            toast.error("İşlem hatası: " + (error?.message || "Bilinmeyen hata"));
+            alert("İşlem hatası: " + (error?.message || "Bilinmeyen hata"));
         } finally {
             setLoading(false);
         }

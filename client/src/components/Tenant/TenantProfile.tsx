@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { Building2, Mail, Camera, Save, AlertCircle, CheckCircle2, Shield } from 'lucide-react';
+import { Building2, Mail, Camera, Save, AlertCircle, CheckCircle2, Shield, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import { useTenant } from '@/lib/tenant-context';
