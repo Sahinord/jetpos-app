@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -480,8 +480,8 @@ function ComparisonTable() {
     );
 }
 
-/* ─── PAGE ──────────────────────────────────────────── */
-export default function FiyatlandirmaPage() {
+/* ─── PAGE CONTENT ───────────────────────────────────── */
+function FiyatlandirmaContent() {
     const searchParams = useSearchParams();
     const [yearly, setYearly] = useState(true);
     const [viewMode, setViewMode] = useState<"plans" | "custom">("plans");
@@ -806,3 +806,10 @@ export default function FiyatlandirmaPage() {
     );
 }
 
+export default function FiyatlandirmaPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-slate-950" />}>
+            <FiyatlandirmaContent />
+        </Suspense>
+    );
+}

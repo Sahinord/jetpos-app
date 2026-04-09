@@ -8,13 +8,14 @@ import {
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 
-interface PublicShowcaseClientProps {
-    settings: any;
-    products: any[];
-    categories: any[];
-}
+import React from "react";
 
-export default function PublicShowcaseClient({ settings, products, categories }: PublicShowcaseClientProps) {
+export default function PublicShowcaseClient({ params }: { params: Promise<{ slug: string }> }) {
+    const { slug } = React.use(params);
+    const [settings, setSettings] = useState<any>(null);
+    const [products, setProducts] = useState<any[]>([]);
+    const [categories, setCategories] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
     const [cart, setCart] = useState<any[]>([]);
     const [showCart, setShowCart] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -32,7 +33,73 @@ export default function PublicShowcaseClient({ settings, products, categories }:
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
-    const primaryColor = settings.primary_color || "#ef4444";
+    useEffect(() => {
+        if (slug) {
+            fetchShowcaseData();
+        }
+    }, [slug]);
+
+    const fetchShowcaseData = async () => {
+        try {
+            const { data: settingsData, error: sError } = await supabase
+                .from('qr_menu_settings')
+                .select('*, tenants!inner(*)')
+                .eq('slug', slug)
+                .single();
+
+            if (sError) throw sError;
+            setSettings(settingsData);
+
+            if (!settingsData.is_showcase_active) {
+                setLoading(false);
+                return;
+            }
+
+            const { data: catData, error: cError } = await supabase
+                .from('categories')
+                .select('*')
+                .eq('tenant_id', settingsData.tenant_id);
+
+            if (cError) throw cError;
+            setCategories(catData || []);
+
+            const { data: prodData, error: pError } = await supabase
+                .from('products')
+                .select('*')
+                .eq('tenant_id', settingsData.tenant_id)
+                .eq('status', 'active');
+            
+            if (pError) throw pError;
+            setProducts(prodData || []);
+
+        } catch (error) {
+            console.error("Showcase fetch error:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+                <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+        );
+    }
+
+    if (!settings || !settings.is_showcase_active) {
+        return (
+            <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
+                <div className="w-20 h-20 bg-slate-900 rounded-full flex items-center justify-center mb-6">
+                    <X size={40} className="text-slate-700" />
+                </div>
+                <h1 className="text-2xl font-black text-white uppercase tracking-tight">Vitrin Bulunamadı</h1>
+                <p className="text-slate-500 mt-2">Bu vitrin şu an yayında değil veya adres yanlış.</p>
+            </div>
+        );
+    }
+
+    const primaryColor = settings.primary_color || "#3b82f6";
     const bgColor = settings.secondary_color || "#0f172a";
 
     const filteredProducts = products.filter(p => {

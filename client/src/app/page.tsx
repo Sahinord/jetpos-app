@@ -116,19 +116,52 @@ export default function Home() {
     setToast({ isVisible: true, message, type });
   };
 
-  useEffect(() => {
-    if (!tenantLoading && currentTenant) {
-      fetchData();
-      // Eğer localStorage'da receiptSettings yoksa, tenant adını default olarak ata
-      const saved = localStorage.getItem('receiptSettings');
-      if (!saved) {
-        setReceiptSettings((prev: any) => ({
-          ...prev,
-          storeName: currentTenant.company_name?.toUpperCase() || prev.storeName,
-        }));
-      }
-    }
-  }, [tenantLoading, currentTenant, activeWarehouse]);
+    useEffect(() => {
+        if (!tenantLoading && currentTenant) {
+            fetchData();
+
+            // REALTIME: Listen for product and stock changes across all devices
+            const productsChannel = supabase
+                .channel(`dashboard_products_${currentTenant.id}`)
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'products',
+                    filter: `tenant_id=eq.${currentTenant.id}`
+                }, () => {
+                    // Update products in state or re-fetch
+                    fetchData();
+                })
+                .subscribe();
+
+            // REALTIME: Listen for new sales for live analytics
+            const salesChannel = supabase
+                .channel(`dashboard_sales_${currentTenant.id}`)
+                .on('postgres_changes', {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'sales',
+                    filter: `tenant_id=eq.${currentTenant.id}`
+                }, () => {
+                    fetchData();
+                })
+                .subscribe();
+
+            // Eğer localStorage'da receiptSettings yoksa, tenant adını default olarak ata
+            const saved = localStorage.getItem('receiptSettings');
+            if (!saved) {
+                setReceiptSettings((prev: any) => ({
+                    ...prev,
+                    storeName: currentTenant.company_name?.toUpperCase() || prev.storeName,
+                }));
+            }
+
+            return () => {
+                supabase.removeChannel(productsChannel);
+                supabase.removeChannel(salesChannel);
+            };
+        }
+    }, [tenantLoading, currentTenant, activeWarehouse]);
 
   useEffect(() => {
     const savedRate = localStorage.getItem('campaignRate');

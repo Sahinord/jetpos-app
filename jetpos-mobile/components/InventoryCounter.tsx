@@ -34,6 +34,23 @@ export default function InventoryCounter({ countId, warehouseId, onClose }: Inve
             supabase.rpc('set_current_tenant', { tenant_id: tenantId }).then(() => {
                 fetchCountItems();
             });
+
+            // REALTIME: Sync between multiple devices counting the same list
+            const channel = supabase
+                .channel(`inventory_count_items_${countId}`)
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'inventory_count_items',
+                    filter: `count_id=eq.${countId}`
+                }, () => {
+                    fetchCountItems();
+                })
+                .subscribe();
+
+            return () => {
+                supabase.removeChannel(channel);
+            };
         }
     }, [countId]);
 

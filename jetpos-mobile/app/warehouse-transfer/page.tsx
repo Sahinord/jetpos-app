@@ -29,6 +29,23 @@ export default function TransfersPage() {
             fetchWarehouses();
             fetchTransfers();
         });
+
+        // REALTIME: Listen for new transfers or status updates
+        const channel = supabase
+            .channel(`warehouse_transfers_${tenantId}`)
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'warehouse_transfers',
+                filter: `tenant_id=eq.${tenantId}`
+            }, () => {
+                fetchTransfers();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
 
     const fetchWarehouses = async () => {

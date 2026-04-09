@@ -89,6 +89,32 @@ export default function POSPage() {
     // Initial Fetch
     useEffect(() => {
         fetchData();
+
+        const tenantId = localStorage.getItem('tenantId');
+        if (!tenantId) return;
+
+        // REALTIME: Listen for product changes (Price, Stock, etc.)
+        const channel = supabase
+            .channel(`pos_products_${tenantId}`)
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'products',
+                filter: `tenant_id=eq.${tenantId}`
+            }, (payload) => {
+                if (payload.eventType === 'INSERT') {
+                    setProducts(prev => [...prev, payload.new as Product]);
+                } else if (payload.eventType === 'UPDATE') {
+                    setProducts(prev => prev.map(p => p.id === payload.new.id ? { ...p, ...payload.new } : p));
+                } else if (payload.eventType === 'DELETE') {
+                    setProducts(prev => prev.filter(p => p.id === payload.old.id));
+                }
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
 
     const fetchData = async () => {

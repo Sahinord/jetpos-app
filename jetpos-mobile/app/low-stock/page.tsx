@@ -21,11 +21,25 @@ export default function LowStockPage() {
     useEffect(() => {
         fetchLowStockProducts();
 
-        const interval = setInterval(() => {
-            fetchLowStockProducts();
-        }, 60000);
+        const tenantId = localStorage.getItem('tenantId');
+        if (!tenantId) return;
 
-        return () => clearInterval(interval);
+        // REALTIME: Listen for stock changes
+        const channel = supabase
+            .channel(`low_stock_${tenantId}`)
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'products',
+                filter: `tenant_id=eq.${tenantId}`
+            }, () => {
+                fetchLowStockProducts();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
 
     const fetchLowStockProducts = async () => {

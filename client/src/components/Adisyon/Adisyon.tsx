@@ -52,6 +52,7 @@ interface OrderItem {
     name: string;
     quantity: number;
     unit_price: number;
+    notes?: string;
 }
 
 export default function Adisyon({ products = [], categories = [], onCheckout, showToast, isAdisyonStoreSpecificEnabled = true, isAdisyonAutoOpenReservationEnabled = true, isCashDrawerEnabled = false, cashDrawerPrinterName = "" }: any) {
@@ -293,7 +294,8 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                 product_id: item.product_id,
                 name: item.products.name,
                 quantity: item.quantity,
-                unit_price: item.unit_price
+                unit_price: item.unit_price,
+                notes: item.notes
             })));
         } catch (error: any) {
             showToast(error.message, "error");
@@ -340,7 +342,8 @@ export default function Adisyon({ products = [], categories = [], onCheckout, sh
                 tenant_id: currentTenant?.id,
                 product_id: item.product_id,
                 quantity: item.quantity,
-                unit_price: item.unit_price
+                unit_price: item.unit_price,
+                notes: item.notes
             }));
 
             const { error: orderError } = await supabase.from('table_orders').insert(payload);

@@ -29,12 +29,25 @@ export default function ProductsPage() {
     useEffect(() => {
         fetchProducts();
 
-        // Polling'i 30 saniyeye çıkarıyoruz (Optimizasyon)
-        const interval = setInterval(() => {
-            fetchProducts();
-        }, 30000);
+        const tenantId = localStorage.getItem('tenantId');
+        if (!tenantId) return;
 
-        return () => clearInterval(interval);
+        // REALTIME: Listen for product updates (Stock, Price, etc.)
+        const channel = supabase
+            .channel(`products_page_${tenantId}`)
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'products',
+                filter: `tenant_id=eq.${tenantId}`
+            }, () => {
+                fetchProducts();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
 
     const filteredProducts = useMemo(() => {
