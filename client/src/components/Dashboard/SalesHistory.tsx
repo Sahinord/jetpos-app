@@ -13,13 +13,16 @@ import {
     Banknote,
     FileText,
     Trash2,
-    AlertTriangle
+    AlertTriangle,
+    RotateCcw
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { triggerManualPrint } from "@/components/POS/Receipt";
+import { useTenant } from "@/lib/tenant-context";
 
 export default function SalesHistory() {
+    const { currentTenant } = useTenant();
     const [sales, setSales] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
@@ -28,12 +31,17 @@ export default function SalesHistory() {
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
     useEffect(() => {
-        fetchSales();
-    }, [dateFilter]);
+        if (currentTenant) {
+            fetchSales();
+        }
+    }, [dateFilter, currentTenant?.id]);
 
     const fetchSales = async () => {
         setLoading(true);
         try {
+            console.log("Satış geçmişi çekiliyor...");
+            if (!currentTenant) return;
+
             let query = supabase
                 .from('sales')
                 .select(`
@@ -41,6 +49,7 @@ export default function SalesHistory() {
                     total_amount, 
                     total_profit,
                     payment_method, 
+                    status,
                     notes,
                     created_at,
                     sale_items (
@@ -50,9 +59,9 @@ export default function SalesHistory() {
                         products ( name, barcode )
                     )
                 `)
+                .eq('tenant_id', currentTenant.id)
                 .order('created_at', { ascending: false });
 
-            // Date filtering logic
             const now = new Date();
             if (dateFilter === 'today') {
                 now.setHours(0, 0, 0, 0);
@@ -68,21 +77,57 @@ export default function SalesHistory() {
             }
 
             const { data, error } = await query;
-            if (error) throw error;
+            if (error) {
+                console.error("Supabase Error Details:", error);
+                throw error;
+            }
             setSales(data || []);
-        } catch (error) {
-            console.error("Satış geçmişi yüklenemedi:", error);
+        } catch (error: any) {
+            console.error("Fetch Data Error:", error);
+            toast.error("Veri çekme hatası: " + (error?.message || "Bilinmeyen hata"));
         } finally {
             setLoading(false);
         }
     };
 
-    // Filter by Search Term (Sale ID or Product Name within items)
+    const handleCancelRestore = async (sale: any, action: 'cancel' | 'restore') => {
+        if (!currentTenant) return;
+        try {
+            setLoading(true);
+            const { error: updateError } = await supabase
+                .from('sales')
+                .update({
+                    status: action === 'cancel' ? 'cancelled' : 'completed',
+                    notes: action === 'cancel' ? 'İADE/İPTAL' : 'GERİ ALINDI'
+                })
+                .eq('id', sale.id)
+                .eq('tenant_id', currentTenant.id);
+
+            if (updateError) throw updateError;
+
+            for (const item of sale.sale_items) {
+                const rpcName = action === 'cancel' ? 'increment_stock' : 'decrement_stock';
+                const { error: stockError } = await supabase.rpc(rpcName, {
+                    p_product_id: item.product_id,
+                    p_qty: item.quantity
+                });
+                if (stockError) throw stockError;
+            }
+
+            toast.success(action === 'cancel' ? "Satış iptal edildi." : "İşlem geri alındı.");
+            setIsDetailModalOpen(false);
+            fetchSales();
+        } catch (error: any) {
+            console.error("Cancel/Restore Error:", error);
+            toast.error("İşlem hatası: " + (error?.message || "Bilinmeyen hata"));
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const filteredSales = sales.filter(s => {
         const searchLower = searchTerm.toLowerCase();
-        // Check ID
         if (s.id.toLowerCase().includes(searchLower)) return true;
-        // Check products
         const hasProduct = s.sale_items?.some((item: any) =>
             item.products?.name.toLowerCase().includes(searchLower) ||
             item.products?.barcode?.includes(searchLower)
@@ -92,7 +137,6 @@ export default function SalesHistory() {
 
     return (
         <div className="space-y-6 pb-20">
-            {/* Header & Filter Bar */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-card/20 p-6 rounded-2xl border border-border">
                 <div className="flex items-center space-x-4">
                     <div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-400 shadow-inner">
@@ -105,7 +149,6 @@ export default function SalesHistory() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
-                    {/* Search Input */}
                     <div className="relative flex-1 md:w-64">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-secondary w-4 h-4" />
                         <input
@@ -117,7 +160,6 @@ export default function SalesHistory() {
                         />
                     </div>
 
-                    {/* Date Filter */}
                     <div className="flex items-center bg-primary/5 border border-border rounded-xl p-1">
                         {[
                             { id: 'today', label: 'Bugün' },
@@ -137,7 +179,6 @@ export default function SalesHistory() {
                 </div>
             </div>
 
-            {/* Sales List Table */}
             <div className="glass-card !p-0 overflow-hidden">
                 <table className="w-full text-left">
                     <thead className="bg-primary/5 border-b border-border">
@@ -157,10 +198,11 @@ export default function SalesHistory() {
                             <tr><td colSpan={6} className="p-10 text-center text-secondary font-bold">Kayıt bulunamadı.</td></tr>
                         ) : (
                             filteredSales.map((sale) => (
-                                <tr key={sale.id} className="hover:bg-primary/5 transition-colors group cursor-pointer" onClick={() => { setSelectedSale(sale); setIsDetailModalOpen(true); }}>
+                                <tr key={sale.id} className={`hover:bg-primary/5 transition-colors group cursor-pointer ${sale.status === 'cancelled' ? 'opacity-50' : ''}`} onClick={() => { setSelectedSale(sale); setIsDetailModalOpen(true); }}>
                                     <td className="px-6 py-4">
-                                        <div className="font-mono text-xs text-secondary group-hover:text-blue-400 transition-colors">
+                                        <div className="font-mono text-xs text-secondary group-hover:text-blue-400 transition-colors flex items-center gap-2">
                                             #{sale.id.slice(0, 8).toUpperCase()}
+                                            {sale.status === 'cancelled' && <span className="text-[10px] text-rose-500 font-black px-1.5 py-0.5 bg-rose-500/10 rounded">İPTAL</span>}
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
@@ -198,7 +240,6 @@ export default function SalesHistory() {
                 </table>
             </div>
 
-            {/* Sale Detail Modal */}
             <AnimatePresence>
                 {isDetailModalOpen && selectedSale && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setIsDetailModalOpen(false)}>
@@ -209,7 +250,6 @@ export default function SalesHistory() {
                             onClick={(e) => e.stopPropagation()}
                             className="w-full max-w-2xl glass-card !p-0 overflow-hidden shadow-2xl border-white/10 flex flex-col max-h-[85vh]"
                         >
-                            {/* Modal Header */}
                             <div className="p-6 border-b border-border bg-primary/5 flex items-center justify-between">
                                 <div>
                                     <p className="text-[10px] font-bold text-secondary uppercase tracking-[2px]">İşlem Detayı</p>
@@ -221,9 +261,7 @@ export default function SalesHistory() {
                                 </div>
                             </div>
 
-                            {/* Modal Content - Scrollable */}
                             <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                                {/* Items List */}
                                 <div className="space-y-3">
                                     <h4 className="text-xs font-bold text-secondary uppercase tracking-widest mb-4">Satılan Ürünler</h4>
                                     {selectedSale.sale_items?.map((item: any, idx: number) => (
@@ -240,7 +278,6 @@ export default function SalesHistory() {
                                     ))}
                                 </div>
 
-                                {/* Summary */}
                                 <div className="border-t border-border pt-6 space-y-2">
                                     <div className="flex justify-between items-center">
                                         <span className="text-secondary font-bold text-sm">Ödeme Yöntemi</span>
@@ -253,54 +290,45 @@ export default function SalesHistory() {
                                 </div>
                             </div>
 
-                            {/* Modal Footer (Actions) */}
                             <div className="p-6 border-t border-border bg-primary/5 flex flex-wrap gap-4">
-                                {selectedSale.notes !== "İPTAL EDİLDİ" && (
+                                {selectedSale.status !== 'cancelled' ? (
                                     <button
                                         onClick={async () => {
-                                            if (!confirm("BU SATIŞI İPTAL ETMEK İSTEDİĞİNİZDEN EMİN MİSİNİZ? \n\n* Tüm ürünler stoğa geri eklenecek. \n* Kasa toplamından düşülecek.")) return;
-
+                                            if (!confirm("BU SATIŞI İPTAL ETMEK İSTEDİĞİNİZDEN EMİN MİSİNİZ? \n\n* Tüm ürünler stoğa geri eklenecek.")) return;
                                             try {
-                                                // 1. İptal Durumunu Güncelle (SQL'e yeni sütun ekleme riskine girmemek için NOTES kısmını kullanıyoruz)
-                                                // Tutar ve Kar sıfırlanır ki dashboardlardan otomatik düşsün
-                                                const { error: cancelError } = await supabase
-                                                    .from('sales')
-                                                    .update({
-                                                        notes: "İPTAL EDİLDİ",
-                                                        total_amount: 0,
-                                                        total_profit: 0
-                                                    })
-                                                    .eq('id', selectedSale.id);
-
-                                                if (cancelError) throw cancelError;
-
-                                                // 2. Stokları Geri Al
+                                                const { error } = await supabase.from('sales').update({ status: 'cancelled', notes: (selectedSale.notes || '') + ' [İPTAL EDİLDİ]' }).eq('id', selectedSale.id).eq('tenant_id', currentTenant?.id);
+                                                if (error) throw error;
                                                 for (const item of selectedSale.sale_items) {
-                                                    await supabase.rpc('increment_stock', {
-                                                        p_product_id: item.product_id,
-                                                        p_qty: item.quantity
-                                                    });
+                                                    await supabase.rpc('increment_stock', { p_product_id: item.product_id, p_qty: item.quantity });
                                                 }
-
-                                                alert("Satış başarıyla iptal edildi ve stoklar güncellendi.");
+                                                alert("Satış iptal edildi.");
                                                 setIsDetailModalOpen(false);
-                                                fetchSales(); // Listeyi yenile
-                                            } catch (err: any) {
-                                                alert("İptal sırasında bir hata oluştu: " + err.message);
-                                            }
+                                                fetchSales();
+                                            } catch (err: any) { alert(err.message); }
                                         }}
                                         className="py-4 px-6 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2 border border-rose-500/20"
                                     >
-                                        <Trash2 className="w-4 h-4" />
-                                        SATIŞI İPTAL ET
+                                        <Trash2 className="w-4 h-4" /> SATIŞI İPTAL ET
                                     </button>
-                                )}
-
-                                {selectedSale.notes === "İPTAL EDİLDİ" && (
-                                    <div className="flex-1 flex items-center justify-center gap-2 text-rose-500 font-black uppercase text-sm bg-rose-500/5 rounded-xl border border-rose-500/20 py-4">
-                                        <AlertTriangle size={18} />
-                                        BU İŞLEM İPTAL EDİLMİŞTİR
-                                    </div>
+                                ) : (
+                                    <button
+                                        onClick={async () => {
+                                            if (!confirm("BU İPTALİ GERİ ALMAK İSTEDİĞİNİZDEN EMİN MİSİNİZ? \n\n* Stoklar tekrar düşülecek.")) return;
+                                            try {
+                                                const { error } = await supabase.from('sales').update({ status: 'completed', notes: selectedSale.notes?.replace(' [İPTAL EDİLDİ]', '') || '' }).eq('id', selectedSale.id).eq('tenant_id', currentTenant?.id);
+                                                if (error) throw error;
+                                                for (const item of selectedSale.sale_items) {
+                                                    await supabase.rpc('decrement_stock', { p_product_id: item.product_id, p_qty: item.quantity });
+                                                }
+                                                alert("İşlem geri alındı.");
+                                                setIsDetailModalOpen(false);
+                                                fetchSales();
+                                            } catch (err: any) { alert(err.message); }
+                                        }}
+                                        className="py-4 px-6 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-500 hover:text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2 border border-emerald-500/20"
+                                    >
+                                        <RotateCcw className="w-4 h-4" /> İŞLEMİ GERİ AL
+                                    </button>
                                 )}
 
                                 <button
@@ -308,12 +336,7 @@ export default function SalesHistory() {
                                         const receiptData = {
                                             saleId: selectedSale.id.slice(0, 8).toUpperCase(),
                                             date: new Date(selectedSale.created_at),
-                                            items: selectedSale.sale_items.map((i: any) => ({
-                                                name: i.products?.name || "Ürün",
-                                                barcode: i.products?.barcode,
-                                                quantity: i.quantity,
-                                                sale_price: i.unit_price
-                                            })),
+                                            items: selectedSale.sale_items.map((i: any) => ({ name: i.products?.name || "Ürün", barcode: i.products?.barcode, quantity: i.quantity, sale_price: i.unit_price })),
                                             total: selectedSale.total_amount,
                                             paymentMethod: selectedSale.payment_method
                                         };
@@ -321,15 +344,9 @@ export default function SalesHistory() {
                                     }}
                                     className="flex-1 py-4 bg-primary/5 hover:bg-primary/10 text-foreground font-bold rounded-xl transition-all flex items-center justify-center gap-2"
                                 >
-                                    <Printer className="w-4 h-4" />
-                                    TEKRAR YAZDIR
+                                    <Printer className="w-4 h-4" /> TEKRAR YAZDIR
                                 </button>
-                                <button
-                                    onClick={() => setIsDetailModalOpen(false)}
-                                    className="px-8 py-4 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-500/20"
-                                >
-                                    KAPAT
-                                </button>
+                                <button onClick={() => setIsDetailModalOpen(false)} className="px-8 py-4 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-500/20">KAPAT</button>
                             </div>
                         </motion.div>
                     </div>

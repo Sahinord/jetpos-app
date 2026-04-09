@@ -22,16 +22,15 @@ import {
     RefreshCw,
     Hash,
     History as HistoryIcon,
-    Sparkles
+    RotateCcw
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { exportToExcel, importFromExcel } from "@/lib/excel";
 import { supabase, setCurrentTenant } from "@/lib/supabase";
-import SmartScanner from "@/components/Tools/SmartScanner";
 import { useTenant } from "@/lib/tenant-context";
 
 
-export default function ProductTable({ products, onEdit, onDelete, onAdd, onManageCategories, onBulkImport, onClearAll, onToggleAllCampaign, campaignRate, hideFilters = false, limit, onRefresh, showToast, onViewChangeLogs, isPriceSyncEnabled = false, isStockSyncEnabled = false, lowStockThreshold = 10 }: any) {
+export default function ProductTable({ products, onEdit, onDelete, onAdd, onManageCategories, onBulkImport, onClearAll, onToggleAllCampaign, campaignRate, hideFilters = false, limit, onRefresh, showToast, onViewChangeLogs, isPriceSyncEnabled = false, isStockSyncEnabled = false, lowStockThreshold = 10, isTrashMode = false, onRestore }: any) {
     const [search, setSearch] = useState("");
     const [filter, setFilter] = useState("all"); // all, active, passive, campaign
     const [sortBy, setSortBy] = useState("name-asc"); // name-asc, name-desc, stock-asc, stock-desc, price-desc
@@ -49,8 +48,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
     const [bulkStockValue, setBulkStockValue] = useState("0");
     const [isRandomStock, setIsRandomStock] = useState(false);
 
-    // NEW: Smart AI Scanner States
-    const [isSmartScannerOpen, setIsSmartScannerOpen] = useState(false);
+
     const { currentTenant, activeWarehouse } = useTenant();
 
     // NEW: Processing state for bulk actions
@@ -73,9 +71,10 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
 
             const matchesSearch = nameMatch || barcodeMatch;
 
-            const isPassive = p.status === 'passive' || p.is_active === false;
-            const isPending = p.status === 'pending';
-            const isActive = !isPassive && !isPending;
+            const isDeleted = p.status === 'deleted' || p.deleted_at !== null;
+            const isPassive = (p.status === 'passive' || p.is_active === false) && !isDeleted;
+            const isPending = p.status === 'pending' && !isDeleted;
+            const isActive = !isPassive && !isPending && !isDeleted;
 
             const matchesFilter =
                 filter === "all" ? true :
@@ -93,13 +92,14 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
         return {
             all: products.length,
             active: products.filter((p: any) => {
-                const isPassive = p.status === 'passive' || p.is_active === false;
-                const isPending = p.status === 'pending';
-                return !isPassive && !isPending;
+                const isDeleted = p.status === 'deleted' || p.deleted_at !== null;
+                const isPassive = (p.status === 'passive' || p.is_active === false) && !isDeleted;
+                const isPending = p.status === 'pending' && !isDeleted;
+                return !isPassive && !isPending && !isDeleted;
             }).length,
-            passive: products.filter((p: any) => p.status === 'passive' || p.is_active === false).length,
-            pending: products.filter((p: any) => p.status === 'pending').length,
-            campaign: products.filter((p: any) => p.is_campaign).length
+            passive: products.filter((p: any) => (p.status === 'passive' || p.is_active === false) && p.status !== 'deleted' && p.deleted_at === null).length,
+            pending: products.filter((p: any) => p.status === 'pending' && p.status !== 'deleted' && p.deleted_at === null).length,
+            campaign: products.filter((p: any) => p.is_campaign && p.status !== 'deleted' && p.deleted_at === null).length
         }
     }, [products]);
 
@@ -498,16 +498,6 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                     <option value="price-asc" className="bg-background text-foreground">Fiyat (En Düşük)</option>
                                 </select>
                             </div>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                            <button
-                                onClick={() => setIsSmartScannerOpen(true)}
-                                className="flex items-center space-x-2 bg-primary/10 hover:bg-primary/20 border border-primary/30 text-primary px-6 py-3.5 rounded-2xl font-black transition-all active:scale-95 group"
-                            >
-                                <Sparkles className="w-5 h-5 animate-pulse" />
-                                <span>AI SMART SCAN</span>
-                            </button>
                             <button
                                 onClick={() => onAdd()}
                                 className="flex items-center space-x-2 bg-primary hover:bg-primary/90 text-white px-8 py-3.5 rounded-2xl font-black transition-all shadow-xl shadow-primary/20 active:scale-95"
@@ -519,156 +509,172 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                     </div>
 
                     {/* Filters & Tools Group */}
-                    <div className="flex flex-wrap items-center justify-between gap-6 p-4 bg-primary/5 rounded-2xl border border-border/50">
-                        <div className="flex items-center space-x-6">
-                            <div className="flex items-center space-x-2">
-                                <Filter className="w-4 h-4 text-primary" />
-                                <span className="text-[10px] font-black text-secondary uppercase tracking-[2px]">Filtrele:</span>
-                            </div>
-                            <div className="flex items-center bg-black/20 border border-border rounded-xl p-1">
-                                {[
-                                    { id: 'all', label: 'Tümü' },
-                                    { id: 'active', label: 'Aktif' },
-                                    { id: 'passive', label: 'Pasif' },
-                                    { id: 'pending', label: 'Beklemede' },
-                                    { id: 'campaign', label: 'Kampanya' }
-                                ].map((btn) => (
-                                    <button
-                                        key={btn.id}
-                                        onClick={() => setFilter(btn.id)}
-                                        className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 ${filter === btn.id ? 'bg-primary text-white shadow-lg' : 'text-secondary hover:text-foreground'}`}
-                                    >
-                                        <span>{btn.label.toUpperCase()}</span>
-                                        <span className={`px-1.5 py-0.5 rounded-md text-[9px] ${filter === btn.id ? 'bg-white/20 text-white' : 'bg-white/5 text-secondary'}`}>
-                                            {(counts as any)[btn.id]}
-                                        </span>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                            {/* NEW: Selective Price Increase Controls */}
-                            {selectedProducts.length > 0 && (
-                                <>
-                                    <div className="h-6 w-[1px] bg-border mx-2" />
-                                    <div className="flex items-center gap-2 bg-primary/10 border border-primary/30 rounded-xl px-3 py-2">
-                                        <span className="text-xs font-black text-primary">
-                                            {selectedProducts.length} ÜRÜN SEÇİLİ
-                                        </span>
+                    <div className="flex flex-col gap-4">
+                        {/* Main Toolbar: Filters and Global Actions */}
+                        <div className="flex flex-wrap items-center justify-between gap-6 p-4 bg-primary/5 rounded-2xl border border-border/50">
+                            {!isTrashMode && (
+                                <div className="flex items-center space-x-6">
+                                    <div className="flex items-center space-x-2">
+                                        <Filter className="w-4 h-4 text-primary" />
+                                        <span className="text-[10px] font-black text-secondary uppercase tracking-[2px]">Filtrele:</span>
                                     </div>
-                                    <button
-                                        onClick={() => setIsSelectivePriceModalOpen(true)}
-                                        className="flex items-center space-x-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-600 transition-all"
-                                    >
-                                        <Calculator className="w-4 h-4" />
-                                        <span>ZAM UYGULA</span>
-                                    </button>
-                                    <button
-                                        onClick={() => handleBulkStatusChange('active')}
-                                        className="flex items-center space-x-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-600 transition-all"
-                                    >
-                                        <Eye className="w-4 h-4" />
-                                        <span>AKTİFE AL</span>
-                                    </button>
-                                    <button
-                                        onClick={() => handleBulkStatusChange('passive')}
-                                        className="flex items-center space-x-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 px-4 py-2.5 rounded-xl text-xs font-bold text-rose-500 transition-all"
-                                    >
-                                        <EyeOff className="w-4 h-4" />
-                                        <span>PASİFE AL</span>
-                                    </button>
-                                    <button
-                                        onClick={() => setIsBulkStockModalOpen(true)}
-                                        className="flex items-center space-x-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 px-4 py-2.5 rounded-xl text-xs font-bold text-blue-600 transition-all"
-                                    >
-                                        <Hash className="w-4 h-4" />
-                                        <span>STOK GÜNCELLE</span>
-                                    </button>
-                                    <div className="h-6 w-[1px] bg-border mx-2" />
-                                </>
+                                    <div className="flex items-center bg-black/20 border border-border rounded-xl p-1">
+                                        {[
+                                            { id: 'all', label: 'Tümü' },
+                                            { id: 'active', label: 'Aktif' },
+                                            { id: 'passive', label: 'Pasif' },
+                                            { id: 'pending', label: 'Beklemede' },
+                                            { id: 'campaign', label: 'Kampanya' }
+                                        ].map((btn) => (
+                                            <button
+                                                key={btn.id}
+                                                onClick={() => setFilter(btn.id)}
+                                                className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 ${filter === btn.id ? 'bg-primary text-white shadow-lg' : 'text-secondary hover:text-foreground'}`}
+                                            >
+                                                <span>{btn.label.toUpperCase()}</span>
+                                                <span className={`px-1.5 py-0.5 rounded-md text-[9px] ${filter === btn.id ? 'bg-white/20 text-white' : 'bg-white/5 text-secondary'}`}>
+                                                    {(counts as any)[btn.id]}
+                                                </span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
                             )}
-
-                            <button
-                                onClick={handleAutoPassiveZeroStock}
-                                className="flex items-center space-x-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-4 py-2.5 rounded-xl text-xs font-bold text-amber-500 transition-all"
-                                title="Stoku sıfır olanları otomatik pasife alır"
-                            >
-                                <RefreshCw className="w-4 h-4" />
-                                <span>STOKSUZLARI PASİFE AL</span>
-                            </button>
-
-                            <button
-                                onClick={onManageCategories}
-                                className="flex items-center space-x-2 bg-primary/5 hover:bg-primary/10 border border-border px-4 py-2.5 rounded-xl text-xs font-bold transition-all"
-                            >
-                                <FolderTree className="w-4 h-4 text-primary" />
-                                <span>KATEGORİLER</span>
-                            </button>
-                            {onViewChangeLogs && (
-                                <button
-                                    onClick={onViewChangeLogs}
-                                    className="flex items-center space-x-2 bg-blue-500/5 hover:bg-blue-500/10 border border-blue-500/20 px-4 py-2.5 rounded-xl text-xs font-bold text-blue-400 transition-all"
-                                >
-                                    <HistoryIcon className="w-4 h-4" />
-                                    <span>DEĞİŞİKLİK KAYITLARI</span>
-                                </button>
-                            )}
-                            <div className="h-6 w-[1px] bg-border mx-2" />
 
                             <div className="flex items-center gap-2">
-                                <button
-                                    onClick={handleExport}
-                                    className="p-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 border border-emerald-500/20 rounded-xl transition-all"
-                                    title="Excel Olarak İndir"
-                                >
-                                    <Download className="w-4 h-4" />
-                                </button>
-
-                                <button
-                                    onClick={handleCampaignExport}
-                                    className="p-2.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border border-amber-500/20 rounded-xl transition-all"
-                                    title="Kampanya Listesini İndir (Excel)"
-                                >
-                                    <FileSpreadsheet className="w-4 h-4" />
-                                </button>
-
-                                <label className="p-2.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 border border-blue-500/20 rounded-xl transition-all cursor-pointer">
-                                    <Upload className="w-4 h-4" />
-                                    <input type="file" accept=".xlsx, .xls" className="hidden" onChange={handleFileImport} />
-                                </label>
-
-                                <div className="w-[1px] h-6 bg-border mx-1" />
-
-                                <button
-                                    onClick={handleBulkCampaign}
-                                    className={`flex items-center space-x-2 border px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${anyInCampaign ? 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border-rose-500/20' : 'bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border-purple-500/20'}`}
-                                    title={anyInCampaign ? "Tüm Kampanyaları Kaldır" : "Tümüne Kampanya Uygula"}
-                                >
-                                    {anyInCampaign ? <Trash2 className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                                    <span>{anyInCampaign ? 'KAMPANYA KALDIR' : 'KAMPANYA'}</span>
-                                </button>
-
-                                <button
-                                    onClick={() => setPreviewCampaign(!previewCampaign)}
-                                    className={`flex items-center space-x-2 border px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${previewCampaign ? 'bg-amber-500 text-white border-amber-500' : 'bg-primary/5 border-border text-secondary hover:text-foreground'}`}
-                                >
-                                    <Calculator className="w-4 h-4" />
-                                    <span>ÖNİZLEME</span>
-                                </button>
-
-                                {onClearAll && (
+                                {!isTrashMode && (
                                     <button
-                                        onClick={onClearAll}
-                                        className="flex items-center gap-2 px-4 py-2.5 bg-rose-500/10 hover:bg-rose-600 text-rose-500 hover:text-white border border-rose-500/30 hover:border-rose-600 rounded-xl transition-all duration-300 font-black text-[10px] tracking-widest uppercase group"
-                                        title="Tüm Veritabanını Sıfırla"
+                                        onClick={handleAutoPassiveZeroStock}
+                                        className="flex items-center space-x-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-4 py-2.5 rounded-xl text-xs font-bold text-amber-500 transition-all"
+                                        title="Stoku sıfır olanları otomatik pasife alır"
                                     >
-                                        <Trash2 className="w-4 h-4 group-hover:animate-bounce" />
-                                        <span>TÜMÜNÜ TEMİZLE</span>
+                                        <RefreshCw className="w-4 h-4" />
+                                        <span>STOKSUZLARI PASİFE AL</span>
                                     </button>
                                 )}
+
+                                <button
+                                    onClick={onManageCategories}
+                                    className="flex items-center space-x-2 bg-primary/5 hover:bg-primary/10 border border-border px-4 py-2.5 rounded-xl text-xs font-bold transition-all"
+                                >
+                                    <FolderTree className="w-4 h-4 text-primary" />
+                                    <span>KATEGORİLER</span>
+                                </button>
+                                {!isTrashMode && onViewChangeLogs && (
+                                    <button
+                                        onClick={onViewChangeLogs}
+                                        className="flex items-center space-x-2 bg-blue-500/5 hover:bg-blue-500/10 border border-blue-500/20 px-4 py-2.5 rounded-xl text-xs font-bold text-blue-400 transition-all"
+                                    >
+                                        <HistoryIcon className="w-4 h-4" />
+                                        <span>DEĞİŞİKLİK KAYITLARI</span>
+                                    </button>
+                                )}
+                                <div className="h-6 w-[1px] bg-border mx-2" />
+
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={handleExport}
+                                        className="p-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 border border-emerald-500/20 rounded-xl transition-all"
+                                        title="Excel Olarak İndir"
+                                    >
+                                        <Download className="w-4 h-4" />
+                                    </button>
+
+                                    <button
+                                        onClick={handleCampaignExport}
+                                        className="p-2.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border border-amber-500/20 rounded-xl transition-all"
+                                        title="Kampanya Listesini İndir (Excel)"
+                                    >
+                                        <FileSpreadsheet className="w-4 h-4" />
+                                    </button>
+
+                                    <label className="p-2.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 border border-blue-500/20 rounded-xl transition-all cursor-pointer">
+                                        <Upload className="w-4 h-4" />
+                                        <input type="file" accept=".xlsx, .xls" className="hidden" onChange={handleFileImport} />
+                                    </label>
+
+                                    <div className="w-[1px] h-6 bg-border mx-1" />
+
+                                    <button
+                                        onClick={handleBulkCampaign}
+                                        className={`flex items-center space-x-2 border px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${anyInCampaign ? 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border-rose-500/20' : 'bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border-purple-500/20'}`}
+                                        title={anyInCampaign ? "Tüm Kampanyaları Kaldır" : "Tümüne Kampanya Uygula"}
+                                    >
+                                        {anyInCampaign ? <Trash2 className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                                        <span>{anyInCampaign ? 'KAMPANYA KALDIR' : 'KAMPANYA'}</span>
+                                    </button>
+
+                                    <button
+                                        onClick={() => setPreviewCampaign(!previewCampaign)}
+                                        className={`flex items-center space-x-2 border px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${previewCampaign ? 'bg-amber-500 text-white border-amber-500' : 'bg-primary/5 border-border text-secondary hover:text-foreground'}`}
+                                    >
+                                        <Calculator className="w-4 h-4" />
+                                        <span>ÖNİZLEME</span>
+                                    </button>
+
+                                    {onClearAll && (
+                                        <button
+                                            onClick={onClearAll}
+                                            className="flex items-center space-x-2 px-4 py-2.5 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white border border-rose-500/20 rounded-xl transition-all font-bold text-xs group"
+                                            title="Tüm Veritabanını Sıfırla"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                            <span>TÜMÜNÜ TEMİZLE</span>
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         </div>
+
+                        {/* Animated Selection Bar */}
+                        <AnimatePresence>
+                            {selectedProducts.length > 0 && !isTrashMode && (
+                                <motion.div
+                                    initial={{ height: 0, opacity: 0, y: -10 }}
+                                    animate={{ height: "auto", opacity: 1, y: 0 }}
+                                    exit={{ height: 0, opacity: 0, y: -10 }}
+                                    className="overflow-hidden"
+                                >
+                                    <div className="flex flex-wrap items-center gap-3 p-4 bg-emerald-500/5 rounded-2xl border border-emerald-500/20">
+                                        <div className="flex items-center space-x-2 bg-emerald-500/20 border border-emerald-500/30 rounded-xl px-4 py-2.5">
+                                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                            <span className="text-xs font-black text-emerald-400 uppercase tracking-widest">
+                                                {selectedProducts.length} ÜRÜN SEÇİLİ
+                                            </span>
+                                        </div>
+                                        <div className="h-6 w-[1px] bg-emerald-500/20 mx-2" />
+                                        <button
+                                            onClick={() => setIsSelectivePriceModalOpen(true)}
+                                            className="flex items-center space-x-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-600 transition-all hover:scale-105"
+                                        >
+                                            <Calculator className="w-4 h-4" />
+                                            <span>ZAM UYGULA</span>
+                                        </button>
+                                        <button
+                                            onClick={() => handleBulkStatusChange('active')}
+                                            className="flex items-center space-x-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-600 transition-all hover:scale-105"
+                                        >
+                                            <Eye className="w-4 h-4" />
+                                            <span>AKTİFE AL</span>
+                                        </button>
+                                        <button
+                                            onClick={() => handleBulkStatusChange('passive')}
+                                            className="flex items-center space-x-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 px-4 py-2.5 rounded-xl text-xs font-bold text-rose-500 transition-all hover:scale-105"
+                                        >
+                                            <EyeOff className="w-4 h-4" />
+                                            <span>PASİFE AL</span>
+                                        </button>
+                                        <button
+                                            onClick={() => setIsBulkStockModalOpen(true)}
+                                            className="flex items-center space-x-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 px-4 py-2.5 rounded-xl text-xs font-bold text-blue-600 transition-all hover:scale-105"
+                                        >
+                                            <Hash className="w-4 h-4" />
+                                            <span>STOK GÜNCELLE</span>
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 </div>
             )}
@@ -692,7 +698,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                 <th className="px-6 py-5 text-[10px] font-black text-secondary tracking-[2px] uppercase">Kategori</th>
                                 <th className="px-6 py-5 text-[10px] font-black text-secondary tracking-[2px] uppercase text-center">Maliyet / Satış</th>
                                 <th className="px-6 py-5 text-[10px] font-black text-secondary tracking-[2px] uppercase text-center">Net Kar</th>
-                                <th className="px-6 py-5 text-[10px] font-black text-secondary tracking-[2px] uppercase text-center">Mevcut Stok</th>
+                                <th className="px-6 py-5 text-[10px] font-black text-secondary tracking-[2px] uppercase text-center">{isTrashMode ? 'Silinme Tarihi' : 'Mevcut Stok'}</th>
                                 {previewCampaign && (
                                     <th className="px-6 py-5 text-[10px] font-black text-amber-500 tracking-[2px] uppercase text-center">Kmp. Fiyat</th>
                                 )}
@@ -763,22 +769,33 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-center">
-                                            <div className="flex flex-col items-center">
-                                                <span className={`text-base font-black tracking-tight ${currentStock <= lowStockThreshold ? 'text-rose-500 animate-pulse' : 'text-foreground'}`}>
-                                                    {product.unit?.toLowerCase() === 'kg'
-                                                        ? (currentStock >= 1
-                                                            ? `${currentStock.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
-                                                            : `${(currentStock * 1000).toFixed(0)} gr`)
-                                                        : currentStock
-                                                    }
-                                                </span>
-                                                <div className={`mt-1 h-1 w-12 rounded-full bg-primary/10 overflow-hidden`}>
-                                                    <div
-                                                        className={`h-full ${currentStock <= lowStockThreshold ? 'bg-rose-500' : 'bg-emerald-500'}`}
-                                                        style={{ width: `${Math.min(100, (currentStock / (lowStockThreshold * 2)) * 100)}%` }}
-                                                    />
+                                            {isTrashMode ? (
+                                                <div className="flex flex-col items-center">
+                                                    <span className="text-sm font-black text-rose-500">
+                                                        {product.deleted_at ? new Date(product.deleted_at).toLocaleDateString('tr-TR') : '---'}
+                                                    </span>
+                                                    <span className="text-[10px] text-secondary/40 font-bold uppercase">
+                                                        {product.deleted_at ? new Date(product.deleted_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : ''}
+                                                    </span>
                                                 </div>
-                                            </div>
+                                            ) : (
+                                                <div className="flex flex-col items-center">
+                                                    <span className={`text-base font-black tracking-tight ${currentStock <= lowStockThreshold ? 'text-rose-500 animate-pulse' : 'text-foreground'}`}>
+                                                        {product.unit?.toLowerCase() === 'kg'
+                                                            ? (currentStock >= 1
+                                                                ? `${currentStock.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
+                                                                : `${(currentStock * 1000).toFixed(0)} gr`)
+                                                            : currentStock
+                                                        }
+                                                    </span>
+                                                    <div className={`mt-1 h-1 w-12 rounded-full bg-primary/10 overflow-hidden`}>
+                                                        <div
+                                                            className={`h-full ${currentStock <= lowStockThreshold ? 'bg-rose-500' : 'bg-emerald-500'}`}
+                                                            style={{ width: `${Math.min(100, (currentStock / (lowStockThreshold * 2)) * 100)}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
                                         </td>
                                         {previewCampaign && (
                                             <td className="px-6 py-4 text-center">
@@ -789,18 +806,43 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                         )}
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex justify-end items-center gap-1">
-                                                <button
-                                                    onClick={() => onEdit(product)}
-                                                    className="p-2 hover:bg-primary/10 text-secondary hover:text-primary rounded-lg transition-colors"
-                                                >
-                                                    <Edit2 className="w-4 h-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => onDelete(product.id)}
-                                                    className="p-2 hover:bg-rose-500/10 text-secondary hover:text-rose-500 rounded-lg transition-colors"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
+                                                {isTrashMode ? (
+                                                    <>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); if (onRestore) onRestore(product.id); }}
+                                                            className="p-2 hover:bg-emerald-500/10 text-emerald-500 rounded-lg transition-colors flex items-center gap-1 text-[10px] font-black uppercase"
+                                                            title="Geri Yükle"
+                                                        >
+                                                            <RotateCcw className="w-4 h-4" />
+                                                            <span>Geri Al</span>
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); if (onDelete) onDelete(product.id); }}
+                                                            className="p-2 hover:bg-rose-500/10 text-rose-500 rounded-lg transition-colors flex items-center gap-1 text-[10px] font-black uppercase"
+                                                            title="Kalıcı Olarak Sil"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                            <span>Yok Et</span>
+                                                        </button>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); onEdit(product); }}
+                                                            className="p-2 hover:bg-primary/10 text-secondary hover:text-primary rounded-lg transition-colors"
+                                                            title="Düzenle"
+                                                        >
+                                                            <Edit2 className="w-4 h-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); onDelete(product.id); }}
+                                                            className="p-2 hover:bg-rose-500/10 text-secondary hover:text-rose-500 rounded-lg transition-colors"
+                                                            title="Sil"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>
@@ -823,9 +865,14 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
 
                 {sortedAndFilteredProducts.length === 0 && (
                     <div className="py-20 flex flex-col items-center justify-center text-secondary">
-                        <Package className="w-12 h-12 mb-4 opacity-20" />
-                        <p className="text-lg font-bold">Aranan kritere uygun ürün bulunamadı.</p>
-                        <button onClick={() => { setSearch(""); setFilter("all"); }} className="mt-4 text-primary hover:underline text-sm font-bold">Tümünü Göster</button>
+                        <div className={`w-20 h-20 rounded-3xl flex items-center justify-center mb-6 border border-border/50 ${isTrashMode ? 'bg-emerald-500/5' : 'bg-primary/5'}`}>
+                             {isTrashMode ? <RotateCcw className="w-10 h-10 text-emerald-500/30" /> : <Package className="w-10 h-10 opacity-20" />}
+                        </div>
+                        <p className="text-lg font-black tracking-tight">{isTrashMode ? 'Çöp kutun tertemiz!' : 'Aranan kritere uygun ürün bulunamadı.'}</p>
+                        <p className="text-xs font-bold text-secondary/40 mt-1 uppercase tracking-widest">{isTrashMode ? 'Silinen ürünlerin burada 7 gün boyunca saklanır.' : 'Farklı bir arama yapmayı deneyin.'}</p>
+                        {!isTrashMode && (
+                            <button onClick={() => { setSearch(""); setFilter("all"); }} className="mt-6 px-6 py-2.5 bg-primary/10 hover:bg-primary text-primary hover:text-white rounded-xl transition-all text-xs font-black tracking-widest uppercase">TÜMÜNÜ GÖSTER</button>
+                        )}
                     </div>
                 )}
             </div>
@@ -1070,35 +1117,6 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                     </div>
                 )}
             </AnimatePresence>
-            {/* Smart AI Scanner Modal */}
-            <SmartScanner
-                isOpen={isSmartScannerOpen}
-                onClose={() => setIsSmartScannerOpen(false)}
-                apiKey={currentTenant?.openrouter_api_key || ""}
-                onProductDetected={(aiProd) => {
-                    // Try to match AI result with existing products
-                    const matched = products.find((p: any) =>
-                        (p.barcode === aiProd.barcode) ||
-                        (p.name.toLowerCase().includes(aiProd.product_name.toLowerCase()))
-                    );
-
-                    if (matched) {
-                        onEdit(matched);
-                        showToast(`${matched.name} (Sistemde Bulundu)`, "info");
-                    } else {
-                        // Open new product modal with AI data
-                        onAdd({
-                            name: aiProd.product_name,
-                            barcode: aiProd.barcode,
-                            sale_price: aiProd.suggested_price,
-                            purchase_price: aiProd.market_avg * 0.7, // Tahmini alış %30 kar marjıyla
-                            status: 'active'
-                        });
-                        showToast(`Yeni ürün algılandı: ${aiProd.product_name}`, "success");
-                    }
-                    setIsSmartScannerOpen(false);
-                }}
-            />
         </div>
     );
 }

@@ -13,6 +13,7 @@ import {
     Clock,
     Lock,
     LogOut,
+    Trash2,
     Sparkles,
     FileText,
     ChevronDown,
@@ -60,6 +61,9 @@ import {
     Heart,
     Target,
     Gift,
+    Monitor,
+    Globe,
+    ExternalLink,
     type LucideIcon
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -151,7 +155,23 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
             feature: "adisyon",
             items: [
                 { id: "adisyon", label: "Masa Yönetimi", icon: Grid3X3, feature: null, description: "Restoran ve kafeler için masa bazlı sipariş takip ve adisyon ekranı." },
-                { id: "qrmenu", label: "QR Menü Yönetimi", icon: QrCode, feature: null, description: "Dijital menü ayarları, QR kod üretimi ve tema özelleştirme." },
+            ]
+        },
+        {
+            id: "web",
+            label: "Web Sitesi & Dijital",
+            icon: Globe,
+            items: [
+                { id: "qrmenu", label: "QR Menü Yönetimi", icon: ExternalLink, feature: "qrmenu", description: "Dijital menünüzü tasarlayın ve yayınlayın." },
+                { id: "showcase", label: "Vitrin Tasarımı", icon: Monitor, feature: "showcase", description: "Müşterileriniz için premium bir açılış sayfası (Vitrin) oluşturun." },
+            ]
+        },
+        {
+            id: "marketing",
+            label: "Müşteri Deneyimi",
+            icon: Monitor,
+            items: [
+                { id: "cfd", label: "Müşteri Ekranı (CFD)", icon: Monitor, feature: "cfd", description: "Müşteri tarafında duran işlem takip ekranını yönetin ve özelleştirin." },
             ]
         },
         {
@@ -162,6 +182,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                 { id: "products", label: "Ürün Listesi", icon: Boxes, feature: "products", description: "Stoktaki ürünlerin listelenmesi, yeni ürün ekleme ve düzenleme işlemleri." },
                 { id: "warehouse", label: "Depo Yönetimi", icon: Building2, feature: "products", description: "Farklı depo ve mağazaların stok ve fiyat yönetimi." },
                 { id: "alerts", label: "Stok Uyarıları", icon: AlertTriangle, feature: "products", description: "Kritik stok seviyesine düşen ürünler için otomatik uyarılar." },
+                { id: "trash", label: "Geri Dönüşüm Kutusu", icon: Trash2, feature: "products", description: "Silinen ürünleri görüntüleyin ve gerekirse geri yükleyin." },
             ]
         },
         {

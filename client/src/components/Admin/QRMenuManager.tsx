@@ -6,7 +6,7 @@ import {
     Plus, Trash2, ArrowRight, ArrowLeft, Save, Globe,
     Type, Moon, Sun, Monitor, RefreshCw, Search, Edit3, CheckCircle2, X, Utensils, 
     Upload, ChevronUp, ChevronDown, ImageIcon as ImageIconIcon,
-    Instagram, Phone, Wifi, Lock, Clock, AlertCircle, Tag
+    Instagram, Phone, Wifi, Lock, Clock, AlertCircle, Tag, Sparkles
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
@@ -99,10 +99,17 @@ export default function QRMenuManager({ products, categories, showToast, onRefre
 
             if (error) throw error;
             if (data) {
-                setQrSettings(data);
+                // Ensure no null values from DB break React controlled inputs
+                const sanitizedData = { ...qrSettings };
+                Object.keys(data).forEach(key => {
+                    if (data[key] !== null) {
+                        sanitizedData[key] = data[key];
+                    }
+                });
+                setQrSettings(sanitizedData);
             } else {
                 // Initialize if not exists
-                const defaultSlug = currentTenant.company_name
+                const defaultSlug = (currentTenant.company_name || "menu")
                     .toLowerCase()
                     .replace(/[^a-z0-9]/g, '-')
                     .replace(/-+/g, '-')
@@ -557,13 +564,13 @@ export default function QRMenuManager({ products, categories, showToast, onRefre
                                                     <div className="flex items-center gap-2">
                                                         <input 
                                                             type="color" 
-                                                            value={qrSettings.primary_color}
+                                                            value={qrSettings.primary_color || "#3b82f6"}
                                                             onChange={(e) => setQrSettings({...qrSettings, primary_color: e.target.value})}
                                                             className="w-10 h-10 rounded-lg cursor-pointer border-none bg-transparent" 
                                                         />
                                                         <input 
                                                             type="text" 
-                                                            value={qrSettings.primary_color}
+                                                            value={qrSettings.primary_color || "#3b82f6"}
                                                             onChange={(e) => setQrSettings({...qrSettings, primary_color: e.target.value})}
                                                             className="flex-1 bg-white border border-border rounded-lg px-3 py-2 text-xs font-mono" 
                                                         />
@@ -574,13 +581,13 @@ export default function QRMenuManager({ products, categories, showToast, onRefre
                                                     <div className="flex items-center gap-2">
                                                         <input 
                                                             type="color" 
-                                                            value={qrSettings.secondary_color}
+                                                            value={qrSettings.secondary_color || "#1e293b"}
                                                             onChange={(e) => setQrSettings({...qrSettings, secondary_color: e.target.value})}
                                                             className="w-10 h-10 rounded-lg cursor-pointer border-none bg-transparent" 
                                                         />
                                                         <input 
                                                             type="text" 
-                                                            value={qrSettings.secondary_color}
+                                                            value={qrSettings.secondary_color || "#1e293b"}
                                                             onChange={(e) => setQrSettings({...qrSettings, secondary_color: e.target.value})}
                                                             className="flex-1 bg-white border border-border rounded-lg px-3 py-2 text-xs font-mono" 
                                                         />
@@ -598,7 +605,7 @@ export default function QRMenuManager({ products, categories, showToast, onRefre
                                                 <div className="space-y-2">
                                                     <label className="text-[10px] font-bold text-secondary uppercase">Yazı Tipi</label>
                                                     <select 
-                                                        value={qrSettings.font_family}
+                                                        value={qrSettings.font_family || "Inter"}
                                                         onChange={(e) => setQrSettings({...qrSettings, font_family: e.target.value})}
                                                         className="w-full bg-white border border-border rounded-xl px-4 py-3 text-xs font-bold shadow-sm"
                                                     >
@@ -1214,7 +1221,7 @@ export default function QRMenuManager({ products, categories, showToast, onRefre
                                             </div>
                                             <input 
                                                 type="text" 
-                                                value={qrSettings.slug}
+                                                value={qrSettings.slug || ""}
                                                 onChange={(e) => setQrSettings({...qrSettings, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')})}
                                                 className="flex-1 bg-card border border-border px-4 py-3 text-sm font-black text-foreground outline-none focus:border-primary transition-all"
                                                 placeholder="restoran-adi"
@@ -1253,6 +1260,48 @@ export default function QRMenuManager({ products, categories, showToast, onRefre
                                             >
                                                 <div className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-all ${qrSettings.is_active ? 'left-8' : 'left-1'}`} />
                                             </button>
+                                        </div>
+
+                                        {/* Google Business Entegrasyonu */}
+                                        <div className="space-y-4 pt-6 border-t border-border/50">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-8 h-8 bg-amber-500/10 rounded-lg flex items-center justify-center">
+                                                    <Sparkles className="w-4 h-4 text-amber-500" />
+                                                </div>
+                                                <div>
+                                                    <h5 className="font-black text-[10px] uppercase tracking-[0.2em] text-foreground">Google İşletme Entegrasyonu</h5>
+                                                    <p className="text-[9px] text-secondary font-medium">Yorum oranlarınızı %300'e kadar artırın</p>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-bold text-secondary uppercase tracking-widest pl-1">İşletme Yorum Linki</label>
+                                                <input 
+                                                    type="text" 
+                                                    value={qrSettings.google_business_link || ""}
+                                                    onChange={(e) => setQrSettings({...qrSettings, google_business_link: e.target.value})}
+                                                    placeholder="https://g.page/r/your-shop/review"
+                                                    className="w-full bg-white dark:bg-black/20 border border-border rounded-xl px-4 py-3 text-xs font-bold outline-none focus:border-amber-500 transition-all shadow-inner" 
+                                                />
+                                            </div>
+
+                                            <div className="flex items-center justify-between p-4 bg-amber-500/5 rounded-2xl border border-amber-500/10">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2 bg-amber-500/10 text-amber-500 rounded-lg">
+                                                        <RefreshCw size={14} />
+                                                    </div>
+                                                    <div>
+                                                        <h6 className="font-black text-[10px] text-foreground uppercase">Otomatik Yorum İste</h6>
+                                                        <p className="text-[9px] text-secondary">Satıştan sonra müşteriye bildirim gönder</p>
+                                                    </div>
+                                                </div>
+                                                <button 
+                                                    onClick={() => setQrSettings({...qrSettings, auto_review_request: !qrSettings.auto_review_request})}
+                                                    className={`relative w-12 h-6 rounded-full transition-colors ${qrSettings.auto_review_request ? 'bg-amber-500 shadow-lg shadow-amber-500/20' : 'bg-slate-400'}`}
+                                                >
+                                                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-all ${qrSettings.auto_review_request ? 'left-6.5' : 'left-0.5'}`} />
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1317,7 +1366,7 @@ export default function QRMenuManager({ products, categories, showToast, onRefre
                                         <input 
                                             type="text" 
                                             placeholder="Ürün Adı..."
-                                            value={newProduct.name}
+                                            value={newProduct.name || ""}
                                             onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
                                             className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold outline-none focus:border-emerald-500 transition-all"
                                         />
@@ -1326,8 +1375,11 @@ export default function QRMenuManager({ products, categories, showToast, onRefre
                                                 <input 
                                                     type="number" 
                                                     placeholder="Fiyat..."
-                                                    value={newProduct.sale_price || ""}
-                                                    onChange={(e) => setNewProduct({...newProduct, sale_price: parseFloat(e.target.value)})}
+                                                    value={newProduct.sale_price === 0 ? "" : newProduct.sale_price}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value === "" ? 0 : parseFloat(e.target.value);
+                                                        setNewProduct({...newProduct, sale_price: isNaN(val) ? 0 : val});
+                                                    }}
                                                     className="w-full bg-white border border-slate-200 rounded-xl pl-4 pr-10 py-3 text-xs font-bold outline-none focus:border-emerald-500 transition-all"
                                                 />
                                                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">₺</span>

@@ -50,14 +50,9 @@ export default function LicenseGate({ onSuccess }: { onSuccess: () => void }) {
         setLoading(true);
         try {
             const { data, error: fetchError } = await supabase
-                .from('tenants')
-                .select('*')
-                .eq('license_key', license)
-                .eq('status', 'active')
-                .single();
+                .rpc('find_tenant_by_license', { p_license_key: license });
 
             if (fetchError || !data) {
-                // Geçersiz lisans - temizle ve lisans sor
                 localStorage.removeItem('savedLicense');
                 setLicenseKey('');
                 setStep('license');
@@ -68,10 +63,8 @@ export default function LicenseGate({ onSuccess }: { onSuccess: () => void }) {
             setTenantData(data);
 
             if (data.company_name && data.company_name.trim()) {
-                // Kayıtlı - şifre sor
                 setStep('password');
             } else {
-                // Kayıt yok - kayıt yap
                 setStep('register');
             }
         } catch {
@@ -84,11 +77,7 @@ export default function LicenseGate({ onSuccess }: { onSuccess: () => void }) {
         setLoading(true);
         try {
             const { data, error: fetchError } = await supabase
-                .from('tenants')
-                .select('*')
-                .eq('license_key', license)
-                .eq('status', 'active')
-                .single();
+                .rpc('find_tenant_by_license', { p_license_key: license });
 
             if (!fetchError && data) {
                 localStorage.setItem('licenseKey', license);
@@ -117,11 +106,7 @@ export default function LicenseGate({ onSuccess }: { onSuccess: () => void }) {
 
         try {
             const { data, error: fetchError } = await supabase
-                .from('tenants')
-                .select('*')
-                .eq('license_key', licenseKey)
-                .eq('status', 'active')
-                .single();
+                .rpc('find_tenant_by_license', { p_license_key: licenseKey });
 
             if (fetchError || !data) {
                 console.error('License check error:', fetchError);
@@ -132,17 +117,12 @@ export default function LicenseGate({ onSuccess }: { onSuccess: () => void }) {
             }
 
             setTenantData(data);
-
-            // Lisansı kalıcı olarak kaydet
             localStorage.setItem('savedLicense', licenseKey);
 
-            // Check if registered
             if (data.company_name && data.company_name.trim()) {
-                // Registered - ask password
                 setStep('password');
                 setLoading(false);
             } else {
-                // Not registered - show registration
                 setStep('register');
                 setLoading(false);
             }
@@ -163,22 +143,27 @@ export default function LicenseGate({ onSuccess }: { onSuccess: () => void }) {
         setError('');
 
         try {
-            // Check password
-            if (tenantData.password !== password) {
+            // Server-side şifre doğrulama - plaintext client'a gelmiyor
+            const { data: ok, error: verifyError } = await supabase
+                .rpc('verify_tenant_password', {
+                    p_tenant_id: tenantData.id,
+                    p_password:  password
+                });
+
+            if (verifyError || !ok) {
                 setError('❌ Hatalı şifre!');
                 setPassword('');
                 setLoading(false);
                 return;
             }
 
-            // Password correct - login
+            // Şifre doğru - giriş
             localStorage.setItem('licenseKey', licenseKey);
             localStorage.setItem('currentTenantId', tenantData.id);
 
-            // Remember me
             if (rememberMe) {
                 const expiryDate = new Date();
-                expiryDate.setDate(expiryDate.getDate() + 30); // 30 gün
+                expiryDate.setDate(expiryDate.getDate() + 30);
                 localStorage.setItem('savedLicense', licenseKey);
                 localStorage.setItem('savedExpiry', expiryDate.toISOString());
             }
@@ -247,16 +232,16 @@ export default function LicenseGate({ onSuccess }: { onSuccess: () => void }) {
                 }
             }
 
-            // Update tenant
-            const { error } = await supabase
-                .from('tenants')
-                .update({
-                    company_name: companyName,
-                    contact_email: contactEmail,
-                    logo_url: logoUrl,
-                    password: password
-                })
-                .eq('id', tenantData.id);
+            // Güvenli RPC ile kayıt — sadece company_name boş olan tenant update edilir
+            const { data: registered, error } = await supabase
+                .rpc('register_tenant', {
+                    p_tenant_id:     tenantData.id,
+                    p_license_key:   licenseKey,
+                    p_company_name:  companyName,
+                    p_password:      password,
+                    p_contact_email: contactEmail || null,
+                    p_logo_url:      logoUrl || null
+                });
 
             if (error) throw error;
 

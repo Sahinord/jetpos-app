@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useCallback, memo, useEffect } from "react";
 import {
@@ -274,7 +274,32 @@ export default function CariTanitim({ showToast }: CariTanitimProps) {
         generateNextCariKodu().then(kod => {
             setFormData(prev => ({ ...prev, cariKodu: kod }));
         });
-    }, [currentTenant]);
+
+        if (currentTenant) {
+            // Realtime subscription for cari_hesaplar
+            const channel = supabase
+                .channel(`cari_realtime_${currentTenant.id}`)
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'cari_hesaplar',
+                    filter: `tenant_id=eq.${currentTenant.id}`
+                }, (payload) => {
+                    console.log('Cari Realtime Change:', payload);
+                    loadCariCount();
+                    
+                    // Fihrist açıksa listeyi de güncelle
+                    if (showFihrist) {
+                        handleFihrist();
+                    }
+                })
+                .subscribe();
+
+            return () => {
+                supabase.removeChannel(channel);
+            };
+        }
+    }, [currentTenant, showFihrist]);
 
     // Optimize edilmiş handler
     const updateField = useCallback((field: string, value: any) => {

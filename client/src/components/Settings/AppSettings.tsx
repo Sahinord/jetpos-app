@@ -26,7 +26,9 @@ export default function AppSettings({
     lowStockThreshold,
     setLowStockThreshold,
     receiptSettings,
-    setReceiptSettings
+    setReceiptSettings,
+    cfdSettings,
+    setCfdSettings
 }: any) {
     const themes = [
         { id: 'modern', name: 'MODERN DARK', color: 'bg-primary', desc: 'Sleek ve modern bir arayüz' },
@@ -179,7 +181,7 @@ export default function AppSettings({
                                             <label className="text-[10px] font-black text-secondary tracking-widest uppercase">YAZICI ADI (SİSTEMDEKİ ADI)</label>
                                             <input 
                                                 type="text"
-                                                value={cashDrawerPrinterName}
+                                                value={cashDrawerPrinterName || ""}
                                                 onChange={(e) => setCashDrawerPrinterName(e.target.value)}
                                                 placeholder="Örn: Rongta RP80"
                                                 className="w-full bg-card border border-border rounded-xl px-4 py-3 text-xs font-bold text-foreground outline-none focus:border-primary transition-all"
@@ -355,7 +357,7 @@ export default function AppSettings({
                                 <div className="flex items-center gap-3">
                                     <input 
                                         type="number"
-                                        value={lowStockThreshold}
+                                        value={lowStockThreshold ?? 0}
                                         onChange={(e) => setLowStockThreshold(parseInt(e.target.value) || 0)}
                                         className="w-20 bg-card border border-border rounded-xl px-3 py-2 text-center font-black text-primary outline-none focus:border-primary transition-all"
                                     />

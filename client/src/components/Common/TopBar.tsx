@@ -123,6 +123,8 @@ export default function TopBar({ activeTab, onMenuClick }: { activeTab: string, 
             "shift_manager": "Vardiya Takibi",
 
             // Diğer
+            "cfd": "Müşteri Ekranı (CFD)",
+            "showcase": "Vitrin Tasarımı",
             "settings": "Ayarlar",
             "profile": "Profil",
             "support": "Destek"

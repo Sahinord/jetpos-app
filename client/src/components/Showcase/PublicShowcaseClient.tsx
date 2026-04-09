@@ -1,0 +1,209 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { 
+    Utensils, Instagram, ArrowRight, ArrowLeft, Search, Menu, X, 
+    ShoppingCart, Star, Clock, Phone, MapPin, Instagram as InstagramIcon 
+} from "lucide-react";
+import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
+import { supabase } from "@/lib/supabase";
+
+interface PublicShowcaseClientProps {
+    settings: any;
+    products: any[];
+    categories: any[];
+}
+
+export default function PublicShowcaseClient({ settings, products, categories }: PublicShowcaseClientProps) {
+    const [cart, setCart] = useState<any[]>([]);
+    const [showCart, setShowCart] = useState(false);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [activeCategory, setActiveCategory] = useState("all");
+    const [searchQuery, setSearchQuery] = useState("");
+    const [page, setPage] = useState<"home" | "about">("home");
+    const [scrolled, setScrolled] = useState(false);
+
+    const { scrollY } = useScroll();
+    const y1 = useTransform(scrollY, [0, 500], [0, 200]);
+
+    useEffect(() => {
+        const handleScroll = () => setScrolled(window.scrollY > 50);
+        window.addEventListener("scroll", handleScroll);
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
+
+    const primaryColor = settings.primary_color || "#ef4444";
+    const bgColor = settings.secondary_color || "#0f172a";
+
+    const filteredProducts = products.filter(p => {
+        const matchesCategory = activeCategory === "all" || p.category_id === activeCategory;
+        const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+        const isSelected = settings.showcase_use_automatic_products || (settings.showcase_selected_product_ids || []).includes(p.id);
+        return matchesCategory && matchesSearch && isSelected;
+    });
+
+    const showcaseLinks = settings.showcase_navbar_links || [
+        {label: "Anasayfa", href: "#home"}, 
+        {label: "Ürünler", href: "#products"}, 
+        {label: "Hakkımızda", href: "#about"}
+    ];
+
+    return (
+        <div 
+            className="min-h-screen text-white selection:bg-primary/30 selection:text-white transition-colors duration-700 overflow-x-hidden"
+            style={{ 
+                fontFamily: settings.showcase_primary_font || 'Inter',
+                backgroundColor: bgColor,
+                ['--primary' as any]: primaryColor
+            }}
+        >
+            <style jsx global>{`
+                :root { --primary: ${primaryColor}; }
+                .scrollbar-none::-webkit-scrollbar { display: none; }
+                .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+                @keyframes marquee-showcase { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+                .animate-marquee-showcase { display: flex; animation: marquee-showcase linear infinite; width: max-content; }
+            `}</style>
+
+            {/* Navbar */}
+            <nav className={`fixed top-0 inset-x-0 z-[100] transition-all duration-500 border-b ${scrolled ? 'backdrop-blur-2xl border-white/10 py-4 shadow-2xl' : 'bg-transparent border-transparent py-8'}`} style={{ backgroundColor: scrolled ? `${bgColor}dd` : 'transparent' }}>
+                <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+                    <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-4 cursor-pointer" onClick={() => setPage("home")}>
+                        <div className="w-12 h-12 bg-white flex items-center justify-center rounded-2xl shadow-xl" style={{ backgroundColor: primaryColor }}><Utensils className="text-white" size={24} /></div>
+                        <h1 className="text-xl sm:text-2xl font-black uppercase tracking-tighter text-white">{settings.tenants?.company_name || "JetPOS"}</h1>
+                    </motion.div>
+
+                    <div className="hidden lg:flex items-center gap-10">
+                        {showcaseLinks.map((link: any, i: number) => (
+                            <button 
+                                key={i} 
+                                onClick={() => {
+                                    if (link.href === "#about") setPage("about");
+                                    else {
+                                        setPage("home");
+                                        if (link.href.startsWith("#") && link.href !== "#home") {
+                                            setTimeout(() => document.getElementById(link.href.replace("#", ""))?.scrollIntoView({ behavior: "smooth" }), 100);
+                                        } else window.scrollTo({ top: 0, behavior: 'smooth' });
+                                    }
+                                }}
+                                className={`text-[10px] font-black uppercase tracking-widest transition-colors relative group ${page === (link.href === "#about" ? "about" : "home") ? "text-white" : "text-slate-400 hover:text-white"}`}
+                            >
+                                {link.label}
+                                <span className={`absolute -bottom-1 left-0 h-0.5 bg-indigo-500 transition-all ${page === (link.href === "#about" ? "about" : "home") ? "w-full" : "w-0 group-hover:w-full"}`} />
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                        <button className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10"><InstagramIcon size={18} /></button>
+                        <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="lg:hidden p-3 bg-white/5 text-white rounded-2xl border border-white/10"><Menu size={24} /></button>
+                    </div>
+                </div>
+            </nav>
+
+            <AnimatePresence mode="wait">
+                {page === "home" ? (
+                    <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.5 }}>
+                        <section id="home" className="relative min-h-screen flex items-center px-6 overflow-hidden pt-20">
+                            <motion.div style={{ y: y1 }} className="absolute inset-0 z-0">
+                                {settings.showcase_hero_image_url ? (
+                                    <img src={settings.showcase_hero_image_url} className="w-full h-[120%] object-cover opacity-30 grayscale" alt="Hero" />
+                                ) : (
+                                    <div className="w-full h-full bg-slate-950 flex items-center justify-center opacity-10"><Utensils size={300} /></div>
+                                )}
+                                <div className="absolute inset-0" style={{ backgroundImage: `linear-gradient(to bottom, transparent, ${bgColor})` }} />
+                            </motion.div>
+
+                            <div className="relative z-10 max-w-7xl mx-auto text-center w-full">
+                                <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}>
+                                    <h1 className="text-6xl sm:text-9xl font-black uppercase tracking-tighter leading-none mb-8">{settings.showcase_hero_title || settings.tenants?.company_name}</h1>
+                                    <p className="max-w-2xl mx-auto text-lg text-slate-300 font-medium mb-12">{settings.showcase_hero_subtitle}</p>
+                                    <button onClick={() => document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })} className="px-12 py-6 bg-white text-black rounded-full font-black uppercase tracking-widest text-sm shadow-2xl hover:scale-105 transition-all">MENÜYÜ İNCELE</button>
+                                </motion.div>
+                            </div>
+                        </section>
+
+                        {settings.marquee_text && (
+                            <div className="py-8 bg-white/5 border-y border-white/5 overflow-hidden backdrop-blur-3xl relative z-10">
+                                <div className="animate-marquee-showcase" style={{ animationDuration: `${settings.marquee_speed || 25}s` }}>
+                                    {Array.from({ length: 15 }).map((_, i) => (
+                                        <div key={i} className="flex items-center gap-10 px-8">
+                                            <span className="text-4xl sm:text-7xl font-black uppercase tracking-tighter text-white/10">{settings.marquee_text}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        <section id="products" className="py-32 px-6">
+                            <div className="max-w-7xl mx-auto space-y-20">
+                                <div className="flex flex-col md:flex-row md:items-end justify-between gap-10">
+                                    <div className="space-y-4">
+                                        <div className="w-12 h-1 rounded-full" style={{ backgroundColor: primaryColor }} />
+                                        <h2 className="text-5xl sm:text-7xl font-black uppercase tracking-tighter">MENÜMÜZ</h2>
+                                    </div>
+                                    <div className="relative w-full max-w-md">
+                                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-500" />
+                                        <input type="text" placeholder="Ürün ara..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-3xl pl-16 pr-8 py-5 text-white font-bold outline-none focus:border-primary/50 transition-all font-sans" />
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-4 overflow-x-auto pb-6 scrollbar-none">
+                                    <button onClick={() => setActiveCategory("all")} className={`px-10 py-5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeCategory === "all" ? 'bg-primary text-white shadow-xl shadow-primary/20' : 'bg-white/5 text-slate-500 hover:text-white'}`}>TÜMÜ</button>
+                                    {categories.map(cat => (
+                                        <button key={cat.id} onClick={() => setActiveCategory(cat.id)} className={`px-10 py-5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeCategory === cat.id ? 'bg-primary text-white shadow-xl shadow-primary/20' : 'bg-white/5 text-slate-500 hover:text-white'}`}>{cat.name}</button>
+                                    ))}
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                                    {filteredProducts.map(prod => (
+                                        <motion.div key={prod.id} layout className="group space-y-6">
+                                            <div className="aspect-[4/5] bg-white/5 rounded-[40px] border border-white/5 overflow-hidden relative shadow-2xl group-hover:scale-[1.02] transition-transform duration-500">
+                                                {prod.image_url ? (
+                                                    <img src={prod.image_url} className="w-full h-full object-cover grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-1000" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-white/5"><Utensils size={80} /></div>
+                                                )}
+                                                <div className="absolute top-6 right-6 px-4 py-2 bg-indigo-500 rounded-full text-[10px] font-black tracking-widest uppercase shadow-xl" style={{ backgroundColor: primaryColor }}>{prod.sale_price} ₺</div>
+                                            </div>
+                                            <div className="space-y-2 px-4">
+                                                <h4 className="text-lg font-black uppercase tracking-tight text-white/90">{prod.name}</h4>
+                                                <p className="text-sm text-slate-500 line-clamp-2">{prod.description || "Benzersiz lezzetlerin buluşma noktası."}</p>
+                                            </div>
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            </div>
+                        </section>
+                    </motion.div>
+                ) : (
+                    <motion.div key="about" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} className="pt-48 pb-32">
+                        <section className="max-w-7xl mx-auto px-6">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-start">
+                                <div className="space-y-12">
+                                    <div className="space-y-6">
+                                        <div className="w-16 h-1 rounded-full" style={{ backgroundColor: primaryColor }} />
+                                        <h1 className="text-6xl sm:text-8xl font-black uppercase tracking-tighter leading-none">{settings.showcase_about_title || "BİZ KİMİZ?"}</h1>
+                                    </div>
+                                    <p className="text-xl text-slate-400 leading-relaxed whitespace-pre-wrap font-medium">
+                                        {settings.showcase_about_content || "Yakında burada."}
+                                    </p>
+                                    <button onClick={() => setPage("home")} className="px-10 py-5 rounded-[24px] text-[11px] font-black uppercase tracking-widest bg-white/5 border border-white/10 hover:bg-white/10 transition-all flex items-center gap-4">
+                                        <ArrowLeft size={16} /> ANA SAYFAYA DÖN
+                                    </button>
+                                </div>
+                                <div className="aspect-[3/4] rounded-[60px] overflow-hidden border border-white/5 bg-white/10 shadow-2xl flex items-center justify-center">
+                                    {settings.showcase_about_image_url ? (
+                                        <img src={settings.showcase_about_image_url} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <Utensils size={180} className="opacity-5" />
+                                    )}
+                                </div>
+                            </div>
+                        </section>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+}

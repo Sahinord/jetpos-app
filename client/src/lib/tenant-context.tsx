@@ -8,12 +8,10 @@ interface Tenant {
     license_key: string;
     company_name: string;
     contact_email?: string;
-    password?: string;
     logo_url: string | null;
     status: string;
     features: any;
     settings?: any;
-    openrouter_api_key?: string;
 }
 
 interface Warehouse {
@@ -56,20 +54,18 @@ export function TenantProvider({ children }: { children: ReactNode }) {
             }
 
             // Lisans var - kontrol et
+            // Lisans var - RPC ile güvenli doğrula (RLS bypass, sadece eşleşen tenant döner)
             const { data, error } = await supabase
-                .from('tenants')
-                .select('*')
-                .eq('id', savedTenantId)
-                .eq('license_key', savedLicenseKey)
-                .eq('status', 'active')
-                .single();
+                .rpc('validate_license', {
+                    p_tenant_id:   savedTenantId,
+                    p_license_key: savedLicenseKey
+                });
 
             if (error || !data) {
                 // Geçersiz lisans olabilir ama bağlantı hatası da olabilir.
-                // Hemen silmek yerine loglayıp devam etmiyoruz, kullanıcı manuel çıkış yapmalı.
                 console.error("License validation failed:", error);
 
-                // Sadece veritabanından açıkça "bulunamadı" geldiyse sil
+                // Sadece kesin "bulunamadı" ise temizle
                 if (!data && !error) {
                     localStorage.removeItem('licenseKey');
                     localStorage.removeItem('currentTenantId');

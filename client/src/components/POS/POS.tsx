@@ -12,8 +12,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PrintReceiptButton, triggerManualPrint, ReceiptPreview } from "./Receipt";
 import { Html5QrcodeScanner } from "html5-qrcode";
 import { useTenant } from "@/lib/tenant-context";
-import { supabase } from "@/lib/supabase";
-import SmartScanner from "@/components/Tools/SmartScanner";
+import { supabase, auditLog } from "@/lib/supabase";
+import { readScaleWeight } from "@/lib/hardware";
 
 
 export default function POS({
@@ -99,7 +99,6 @@ export default function POS({
     const [priceCheckProduct, setPriceCheckProduct] = useState<any>(null);
 
     const [isScannerOpen, setIsScannerOpen] = useState(false);
-    const [isSmartScannerOpen, setIsSmartScannerOpen] = useState(false);
 
     // CRM / Müşteri States
     const [selectedCari, setSelectedCari] = useState<any>(null);
@@ -282,6 +281,20 @@ export default function POS({
     const subtotal = cart.reduce((sum, item) => sum + (item.sale_price * item.quantity), 0);
     const total = Math.max(0, subtotal - discount);
 
+    // Customer Display Sync (BroadcastChannel)
+    useEffect(() => {
+        const channel = new BroadcastChannel("jetpos-display-sync");
+        channel.postMessage({ type: 'CART_SYNC', cart, total, discount });
+        return () => channel.close();
+    }, [cart, total, discount]);
+
+    // Helper to update CFD status
+    const updateDisplayStatus = (status: string, data?: any) => {
+        const channel = new BroadcastChannel("jetpos-display-sync");
+        channel.postMessage({ type: 'STATUS_UPDATE', status, ...data });
+        channel.close();
+    };
+
     const addToCart = (product: any, manualQty?: number) => {
         if (isPriceCheckMode) {
             setPriceCheckProduct(product);
@@ -326,6 +339,17 @@ export default function POS({
         if (isNaN(grams) || grams <= 0) return showToast("Geçerli gramaj girin!", "error");
         addToCart(weightModalProduct, grams / 1000);
         setWeightModalProduct(null);
+    };
+
+    const handleReadFromScale = async () => {
+        try {
+            showToast("Teraziden veri bekleniyor...", "info");
+            const weight = await readScaleWeight();
+            setWeightInput((weight * 1000).toString()); // g cinsinden set et
+            showToast(`Ağırlık okundu: ${weight} kg`, "success");
+        } catch (err: any) {
+            showToast("Terazi okunamadı: " + err.message, "error");
+        }
     };
 
     const updateQuantity = (id: string, delta: number) => {
@@ -421,6 +445,13 @@ export default function POS({
             changeAmount: method === 'NAKİT' ? changeAmount : 0,
             receiptSettings
         });
+        updateDisplayStatus('completed', {
+            total,
+            receivedAmount,
+            changeAmount,
+            paymentMethod: method,
+            customerName: selectedCari?.unvani
+        });
         setShowReceiptModal(true);
         setCart([]);
         setSelectedCari(null); // Reset customer
@@ -435,6 +466,31 @@ export default function POS({
             } catch (err) {
                 console.error("Kasa çekmecesi tetikleme hatası (Renderer):", err);
             }
+        }
+    };
+
+    const handleOpenCashDrawerManual = async () => {
+        if (!isCashDrawerEnabled) {
+            showToast("Kasa çekmecesi ayarları kapalı!", "error");
+            return;
+        }
+
+        try {
+            // Log manually
+            if (currentTenant) {
+                auditLog(currentTenant.id, 'CASH_DRAWER_OPEN', 'Kasa çekmecesi manuel olarak açıldı');
+            }
+
+            // Trigger hardware
+            if (window.require) {
+                const { ipcRenderer } = window.require('electron');
+                ipcRenderer.send('open-cash-drawer', { printerName: cashDrawerPrinterName });
+            }
+
+            showToast("Kasa Çekmecesi Açıldı", "success");
+        } catch (err) {
+            console.error("Kasa açma hatası:", err);
+            showToast("Donanım tetiklenemedi!", "error");
         }
     };
 
@@ -462,6 +518,15 @@ export default function POS({
                         <Monitor size={16} className="text-primary" />
                         <span className="text-xs font-black text-secondary uppercase tracking-wider">Terminal #01</span>
                     </div>
+
+                    {/* Kasa Aç Butonu */}
+                    <button
+                        onClick={handleOpenCashDrawerManual}
+                        className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 rounded-xl border border-amber-500/30 transition-all font-black text-xs uppercase tracking-wider"
+                    >
+                        <Wallet size={16} />
+                        KASA AÇ
+                    </button>
 
                     {/* User Info */}
                     <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl border border-primary/20 backdrop-blur-sm">
@@ -951,7 +1016,11 @@ export default function POS({
                                 <div className="grid grid-cols-2 gap-3">
                                     {/* NAKİT */}
                                     <button
-                                        onClick={() => handleCheckout("NAKİT")}
+                                        onClick={() => {
+                                            if (cart.length === 0) return;
+                                            updateDisplayStatus('payment', { paymentMethod: 'NAKİT' });
+                                            setTimeout(() => handleCheckout("NAKİT"), 800);
+                                        }}
                                         className="group relative flex flex-col items-center justify-center p-3 rounded-xl bg-primary text-white hover:scale-[1.01] transition-all shadow-md shadow-primary/20 active:scale-95 border border-primary/20 overflow-hidden"
                                     >
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -962,7 +1031,12 @@ export default function POS({
 
                                     {/* KART */}
                                     <button
-                                        onClick={() => handleCheckout("KART")}
+                                        onClick={() => {
+                                            if (cart.length === 0) return;
+                                            updateDisplayStatus('payment', { paymentMethod: 'KART' });
+                                            // Simulate terminal wait or just go to checkout after slight delay for effect
+                                            setTimeout(() => handleCheckout("KART"), 1500);
+                                        }}
                                         className="group relative flex flex-col items-center justify-center p-3 rounded-xl bg-primary text-white hover:scale-[1.01] transition-all shadow-md shadow-primary/20 active:scale-95 border border-primary/20 overflow-hidden"
                                     >
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -1093,9 +1167,18 @@ export default function POS({
                                 />
                                 <span className="absolute right-6 top-1/2 -translate-y-1/2 text-xl font-black text-secondary opacity-30">GR</span>
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <button onClick={() => setWeightModalProduct(null)} className="py-4 rounded-xl bg-white/5 font-bold hover:bg-white/10">VAZGEÇ</button>
-                                <button onClick={handleWeightSubmit} className="py-4 rounded-xl bg-primary text-white font-black shadow-lg shadow-primary/20">EKLE</button>
+                            <div className="space-y-4">
+                                <button
+                                    onClick={handleReadFromScale}
+                                    className="w-full py-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-500 font-black flex items-center justify-center gap-2 hover:bg-amber-500/20 transition-all"
+                                >
+                                    <Calculator size={18} />
+                                    BAĞLI TERAZİDEN OKU
+                                </button>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <button onClick={() => setWeightModalProduct(null)} className="py-4 rounded-xl bg-white/5 font-bold hover:bg-white/10">VAZGEÇ</button>
+                                    <button onClick={handleWeightSubmit} className="py-4 rounded-xl bg-primary text-white font-black shadow-lg shadow-primary/20">EKLE</button>
+                                </div>
                             </div>
                         </motion.div>
                     </div>
@@ -1247,28 +1330,7 @@ export default function POS({
 
             {/* Hidden Printing Component */}
             <PrintReceiptButton data={lastTransaction} onAfterPrint={() => console.log('Yazdırıldı')} />
-            {/* Smart AI Scanner Modal */}
-            <SmartScanner
-                isOpen={isSmartScannerOpen}
-                onClose={() => setIsSmartScannerOpen(false)}
-                apiKey={currentTenant?.openrouter_api_key || ""}
-                onProductDetected={(aiProd) => {
-                    // Try to match AI result with existing products
-                    const matched = products.find((p: any) =>
-                        (p.barcode === aiProd.barcode) ||
-                        (p.name.toLowerCase().includes(aiProd.product_name.toLowerCase()))
-                    );
 
-                    if (matched) {
-                        addToCart(matched);
-                        showToast(`${matched.name} (AI Tarafından Eşleşti)`, "success");
-                    } else {
-                        // Create a temporary/adhoc product or show toast
-                        showToast(`Ürün sistemde bulunamadı: ${aiProd.product_name}. Ancak piyasa fiyatı ₺${aiProd.market_avg} civarında.`, "warning");
-                    }
-                    setIsSmartScannerOpen(false);
-                }}
-            />
             {/* Right Click Context Menu */}
             <AnimatePresence>
                 {contextMenu && (
@@ -1294,6 +1356,16 @@ export default function POS({
                                 className="w-full text-left px-4 py-2.5 hover:bg-primary/10 rounded-lg text-sm font-bold text-foreground flex items-center gap-3 transition-colors"
                             >
                                 <Plus size={16} className="text-primary" /> Düzenle
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    const { printBarcodeLabel } = await import("@/lib/hardware");
+                                    printBarcodeLabel(contextMenu.product);
+                                    setContextMenu(null);
+                                }}
+                                className="w-full text-left px-4 py-2.5 hover:bg-emerald-500/10 rounded-lg text-sm font-bold text-emerald-400 flex items-center gap-3 transition-colors"
+                            >
+                                <Printer size={16} className="text-emerald-500" /> Barkod Yazdır
                             </button>
                             <div className="h-[1px] bg-white/5 my-1" />
                             <button

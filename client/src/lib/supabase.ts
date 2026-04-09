@@ -50,10 +50,36 @@ export async function changePassword(tenantId: string, oldPassword: string, newP
             .eq('id', tenantId);
 
         if (updateError) throw updateError;
-
         return { success: true };
     } catch (err: any) {
         console.error('Password change error:', err);
         throw err;
     }
 }
+
+/**
+ * Audit Log Kaydı Oluştur
+ * Fire-and-forget: Network hatası POS akışını etkilemez
+ */
+export function auditLog(tenantId: string, eventType: string, description: string, metadata: any = {}): void {
+    if (!tenantId) return;
+
+    const timeout = setTimeout(() => { /* fire & forget — no-op on timeout */ }, 3000);
+
+    void (async () => {
+        try {
+            const { error } = await supabase
+                .from('audit_logs')
+                .insert([{ tenant_id: tenantId, event_type: eventType, description, metadata }]);
+
+            if (error && process.env.NODE_ENV === 'development') {
+                console.warn('[AuditLog]', error.message || error.code);
+            }
+        } catch {
+            // Sessizce geç — audit log kritik değil
+        } finally {
+            clearTimeout(timeout);
+        }
+    })();
+}
+

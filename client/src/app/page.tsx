@@ -30,7 +30,7 @@ import LicenseGate from "@/components/Auth/LicenseGate";
 import StoreSelectionOverlay from "@/components/Auth/StoreSelectionOverlay";
 import { useTenant } from "@/lib/tenant-context";
 import { calculateStockMetrics, calculateStockPredictions } from "@/lib/calculations";
-import { supabase } from "@/lib/supabase";
+import { supabase, auditLog } from "@/lib/supabase";
 import { LayoutDashboard, ShoppingCart, Package, AlertTriangle, ArrowLeft, Sparkles, Clock, ShieldAlert, Trash2, X } from "lucide-react";
 import TenantProfile from "@/components/Tenant/TenantProfile";
 import SupportTicketModal from "@/components/Support/SupportTicketModal";
@@ -50,6 +50,8 @@ import FinancialCalendar from '@/components/Calendar/FinancialCalendar';
 import InvoiceWaybillPage from '@/components/Waybill/InvoiceWaybillPage';
 import WarehousePage from '@/components/Warehouse/WarehousePage';
 import QRMenuManager from '@/components/Admin/QRMenuManager';
+import ShowcaseManager from '@/components/Admin/ShowcaseManager';
+import CFDManager from '@/components/Admin/CFDManager';
 import CRMPage from '@/components/CRM/CRMPage';
 import { createTrendyolGoClient } from "@/lib/trendyol-go-client";
 
@@ -58,6 +60,7 @@ export default function Home() {
   const [isLicenseValid, setIsLicenseValid] = useState(false);
   const [activeTab, setActiveTab] = useState("home");
   const [products, setProducts] = useState<any[]>([]);
+  const [trashProducts, setTrashProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCatModalOpen, setIsCatModalOpen] = useState(false);
@@ -96,6 +99,13 @@ export default function Home() {
     address: '',
     taxOffice: '',
     taxNumber: '',
+  });
+
+  // Müşteri Ekranı Ayarları
+  const [cfdSettings, setCfdSettings] = useState({
+    welcomeTitle: 'HOŞGELDİNİZ',
+    welcomeSubtitle: 'KEYİFLİ ALIŞVERİŞLER',
+    showImages: true,
   });
 
   const [toast, setToast] = useState({ isVisible: false, message: "", type: "success" as ToastType });
@@ -159,7 +169,7 @@ export default function Home() {
 
     const savedReceiptSettings = localStorage.getItem('receiptSettings');
     if (savedReceiptSettings) {
-      try { setReceiptSettings(JSON.parse(savedReceiptSettings)); } catch (e) {}
+      try { setReceiptSettings(JSON.parse(savedReceiptSettings)); } catch (e) { }
     }
 
     // Hash control for profile tab
@@ -231,6 +241,7 @@ export default function Home() {
           .from('products')
           .select('*, categories(name), warehouse_stock(*)')
           .eq('tenant_id', currentTenant.id)
+          .is('deleted_at', null)
           .order('id', { ascending: true })
           .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
@@ -248,12 +259,37 @@ export default function Home() {
         page++;
       }
       setProducts(allProducts);
-
       console.log(`Final Success! Total: ${allProducts.length}`);
     } catch (error: any) {
       showToast(error.message, "error");
     } finally {
       setLoading(false);
+      if (activeTab === "trash") fetchTrashProducts();
+    }
+  };
+
+  const fetchTrashProducts = async () => {
+    if (!currentTenant) return;
+    try {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+      const { data, error } = await supabase
+        .from('products')
+        .select(`
+          *,
+          categories:category_id (id, name),
+          warehouse_stock (*)
+        `)
+        .eq('tenant_id', currentTenant.id)
+        .not('deleted_at', 'is', null)
+        .gte('deleted_at', sevenDaysAgo.toISOString())
+        .order('deleted_at', { ascending: false });
+
+      if (error) throw error;
+      setTrashProducts(data || []);
+    } catch (error: any) {
+      console.error("Fetch Trash Error:", error);
     }
   };
 
@@ -373,28 +409,47 @@ export default function Home() {
 
   const handleDelete = async (id: string) => {
     if (!currentTenant) return;
-    if (!confirm("Silmek istediğinize emin misiniz?")) return;
+    if (!confirm("Ürünü silmek istediğinize emin misiniz? (7 gün boyunca çöp kutusundan geri alınabilir)")) return;
 
     try {
       setLoading(true);
-      // Delete from all tables that reference this product_id
-      await supabase.from('warehouse_stock').delete().eq('product_id', id);
-      await supabase.from('warehouse_transfer_items').delete().eq('product_id', id);
-      await supabase.from('inventory_count_items').delete().eq('product_id', id);
-      await supabase.from('sale_items').delete().eq('product_id', id);
-      await supabase.from('price_change_logs').delete().eq('product_id', id);
-
       const { error } = await supabase.from('products')
-        .delete()
+        .update({
+          status: 'deleted',
+          deleted_at: new Date().toISOString()
+        })
         .eq('id', id)
         .eq('tenant_id', currentTenant.id);
 
       if (error) throw error;
 
-      showToast("Ürün ve ilişkili tüm veriler silindi", "info");
+      showToast("Ürün çöp kutusuna taşındı", "info");
       await fetchData();
     } catch (error: any) {
       showToast("Silme hatası: " + error.message, "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRestoreProduct = async (id: string) => {
+    if (!currentTenant) return;
+    try {
+      setLoading(true);
+      const { error } = await supabase.from('products')
+        .update({
+          status: 'active',
+          deleted_at: null
+        })
+        .eq('id', id)
+        .eq('tenant_id', currentTenant.id);
+
+      if (error) throw error;
+
+      showToast("Ürün başarıyla geri yüklendi", "success");
+      await fetchData();
+    } catch (error: any) {
+      showToast("Geri yükleme hatası: " + error.message, "error");
     } finally {
       setLoading(false);
     }
@@ -413,7 +468,8 @@ export default function Home() {
       const { error } = await supabase
         .from('products')
         .update({ is_campaign: status })
-        .eq('tenant_id', currentTenant.id);
+        .eq('tenant_id', currentTenant.id)
+        .is('deleted_at', null);
 
       if (error) throw error;
       showToast(status ? `Tüm ürünlere %${rate} kampanya uygulandı` : "Tüm ürünlerden kampanya kaldırıldı");
@@ -478,6 +534,9 @@ export default function Home() {
         .eq('tenant_id', currentTenant.id);
 
       if (productsError) throw productsError;
+
+      // Log critical action
+      auditLog(currentTenant.id, 'DATABASE_RESET', 'Tüm ürünler ve satış verileri sıfırlandı');
 
       showToast("Tüm veri tabanı başarıyla sıfırlandı", "info");
       await fetchData();
@@ -736,6 +795,13 @@ export default function Home() {
       }
 
       fetchData();
+
+      // Log successful sale - fire and forget, hata fırlatmasın
+      auditLog(currentTenant.id, 'SALE_COMPLETED', `${totalAmount} TL tutarında ${paymentMethod} satışı tamamlandı`, {
+        sale_id: sale.id,
+        item_count: cartItems.length,
+        payment_method: paymentMethod
+      });
     } catch (error: any) {
       showToast(error.message, "error");
     }
@@ -947,6 +1013,8 @@ export default function Home() {
                 setLowStockThreshold={setLowStockThreshold}
                 receiptSettings={receiptSettings}
                 setReceiptSettings={setReceiptSettings}
+                cfdSettings={cfdSettings}
+                setCfdSettings={setCfdSettings}
               />
             </div>
           )}
@@ -998,6 +1066,16 @@ export default function Home() {
               />
             </div>
           )}
+          {activeTab === "showcase" && (
+            <div className="max-w-[1500px] mx-auto w-full">
+              <ShowcaseManager
+                products={products}
+                categories={categories}
+                showToast={showToast}
+                onRefresh={fetchData}
+              />
+            </div>
+          )}
           {activeTab === "adisyon" && (
             <div className="max-w-[1500px] mx-auto w-full flex-1 flex flex-col min-h-0">
               <Adisyon
@@ -1036,6 +1114,36 @@ export default function Home() {
           {activeTab === "mali_takvim" && (
             <div className="max-w-[1500px] mx-auto w-full">
               <FinancialCalendar />
+            </div>
+          )}
+          {activeTab === "trash" && (
+            <div className="max-w-[1500px] mx-auto w-full space-y-6">
+              <div className="flex items-center space-x-4 mb-2">
+                <div className="w-12 h-12 bg-rose-500/10 rounded-2xl flex items-center justify-center text-rose-500">
+                  <Trash2 className="w-6 h-6" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold">Çöp Kutusu</h2>
+                  <p className="text-sm text-secondary">Silinen ürünler 7 gün boyunca burada saklanır ve geri yüklenebilir.</p>
+                </div>
+              </div>
+
+              <ProductTable
+                products={trashProducts}
+                isTrashMode={true}
+                onRestore={handleRestoreProduct}
+                onDelete={async (id: string) => {
+                  if (confirm("BU ÜRÜNÜ KALICI OLARAK SİLMEK İSTEDİĞİNİZDEN EMİN MİSİNİZ? Bu işlem geri alınamaz.")) {
+                    const { error } = await supabase.from('products').delete().eq('id', id).eq('tenant_id', currentTenant?.id);
+                    if (!error) {
+                      showToast("Ürün kalıcı olarak silindi", "info");
+                      fetchTrashProducts();
+                    }
+                  }
+                }}
+                onRefresh={fetchTrashProducts}
+                showToast={showToast}
+              />
             </div>
           )}
 
@@ -1226,6 +1334,17 @@ export default function Home() {
             </div>
           )}
 
+
+          {activeTab === "cfd" && (
+            <div className="max-w-[1500px] mx-auto w-full">
+              <CFDManager
+                settings={cfdSettings}
+                onUpdate={setCfdSettings}
+                showToast={showToast}
+                currentTenant={currentTenant}
+              />
+            </div>
+          )}
 
           {activeTab.endsWith('_integration') && (
             <div className="max-w-[1500px] mx-auto w-full">

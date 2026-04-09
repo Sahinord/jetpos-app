@@ -34,6 +34,9 @@ const AVAILABLE_FEATURES = [
     { id: 'invoice_management', label: 'Fatura ve İrsaliye Yönetimi' },
     { id: 'ai_features', label: 'JetPos AI (Öngörüler & Asistan)' },
     { id: 'adisyon', label: 'Adisyon (Masa Yönetimi)' },
+    { id: 'qrmenu', label: 'QR Menü Yönetimi' },
+    { id: 'showcase', label: 'Vitrin Web Sitesi' },
+    { id: 'cfd', label: 'Müşteri Ekranı (CFD)' },
 ];
 
 const MOBILE_FEATURES = [
@@ -304,14 +307,15 @@ export default function SuperAdmin() {
 
         setSaving(true);
         try {
-            const { error } = await supabase
-                .from('tenants')
-                .update({ password: newPassword })
-                .eq('id', passwordModal.tenantId);
+            // ✅ Güvenli RPC'yi çağır (Bcrypt hashleme yapar)
+            const { data, error } = await supabase.rpc('reset_tenant_password', {
+                p_tenant_id: passwordModal.tenantId,
+                p_new_password: newPassword
+            });
 
             if (error) throw error;
 
-            alert(`✅ ${passwordModal.tenantName} için şifre başarıyla değiştirildi!`);
+            alert(`✅ ${passwordModal.tenantName} için şifre başarıyla sıfırlandı ve hash'lendi!`);
             setPasswordModal(null);
             setNewPassword('');
         } catch (err: any) {
@@ -1014,21 +1018,36 @@ export default function SuperAdmin() {
                                 </div>
                             </div>
 
-                            <div className="space-y-4">
-                                <h4 className="text-sm font-black text-white uppercase tracking-[0.2em] ml-1">Erişim Yetkileri (Terminal PC)</h4>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                    {AVAILABLE_FEATURES.map(f => {
-                                        const isActive = editingTenant.features?.[f.id];
-                                        return (
-                                            <button key={f.id} onClick={() => toggleFeature(f.id)} className={`p-4 rounded-[1.5rem] border-2 transition-all text-left group ${isActive ? 'border-primary bg-primary/10' : 'border-white/5 hover:border-white/10'}`}>
-                                                <div className={`w-8 h-8 rounded-xl flex items-center justify-center mb-3 ${isActive ? 'bg-primary text-white shadow-lg shadow-primary/30' : 'bg-white/5 text-slate-700'}`}>
-                                                    {isActive ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
-                                                </div>
-                                                <p className={`text-[11px] font-black leading-tight ${isActive ? 'text-white' : 'text-slate-600'}`}>{f.label}</p>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
+                            <div className="space-y-8">
+                                <h4 className="text-xl font-black text-white uppercase tracking-[0.2em] ml-1 pt-8 border-t border-white/5">Yazılım Modülleri ve Özellikler</h4>
+                                
+                                {[
+                                    { label: 'SATIŞ & POS', features: ['pos', 'sales_history', 'adisyon', 'invoice'] },
+                                    { label: 'ÜRÜN & STOK', features: ['products', 'label_designer', 'invoice_management'] },
+                                    { label: 'DİJİTAL & WEB', features: ['qrmenu', 'showcase', 'cfd'] },
+                                    { label: 'FİNANS & YÖNETİM', features: ['profit_calculator', 'price_simulator', 'reports', 'cari_hesap', 'bank_management', 'cash_management', 'employee_module'] },
+                                    { label: 'YAPAY ZEKA & ENTEGRASYON', features: ['ai_features', 'trendyol_go'] },
+                                ].map((cat) => (
+                                    <div key={cat.label} className="space-y-4">
+                                        <div className="flex items-center gap-3 ml-2">
+                                            <div className="w-1.5 h-6 bg-primary rounded-full" />
+                                            <h5 className="text-[10px] font-black text-slate-400 tracking-[0.3em] uppercase">{cat.label}</h5>
+                                        </div>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            {AVAILABLE_FEATURES.filter(f => cat.features.includes(f.id)).map(f => {
+                                                const isActive = editingTenant.features?.[f.id];
+                                                return (
+                                                    <button key={f.id} onClick={() => toggleFeature(f.id)} className={`p-4 rounded-[1.5rem] border-2 transition-all text-left ${isActive ? 'border-primary bg-primary/10' : 'border-white/5 hover:border-white/10'}`}>
+                                                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center mb-3 ${isActive ? 'bg-primary text-white shadow-lg shadow-primary/30' : 'bg-white/5 text-slate-700'}`}>
+                                                            {isActive ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                                                        </div>
+                                                        <p className={`text-[11px] font-black px-1 leading-tight ${isActive ? 'text-white' : 'text-slate-600'}`}>{f.label}</p>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                ))}
 
                                 <h4 className="text-sm font-black text-white uppercase tracking-[0.2em] ml-1 mt-8 pt-4 border-t border-white/5">JetPOS Mobile Yetkileri (Telefon/Tablet)</h4>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

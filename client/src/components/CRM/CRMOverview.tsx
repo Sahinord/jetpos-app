@@ -39,6 +39,7 @@ export default function CRMOverview({ showToast }: CRMOverviewProps) {
         { id: '3', name: 'Yeni Üyeler', count: 0, color: 'text-emerald-400', icon: Zap, description: 'Son 7 gün içinde eklenenler' },
         { id: '4', name: 'Potansiyel Sadıklar', count: 0, color: 'text-blue-400', icon: Target, description: 'Sık ziyaret eden ama harcaması düşük olanlar' },
     ]);
+    const [campaignData, setCampaignData] = useState<any[]>([]);
 
     const loadData = async () => {
         if (!currentTenant) return;
@@ -50,9 +51,29 @@ export default function CRMOverview({ showToast }: CRMOverviewProps) {
                 .select('id, loyalty_points_total, created_at')
                 .eq('tenant_id', currentTenant.id);
 
-            if (cError) throw cError;
+            if (cError) {
+                console.error('Cari hesaplar yükleme hatası:', cError);
+                throw new Error(`Müşteri verileri alınamadı: ${cError.message}`);
+            }
 
-            // 2. Fetch AI Segmentation (RFM Analysis)
+            // 2. Fetch Marketing Campaigns (All for the list)
+            const { data: campaigns, error: campError } = await supabase
+                .from('marketing_campaigns')
+                .select('*')
+                .eq('tenant_id', currentTenant.id)
+                .order('created_at', { ascending: false });
+
+            if (campError) {
+                console.warn('Kampanyalar yüklenemedi (veya tablo yok):', campError);
+                // Kampanya tablosu yoksa bile devam edebiliriz (fallback)
+                setCampaignData([]);
+            } else if (campaigns) {
+                setCampaignData(campaigns);
+            }
+
+            const activeCampaignCount = campaigns?.filter(c => c.is_active).length || 0;
+
+            // 3. Fetch AI Segmentation (RFM Analysis)
             const { data: rfmData, error: rfmError } = await supabase
                 .rpc('get_customer_rfm_analysis', { target_tenant_id: currentTenant.id });
 
@@ -68,10 +89,10 @@ export default function CRMOverview({ showToast }: CRMOverviewProps) {
                 totalCustomers: total,
                 activeLoyaltyUsers: withPoints,
                 totalPointsIssued: totalPoints,
-                activeCampaigns: 3
+                activeCampaigns: activeCampaignCount
             });
 
-            // 3. Update Segments from RFM Data
+            // 4. Update Segments from RFM Data
             if (rfmData) {
                 const segmentCounts = rfmData.reduce((acc: any, curr: any) => {
                     acc[curr.segment] = (acc[curr.segment] || 0) + 1;
@@ -87,8 +108,9 @@ export default function CRMOverview({ showToast }: CRMOverviewProps) {
             }
 
         } catch (err: any) {
-            console.error('CRM verileri yüklenemedi:', err);
-            if (showToast) showToast("Veriler yüklenirken bir hata oluştu", "error");
+            console.error('CRM verileri yüklenemedi (tam hata):', err);
+            const errorMessage = err?.message || err?.details || String(err);
+            if (showToast) showToast(`Veri yükleme hatası: ${errorMessage}`, "error");
         } finally {
             setLoading(false);
         }
@@ -96,6 +118,35 @@ export default function CRMOverview({ showToast }: CRMOverviewProps) {
 
     useEffect(() => {
         loadData();
+
+        if (currentTenant) {
+            // Realtime subscriptions for CRM data
+            const channel = supabase
+                .channel(`crm_realtime_${currentTenant.id}`)
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'cari_hesaplar',
+                    filter: `tenant_id=eq.${currentTenant.id}`
+                }, () => loadData())
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'loyalty_points',
+                    filter: `tenant_id=eq.${currentTenant.id}`
+                }, () => loadData())
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'marketing_campaigns',
+                    filter: `tenant_id=eq.${currentTenant.id}`
+                }, () => loadData())
+                .subscribe();
+
+            return () => {
+                supabase.removeChannel(channel);
+            };
+        }
     }, [currentTenant]);
 
     return (
@@ -217,30 +268,34 @@ export default function CRMOverview({ showToast }: CRMOverviewProps) {
                             <tr>
                                 <th className="text-left pb-3">Kampanya</th>
                                 <th className="text-left pb-3">Kanal</th>
-                                <th className="text-left pb-3">Erişim</th>
-                                <th className="text-left pb-3">Dönüşüm</th>
-                                <th className="text-right pb-3">Durum</th>
+                                <th className="text-left pb-3">Tür</th>
+                                <th className="text-left pb-3">Durum</th>
                             </tr>
                         </thead>
                         <tbody className="text-white">
-                            <tr className="border-b border-white/5">
-                                <td className="py-3">Haftasonu İndirimi</td>
-                                <td className="py-3">SMS</td>
-                                <td className="py-3 font-mono text-blue-400">1,240</td>
-                                <td className="py-3 font-mono text-emerald-400">%8.2</td>
-                                <td className="py-3 text-right">
-                                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px]">Tamamlandı</span>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td className="py-3">Sadık Müşteri Puanı</td>
-                                <td className="py-3">Uygulama İçi</td>
-                                <td className="py-3 font-mono text-blue-400">450</td>
-                                <td className="py-3 font-mono text-emerald-400">%12.4</td>
-                                <td className="py-3 text-right">
-                                    <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 text-[10px]">Devam Ediyor</span>
-                                </td>
-                            </tr>
+                            {campaignData.length > 0 ? campaignData.slice(0, 5).map((camp: any) => (
+                                <tr key={camp.id} className="border-b border-white/5 last:border-0">
+                                    <td className="py-3 font-medium">{camp.name}</td>
+                                    <td className="py-3 text-secondary">
+                                        <span className="flex items-center gap-1.5 capitalize">
+                                            {camp.campaign_type === 'Discount' ? <Mail className="w-3 h-3" /> : <MessageSquare className="w-3 h-3" />}
+                                            Email / SMS
+                                        </span>
+                                    </td>
+                                    <td className="py-3 font-mono text-emerald-400">
+                                        {camp.campaign_type === 'Discount' ? `%${camp.discount_rate}` : `${camp.point_multiplier}x Puan`}
+                                    </td>
+                                    <td className="py-3 text-right">
+                                        <span className={`px-2 py-0.5 rounded-full text-[10px] ${camp.is_active ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-500/20 text-slate-400'}`}>
+                                            {camp.is_active ? 'Devam Ediyor' : 'Tamamlandı'}
+                                        </span>
+                                    </td>
+                                </tr>
+                            )) : (
+                                <tr>
+                                    <td colSpan={4} className="py-8 text-center text-secondary italic">Henüz bir faaliyet bulunmuyor.</td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>
