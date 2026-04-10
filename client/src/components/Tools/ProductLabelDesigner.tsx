@@ -164,7 +164,7 @@ function priceHtmlMm(cfg: LabelConfig, product: Product, pos: Pos): string {
 }
 
 /* ── Main Component ── */
-export default function ProductLabelDesigner({ products, showToast }: { products: Product[]; showToast: any }) {
+export default function ProductLabelDesigner({ products, showToast, printerName }: { products: Product[]; showToast: any; printerName?: string }) {
     const { currentTenant } = useTenant();
 
     /* ─ selection ─ */
@@ -399,26 +399,41 @@ div,span,p{color:#000!important}
 canvas{display:block}
 </style></head><body><div class="grid">${labelsHtml}</div>
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>
-<script>
-// JsBarcode yüklendikten sonra barcodeları render et, ardından yazdır
-function renderAndPrint() {
+// JsBarcode yüklendikten sonra barcodeları render et
+function renderBarcodes() {
     if (typeof JsBarcode === 'undefined') {
-        setTimeout(renderAndPrint, 200);
+        setTimeout(renderBarcodes, 200);
         return;
     }
     ${barcodeScripts.join('\n')}
-    // Barcodelar render edildikten sonra 400ms bekleyip yazdır
-    setTimeout(function(){ window.print(); }, 400);
 }
 // Script yüklenince başlat
 if (document.readyState === 'complete') {
-    setTimeout(renderAndPrint, 300);
+    renderBarcodes();
 } else {
-    window.addEventListener('load', function(){ setTimeout(renderAndPrint, 300); });
+    window.addEventListener('load', renderBarcodes);
 }
 <\/script></body></html>`;
 
-        // iframe ile yazdır (harici sayfa açılmaz)
+        // Sessiz Yazdırma (Electron ise)
+        if (window.require) {
+            try {
+                const { ipcRenderer } = window.require('electron');
+                ipcRenderer.send('silent-print', {
+                    html: fullHtml,
+                    printerName: printerName || "",
+                    width: isRotated ? cfg.heightMm : cfg.widthMm,
+                    height: isRotated ? cfg.widthMm : cfg.heightMm,
+                    delay: 600
+                });
+                showToast('Etiketler yazıcıya gönderildi (Sessiz)');
+                return;
+            } catch (e) {
+                console.error('Sessiz yazdırma hatası:', e);
+            }
+        }
+
+        // iframe ile yazdır (Electron değilse veya hata varsay)
         try {
             const iframe = document.createElement('iframe');
             iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:none;opacity:0;pointer-events:none;';

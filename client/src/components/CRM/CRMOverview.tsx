@@ -11,6 +11,7 @@ import { supabase } from "@/lib/supabase";
 import { useTenant } from "@/lib/tenant-context";
 
 interface CRMOverviewProps {
+    onTabChange?: (tabId: string) => void;
     showToast?: (message: string, type: "success" | "error" | "info" | "warning") => void;
 }
 
@@ -23,7 +24,7 @@ interface Segment {
     description: string;
 }
 
-export default function CRMOverview({ showToast }: CRMOverviewProps) {
+export default function CRMOverview({ onTabChange, showToast }: CRMOverviewProps) {
     const { currentTenant } = useTenant();
     const [loading, setLoading] = useState(false);
     const [stats, setStats] = useState({
@@ -214,10 +215,16 @@ export default function CRMOverview({ showToast }: CRMOverviewProps) {
                                     <span className="text-2xl font-bold text-white">{segment.count}</span>
                                 </div>
                                 <div className="mt-4 flex gap-2">
-                                    <button className="flex-1 py-1.5 bg-pink-600/20 hover:bg-pink-600/40 text-pink-400 text-xs rounded-md border border-pink-500/30 transition-all">
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); onTabChange?.('crm_campaigns'); }}
+                                        className="flex-1 py-1.5 bg-pink-600/20 hover:bg-pink-600/40 text-pink-400 text-xs rounded-md border border-pink-500/30 transition-all font-bold"
+                                    >
                                         Kampanya Hazırla
                                     </button>
-                                    <button className="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white text-xs rounded-md border border-white/10">
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); onTabChange?.('crm_segments'); }}
+                                        className="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white text-xs rounded-md border border-white/10 transition-all"
+                                    >
                                         Listele
                                     </button>
                                 </div>
@@ -239,12 +246,14 @@ export default function CRMOverview({ showToast }: CRMOverviewProps) {
                             title="VIP Geri Dönüş" 
                             desc="En çok harcama yapan 5 VIP müşterin 15 gündür gelmiyor." 
                             action="SMS Gönder"
+                            onClick={() => showToast?.("SMS Modülü hazırlanıyor...", "info")}
                         />
                         <RecommendationItem 
                             icon={TrendingUp} 
                             title="Çapraz Satış Fırsatı" 
                             desc="Et alan müşterilerin %40'ı sos almıyor. Soslarda kampanya yap!" 
                             action="Kampanya Kur"
+                            onClick={() => onTabChange?.('crm_campaigns')}
                         />
                         <RecommendationItem 
                             icon={Clock} 
@@ -324,9 +333,12 @@ function StatCard({ title, value, icon: Icon, color, trend }: any) {
     );
 }
 
-function RecommendationItem({ icon: Icon, title, desc, action }: any) {
+function RecommendationItem({ icon: Icon, title, desc, action, onClick }: any) {
     return (
-        <div className="glass-card p-3 bg-white/[0.02] border-white/5 hover:bg-white/[0.05] group transition-all">
+        <div 
+            onClick={onClick}
+            className="glass-card p-3 bg-white/[0.02] border-white/5 hover:bg-white/[0.05] group transition-all cursor-pointer"
+        >
             <div className="flex gap-3">
                 <div className="p-2 rounded-lg bg-pink-500/10 text-pink-400 flex-shrink-0">
                     <Icon className="w-5 h-5" />

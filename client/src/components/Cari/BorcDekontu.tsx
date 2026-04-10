@@ -11,6 +11,7 @@ interface BorcDekontuProps {
 
 interface DekontuKalem {
     id: string;
+    cariId: string;
     cariKodu: string;
     unvani: string;
     belgeTarihi: string;
@@ -20,6 +21,8 @@ interface DekontuKalem {
     hizKodu: string;
     hizAdi: string;
 }
+
+import CariSearchModal from "./CariSearchModal";
 
 export default function BorcDekontu({ showToast }: BorcDekontuProps) {
     const { currentTenant } = useTenant();
@@ -53,10 +56,14 @@ export default function BorcDekontu({ showToast }: BorcDekontuProps) {
         setFormData(prev => ({ ...prev, [field]: value }));
     }, []);
 
+    const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+    const [selectedKalemId, setSelectedKalemId] = useState<string | null>(null);
+
     // Yeni kalem ekle
     const addKalem = () => {
         const newKalem: DekontuKalem = {
             id: Date.now().toString(),
+            cariId: "",
             cariKodu: "",
             unvani: "",
             belgeTarihi: formData.fisTarihi,
@@ -99,6 +106,7 @@ export default function BorcDekontu({ showToast }: BorcDekontuProps) {
             // Her kalem için cari hareket oluştur
             const hareketler = kalemler.map(kalem => ({
                 tenant_id: currentTenant.id,
+                cari_id: kalem.cariId,
                 hareket_tipi: 'BORC_DEKONTU',
                 tarih: formData.fisTarihi,
                 vade_tarihi: kalem.belgeTarihi || formData.fisTarihi,
@@ -106,7 +114,6 @@ export default function BorcDekontu({ showToast }: BorcDekontuProps) {
                 aciklama: kalem.aciklama || formData.aciklama,
                 borc: kalem.tutar,
                 alacak: 0,
-                bakiye: kalem.tutar,
                 para_birimi: kalem.paraBirimi,
             }));
 
@@ -236,7 +243,10 @@ export default function BorcDekontu({ showToast }: BorcDekontuProps) {
                                     className="flex-1 bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded px-3 py-1.5 text-[var(--color-foreground)] text-sm placeholder:text-secondary/50"
                                     placeholder="Cari kodu..."
                                 />
-                                <button className="px-2 bg-white/5 hover:bg-white/10 border border-[var(--color-input-border)] rounded">
+                                <button 
+                                    onClick={() => { setSelectedKalemId(null); setIsSearchModalOpen(true); }}
+                                    className="px-2 bg-white/5 hover:bg-white/10 border border-[var(--color-input-border)] rounded transition-colors"
+                                >
                                     <Search className="w-4 h-4 text-secondary" />
                                 </button>
                             </div>
@@ -352,19 +362,29 @@ export default function BorcDekontu({ showToast }: BorcDekontuProps) {
                                     {kalemler.map((kalem, idx) => (
                                         <tr key={kalem.id} className="hover:bg-white/[0.02]">
                                             <td className="px-2 py-1">
-                                                <input
-                                                    type="text"
-                                                    value={kalem.cariKodu}
-                                                    onChange={(e) => updateKalem(kalem.id, 'cariKodu', e.target.value)}
-                                                    className="w-full bg-transparent border border-[var(--color-input-border)] rounded px-2 py-1 text-[var(--color-foreground)] text-xs focus:border-primary focus:outline-none"
-                                                />
+                                                <div className="flex gap-1">
+                                                    <input
+                                                        type="text"
+                                                        readOnly
+                                                        value={kalem.cariKodu}
+                                                        placeholder="Kodu..."
+                                                        className="w-full bg-white/5 border border-[var(--color-input-border)] rounded px-2 py-1 text-[var(--color-foreground)] text-xs focus:border-primary focus:outline-none cursor-default"
+                                                    />
+                                                    <button 
+                                                        onClick={() => { setSelectedKalemId(kalem.id); setIsSearchModalOpen(true); }}
+                                                        className="px-2 bg-primary/20 hover:bg-primary/30 border border-primary/30 rounded text-primary transition-colors"
+                                                    >
+                                                        <Search className="w-3 h-3" />
+                                                    </button>
+                                                </div>
                                             </td>
                                             <td className="px-2 py-1">
                                                 <input
                                                     type="text"
+                                                    readOnly
                                                     value={kalem.unvani}
-                                                    onChange={(e) => updateKalem(kalem.id, 'unvani', e.target.value)}
-                                                    className="w-full bg-transparent border border-[var(--color-input-border)] rounded px-2 py-1 text-[var(--color-foreground)] text-xs focus:border-primary focus:outline-none"
+                                                    placeholder="Cari Seçiniz..."
+                                                    className="w-full bg-white/5 border border-[var(--color-input-border)] rounded px-2 py-1 text-[var(--color-foreground)] text-xs focus:border-primary focus:outline-none cursor-default"
                                                 />
                                             </td>
                                             <td className="px-2 py-1">
@@ -499,6 +519,35 @@ export default function BorcDekontu({ showToast }: BorcDekontuProps) {
                     </div>
                 </div>
             </div>
+            <CariSearchModal
+                isOpen={isSearchModalOpen}
+                onClose={() => setIsSearchModalOpen(false)}
+                onSelect={(cari) => {
+                    if (selectedKalemId) {
+                        setKalemler(prev => prev.map(k => 
+                            k.id === selectedKalemId 
+                            ? { ...k, cariId: cari.id, cariKodu: cari.cari_kodu, unvani: cari.unvani } 
+                            : k
+                        ));
+                    } else {
+                        // Header search - add as new row
+                        const newKalem: DekontuKalem = {
+                            id: Date.now().toString(),
+                            cariId: cari.id,
+                            cariKodu: cari.cari_kodu,
+                            unvani: cari.unvani,
+                            belgeTarihi: formData.fisTarihi,
+                            aciklama: formData.aciklama,
+                            tutar: 0,
+                            paraBirimi: formData.paraBirimi || "TRY",
+                            hizKodu: "",
+                            hizAdi: "",
+                        } as any;
+                        setKalemler(prev => [...prev, newKalem]);
+                    }
+                    setIsSearchModalOpen(false);
+                }}
+            />
         </div>
     );
 }

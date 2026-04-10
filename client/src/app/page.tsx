@@ -86,6 +86,7 @@ export default function Home() {
   const [isAdisyonStoreSpecificEnabled, setIsAdisyonStoreSpecificEnabled] = useState(true);
   const [isAdisyonAutoOpenReservationEnabled, setIsAdisyonAutoOpenReservationEnabled] = useState(true);
   const [lowStockThreshold, setLowStockThreshold] = useState(10);
+  const [labelPrinterName, setLabelPrinterName] = useState("");
 
   // Fiş Özelleştirme Ayarları
   const [receiptSettings, setReceiptSettings] = useState({
@@ -739,6 +740,26 @@ export default function Home() {
       const { error: itemsError } = await supabase.from('sale_items').insert(saleItems);
       if (itemsError) throw itemsError;
 
+      // --- CRM ENTEGRASYONU (VERESİYE) ---
+      if (paymentMethod === "VERESİYE" && customerId) {
+        const { error: cariError } = await supabase
+          .from('cari_hareketler')
+          .insert([{
+            tenant_id: currentTenant!.id,
+            cari_id: customerId,
+            hareket_tipi: 'SATIS',
+            tarih: new Date().toISOString(),
+            belge_no: `POS-${sale.id}`,
+            aciklama: `${cartItems.length} kalem ürün satışı (Veresiye)`,
+            borc: totalAmount,
+            alacak: 0,
+            para_birimi: 'TRY'
+          }]);
+        
+        if (cariError) console.error("Cari hareket kaydı hatası:", cariError);
+      }
+      // -----------------------------------
+
       // --- TRENDYOL ENTEGRASYONU ---
       let trendyolClient: any = null;
       let mappings: any[] = [];
@@ -1044,6 +1065,8 @@ export default function Home() {
                 setCashDrawerPrinterName={setCashDrawerPrinterName}
                 receiptPrinterName={receiptPrinterName}
                 setReceiptPrinterName={setReceiptPrinterName}
+                labelPrinterName={labelPrinterName}
+                setLabelPrinterName={setLabelPrinterName}
                 isAdisyonStoreSpecificEnabled={isAdisyonStoreSpecificEnabled}
                 setIsAdisyonStoreSpecificEnabled={setIsAdisyonStoreSpecificEnabled}
                 isAdisyonAutoOpenReservationEnabled={isAdisyonAutoOpenReservationEnabled}
@@ -1238,7 +1261,7 @@ export default function Home() {
           {/* CRM & Sadakat Sayfaları */}
           {activeTab.startsWith("crm_") && (
             <div className="max-w-[1500px] mx-auto w-full">
-              <CRMPage pageId={activeTab} showToast={showToast} />
+              <CRMPage pageId={activeTab} onTabChange={setActiveTab} showToast={showToast} />
             </div>
           )}
 
@@ -1259,7 +1282,7 @@ export default function Home() {
           {/* Product Label Designer - Ürün Etiket Tasarımı */}
           {activeTab === "label_designer" && (
             <div className="max-w-[1500px] mx-auto w-full">
-              <ProductLabelDesigner products={products} showToast={showToast} />
+              <ProductLabelDesigner products={products} showToast={showToast} printerName={labelPrinterName || receiptPrinterName} />
             </div>
           )}
 

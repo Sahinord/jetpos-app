@@ -5,6 +5,7 @@ import {
     Search, RefreshCw, Download, Filter, Activity,
     ChevronLeft, ChevronRight, Calendar
 } from "lucide-react";
+import CariSearchModal from "./CariSearchModal";
 import { supabase } from "@/lib/supabase";
 import { useTenant } from "@/lib/tenant-context";
 
@@ -36,12 +37,16 @@ export default function HareketRaporu({ showToast }: HareketRaporuProps) {
     const [filters, setFilters] = useState({
         baslangicTarihi: new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0],
         bitisTarihi: new Date().toISOString().split('T')[0],
+        cariId: "",
         cariKodu: "",
+        unvani: "",
         hareketTipi: "all",
         belgeNo: "",
         paraBirimi: "TRY",
         vadeDurumu: "all",
     });
+
+    const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
 
     // Pagination
     const [currentPage, setCurrentPage] = useState(1);
@@ -71,6 +76,9 @@ export default function HareketRaporu({ showToast }: HareketRaporuProps) {
             }
             if (filters.belgeNo) {
                 query = query.ilike('belge_no', `%${filters.belgeNo}%`);
+            }
+            if (filters.cariId) {
+                query = query.eq('cari_id', filters.cariId);
             }
 
             const { data, error } = await query;
@@ -167,7 +175,9 @@ export default function HareketRaporu({ showToast }: HareketRaporuProps) {
                             onClick={() => setFilters({
                                 baslangicTarihi: new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0],
                                 bitisTarihi: new Date().toISOString().split('T')[0],
+                                cariId: "",
                                 cariKodu: "",
+                                unvani: "",
                                 hareketTipi: "all",
                                 belgeNo: "",
                                 paraBirimi: "TRY",
@@ -202,16 +212,24 @@ export default function HareketRaporu({ showToast }: HareketRaporuProps) {
                             </div>
                         </div>
 
-                        {/* Cari Kodu */}
+                        {/* Cari Seçimi */}
                         <div className="space-y-1">
-                            <label className="text-xs text-secondary">Cari Kodu</label>
-                            <input
-                                type="text"
-                                value={filters.cariKodu}
-                                onChange={(e) => updateFilter('cariKodu', e.target.value)}
-                                className="w-full bg-white/5 border border-white/10 rounded px-3 py-1.5 text-white text-sm"
-                                placeholder="Ara..."
-                            />
+                            <label className="text-xs text-secondary">Cari Hesap</label>
+                            <div className="flex gap-1">
+                                <input
+                                    type="text"
+                                    readOnly
+                                    value={filters.unvani || filters.cariKodu}
+                                    className="w-full bg-white/5 border border-white/10 rounded px-2 py-1.5 text-white text-[10px] focus:outline-none"
+                                    placeholder="Cari seç..."
+                                />
+                                <button
+                                    onClick={() => setIsSearchModalOpen(true)}
+                                    className="px-2 bg-orange-600/20 hover:bg-orange-600/30 border border-orange-600/30 rounded text-orange-500 transition-colors"
+                                >
+                                    <Search className="w-3 h-3" />
+                                </button>
+                            </div>
                         </div>
 
                         {/* Hareket Tipi */}
@@ -452,6 +470,19 @@ export default function HareketRaporu({ showToast }: HareketRaporuProps) {
                     </div>
                 </div>
             </div>
+            <CariSearchModal
+                isOpen={isSearchModalOpen}
+                onClose={() => setIsSearchModalOpen(false)}
+                onSelect={(cari) => {
+                    setFilters(prev => ({ 
+                        ...prev, 
+                        cariId: cari.id, 
+                        cariKodu: cari.cari_kodu, 
+                        unvani: cari.unvani 
+                    }));
+                    setIsSearchModalOpen(false);
+                }}
+            />
         </div>
     );
 }

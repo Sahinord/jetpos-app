@@ -7,17 +7,18 @@ import Campaigns from "./Campaigns";
 
 interface CRMPageProps {
     pageId: string;
+    onTabChange?: (tabId: string) => void;
     showToast?: (message: string, type: "success" | "error" | "info" | "warning") => void;
 }
 
-export default function CRMPage({ pageId, showToast }: CRMPageProps) {
+export default function CRMPage({ pageId, onTabChange, showToast }: CRMPageProps) {
     switch (pageId) {
         case "crm_overview":
-            return <CRMOverview showToast={showToast} />;
+            return <CRMOverview onTabChange={onTabChange} showToast={showToast} />;
         case "crm_segments":
-            return <Segments showToast={showToast} />;
+            return <Segments onTabChange={onTabChange} showToast={showToast} />;
         case "crm_campaigns":
-            return <Campaigns showToast={showToast} />;
+            return <Campaigns onTabChange={onTabChange} showToast={showToast} />;
         case "crm_loyalty":
             return (
                 <div className="glass-card p-12 text-center space-y-6 flex flex-col items-center justify-center min-h-[400px]">

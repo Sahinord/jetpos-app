@@ -27,7 +27,7 @@ interface Segment {
     icon?: any;
 }
 
-export default function Segments({ showToast }: { showToast?: any }) {
+export default function Segments({ onTabChange, showToast }: { onTabChange?: any, showToast?: any }) {
     const { currentTenant } = useTenant();
     const [segments, setSegments] = useState<Segment[]>([]);
     const [loading, setLoading] = useState(false);
@@ -159,10 +159,16 @@ export default function Segments({ showToast }: { showToast?: any }) {
                             </div>
 
                             <div className="mt-6 flex flex-wrap gap-2">
-                                <button className="flex-1 py-2 bg-pink-600/20 hover:bg-pink-600/40 text-pink-400 text-xs font-bold rounded-xl border border-pink-500/30 transition-all">
+                                <button 
+                                    onClick={() => onTabChange?.('crm_campaigns')}
+                                    className="flex-1 py-2 bg-pink-600/20 hover:bg-pink-600/40 text-pink-400 text-xs font-bold rounded-xl border border-pink-500/30 transition-all"
+                                >
                                     Kampanya Hazırla
                                 </button>
-                                <button className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-xs font-bold rounded-xl border border-white/10 transition-all group-hover:gap-3 flex items-center">
+                                <button 
+                                    onClick={() => onTabChange?.('crm_segments')}
+                                    className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-xs font-bold rounded-xl border border-white/10 transition-all group-hover:gap-3 flex items-center"
+                                >
                                     Listele <ChevronRight className="w-3 h-3 ml-1" />
                                 </button>
                             </div>

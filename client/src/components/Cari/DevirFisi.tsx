@@ -11,12 +11,15 @@ interface DevirFisiProps {
 
 interface DevirKalem {
     id: string;
+    cariId: string;
     cariKodu: string;
     unvani: string;
     aciklama: string;
     borcTutari: number;
     alacakTutari: number;
 }
+
+import CariSearchModal from "./CariSearchModal";
 
 export default function DevirFisi({ showToast }: DevirFisiProps) {
     const { currentTenant } = useTenant();
@@ -54,10 +57,14 @@ export default function DevirFisi({ showToast }: DevirFisiProps) {
         setFormData(prev => ({ ...prev, [field]: value }));
     }, []);
 
+    const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+    const [selectedKalemId, setSelectedKalemId] = useState<string | null>(null);
+
     // Yeni kalem ekle
     const addKalem = () => {
         const newKalem: DevirKalem = {
             id: Date.now().toString(),
+            cariId: "",
             cariKodu: "",
             unvani: "",
             aciklama: "Dönem başı devir",
@@ -103,19 +110,17 @@ export default function DevirFisi({ showToast }: DevirFisiProps) {
         setLoading(true);
         try {
             // Her kalem için cari hareket oluştur
-            const hareketler = kalemler
-                .filter(k => k.borcTutari > 0 || k.alacakTutari > 0)
-                .map(kalem => ({
-                    tenant_id: currentTenant.id,
-                    hareket_tipi: 'DEVIR',
-                    tarih: formData.fisTarihi,
-                    belge_no: formData.fisNo,
-                    aciklama: kalem.aciklama || 'Dönem başı devir',
-                    borc: kalem.borcTutari,
-                    alacak: kalem.alacakTutari,
-                    bakiye: kalem.borcTutari - kalem.alacakTutari,
-                    para_birimi: formData.paraBirimi,
-                }));
+            const hareketler = kalemler.map(kalem => ({
+                tenant_id: currentTenant.id,
+                cari_id: kalem.cariId,
+                hareket_tipi: 'DEVIR',
+                tarih: formData.fisTarihi,
+                belge_no: formData.fisNo,
+                aciklama: kalem.aciklama || "Dönem başı devir",
+                borc: kalem.borcTutari,
+                alacak: kalem.alacakTutari,
+                para_birimi: formData.paraBirimi,
+            }));
 
             const { error } = await supabase
                 .from('cari_hareketler')
@@ -242,7 +247,10 @@ export default function DevirFisi({ showToast }: DevirFisiProps) {
                                     className="flex-1 bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded px-3 py-1.5 text-[var(--color-foreground)] text-sm placeholder:text-secondary/50"
                                     placeholder="Cari kodu..."
                                 />
-                                <button className="px-2 bg-white/5 hover:bg-white/10 border border-[var(--color-input-border)] rounded">
+                                <button 
+                                    onClick={() => { setSelectedKalemId(null); setIsSearchModalOpen(true); }}
+                                    className="px-2 bg-white/5 hover:bg-white/10 border border-[var(--color-input-border)] rounded transition-colors"
+                                >
                                     <Search className="w-4 h-4 text-secondary" />
                                 </button>
                             </div>
@@ -363,21 +371,29 @@ export default function DevirFisi({ showToast }: DevirFisiProps) {
                                     {kalemler.map((kalem) => (
                                         <tr key={kalem.id} className="hover:bg-white/[0.02]">
                                             <td className="px-2 py-1">
-                                                <input
-                                                    type="text"
-                                                    value={kalem.cariKodu}
-                                                    onChange={(e) => updateKalem(kalem.id, 'cariKodu', e.target.value)}
-                                                    className="w-full bg-transparent border border-[var(--color-input-border)] rounded px-2 py-1.5 text-[var(--color-foreground)] text-xs focus:border-cyan-500 focus:outline-none"
-                                                    placeholder="Cari kodu..."
-                                                />
+                                                <div className="flex gap-1">
+                                                    <input
+                                                        type="text"
+                                                        readOnly
+                                                        value={kalem.cariKodu}
+                                                        placeholder="Kodu..."
+                                                        className="w-full bg-white/5 border border-[var(--color-input-border)] rounded px-2 py-1 text-[var(--color-foreground)] text-xs focus:border-primary focus:outline-none cursor-default"
+                                                    />
+                                                    <button 
+                                                        onClick={() => { setSelectedKalemId(kalem.id); setIsSearchModalOpen(true); }}
+                                                        className="px-2 bg-primary/20 hover:bg-primary/30 border border-primary/30 rounded text-primary transition-colors"
+                                                    >
+                                                        <Search className="w-3 h-3" />
+                                                    </button>
+                                                </div>
                                             </td>
                                             <td className="px-2 py-1">
                                                 <input
                                                     type="text"
+                                                    readOnly
                                                     value={kalem.unvani}
-                                                    onChange={(e) => updateKalem(kalem.id, 'unvani', e.target.value)}
-                                                    className="w-full bg-transparent border border-[var(--color-input-border)] rounded px-2 py-1.5 text-[var(--color-foreground)] text-xs focus:border-cyan-500 focus:outline-none"
-                                                    placeholder="Ünvan..."
+                                                    placeholder="Cari Seçiniz..."
+                                                    className="w-full bg-white/5 border border-[var(--color-input-border)] rounded px-2 py-1 text-[var(--color-foreground)] text-xs focus:border-primary focus:outline-none cursor-default"
                                                 />
                                             </td>
                                             <td className="px-2 py-1">
@@ -495,6 +511,32 @@ export default function DevirFisi({ showToast }: DevirFisiProps) {
                     </div>
                 </div>
             </div>
+            <CariSearchModal
+                isOpen={isSearchModalOpen}
+                onClose={() => setIsSearchModalOpen(false)}
+                onSelect={(cari) => {
+                    if (selectedKalemId) {
+                        setKalemler(prev => prev.map(k => 
+                            k.id === selectedKalemId 
+                            ? { ...k, cariId: cari.id, cariKodu: cari.cari_kodu, unvani: cari.unvani } 
+                            : k
+                        ));
+                    } else {
+                        // Header search - add as new row
+                        const newKalem: DevirKalem = {
+                            id: Date.now().toString(),
+                            cariId: cari.id,
+                            cariKodu: cari.cari_kodu,
+                            unvani: cari.unvani,
+                            aciklama: "Dönem başı devir",
+                            borcTutari: 0,
+                            alacakTutari: 0,
+                        };
+                        setKalemler(prev => [...prev, newKalem]);
+                    }
+                    setIsSearchModalOpen(false);
+                }}
+            />
         </div>
     );
 }

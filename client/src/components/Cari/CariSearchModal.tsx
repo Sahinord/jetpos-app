@@ -9,9 +9,10 @@ interface CariSearchModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSelect: (cari: any) => void;
+    title?: string;
 }
 
-export default function CariSearchModal({ isOpen, onClose, onSelect }: CariSearchModalProps) {
+export default function CariSearchModal({ isOpen, onClose, onSelect, title = "Cari Seçimi" }: CariSearchModalProps) {
     const { currentTenant } = useTenant();
     const [searchTerm, setSearchTerm] = useState("");
     const [loading, setLoading] = useState(false);
@@ -63,7 +64,7 @@ export default function CariSearchModal({ isOpen, onClose, onSelect }: CariSearc
                 <div className="flex items-center justify-between p-4 border-b border-white/10 bg-white/5">
                     <div className="flex items-center gap-2">
                         <Users className="w-5 h-5 text-primary" />
-                        <h2 className="text-white font-bold text-lg tracking-tight">Cari Seçimi</h2>
+                        <h2 className="text-white font-bold text-lg tracking-tight">{title}</h2>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors text-secondary hover:text-white">
                         <X className="w-5 h-5" />
@@ -118,14 +119,30 @@ export default function CariSearchModal({ isOpen, onClose, onSelect }: CariSearc
                                         </td>
                                         <td className="px-4 py-3">
                                             <div className="flex flex-col">
-                                                <span className="text-white font-medium">{cari.unvani}</span>
-                                                <span className="text-[10px] text-secondary">{cari.vergi_no || 'Vergi No Yok'}</span>
+                                                <span className="text-white font-medium group-hover:text-primary transition-colors">{cari.unvani}</span>
+                                                <div className="flex items-center gap-2 mt-0.5">
+                                                    <span className="text-[9px] text-secondary/60 bg-white/5 px-1.5 py-0.5 rounded font-mono uppercase tracking-tighter">
+                                                        {cari.cari_kodu}
+                                                    </span>
+                                                    {cari.vergi_no && (
+                                                        <span className="text-[9px] text-secondary/60">
+                                                            {cari.vergi_no}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                         </td>
                                         <td className="px-4 py-3 text-right">
-                                            <span className={`font-mono font-bold ${cari.bakiye >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                                {Number(cari.bakiye || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
-                                            </span>
+                                            <div className="flex flex-col items-end">
+                                                <span className={`font-mono font-bold text-sm ${cari.bakiye >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                                    {Number(cari.bakiye || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
+                                                </span>
+                                                {cari.loyalty_points_total !== undefined && (
+                                                    <span className="text-[8px] font-black text-amber-500 uppercase tracking-widest mt-0.5">
+                                                        Puan: {Number(cari.loyalty_points_total).toLocaleString('tr-TR')}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

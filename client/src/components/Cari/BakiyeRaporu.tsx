@@ -94,8 +94,9 @@ export default function BakiyeRaporu({ showToast }: BakiyeRaporuProps) {
 
             setCariler(filteredData);
         } catch (err: any) {
-            console.error('Bakiye raporu yüklenemedi:', err);
-            showToast?.("Hata: " + err.message, "error");
+            console.error('Bakiye raporu yüklenemedi (Detay):', err);
+            const detail = err.message || err.details || JSON.stringify(err);
+            showToast?.("Rapor Yükleme Hatası: " + detail, "error");
         } finally {
             setLoading(false);
         }
