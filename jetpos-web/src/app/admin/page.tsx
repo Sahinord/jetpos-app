@@ -116,7 +116,8 @@ export default function AdminPage() {
             ai_features: true
         },
         custom_logo_url: "",
-        branding_config: { primary_color: "#3b82f6", hide_jetpos_badge: false }
+        branding_config: { primary_color: "#3b82f6", hide_jetpos_badge: false },
+        max_stores: 1
     });
 
     // Edit license state
@@ -765,6 +766,17 @@ export default function AdminPage() {
                                             </div>
                                         </div>
                                     </div>
+
+                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+                                        <div style={{ background: "rgba(0,0,0,0.2)", borderRadius: "0.75rem", padding: "0.75rem", border: "1px solid rgba(255,255,255,0.05)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                                            <span style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.3)", textTransform: "uppercase", fontWeight: 700 }}>Mağaza Limiti</span>
+                                            <span style={{ fontSize: "1rem", fontWeight: 800, color: "white" }}>{l.max_stores || 1} Adet</span>
+                                        </div>
+                                        <div style={{ background: "rgba(0,0,0,0.2)", borderRadius: "0.75rem", padding: "0.75rem", border: "1px solid rgba(255,255,255,0.05)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                                            <span style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.3)", textTransform: "uppercase", fontWeight: 700 }}>Plan</span>
+                                            <span style={{ fontSize: "1rem", fontWeight: 800, color: "#60a5fa" }}>{l.plan_type}</span>
+                                        </div>
+                                    </div>
                                 </motion.div>
                             ))}
                         </div>
@@ -806,7 +818,16 @@ export default function AdminPage() {
                                             </div>
                                         </div>
                                         </div>
-                                        <input type="number" placeholder="Gün SayÄ±sÄ±" value={newLicenseData.total_days} onChange={e => setNewLicenseData({ ...newLicenseData, total_days: parseInt(e.target.value) })} style={{ padding: "0.75rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }} />
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                                            <div>
+                                                <label style={{ display: "block", fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", marginBottom: "0.5rem", fontWeight: 600 }}>Gün SayÄ±sÄ±</label>
+                                                <input type="number" placeholder="Gün SayÄ±sÄ±" value={newLicenseData.total_days} onChange={e => setNewLicenseData({ ...newLicenseData, total_days: parseInt(e.target.value) })} style={{ width: "100%", padding: "0.75rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }} />
+                                            </div>
+                                            <div>
+                                                <label style={{ display: "block", fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", marginBottom: "0.5rem", fontWeight: 600 }}>Mağaza Limiti</label>
+                                                <input type="number" placeholder="Mağaza SayÄ±sÄ±" value={newLicenseData.max_stores} onChange={e => setNewLicenseData({ ...newLicenseData, max_stores: parseInt(e.target.value) })} style={{ width: "100%", padding: "0.75rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }} />
+                                            </div>
+                                        </div>
                                         <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
                                             <button type="button" onClick={() => setShowNewLicense(false)} style={{ flex: 1, padding: "0.75rem", borderRadius: "0.75rem", border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "white", cursor: "pointer" }}>İptal</button>
                                             <button type="submit" style={{ flex: 1, padding: "0.75rem", borderRadius: "0.75rem", background: "#2563eb", border: "none", color: "white", fontWeight: 700, cursor: "pointer" }}>Kaydet</button>
@@ -862,6 +883,16 @@ export default function AdminPage() {
                                                 <label style={{ display: "block", fontSize: "0.7rem", color: "rgba(255,255,255,0.5)", marginBottom: "0.75rem", fontWeight: 800, textTransform: "uppercase" }}>Enterprise (Markalama)</label>
                                                 <input placeholder="Logo URL" value={editingLicense.custom_logo_url || ""} onChange={e => setEditingLicense({ ...editingLicense, custom_logo_url: e.target.value })} style={{ width: "100%", padding: "0.5rem", background: "rgba(30,41,59,0.5)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white", fontSize: "0.8rem", marginBottom: "0.5rem" }} />
                                                 <input placeholder="Birincil Renk" value={editingLicense.branding_config?.primary_color || ""} onChange={e => setEditingLicense({ ...editingLicense, branding_config: { ...editingLicense.branding_config, primary_color: e.target.value } })} style={{ width: "100%", padding: "0.5rem", background: "rgba(30,41,59,0.5)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white", fontSize: "0.8rem" }} />
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                                            <div>
+                                                <label style={{ display: "block", fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", marginBottom: "0.35rem", fontWeight: 600 }}>Mağaza Limiti</label>
+                                                <input type="number" value={editingLicense.max_stores || 1} onChange={e => setEditingLicense({ ...editingLicense, max_stores: parseInt(e.target.value) })} style={{ width: "100%", padding: "0.7rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem", color: "white" }} />
+                                            </div>
+                                            <div>
+                                                {/* Gelecekte eklemek için boÅŸluk */}
                                             </div>
                                         </div>
 

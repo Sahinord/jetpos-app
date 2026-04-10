@@ -14,6 +14,7 @@ interface Tenant {
     settings?: any;
     openrouter_api_key?: string;
     expires_at?: string;
+    max_stores?: number;
 }
 
 interface Warehouse {

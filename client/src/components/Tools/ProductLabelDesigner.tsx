@@ -400,10 +400,22 @@ canvas{display:block}
 </style></head><body><div class="grid">${labelsHtml}</div>
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>
 <script>
-window.onload=function(){
-${barcodeScripts.join('\n')}
-setTimeout(function(){window.print();},600);
-};
+// JsBarcode yüklendikten sonra barcodeları render et, ardından yazdır
+function renderAndPrint() {
+    if (typeof JsBarcode === 'undefined') {
+        setTimeout(renderAndPrint, 200);
+        return;
+    }
+    ${barcodeScripts.join('\n')}
+    // Barcodelar render edildikten sonra 400ms bekleyip yazdır
+    setTimeout(function(){ window.print(); }, 400);
+}
+// Script yüklenince başlat
+if (document.readyState === 'complete') {
+    setTimeout(renderAndPrint, 300);
+} else {
+    window.addEventListener('load', function(){ setTimeout(renderAndPrint, 300); });
+}
 <\/script></body></html>`;
 
         // iframe ile yazdır (harici sayfa açılmaz)
@@ -417,20 +429,11 @@ setTimeout(function(){window.print();},600);
                 doc.open();
                 doc.write(fullHtml);
                 doc.close();
-
-                // JsBarcode CDN yüklenmesi + render için bekle
+                showToast('Etiketler hazırlanıyor...');
+                // Otomatik temizleme (yazdırma bitince)
                 setTimeout(() => {
-                    try {
-                        iframe.contentWindow?.print();
-                    } catch (e) {
-                        console.error('Print error:', e);
-                        showToast('Yazdırma hatası oluştu', 'error');
-                    }
-                    showToast('Etiket yazdırma penceresi açıldı');
-                    setTimeout(() => {
-                        try { document.body.removeChild(iframe); } catch {}
-                    }, 5000);
-                }, 1500);
+                    try { document.body.removeChild(iframe); } catch {}
+                }, 15000);
             } else {
                 showToast('İframe oluşturulamadı', 'error');
             }
@@ -438,6 +441,7 @@ setTimeout(function(){window.print();},600);
             showToast('Yazdırma hatası oluştu', 'error');
         }
     };
+
 
     /* ─ utils ─ */
     const filtered = products.filter(p =>

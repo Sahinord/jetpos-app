@@ -119,6 +119,13 @@ export default function KasaTanitim({ showToast }: KasaTanitimProps) {
                 if (error) throw error;
                 showToast?.("Kasa güncellendi", "success");
             } else {
+                // Mağaza/Kasa Limit Kontrolü
+                if (currentTenant && currentTenant.max_stores && kasaCount >= currentTenant.max_stores) {
+                    showToast?.(`Lisans limitinize ulaştınız (${currentTenant.max_stores} Mağaza/Kasa). Lütfen paketinizi yükseltin.`, "warning");
+                    setLoading(false);
+                    return;
+                }
+
                 const { error } = await supabase.from('kasa_tanimlari').insert([dbData]);
                 if (error) throw error;
                 showToast?.("Kasa başarıyla oluşturuldu", "success");

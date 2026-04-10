@@ -37,7 +37,9 @@ export async function GET(req: NextRequest) {
                 created_at,
                 expires_at,
                 custom_logo_url,
-                branding_config
+                branding_config,
+                max_stores,
+                max_online_stores
             `)
             .order("created_at", { ascending: false });
         
@@ -50,7 +52,9 @@ export async function GET(req: NextRequest) {
             user_email: t.contact_email,
             // total_days (güncel kalan gün) hesapla
             total_days: t.expires_at ? Math.max(0, Math.ceil((new Date(t.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : 0,
-            plan_type: t.features?.enterprise ? "ENTERPRISE" : (t.features?.pro ? "PRO" : "BASIC")
+            plan_type: t.features?.enterprise ? "ENTERPRISE" : (t.features?.pro ? "PRO" : "BASIC"),
+            max_stores: t.max_stores || 1,
+            max_online_stores: t.max_online_stores || 0
         }));
 
         return NextResponse.json(mappedData);
@@ -85,7 +89,9 @@ export async function POST(req: NextRequest) {
             expires_at: expiry.toISOString(),
             created_at: new Date().toISOString(),
             custom_logo_url: body.custom_logo_url || null,
-            branding_config: body.branding_config || {}
+            branding_config: body.branding_config || {},
+            max_stores: body.max_stores || 1,
+            max_online_stores: body.max_online_stores || 0
         };
 
         const { data, error } = await sb
@@ -103,8 +109,10 @@ export async function POST(req: NextRequest) {
             user_email: body.user_email,
             plan_type: body.plan_type || "PRO",
             total_days: body.total_days || 365,
-            features: body.features || {},
-            download_link: body.download_link
+            features: body.features || { pos: true, products: true },
+            download_link: body.download_link,
+            max_stores: body.max_stores || 1,
+            max_online_stores: body.max_online_stores || 0
         }]);
 
         return NextResponse.json(data, { status: 201 });
@@ -132,6 +140,8 @@ export async function PATCH(req: NextRequest) {
         if (body.expires_at) updateData.expires_at = body.expires_at;
         if (body.custom_logo_url !== undefined) updateData.custom_logo_url = body.custom_logo_url;
         if (body.branding_config !== undefined) updateData.branding_config = body.branding_config;
+        if (body.max_stores !== undefined) updateData.max_stores = body.max_stores;
+        if (body.max_online_stores !== undefined) updateData.max_online_stores = body.max_online_stores;
 
         const { data, error } = await sb
             .from("tenants")
@@ -149,7 +159,9 @@ export async function PATCH(req: NextRequest) {
                 user_email: body.user_email || data.contact_email,
                 features: body.features || data.features,
                 download_link: body.download_link || data.download_link,
-                plan_type: body.plan_type || (data.features?.enterprise ? "ENTERPRISE" : (data.features?.pro ? "PRO" : "BASIC"))
+                plan_type: body.plan_type || (data.features?.enterprise ? "ENTERPRISE" : (data.features?.pro ? "PRO" : "BASIC")),
+                max_stores: body.max_stores !== undefined ? body.max_stores : data.max_stores,
+                max_online_stores: body.max_online_stores !== undefined ? body.max_online_stores : data.max_online_stores
             }).eq("license_key", data.license_key);
         }
 

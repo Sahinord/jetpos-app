@@ -14,6 +14,7 @@ interface Tenant {
     features: any;
     settings?: any;
     openrouter_api_key?: string;
+    max_stores?: number;
     created_at: string;
 }
 
@@ -215,6 +216,8 @@ export default function SuperAdmin() {
                     logo_url: editingTenant.logo_url,
                     features: editingTenant.features,
                     openrouter_api_key: editingTenant.openrouter_api_key,
+                    max_stores: editingTenant.max_stores || 1,
+                    max_online_stores: editingTenant.max_online_stores || 0,
                     status: editingTenant.status
                 })
                 .eq('id', editingTenant.id);
@@ -259,10 +262,12 @@ export default function SuperAdmin() {
             logo_url: null,
             status: 'active',
             contact_email: '',
-            features: {
+                features: {
                 pos: true,
                 products: true
             },
+            max_stores: 1,
+            max_online_stores: 0,
             created_at: new Date().toISOString()
         });
     };
@@ -281,6 +286,8 @@ export default function SuperAdmin() {
                     contact_email: editingTenant.contact_email,
                     features: editingTenant.features,
                     openrouter_api_key: editingTenant.openrouter_api_key,
+                    max_stores: editingTenant.max_stores || 1,
+                    max_online_stores: editingTenant.max_online_stores || 0,
                     status: editingTenant.status
                 }]);
 
@@ -1003,6 +1010,28 @@ export default function SuperAdmin() {
                                         <option value="expired">Süresi Dolmuş</option>
                                     </select>
                                 </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Fiziksel Mağaza Limiti</label>
+                                        <input 
+                                            type="number" 
+                                            value={editingTenant.max_stores || 1} 
+                                            onChange={(e) => setEditingTenant({ ...editingTenant, max_stores: parseInt(e.target.value) || 1 })} 
+                                            className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl text-white focus:border-primary/50 outline-none" 
+                                            min="1"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Online Mağaza Limiti</label>
+                                        <input 
+                                            type="number" 
+                                            value={editingTenant.max_online_stores || 0} 
+                                            onChange={(e) => setEditingTenant({ ...editingTenant, max_online_stores: parseInt(e.target.value) || 0 })} 
+                                            className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl text-white focus:border-indigo-500/50 outline-none" 
+                                            min="0"
+                                        />
+                                    </div>
+                                </div>
                                 <div className="space-y-2 md:col-span-2">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 flex items-center gap-2">
                                         <Sparkles className="w-3 h-3 text-purple-400" />
@@ -1550,7 +1579,13 @@ export default function SuperAdmin() {
                         <div className="sticky top-0 bg-slate-900/80 backdrop-blur-md border-b border-white/10 p-8 flex items-center justify-between z-10">
                             <div>
                                 <h3 className="text-2xl font-black text-white">{warehouseModal.tenantName} - Mağaza/Depo Yönetimi</h3>
-                                <p className="text-xs text-slate-500 mt-1 uppercase tracking-widest font-bold font-mono">ID: {warehouseModal.tenantId}</p>
+                                <div className="flex items-center gap-4 mt-1">
+                                    <p className="text-xs text-slate-500 uppercase tracking-widest font-bold font-mono">ID: {warehouseModal.tenantId}</p>
+                                    <span className="w-1 h-1 bg-slate-700 rounded-full" />
+                                    <p className="text-xs font-black text-indigo-400 uppercase tracking-widest">
+                                        Limit: {warehousesList.length} / {tenants.find(t => t.id === warehouseModal.tenantId)?.max_stores || 1}
+                                    </p>
+                                </div>
                             </div>
                             <button onClick={() => setWarehouseModal(null)} className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-all">
                                 <X className="w-6 h-6 text-slate-400" />
@@ -1558,44 +1593,95 @@ export default function SuperAdmin() {
                         </div>
 
                         <div className="p-8 flex-1">
-                            <div className="grid grid-cols-1 gap-4">
-                                <button
-                                    onClick={() => setEditingWarehouse({ name: '', code: '', type: 'store', address: '', is_default: false })}
-                                    className="flex items-center justify-center gap-2 p-4 bg-primary/10 border border-primary/20 hover:bg-primary/20 text-primary rounded-2xl font-bold transition-all mb-4"
-                                >
-                                    <Plus className="w-5 h-5" />
-                                    Yeni Mağaza/Depo Ekle
-                                </button>
-
-                                {warehousesList.map(w => (
-                                    <div key={w.id} className="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center">
-                                                <Home className="w-6 h-6 text-indigo-400" />
-                                            </div>
-                                            <div>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-white font-bold">{w.name}</span>
-                                                    {w.is_default && <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 rounded text-[10px] uppercase font-black">Varsayılan</span>}
+                            {/* Fiziksel Mağazalar Bölümü */}
+                            <div className="mb-10">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                        <Building2 className="w-4 h-4" /> Fiziksel Mağazalar & Depolar
+                                    </h4>
+                                    <span className="text-[10px] font-black px-2 py-1 bg-white/5 rounded-lg text-slate-500">
+                                        {warehousesList.filter(w => w.type !== 'virtual').length} / {tenants.find(t => t.id === warehouseModal.tenantId)?.max_stores || 1}
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-1 gap-3">
+                                    {warehousesList.filter(w => w.type !== 'virtual').map(w => (
+                                        <div key={w.id} className="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between group">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center">
+                                                    <Home className="w-5 h-5 text-indigo-400" />
                                                 </div>
-                                                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">{w.type === 'store' ? 'Mağaza' : 'Depo'} | {w.code || 'Kodsuz'}</p>
+                                                <div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-white font-bold">{w.name}</span>
+                                                        {w.is_default && <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 rounded text-[8px] uppercase font-black">Varsayılan</span>}
+                                                    </div>
+                                                    <p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">{w.type === 'store' ? 'Mağaza' : 'Depo'} | {w.code || 'Kodsuz'}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                                <button onClick={() => setEditingWarehouse(w)} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition-all">
+                                                    <Edit className="w-4 h-4" />
+                                                </button>
+                                                <button onClick={() => handleDeleteWarehouse(w.id)} className="p-2 hover:bg-rose-500/10 rounded-lg text-slate-400 hover:text-rose-500 transition-all">
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
                                             </div>
                                         </div>
-                                        <div className="flex gap-2">
-                                            <button onClick={() => setEditingWarehouse(w)} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition-all">
-                                                <Edit className="w-4 h-4" />
-                                            </button>
-                                            <button onClick={() => handleDeleteWarehouse(w.id)} className="p-2 hover:bg-rose-500/10 rounded-lg text-slate-400 hover:text-rose-500 transition-all">
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-
-                                {warehousesList.length === 0 && !loading && (
-                                    <div className="text-center py-12 text-slate-600">Henüz mağaza bulunmuyor.</div>
-                                )}
+                                    ))}
+                                </div>
                             </div>
+
+                            {/* Online Mağazalar Bölümü */}
+                            <div className="mb-8">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h4 className="text-sm font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">
+                                        <Globe className="w-4 h-4" /> Online Mağazalar (Trendyol vb.)
+                                    </h4>
+                                    <span className="text-[10px] font-black px-2 py-1 bg-indigo-500/10 rounded-lg text-indigo-400">
+                                        {warehousesList.filter(w => w.type === 'virtual').length} / {tenants.find(t => t.id === warehouseModal.tenantId)?.max_online_stores || 0}
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-1 gap-3">
+                                    {warehousesList.filter(w => w.type === 'virtual').map(w => (
+                                        <div key={w.id} className="p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl flex items-center justify-between group">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center">
+                                                    <Globe className="w-5 h-5 text-indigo-400" />
+                                                </div>
+                                                <div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-white font-bold">{w.name}</span>
+                                                    </div>
+                                                    <p className="text-[9px] text-indigo-400/50 uppercase tracking-widest font-bold">Virtual Store | {w.code || 'KODSUZ'}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                                <button onClick={() => setEditingWarehouse(w)} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition-all">
+                                                    <Edit className="w-4 h-4" />
+                                                </button>
+                                                <button onClick={() => handleDeleteWarehouse(w.id)} className="p-2 hover:bg-rose-500/10 rounded-lg text-slate-400 hover:text-rose-500 transition-all">
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    <button
+                                        onClick={() => setEditingWarehouse({ name: '', code: '', type: 'virtual', address: '', is_default: false })}
+                                        className="flex items-center justify-center gap-2 p-4 bg-white/5 border border-dashed border-white/10 hover:bg-white/10 text-slate-400 rounded-2xl font-bold transition-all"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                        Yeni Online Mağaza Ekle
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={() => setEditingWarehouse({ name: '', code: '', type: 'store', address: '', is_default: false })}
+                                className="w-full flex items-center justify-center gap-2 p-4 bg-primary text-white rounded-2xl font-black transition-all shadow-lg shadow-primary/20 hover:scale-[1.01]"
+                            >
+                                <Plus className="w-5 h-5" />
+                                Yeni Fiziksel Mağaza / Depo Ekle
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1630,8 +1716,9 @@ export default function SuperAdmin() {
                                         onChange={e => setEditingWarehouse({ ...editingWarehouse, type: e.target.value })}
                                         className="w-full px-5 py-3 bg-black/40 border border-white/10 rounded-xl text-white outline-none focus:border-primary/50"
                                     >
-                                        <option value="store">Mağaza</option>
+                                        <option value="store">Fiziksel Mağaza</option>
                                         <option value="warehouse">Depo</option>
+                                        <option value="virtual">Online Mağaza (Trendyol vb.)</option>
                                     </select>
                                 </div>
                                 <div className="space-y-2">

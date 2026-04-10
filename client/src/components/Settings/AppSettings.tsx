@@ -19,6 +19,7 @@ export default function AppSettings({
     isWarehouseStockDeductionEnabled, setIsWarehouseStockDeductionEnabled,
     isCashDrawerEnabled, setIsCashDrawerEnabled,
     cashDrawerPrinterName, setCashDrawerPrinterName,
+    receiptPrinterName, setReceiptPrinterName,
     isAdisyonStoreSpecificEnabled, setIsAdisyonStoreSpecificEnabled,
     isAdisyonAutoOpenReservationEnabled, setIsAdisyonAutoOpenReservationEnabled,
     currentTenant,
@@ -211,7 +212,58 @@ export default function AppSettings({
                                     </p>
                                 </div>
                             )}
+
+                            {/* FİŞ YAZICISI SEÇİMİ */}
+                            <div className="flex items-center justify-between p-4 bg-primary/5 rounded-2xl border border-border">
+                                <div className="flex items-center gap-4">
+                                    <div className="p-3 bg-emerald-500/10 rounded-xl">
+                                        <Printer className="text-emerald-500" />
+                                    </div>
+                                    <div>
+                                        <div className="font-black text-sm uppercase tracking-wider text-foreground">FİŞ YAZICISI</div>
+                                        <div className="text-[10px] text-secondary font-bold">Satış fişleri için kullanılacak yazıcı</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="p-4 bg-primary/5 rounded-2xl border border-border space-y-2">
+                                <div className="flex items-center justify-between gap-4">
+                                    <div className="flex-1 space-y-2">
+                                        <label className="text-[10px] font-black text-secondary tracking-widest uppercase">FİŞ YAZICI ADI</label>
+                                        <input
+                                            type="text"
+                                            value={receiptPrinterName || ""}
+                                            onChange={(e) => setReceiptPrinterName(e.target.value)}
+                                            placeholder="Örn: Epson TM-T20, Rongta RP80"
+                                            className="w-full bg-card border border-border rounded-xl px-4 py-3 text-xs font-bold text-foreground outline-none focus:border-primary transition-all"
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            if (!receiptPrinterName) return showToast("Önce yazıcı adını giriniz", "error");
+                                            if (window.require) {
+                                                try {
+                                                    const { ipcRenderer } = window.require('electron');
+                                                    ipcRenderer.send('test-receipt-printer', { printerName: receiptPrinterName });
+                                                    showToast("Test fişi gönderildi: " + receiptPrinterName, "info");
+                                                } catch (err) {
+                                                    showToast("Test işlemi başarısız", "error");
+                                                }
+                                            } else {
+                                                showToast("Test: " + receiptPrinterName + " seçildi", "info");
+                                            }
+                                        }}
+                                        className="px-6 py-3 self-end bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 rounded-xl text-[10px] font-black text-emerald-500 transition-all active:scale-95"
+                                    >
+                                        TEST ET
+                                    </button>
+                                </div>
+                                <p className="text-[9px] text-secondary/60 italic mt-1 font-medium leading-relaxed uppercase">
+                                    * Fiş yazdırmak için sisteme tanımlı termal yazıcı adını girin (Windows Yazıcılar'daki isim).
+                                </p>
+                            </div>
                         </div>
+
                     </div>
                 </motion.div>
 

@@ -105,7 +105,7 @@ function createWindow() {
     });
 
     // --- SESSİZ FİŞ YAZDIRMA (SILENT PRINT - DIŞ PENCERE AÇMAZ) ---
-    ipcMain.on('silent-print-receipt', (event, { html }) => {
+    ipcMain.on('silent-print-receipt', (event, { html, printerName }) => {
         const printWin = new BrowserWindow({
             show: false,
             width: 302, // 80mm ≈ 302px @ 96dpi
@@ -121,6 +121,7 @@ function createWindow() {
         printWin.webContents.on('did-finish-load', () => {
             printWin.webContents.print({
                 silent: true,
+                deviceName: printerName || "", // Belirtilen yazıcıyı kullan
                 printBackground: true,
                 margins: { marginType: 'none' },
                 pageSize: { width: 80000, height: 297000 }, // 80mm x ~300mm in microns

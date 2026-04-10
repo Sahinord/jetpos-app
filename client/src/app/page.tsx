@@ -81,6 +81,7 @@ export default function Home() {
   const [clearAllConfirmationText, setClearAllConfirmationText] = useState("");
   const [isCashDrawerEnabled, setIsCashDrawerEnabled] = useState(false);
   const [cashDrawerPrinterName, setCashDrawerPrinterName] = useState("");
+  const [receiptPrinterName, setReceiptPrinterName] = useState("");
   const [adisyonCart, setAdisyonCart] = useState<any[]>([]);
   const [isAdisyonStoreSpecificEnabled, setIsAdisyonStoreSpecificEnabled] = useState(true);
   const [isAdisyonAutoOpenReservationEnabled, setIsAdisyonAutoOpenReservationEnabled] = useState(true);
@@ -191,6 +192,9 @@ export default function Home() {
     const savedPrinterName = localStorage.getItem('cashDrawerPrinterName');
     if (savedPrinterName) setCashDrawerPrinterName(savedPrinterName);
 
+    const savedReceiptPrinterName = localStorage.getItem('receiptPrinterName');
+    if (savedReceiptPrinterName) setReceiptPrinterName(savedReceiptPrinterName);
+
     const savedAdisyonStoreSpecific = localStorage.getItem('isAdisyonStoreSpecificEnabled');
     if (savedAdisyonStoreSpecific !== null) setIsAdisyonStoreSpecificEnabled(savedAdisyonStoreSpecific === 'true');
 
@@ -228,11 +232,12 @@ export default function Home() {
     localStorage.setItem('isWarehouseStockDeductionEnabled', isWarehouseStockDeductionEnabled.toString());
     localStorage.setItem('isCashDrawerEnabled', isCashDrawerEnabled.toString());
     localStorage.setItem('cashDrawerPrinterName', cashDrawerPrinterName);
+    localStorage.setItem('receiptPrinterName', receiptPrinterName);
     localStorage.setItem('isAdisyonStoreSpecificEnabled', isAdisyonStoreSpecificEnabled.toString());
     localStorage.setItem('isAdisyonAutoOpenReservationEnabled', isAdisyonAutoOpenReservationEnabled.toString());
     localStorage.setItem('lowStockThreshold', lowStockThreshold.toString());
     localStorage.setItem('receiptSettings', JSON.stringify(receiptSettings));
-  }, [theme, isBeepEnabled, showHelpIcons, isEmployeeModuleEnabled, isPriceSyncEnabled, isStockSyncEnabled, isWarehouseStockDeductionEnabled, isCashDrawerEnabled, cashDrawerPrinterName, isAdisyonStoreSpecificEnabled, isAdisyonAutoOpenReservationEnabled, lowStockThreshold, receiptSettings]);
+  }, [theme, isBeepEnabled, showHelpIcons, isEmployeeModuleEnabled, isPriceSyncEnabled, isStockSyncEnabled, isWarehouseStockDeductionEnabled, isCashDrawerEnabled, cashDrawerPrinterName, receiptPrinterName, isAdisyonStoreSpecificEnabled, isAdisyonAutoOpenReservationEnabled, lowStockThreshold, receiptSettings]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -1006,6 +1011,7 @@ export default function Home() {
                 isStockSyncEnabled={isStockSyncEnabled}
                 isCashDrawerEnabled={isCashDrawerEnabled}
                 cashDrawerPrinterName={cashDrawerPrinterName}
+                receiptPrinterName={receiptPrinterName}
                 setActiveTab={setActiveTab}
                 initialCart={adisyonCart}
                 onCartCleared={() => setAdisyonCart([])}
@@ -1036,6 +1042,8 @@ export default function Home() {
                 setIsCashDrawerEnabled={setIsCashDrawerEnabled}
                 cashDrawerPrinterName={cashDrawerPrinterName}
                 setCashDrawerPrinterName={setCashDrawerPrinterName}
+                receiptPrinterName={receiptPrinterName}
+                setReceiptPrinterName={setReceiptPrinterName}
                 isAdisyonStoreSpecificEnabled={isAdisyonStoreSpecificEnabled}
                 setIsAdisyonStoreSpecificEnabled={setIsAdisyonStoreSpecificEnabled}
                 isAdisyonAutoOpenReservationEnabled={isAdisyonAutoOpenReservationEnabled}

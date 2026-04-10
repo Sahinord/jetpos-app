@@ -68,6 +68,7 @@ export default function ShiftManager({ showToast }: any) {
             const { data: active, error: activeError } = await supabase
                 .from('shifts')
                 .select('*, employees(*)')
+                .eq('tenant_id', currentTenant.id)
                 .is('clock_out', null)
                 .order('clock_in', { ascending: false });
 
@@ -82,6 +83,7 @@ export default function ShiftManager({ showToast }: any) {
             const { data: history, error: historyError } = await supabase
                 .from('shifts')
                 .select('*, employees(*)')
+                .eq('tenant_id', currentTenant.id)
                 .not('clock_out', 'is', null)
                 .gte('clock_in', startOfDay.toISOString())
                 .lte('clock_in', endOfDay.toISOString())
@@ -110,6 +112,7 @@ export default function ShiftManager({ showToast }: any) {
             const { error } = await supabase
                 .from('shifts')
                 .insert([{
+                    tenant_id: currentTenant.id,
                     employee_id: employeeId,
                     clock_in: new Date().toISOString(),
                     total_sales: 0,

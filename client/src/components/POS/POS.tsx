@@ -29,6 +29,7 @@ export default function POS({
     isStockSyncEnabled = false,
     isCashDrawerEnabled = false,
     cashDrawerPrinterName = "",
+    receiptPrinterName = "",
     setActiveTab,
     initialCart = [],
     onCartCleared,
@@ -1329,7 +1330,7 @@ export default function POS({
             </AnimatePresence>
 
             {/* Hidden Printing Component */}
-            <PrintReceiptButton data={lastTransaction} onAfterPrint={() => console.log('Yazdırıldı')} />
+            <PrintReceiptButton data={lastTransaction} printerName={receiptPrinterName} onAfterPrint={() => console.log('Yazdırıldı')} />
 
             {/* Right Click Context Menu */}
             <AnimatePresence>

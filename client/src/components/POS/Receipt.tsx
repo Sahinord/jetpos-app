@@ -278,7 +278,7 @@ function isElectron(): boolean {
 // SILENT PRINT - Sadece Electron'da sessiz yazdırır
 // Tarayıcıda dış pencere AÇMAZ
 // ──────────────────────────────────────────────
-async function silentPrint(data: ReceiptData | null): Promise<boolean> {
+async function silentPrint(data: ReceiptData | null, printerName?: string): Promise<boolean> {
     if (!isElectron()) {
         console.log('Tarayıcı modu: Sessiz yazdırma atlandı (fiş modal içinde görüntüleniyor)');
         return false;
@@ -292,7 +292,7 @@ async function silentPrint(data: ReceiptData | null): Promise<boolean> {
             ipcRenderer.once('silent-print-result', (_event: any, result: { success: boolean }) => {
                 resolve(result.success);
             });
-            ipcRenderer.send('silent-print-receipt', { html });
+            ipcRenderer.send('silent-print-receipt', { html, printerName: printerName || null });
         });
     } catch (err) {
         console.error('Electron silent print hatası:', err);
@@ -358,11 +358,11 @@ async function manualPrint(data: ReceiptData | null): Promise<boolean> {
 // ──────────────────────────────────────────────
 // PRINT RECEIPT BUTTON (Satış sonrası otomatik yazdırma)
 // ──────────────────────────────────────────────
-export const PrintReceiptButton = ({ data, onAfterPrint }: { data: any, onAfterPrint?: () => void }) => {
+export const PrintReceiptButton = ({ data, onAfterPrint, printerName }: { data: any, onAfterPrint?: () => void, printerName?: string }) => {
     React.useEffect(() => {
         if (data) {
             const timer = setTimeout(async () => {
-                await silentPrint(data);
+                await silentPrint(data, printerName);
                 onAfterPrint?.();
             }, 600);
             return () => clearTimeout(timer);

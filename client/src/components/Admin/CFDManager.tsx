@@ -46,7 +46,11 @@ export default function CFDManager({ settings, onUpdate, showToast, currentTenan
                         </div>
 
                         <button
-                            onClick={() => window.open('/display', 'JetPosDisplay', 'width=1200,height=800')}
+                            onClick={() => {
+                                const isProd = typeof window !== 'undefined' && (window as any).require;
+                                const url = isProd ? './display.html' : '/display';
+                                window.open(url, 'JetPosDisplay', 'width=1200,height=800');
+                            }}
                             className="w-full flex items-center justify-center gap-3 py-4 bg-primary text-white rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all text-xs"
                         >
                             <ExternalLink size={18} /> EKRANI AYRI PENCEREDE AÇ

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { TrendingDown, Plus, Trash2, Calendar, Tag, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
+import { useTenant } from "@/lib/tenant-context";
 
 export default function Expenses() {
     const [expenses, setExpenses] = useState<any[]>([]);
@@ -16,16 +17,20 @@ export default function Expenses() {
         expense_date: new Date().toISOString().split('T')[0]
     });
 
+    const { currentTenant } = useTenant();
+
     useEffect(() => {
-        fetchExpenses();
-    }, []);
+        if (currentTenant) fetchExpenses();
+    }, [currentTenant]);
 
     const fetchExpenses = async () => {
+        if (!currentTenant) return;
         setLoading(true);
         try {
             const { data, error } = await supabase
                 .from('expenses')
                 .select('*')
+                .eq('tenant_id', currentTenant.id)
                 .order('expense_date', { ascending: false });
 
             if (error) throw error;
@@ -39,10 +44,12 @@ export default function Expenses() {
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!currentTenant) return;
         try {
             const { error } = await supabase
                 .from('expenses')
                 .insert([{
+                    tenant_id: currentTenant.id,
                     title: formData.title,
                     amount: parseFloat(formData.amount),
                     category: formData.category,

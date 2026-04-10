@@ -61,6 +61,7 @@ export default function EmployeeManager({ showToast }: any) {
             const { data, error } = await supabase
                 .from('employees')
                 .select('*')
+                .eq('tenant_id', currentTenant.id)
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
@@ -96,7 +97,7 @@ export default function EmployeeManager({ showToast }: any) {
             } else {
                 const { error } = await supabase
                     .from('employees')
-                    .insert([formData]);
+                    .insert([{ ...formData, tenant_id: currentTenant.id }]);
 
                 if (error) throw error;
                 showToast("Yeni çalışan eklendi", "success");

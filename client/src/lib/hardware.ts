@@ -48,34 +48,67 @@ export async function readScaleWeight(): Promise<number> {
 }
 
 /**
- * Barkod Yazıcı (ZPL/EPL veya HTML Print)
+ * Barkod Yazıcı (iframe tabanlı - kasa çekmecesi tetiklemez, yeni pencere açmaz)
  */
 export async function printBarcodeLabel(product: any, settings: any = {}) {
-    // Tarayıcı yazdırma penceresini açar (CSS @media print ile optimize edilmiş)
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
+    // iframe tabanlı yazdırma: window.open açmaz, kasa çekmecesiyle çakışmaz
+    return new Promise<void>((resolve) => {
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'fixed';
+        iframe.style.right = '0';
+        iframe.style.bottom = '0';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = 'none';
+        iframe.style.opacity = '0';
+        iframe.style.pointerEvents = 'none';
+        document.body.appendChild(iframe);
 
-    printWindow.document.write(`
-        <html>
-            <head>
-                <style>
-                    @page { size: ${settings.width || '40mm'} ${settings.height || '30mm'}; margin: 0; }
-                    body { font-family: 'Inter', sans-serif; margin: 5px; text-align: center; }
-                    .name { font-size: 10px; font-weight: bold; margin-bottom: 2px; }
-                    .price { font-size: 14px; font-weight: 1000; }
-                    .barcode { font-family: 'Libre Barcode 39', cursive; font-size: 30px; }
-                    .barcode-text { font-size: 8px; }
-                </style>
-                <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&display=swap" rel="stylesheet">
-            </head>
-            <body>
-                <div class="name">${product.name}</div>
-                <div class="price">₺${product.sale_price.toFixed(2)}</div>
-                <div class="barcode">*${product.barcode}*</div>
-                <div class="barcode-text">${product.barcode}</div>
-                <script>window.onload = () => { window.print(); window.close(); }</script>
-            </body>
-        </html>
-    `);
-    printWindow.document.close();
+        const html = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        @page { size: ${settings.width || '40mm'} ${settings.height || '30mm'}; margin: 0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Libre Barcode 39', 'Courier New', monospace; padding: 3px; text-align: center; background: #fff; }
+        .name { font-family: Arial, sans-serif; font-size: 10px; font-weight: bold; margin-bottom: 2px; color: #000; }
+        .price { font-family: Arial, sans-serif; font-size: 14px; font-weight: 900; color: #000; margin-bottom: 2px; }
+        .barcode { font-family: 'Libre Barcode 39', cursive; font-size: 36px; line-height: 1; color: #000; letter-spacing: 2px; }
+        .barcode-text { font-family: 'Courier New', monospace; font-size: 7px; color: #000; letter-spacing: 1px; margin-top: 1px; }
+    </style>
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&display=swap" as="style" onload="this.rel='stylesheet'">
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="name">${product.name}</div>
+    <div class="price">&#8378;${Number(product.sale_price).toFixed(2)}</div>
+    <div class="barcode">*${product.barcode}*</div>
+    <div class="barcode-text">${product.barcode}</div>
+</body>
+</html>`;
+
+        const doc = iframe.contentDocument || iframe.contentWindow?.document;
+        if (doc) {
+            doc.open();
+            doc.write(html);
+            doc.close();
+
+            // Font yüklenmesini bekle, sonra yazdır
+            setTimeout(() => {
+                try {
+                    iframe.contentWindow?.print();
+                } catch (e) {
+                    console.error('Yazdırma hatası:', e);
+                }
+                setTimeout(() => {
+                    try { document.body.removeChild(iframe); } catch { }
+                    resolve();
+                }, 500);
+            }, 1200); // Font yüklenme süresi için bekleme
+        } else {
+            document.body.removeChild(iframe);
+            resolve();
+        }
+    });
 }

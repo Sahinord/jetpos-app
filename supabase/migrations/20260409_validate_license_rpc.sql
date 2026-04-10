@@ -21,7 +21,7 @@ BEGIN
     FROM (
         SELECT
             id, license_key, company_name, contact_email,
-            logo_url, status, features, settings
+            logo_url, status, features, settings, max_stores, max_online_stores
         FROM tenants
         WHERE license_key = p_license_key
           AND status      = 'active'
@@ -74,7 +74,7 @@ BEGIN
     FROM (
         SELECT
             id, license_key, company_name, contact_email,
-            logo_url, status, features, settings
+            logo_url, status, features, settings, max_stores, max_online_stores
         FROM tenants
         WHERE id          = p_tenant_id
           AND license_key = p_license_key
