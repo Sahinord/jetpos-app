@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Building2, Key, Check, X, Save, Edit, Trash2, Plus, MessageSquare, Bell, LifeBuoy, Send, User, Trash, Sparkles, FileText, Home, MapPin, Store, Heart } from 'lucide-react';
+import { Building2, Key, Check, X, Save, Edit, Trash2, Plus, MessageSquare, Bell, LifeBuoy, Send, User, Users, Trash, Sparkles, FileText, Home, MapPin, Store, Heart, Search, Globe, Shield } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 interface Tenant {
@@ -15,6 +15,7 @@ interface Tenant {
     settings?: any;
     openrouter_api_key?: string;
     max_stores?: number;
+    master_pin?: string;
     created_at: string;
 }
 
@@ -29,6 +30,9 @@ const AVAILABLE_FEATURES = [
     { id: 'bank_management', label: 'Banka İşlemleri' },
     { id: 'cash_management', label: 'Kasa İşlemleri' },
     { id: 'employee_module', label: 'Çalışan Yönetimi & Vardiya' },
+    { id: 'employee_login', label: 'Çalışan Giriş Sistemi (PIN)' },
+    { id: 'employee_permissions', label: 'Gelişmiş Yetkilendirme Sistemi' },
+    { id: 'master_pin_enabled', label: 'Master PIN (Patron Master Kodu)' },
     { id: 'label_designer', label: 'Ürün Etiket Tasarımı' },
     { id: 'trendyol_go', label: 'Trendyol GO' },
     { id: 'invoice', label: 'E-Fatura Entegrasyonu' },
@@ -54,6 +58,13 @@ export default function SuperAdmin() {
     const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'suspended' | 'expired'>('all');
+    
+    // Employee Management State for SuperAdmin
+    const [employeeModal, setEmployeeModal] = useState<{ tenantId: string, tenantName: string } | null>(null);
+    const [employeesList, setEmployeesList] = useState<any[]>([]);
+    const [editingStaff, setEditingStaff] = useState<any | null>(null);
 
     // Notification states
     const [notifTitle, setNotifTitle] = useState('');
@@ -218,7 +229,8 @@ export default function SuperAdmin() {
                     openrouter_api_key: editingTenant.openrouter_api_key,
                     max_stores: editingTenant.max_stores || 1,
                     max_online_stores: editingTenant.max_online_stores || 0,
-                    status: editingTenant.status
+                    status: editingTenant.status,
+                    master_pin: editingTenant.master_pin
                 })
                 .eq('id', editingTenant.id);
 
@@ -582,6 +594,57 @@ export default function SuperAdmin() {
             alert('❌ Hata: ' + err.message);
         }
     };
+    const fetchEmployees = async (tenantId: string) => {
+        try {
+            const { data, error } = await supabase.rpc('admin_get_employees', {
+                p_tenant_id: tenantId
+            });
+            if (error) throw error;
+            setEmployeesList(data || []);
+        } catch (error: any) {
+            alert('❌ Çalışanlar yüklenemedi: ' + error.message);
+        }
+    };
+
+    const handleSaveStaff = async (staffData: any) => {
+        if (!employeeModal) return;
+        setSaving(true);
+        try {
+            const { data, error } = await supabase.rpc('admin_upsert_employee', {
+                p_employee: {
+                    ...staffData,
+                    tenant_id: employeeModal.tenantId
+                }
+            });
+
+            if (error) throw error;
+            if (!data.success) throw new Error(data.message);
+
+            alert('✅ Çalışan bilgileri kaydedildi.');
+            setEditingStaff(null);
+            fetchEmployees(employeeModal.tenantId);
+        } catch (error: any) {
+            alert('❌ Hata: ' + error.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleDeleteStaff = async (id: string) => {
+        if (!employeeModal || !confirm('Bu çalışanı silmek istediğinize emin misiniz?')) return;
+        try {
+            const { data, error } = await supabase.rpc('admin_delete_employee', {
+                p_id: id
+            });
+            if (error) throw error;
+            if (!data.success) throw new Error(data.message);
+
+            alert('✅ Çalışan silindi.');
+            fetchEmployees(employeeModal.tenantId);
+        } catch (error: any) {
+            alert('❌ Hata: ' + error.message);
+        }
+    };
 
     return (
         <div className="space-y-8 pb-12">
@@ -623,19 +686,55 @@ export default function SuperAdmin() {
                 </div>
             ) : activeTab === 'tenants' ? (
                 <>
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                         <div>
                             <h2 className="text-3xl font-black text-white">Lisans Yönetimi</h2>
-                            <p className="text-sm text-secondary mt-1">Müşteri lisanslarını ve paket özelliklerini yönetin</p>
+                            <p className="text-sm text-secondary mt-1">
+                                {tenants.length} Lisans Kayıtlı — {tenants.filter(t => t.status === 'active').length} Aktif
+                            </p>
                         </div>
-                        <button onClick={handleAddNew} className="flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold transition-all shadow-lg shadow-primary/20">
-                            <Plus className="w-5 h-5" />
-                            Yeni Lisans Oluştur
-                        </button>
+                        <div className="flex items-center gap-3 w-full md:w-auto">
+                            <div className="relative flex-1 md:w-64">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                                <input 
+                                    type="text"
+                                    placeholder="Firma veya Anahtar Ara..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="w-full pl-11 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-primary/50 transition-all text-sm"
+                                />
+                            </div>
+                            <button onClick={handleAddNew} className="flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold transition-all shadow-lg shadow-primary/20 whitespace-nowrap">
+                                <Plus className="w-5 h-5" />
+                                Yeni Lisans
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 overflow-x-auto pb-2">
+                        {(['all', 'active', 'suspended', 'expired'] as const).map(status => (
+                            <button
+                                key={status}
+                                onClick={() => setStatusFilter(status)}
+                                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest border transition-all ${statusFilter === status 
+                                    ? 'bg-primary border-primary text-white' 
+                                    : 'bg-white/5 border-white/10 text-slate-500 hover:text-white'}`}
+                            >
+                                {status === 'all' ? 'Tümü' : status === 'active' ? 'Aktif' : status === 'suspended' ? 'Askıda' : 'Süresi Dolmuş'}
+                            </button>
+                        ))}
                     </div>
 
                     <div className="grid grid-cols-1 gap-4">
-                        {tenants.filter(t => t.license_key !== 'ADM257SA67').map((tenant) => (
+                        {tenants
+                            .filter(t => t.license_key !== 'ADM257SA67')
+                            .filter(t => statusFilter === 'all' || t.status === statusFilter)
+                            .filter(t => 
+                                !searchTerm || 
+                                (t.company_name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                                (t.license_key?.toLowerCase().includes(searchTerm.toLowerCase()))
+                            )
+                            .map((tenant) => (
                             <div key={tenant.id} className="glass-card p-6 border-l-4 border-l-primary hover:border-l-blue-400 transition-all group">
                                 <div className="flex items-start justify-between">
                                     <div className="flex-1">
@@ -784,6 +883,16 @@ export default function SuperAdmin() {
                                             title="Database Gruplandır"
                                         >
                                             <User className="w-5 h-5" />
+                                        </button>
+                                         <button
+                                            onClick={() => {
+                                                setEmployeeModal({ tenantId: tenant.id, tenantName: tenant.company_name || tenant.license_key });
+                                                fetchEmployees(tenant.id);
+                                            }}
+                                            className="p-3 bg-white/5 hover:bg-emerald-500/20 rounded-xl text-slate-400 hover:text-emerald-500 transition-all font-bold"
+                                            title="Personel ve Yetki Yönetimi"
+                                        >
+                                            <Users className="w-5 h-5" />
                                         </button>
                                         <button onClick={() => setEditingTenant(tenant)} className="p-3 bg-white/5 hover:bg-primary/20 rounded-xl text-slate-400 hover:text-primary transition-all">
                                             <Edit className="w-5 h-5" />
@@ -1045,6 +1154,25 @@ export default function SuperAdmin() {
                                         placeholder="sk-..."
                                     />
                                 </div>
+                                <div className="space-y-2 md:col-span-2 p-5 bg-emerald-500/5 border border-emerald-500/20 rounded-3xl">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-emerald-500 ml-1 flex items-center gap-2">
+                                        <Shield className="w-4 h-4" />
+                                        Patron Master PIN (Özel Sistem)
+                                    </label>
+                                    <div className="flex gap-4 mt-2">
+                                        <input
+                                            type="text"
+                                            value={editingTenant.master_pin || ''}
+                                            onChange={(e) => setEditingTenant({ ...editingTenant, master_pin: e.target.value.replace(/\D/g, '') })}
+                                            className="flex-1 px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl text-white focus:border-emerald-500/50 outline-none font-mono tracking-[0.5em] text-lg text-center"
+                                            placeholder="----"
+                                            maxLength={6}
+                                        />
+                                        <div className="flex flex-col justify-center">
+                                            <p className="text-[9px] text-slate-500 italic max-w-[200px]">Bu PIN girildiğinde sistemdeki tüm yetki kısıtlamaları otomatik devre dışı kalır.</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="space-y-8">
@@ -1054,7 +1182,7 @@ export default function SuperAdmin() {
                                     { label: 'SATIŞ & POS', features: ['pos', 'sales_history', 'adisyon', 'invoice'] },
                                     { label: 'ÜRÜN & STOK', features: ['products', 'label_designer', 'invoice_management'] },
                                     { label: 'DİJİTAL & WEB', features: ['qrmenu', 'showcase', 'cfd'] },
-                                    { label: 'FİNANS & YÖNETİM', features: ['profit_calculator', 'price_simulator', 'reports', 'cari_hesap', 'bank_management', 'cash_management', 'employee_module'] },
+                                    { label: 'FİNANS & YÖNETİM', features: ['profit_calculator', 'price_simulator', 'reports', 'cari_hesap', 'bank_management', 'cash_management', 'employee_module', 'employee_login', 'employee_permissions', 'master_pin_enabled'] },
                                     { label: 'YAPAY ZEKA & ENTEGRASYON', features: ['ai_features', 'trendyol_go'] },
                                 ].map((cat) => (
                                     <div key={cat.label} className="space-y-4">
@@ -1752,6 +1880,155 @@ export default function SuperAdmin() {
                                 className="flex-1 py-3 bg-primary hover:bg-primary/90 text-white rounded-xl font-black shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2"
                             >
                                 {saving ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : 'Kaydet'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Employee Management Modal */}
+            {employeeModal && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+                    <div className="bg-slate-900 border border-white/10 rounded-[2.5rem] max-w-5xl w-full max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
+                        <div className="sticky top-0 bg-slate-900/80 backdrop-blur-md border-b border-white/10 p-8 flex items-center justify-between z-10">
+                            <div>
+                                <h3 className="text-2xl font-black text-white">{employeeModal.tenantName} - Personel Yönetimi</h3>
+                                <p className="text-xs text-slate-500 mt-1 uppercase tracking-widest font-bold">Personel listesi, PIN kodları ve yetkilendirmeler</p>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <button
+                                    onClick={() => setEditingStaff({ 
+                                        first_name: '', last_name: '', position: '', pin_code: '', 
+                                        status: 'active', monthly_salary: 0, 
+                                        permissions: {
+                                            can_access_pos: true, can_access_adisyon: true, can_access_reports: false,
+                                            can_access_settings: false, can_access_inventory: true, can_access_expenses: false,
+                                            can_access_crm: false, can_manage_employees: false, can_apply_discount: false, can_delete_sales: false
+                                        } 
+                                    })}
+                                    className="flex items-center gap-2 px-6 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold transition-all"
+                                >
+                                    <Plus className="w-4 h-4" /> Yeni Personel
+                                </button>
+                                <button onClick={() => setEmployeeModal(null)} className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-all">
+                                    <X className="w-6 h-6 text-slate-400" />
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="p-8 flex-1 overflow-y-auto">
+                            <div className="grid grid-cols-1 gap-3">
+                                {employeesList.length === 0 ? (
+                                    <div className="text-center py-20 bg-white/5 rounded-[2rem] border border-dashed border-white/10">
+                                        <Users className="w-12 h-12 text-slate-700 mx-auto mb-4" />
+                                        <p className="text-slate-500 font-bold">Henüz personel tanımlanmamış.</p>
+                                    </div>
+                                ) : (
+                                    employeesList.map(emp => (
+                                        <div key={emp.id} className="p-5 bg-white/5 border border-white/10 rounded-[1.5rem] flex items-center justify-between group hover:bg-white/10 transition-all">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center border border-emerald-500/20">
+                                                    <span className="text-emerald-500 font-black">{emp.first_name[0]}{emp.last_name[0]}</span>
+                                                </div>
+                                                <div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-white font-bold">{emp.first_name} {emp.last_name}</span>
+                                                        <span className="px-2 py-0.5 bg-white/5 text-slate-500 rounded text-[8px] uppercase font-black">{emp.position}</span>
+                                                        {emp.position?.toLowerCase() === 'patron' && <Sparkles className="w-3 h-3 text-amber-500" />}
+                                                    </div>
+                                                    <div className="flex items-center gap-3 mt-1">
+                                                        <p className="text-[10px] text-slate-500 uppercase tracking-widest font-mono">PIN: {emp.pin_code || '---'}</p>
+                                                        <span className="w-1 h-1 bg-slate-700 rounded-full" />
+                                                        <p className={`text-[10px] font-black uppercase ${emp.status === 'active' ? 'text-emerald-400' : 'text-rose-400'}`}>{emp.status}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button onClick={() => setEditingStaff(emp)} className="p-2 bg-indigo-500/10 hover:bg-indigo-500 text-indigo-400 hover:text-white rounded-lg transition-all" title="Düzenle">
+                                                    <Edit className="w-4 h-4" />
+                                                </button>
+                                                <button onClick={() => handleDeleteStaff(emp.id)} className="p-2 bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white rounded-lg transition-all" title="Sil">
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Staff Edit Sub-Modal */}
+            {editingStaff && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[60] flex items-center justify-center p-6">
+                    <div className="bg-slate-900 border border-white/20 rounded-[2.5rem] max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col">
+                        <div className="p-8 border-b border-white/10 flex items-center justify-between">
+                            <h4 className="text-xl font-black text-white">{editingStaff.id ? 'Personel Düzenle' : 'Yeni Personel Ekle'}</h4>
+                            <button onClick={() => setEditingStaff(null)} className="p-2 hover:bg-white/5 rounded-xl transition-all">
+                                <X className="w-5 h-5 text-slate-400" />
+                            </button>
+                        </div>
+                        
+                        <div className="p-8 space-y-8">
+                            <div className="grid grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Ad</label>
+                                    <input type="text" value={editingStaff.first_name} onChange={e => setEditingStaff({ ...editingStaff, first_name: e.target.value })} className="w-full px-5 py-3 bg-black/40 border border-white/10 rounded-xl text-white outline-none focus:border-emerald-500/50" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Soyad</label>
+                                    <input type="text" value={editingStaff.last_name} onChange={e => setEditingStaff({ ...editingStaff, last_name: e.target.value })} className="w-full px-5 py-3 bg-black/40 border border-white/20 rounded-xl text-white outline-none focus:border-emerald-500/50" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Pozisyon</label>
+                                    <input type="text" value={editingStaff.position} onChange={e => setEditingStaff({ ...editingStaff, position: e.target.value })} className="w-full px-5 py-3 bg-black/40 border border-white/10 rounded-xl text-white outline-none focus:border-emerald-500/50" placeholder="Kasiyer, Garson, Patron vb." />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">PIN Kodu (Sadece Sayı)</label>
+                                    <input type="text" maxLength={6} value={editingStaff.pin_code} onChange={e => setEditingStaff({ ...editingStaff, pin_code: e.target.value.replace(/\D/g, '') })} className="w-full px-5 py-3 bg-black/40 border border-white/10 rounded-xl text-white font-mono tracking-widest outline-none focus:border-emerald-500/50" placeholder="1234" />
+                                </div>
+                            </div>
+
+                            <div className="space-y-4 pt-4 border-t border-white/5">
+                                <h5 className="text-xs font-black text-emerald-400 uppercase tracking-widest flex items-center gap-2">
+                                    <Shield className="w-3 h-3" /> Gelişmiş Yetkilendirme (RBAC)
+                                </h5>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {[
+                                        { id: 'can_access_pos', label: 'POS Ekranı' },
+                                        { id: 'can_access_adisyon', label: 'Adisyonlar' },
+                                        { id: 'can_access_reports', label: 'Raporlar' },
+                                        { id: 'can_manage_employees', label: 'Personel Yön.' },
+                                        { id: 'can_apply_discount', label: 'İskonto Yetkisi' },
+                                        { id: 'can_delete_sales', label: 'İptal/Silme' },
+                                        { id: 'can_manage_invoices', label: 'Fatura/İrsaliye' }
+                                    ].map(perm => (
+                                        <button 
+                                            key={perm.id} 
+                                            onClick={() => setEditingStaff({
+                                                ...editingStaff,
+                                                permissions: { ...editingStaff.permissions, [perm.id]: !editingStaff.permissions?.[perm.id] }
+                                            })}
+                                            className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all ${editingStaff.permissions?.[perm.id] ? 'bg-emerald-500/10 border-emerald-500/50 text-white' : 'bg-white/5 border-white/5 text-slate-500'}`}
+                                        >
+                                            <span className="text-[10px] font-black uppercase">{perm.label}</span>
+                                            {editingStaff.permissions?.[perm.id] ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                                        </button>
+                                    ))}
+                                </div>
+                                <p className="text-[9px] text-slate-500 italic">* Patron pozisyonundaki çalışanlar tüm yetkilere koşulsuz sahiptir.</p>
+                            </div>
+                        </div>
+
+                        <div className="p-8 border-t border-white/10 flex gap-4">
+                            <button onClick={() => setEditingStaff(null)} className="flex-1 py-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl font-bold transition-all">İptal</button>
+                            <button 
+                                onClick={() => handleSaveStaff(editingStaff)} 
+                                disabled={saving}
+                                className="flex-1 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-black shadow-xl shadow-emerald-500/30 transition-all flex items-center justify-center gap-2"
+                            >
+                                {saving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><Save className="w-5 h-5" /> Kaydet</>}
                             </button>
                         </div>
                     </div>

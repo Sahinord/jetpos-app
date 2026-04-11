@@ -25,6 +25,7 @@ interface Employee {
     status: 'active' | 'inactive' | 'on_leave';
     pin_code: string;
     avatar_url?: string;
+    permissions?: any;
 }
 
 export default function EmployeeManager({ showToast }: any) {
@@ -48,7 +49,20 @@ export default function EmployeeManager({ showToast }: any) {
         monthly_salary: 0,
         start_date: new Date().toISOString().split('T')[0],
         status: "active" as 'active' | 'inactive' | 'on_leave',
-        pin_code: ""
+        pin_code: "",
+        permissions: {
+            can_access_pos: true,
+            can_access_adisyon: true,
+            can_access_reports: false,
+            can_access_settings: false,
+            can_access_inventory: true,
+            can_access_expenses: false,
+            can_access_crm: false,
+            can_manage_employees: false,
+            can_apply_discount: false,
+            can_delete_sales: false,
+            can_manage_invoices: false
+        }
     });
 
     useEffect(() => {
@@ -140,10 +154,24 @@ export default function EmployeeManager({ showToast }: any) {
             monthly_salary: 0,
             start_date: new Date().toISOString().split('T')[0],
             status: "active",
-            pin_code: ""
+            pin_code: "",
+            permissions: {
+                can_access_pos: true,
+                can_access_adisyon: true,
+                can_access_reports: false,
+                can_access_settings: false,
+                can_access_inventory: true,
+                can_access_expenses: false,
+                can_access_crm: false,
+                can_manage_employees: false,
+                can_apply_discount: false,
+                can_delete_sales: false
+            }
         });
         setEditingEmployee(null);
     };
+
+    const isPatron = (emp: any) => emp?.position?.toLowerCase() === 'patron';
 
     const openEditModal = (employee: Employee) => {
         setEditingEmployee(employee);
@@ -158,7 +186,19 @@ export default function EmployeeManager({ showToast }: any) {
             monthly_salary: employee.monthly_salary || 0,
             start_date: employee.start_date || new Date().toISOString().split('T')[0],
             status: employee.status,
-            pin_code: employee.pin_code || ""
+            pin_code: employee.pin_code || "",
+            permissions: employee.permissions || {
+                can_access_pos: true,
+                can_access_adisyon: true,
+                can_access_reports: false,
+                can_access_settings: false,
+                can_access_inventory: true,
+                can_access_expenses: false,
+                can_access_crm: false,
+                can_manage_employees: false,
+                can_apply_discount: false,
+                can_delete_sales: false
+            }
         });
         setIsModalOpen(true);
     };
@@ -324,7 +364,12 @@ export default function EmployeeManager({ showToast }: any) {
                                                     </span>
                                                 </div>
                                                 <div>
-                                                    <p className="font-bold text-white">{employee.first_name} {employee.last_name}</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="font-bold text-white">{employee.first_name} {employee.last_name}</p>
+                                                        {isPatron(employee) && (
+                                                            <span className="px-2 py-0.5 bg-amber-500/20 text-amber-500 text-[8px] font-black uppercase rounded border border-amber-500/20">Patron</span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </td>
@@ -438,9 +483,17 @@ export default function EmployeeManager({ showToast }: any) {
                                     <input
                                         type="text"
                                         value={formData.position}
-                                        onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                                        onChange={(e) => {
+                                            const pos = e.target.value;
+                                            const isPatronVal = pos.toLowerCase() === 'patron';
+                                            setFormData({ 
+                                                ...formData, 
+                                                position: pos,
+                                                permissions: isPatronVal ? Object.keys(formData.permissions).reduce((acc: any, key) => ({ ...acc, [key]: true }), {}) : formData.permissions
+                                            });
+                                        }}
                                         className="w-full px-4 py-3 bg-background border border-border rounded-xl text-white focus:outline-none focus:border-primary transition-all"
-                                        placeholder="Kasiyer, Müdür vb."
+                                        placeholder="Patron, Kasiyer, Müdür vb."
                                     />
                                 </div>
                             </div>
@@ -536,6 +589,55 @@ export default function EmployeeManager({ showToast }: any) {
                                     ))}
                                 </div>
                             </div>
+
+                            {/* Permissions Section */}
+                            {currentTenant?.features?.employee_permissions && (
+                                <div className="border-t border-border pt-6 mt-6">
+                                    <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                        <Award size={14} />
+                                        Yetkilendirme Ayarları
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                                        {[
+                                            { id: 'can_access_pos', label: 'Hızlı Satış (POS) Erişimi', role: 'pos' },
+                                            { id: 'can_access_adisyon', label: 'Adisyon/Masa Erişimi', role: 'adisyon' },
+                                            { id: 'can_access_reports', label: 'Raporları Görüntüleme', role: 'reports' },
+                                            { id: 'can_access_inventory', label: 'Stok Yönetimi / Ürünler', role: 'products' },
+                                            { id: 'can_access_expenses', label: 'Gider Yönetimi', role: 'expenses' },
+                                            { id: 'can_access_crm', label: 'Müşteri (CRM) Erişimi', role: 'crm' },
+                                            { id: 'can_manage_employees', label: 'Çalışan Yönetimi / Maaşlar', role: 'employees' },
+                                            { id: 'can_access_settings', label: 'Sistem Ayarları', role: 'settings' },
+                                            { id: 'can_apply_discount', label: 'İskonto/İndirim Yapma' },
+                                            { id: 'can_delete_sales', label: 'Satış Silme / İptal' },
+                                            { id: 'can_manage_invoices', label: 'Fatura/İrsaliye Kesme' },
+                                        ].map(perm => (
+                                            <label key={perm.id} className="flex items-center gap-3 cursor-pointer group">
+                                                <div className="relative flex items-center">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={formData.permissions[perm.id]}
+                                                        onChange={(e) => setFormData({
+                                                            ...formData,
+                                                            permissions: { ...formData.permissions, [perm.id]: e.target.checked }
+                                                        })}
+                                                        className="w-5 h-5 rounded-lg border-2 border-white/10 bg-white/5 checked:bg-primary checked:border-primary transition-all appearance-none cursor-pointer"
+                                                    />
+                                                    {formData.permissions[perm.id] && (
+                                                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">
+                                                                <path d="M5 13l4 4L19 7" />
+                                                            </svg>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <span className="text-sm font-medium text-slate-300 group-hover:text-white transition-colors">
+                                                    {perm.label}
+                                                </span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex gap-3 mt-6 pt-6 border-t border-border">

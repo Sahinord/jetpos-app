@@ -7,7 +7,7 @@
   "private": true,
   "main": "main.js",
   "scripts": {
-    "dev": "set TURBOPACK=0&& next dev -p 3005 -H 127.0.0.1",
+    "dev": "TURBOPACK=0 next dev -p 3005 -H 127.0.0.1",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

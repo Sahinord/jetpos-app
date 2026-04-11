@@ -97,7 +97,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToast, isMobileOpen }: SidebarProps) {
-    const { currentTenant, warehouses, activeWarehouse, setActiveWarehouse } = useTenant();
+    const { currentTenant, warehouses, activeWarehouse, setActiveWarehouse, activeEmployee, logoutEmployee } = useTenant();
     const [openCategories, setOpenCategories] = useState<string[]>(["main", "sales", "products"]);
     const [, setFavoritesVersion] = useState(0); // Force re-render on favorites change
     const [isBottomPanelOpen, setIsBottomPanelOpen] = useState(true); // Alt panel açık/kapalı
@@ -420,6 +420,72 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
         },
     ];
 
+    // Yetki bazlı filtreleme
+    const filteredMenuCategories = menuCategories.map(category => {
+        // Eğer geliştirilmiş yetkilendirme kapalıysa veya çalışan Patron ise filtreleme yapma
+        const permissionsEnabled = currentTenant?.features?.employee_permissions;
+        const permissions = activeEmployee?.permissions;
+        const isPatron = activeEmployee?.position?.toLowerCase() === 'patron';
+        
+        if (permissionsEnabled && permissions && !isPatron) {
+            // Kategori veya altındaki itemlar için yetki kontrolü
+            const isCategoryAllowed = (cat: MenuCategory) => {
+                if (cat.id === 'main') return true; // Ana menü her zaman açık
+                if (cat.id === 'sales') return permissions.can_access_pos;
+                if (cat.id === 'adisyon') return permissions.can_access_adisyon;
+                if (cat.id === 'products') return permissions.can_access_inventory;
+                if (cat.id === 'finance') return permissions.can_access_expenses;
+                if (cat.id === 'crm') return permissions.can_access_crm;
+                if (cat.id === 'employees') return permissions.can_manage_employees;
+                if (cat.id === 'analytics') return permissions.can_access_reports;
+                if (cat.id === 'invoice_waybill_management') return permissions.can_manage_invoices;
+                if (cat.id === 'cash_ops') return permissions.can_access_expenses;
+                if (cat.id === 'bank_ops') return permissions.can_access_expenses;
+                if (cat.id === 'cari_hesap') return permissions.can_access_crm;
+                if (cat.id === 'web' || cat.id === 'marketing') return permissions.can_access_settings;
+                if (cat.id === 'tools') return permissions.can_access_settings;
+                return false; // Bilinmeyen kategoriler varsayılan KAPALI (Güvenli yaklaşım)
+            };
+
+            const isItemAllowed = (itemId: string) => {
+                const map: any = {
+                    'pos': permissions.can_access_pos,
+                    'adisyon': permissions.can_access_adisyon,
+                    'reports': permissions.can_access_reports,
+                    'simulation': permissions.can_access_reports,
+                    'ai_insights': permissions.can_access_reports,
+                    'products': permissions.can_access_inventory,
+                    'warehouse': permissions.can_access_inventory,
+                    'expenses': permissions.can_access_expenses,
+                    'crm_overview': permissions.can_access_crm,
+                    'employee_manager': permissions.can_manage_employees,
+                    'shift_manager': permissions.can_manage_employees,
+                    'settings': permissions.can_access_settings,
+                    'alis_faturasi': permissions.can_manage_invoices,
+                    'satis_faturasi': permissions.can_manage_invoices,
+                    'perakende_satis_faturasi': permissions.can_manage_invoices,
+                    'iade_faturasi': permissions.can_manage_invoices,
+                    'dashboard': permissions.can_access_reports,
+                    'history': permissions.can_access_reports,
+                    'invoice': permissions.can_manage_invoices,
+                    'expenses': permissions.can_access_expenses,
+                };
+                return map[itemId] ?? true;
+            };
+
+            if (!isCategoryAllowed(category)) return null;
+
+            // İçerideki item'ları da filtrele
+            return {
+                ...category,
+                items: category.items?.filter(item => isItemAllowed(item.id)),
+                subCategories: category.subCategories?.filter(sub => isCategoryAllowed(sub))
+            };
+        }
+
+        return category;
+    }).filter(Boolean) as MenuCategory[];
+
     // Arama sonuçlarını hesapla
     const getSearchResults = () => {
         if (!searchQuery.trim()) return [];
@@ -467,7 +533,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
     };
 
     // Tüm kilitli itemları topla (kategori ve item seviyesinde)
-    const allLockedItems = menuCategories.flatMap(cat => {
+    const allLockedItems = filteredMenuCategories.flatMap(cat => {
         // Kategori seviyesinde kilitli mi?
         if (cat.feature && !isFeatureEnabled(cat.feature)) {
             return [{ id: cat.id, label: cat.label, icon: cat.icon, feature: cat.feature }];
@@ -501,7 +567,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
     // Tab değişince ilgili kategoriyi aç
     const handleTabChange = (tabId: string) => {
         // Ana kategorilerde ara
-        for (const category of menuCategories) {
+        for (const category of filteredMenuCategories) {
             if (category.items?.some(item => item.id === tabId)) {
                 if (!openCategories.includes(category.id)) {
                     setOpenCategories(prev => [...prev, category.id]);
@@ -525,6 +591,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
         }
         onTabChange(tabId);
     };
+
 
     return (
         <aside className={`w-72 premium-sidebar flex flex-col h-screen fixed lg:sticky top-0 left-0 bg-card z-50 overflow-hidden border-r transition-transform duration-300 ${isMobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0 shadow-none'}`}>
@@ -554,7 +621,6 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
             </div>
 
 
-            {/* Scrollable Menu Area */}
             <div className="flex-1 overflow-y-auto py-2 custom-scrollbar">
                 {/* Search Bar (Inside scrollable for hide-on-scroll) */}
                 <div className="px-4 mt-4 mb-6 relative">
@@ -621,7 +687,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                 </div>
 
                 <nav className="px-3 space-y-1">
-                    {menuCategories.map((category) => {
+                    {filteredMenuCategories.map((category) => {
                         const filteredItems = getFilteredItems(category.items);
                         const isOpen = openCategories.includes(category.id);
                         const hasActiveItem = hasActiveItemInCategory(category);
@@ -883,6 +949,26 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                             className="overflow-hidden"
                         >
                             <div className="p-4">
+                                {activeEmployee && (
+                                    <div className="mb-4 p-3 bg-primary/5 border border-primary/10 rounded-2xl flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
+                                                <User className="w-4 h-4" />
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] font-black text-primary uppercase tracking-widest leading-none mb-1">{activeEmployee.position}</span>
+                                                <span className="text-xs font-bold text-foreground truncate max-w-[100px]">{activeEmployee.first_name} {activeEmployee.last_name}</span>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            onClick={logoutEmployee}
+                                            className="p-2 hover:bg-rose-500/10 text-slate-400 hover:text-rose-500 rounded-lg transition-all"
+                                            title="Çalışan Çıkış"
+                                        >
+                                            <LogOut className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                )}
                                 {/* User Info */}
                                 <div className="flex items-center space-x-3 mb-3 px-2">
                                     <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-lg">

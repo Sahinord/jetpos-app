@@ -308,6 +308,29 @@ input:focus, select:focus, textarea:focus {
   background-color: var(--color-card) !important;
 }
 
+/* Custom Scrollbar Utility */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-primary), transparent 85%);
+  border-radius: 10px;
+  transition: all 0.3s;
+}
+
+.custom-scrollbar:hover::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-primary), transparent 60%);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary);
+}
+
 /* Specific light mode fixes for invisibile text */
 .theme-light .text-white {
   color: #0f172a !important;

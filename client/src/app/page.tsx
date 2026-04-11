@@ -54,9 +54,10 @@ import ShowcaseManager from '@/components/Admin/ShowcaseManager';
 import CFDManager from '@/components/Admin/CFDManager';
 import CRMPage from '@/components/CRM/CRMPage';
 import { createTrendyolGoClient } from "@/lib/trendyol-go-client";
+import EmployeePinLogin from "@/components/Auth/EmployeePinLogin";
 
 export default function Home() {
-  const { currentTenant, loading: tenantLoading, activeWarehouse } = useTenant();
+  const { currentTenant, loading: tenantLoading, activeWarehouse, activeEmployee } = useTenant();
   const [isLicenseValid, setIsLicenseValid] = useState(false);
   const [activeTab, setActiveTab] = useState("home");
   const [products, setProducts] = useState<any[]>([]);
@@ -65,6 +66,7 @@ export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCatModalOpen, setIsCatModalOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isPOSAuthorized, setIsPOSAuthorized] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [saleItems, setSaleItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -117,6 +119,13 @@ export default function Home() {
   const showToast = (message: string, type: ToastType = "success") => {
     setToast({ isVisible: true, message, type });
   };
+
+  // Reset POS auth when leaving POS
+  useEffect(() => {
+    if (activeTab !== 'pos') {
+      setIsPOSAuthorized(false);
+    }
+  }, [activeTab]);
 
     useEffect(() => {
         if (!tenantLoading && currentTenant) {
@@ -866,12 +875,14 @@ export default function Home() {
     }
   };
 
-  // Show license gate if no valid tenant
+  // Normal App Rendering Logic (Wrapped to maintain Hook order)
+  const isEmployeeLoginEnabled = currentTenant?.features?.employee_login === true;
+  const isAdmin = currentTenant?.license_key === 'ADM257SA67';
+
   if (!currentTenant && !tenantLoading) {
     return <LicenseGate onSuccess={() => window.location.reload()} />;
   }
 
-  // Show loading while checking tenant
   if (tenantLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -882,9 +893,6 @@ export default function Home() {
       </div>
     );
   }
-
-  // Admin Panel (Sadece lisans yönetimi)
-  const isAdmin = currentTenant?.license_key === 'ADM257SA67';
 
   if (isAdmin) {
     return (
@@ -899,7 +907,6 @@ export default function Home() {
               <p className="text-xs text-secondary">Super Admin Panel</p>
             </div>
           </div>
-
           <button
             onClick={() => {
               localStorage.clear();
@@ -910,7 +917,6 @@ export default function Home() {
             Çıkış Yap
           </button>
         </div>
-
         <div className="p-8 max-w-7xl mx-auto">
           <SuperAdmin />
         </div>
@@ -918,7 +924,10 @@ export default function Home() {
     );
   }
 
-  // Normal App (Kullanıcılar için)
+  if (isEmployeeLoginEnabled && !activeEmployee) {
+    return <EmployeePinLogin />;
+  }
+
   return (
     <div className={`flex min-h-screen bg-background text-foreground theme-${theme}`}>
       <StoreSelectionOverlay />
@@ -1018,27 +1027,37 @@ export default function Home() {
           )}
 
           {activeTab === "pos" && (
-            <div className="max-w-[1500px] mx-auto w-full flex-1 flex flex-col min-h-0">
-              <POS
-                products={products.filter((p: any) => p.status === 'active' || (p.is_active !== false && p.status !== 'passive'))}
-                categories={categories}
-                onCheckout={handleCheckout}
-                showToast={showToast}
-                campaignRate={campaignRate}
-                theme={theme}
-                setTheme={setTheme}
-                isBeepEnabled={isBeepEnabled}
-                isPriceSyncEnabled={isPriceSyncEnabled}
-                isStockSyncEnabled={isStockSyncEnabled}
-                isCashDrawerEnabled={isCashDrawerEnabled}
-                cashDrawerPrinterName={cashDrawerPrinterName}
-                receiptPrinterName={receiptPrinterName}
-                setActiveTab={setActiveTab}
-                initialCart={adisyonCart}
-                onCartCleared={() => setAdisyonCart([])}
-                onRefresh={fetchData}
-                receiptSettings={receiptSettings}
-              />
+            <div className="max-w-[1500px] mx-auto w-full flex-1 flex flex-col min-h-0 relative">
+              {(isEmployeeLoginEnabled && !isPOSAuthorized) ? (
+                <div className="flex-1 flex items-center justify-center p-8">
+                  <EmployeePinLogin 
+                    isModal 
+                    onSuccess={() => setIsPOSAuthorized(true)} 
+                    onCancel={() => setActiveTab('home')}
+                  />
+                </div>
+              ) : (
+                <POS
+                  products={products.filter((p: any) => p.status === 'active' || (p.is_active !== false && p.status !== 'passive'))}
+                  categories={categories}
+                  onCheckout={handleCheckout}
+                  showToast={showToast}
+                  campaignRate={campaignRate}
+                  theme={theme}
+                  setTheme={setTheme}
+                  isBeepEnabled={isBeepEnabled}
+                  isPriceSyncEnabled={isPriceSyncEnabled}
+                  isStockSyncEnabled={isStockSyncEnabled}
+                  isCashDrawerEnabled={isCashDrawerEnabled}
+                  cashDrawerPrinterName={cashDrawerPrinterName}
+                  receiptPrinterName={receiptPrinterName}
+                  setActiveTab={setActiveTab}
+                  initialCart={adisyonCart}
+                  onCartCleared={() => setAdisyonCart([])}
+                  onRefresh={fetchData}
+                  receiptSettings={receiptSettings}
+                />
+              )}
             </div>
           )}
 

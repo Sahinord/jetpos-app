@@ -110,7 +110,7 @@ export default function POS({
     const [isListingCari, setIsListingCari] = useState(false);
 
     const scannerRef = useRef<Html5QrcodeScanner | null>(null);
-    const { currentTenant, activeWarehouse, warehouses, setActiveWarehouse } = useTenant();
+    const { currentTenant, activeWarehouse, warehouses, setActiveWarehouse, activeEmployee } = useTenant();
 
     // We use activeWarehouse directly from context for better reactivity
 
@@ -541,7 +541,12 @@ export default function POS({
                     {/* User Info */}
                     <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl border border-primary/20 backdrop-blur-sm">
                         <User size={16} className="text-primary" />
-                        <span className="text-xs font-black text-foreground uppercase tracking-wider">GENEL MÜDÜR</span>
+                        <span className="text-xs font-black text-foreground uppercase tracking-wider">
+                            {activeEmployee ? `${activeEmployee.first_name} ${activeEmployee.last_name}` : 'YÖNETİCİ'}
+                        </span>
+                        {activeEmployee?.position && (
+                            <span className="text-[8px] font-bold text-secondary uppercase opacity-70">({activeEmployee.position})</span>
+                        )}
                     </div>
 
                     {/* Müşteri Seçimi (CRM) */}
