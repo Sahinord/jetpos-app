@@ -30,7 +30,7 @@
 ### 5. **Özelliklerin Listesi:**
 ```json
 {
-  "pos": "Hızlı Satış (POS)",
+  "pos": "JetKasa (POS)",
   "products": "Ürün Yönetimi",
   "sales_history": "Satış Geçmişi",
   "profit_calculator": "Kâr Hesaplama",
@@ -96,7 +96,7 @@ Ayarlar > Özellik Yönetimi:
 ### Sidebar (Basic Lisans):
 ```
 ✅ Dashboard
-✅ Hızlı Satış
+✅ JetKasa
 ✅ Ürünler
 ✅ Stok Uyarıları
 
@@ -113,7 +113,7 @@ Ayarlar > Özellik Yönetimi:
 │ Özellik Yönetimi                │
 │ [Değişiklikleri Kaydet]         │
 ├─────────────────────────────────┤
-│ ✅ Hızlı Satış (POS)            │
+│ ✅ JetKasa (POS)            │
 │ ✅ Ürün Yönetimi                │
 │ ❌ Satış Geçmişi                 │
 │ ❌ Kâr Hesaplama                 │

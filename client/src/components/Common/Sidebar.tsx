@@ -143,7 +143,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
             label: "Satış & POS",
             icon: ShoppingCart,
             items: [
-                { id: "pos", label: "Hızlı Satış", icon: ShoppingCart, feature: "pos", description: "Hızlı nakit veya kartlı satış işlemlerini gerçekleştirebileceğiniz satış ekranı." },
+                { id: "pos", label: "JetKasa", icon: ShoppingCart, feature: "pos", description: "Hızlı nakit veya kartlı satış işlemlerini gerçekleştirebileceğiniz satış ekranı." },
                 { id: "history", label: "Satış Geçmişi", icon: History, feature: "sales_history", description: "Geçmişte yapılan tüm satışların detaylı dökümü ve yönetimi." },
                 { id: "invoice", label: "E-Fatura", icon: FileText, feature: "invoice", description: "E-Fatura gönderimi ve takibi için entegrasyon ekranı." },
             ]
@@ -426,7 +426,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
         const permissionsEnabled = currentTenant?.features?.employee_permissions;
         const permissions = activeEmployee?.permissions;
         const isPatron = activeEmployee?.position?.toLowerCase() === 'patron';
-        
+
         if (permissionsEnabled && permissions && !isPatron) {
             // Kategori veya altındaki itemlar için yetki kontrolü
             const isCategoryAllowed = (cat: MenuCategory) => {
@@ -960,7 +960,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                                                 <span className="text-xs font-bold text-foreground truncate max-w-[100px]">{activeEmployee.first_name} {activeEmployee.last_name}</span>
                                             </div>
                                         </div>
-                                        <button 
+                                        <button
                                             onClick={logoutEmployee}
                                             className="p-2 hover:bg-rose-500/10 text-slate-400 hover:text-rose-500 rounded-lg transition-all"
                                             title="Çalışan Çıkış"

@@ -1,6 +1,9 @@
+import React from "react";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import AppShowcase from "@/components/AppShowcase";
+import HardwareSolutions from "@/components/HardwareSolutions";
+import Features from "@/components/Features";
 import ConnectionAnimation from "@/components/ConnectionAnimation";
 import Integrations from "@/components/Integrations";
 import Testimonials from "@/components/Testimonials";
@@ -21,6 +24,8 @@ export default function Home() {
         <Navbar />
         <Hero />
         <AppShowcase />
+        <HardwareSolutions />
+        <Features />
         <ConnectionAnimation />
         <Integrations />
         <Testimonials />

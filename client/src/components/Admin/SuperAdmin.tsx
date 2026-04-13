@@ -20,7 +20,7 @@ interface Tenant {
 }
 
 const AVAILABLE_FEATURES = [
-    { id: 'pos', label: 'Hızlı Satış (POS)' },
+    { id: "pos", label: "JetKasa (POS)" },
     { id: 'products', label: 'Ürün Yönetimi' },
     { id: 'sales_history', label: 'Satış Geçmişi' },
     { id: 'profit_calculator', label: 'Kâr Hesaplama' },
@@ -883,6 +883,21 @@ export default function SuperAdmin() {
                                             title="Database Gruplandır"
                                         >
                                             <User className="w-5 h-5" />
+                                        </button>
+                                         <button 
+                                            onClick={() => {
+                                                if(confirm(`${tenant.company_name || tenant.license_key} oturumuna geçmek istiyor musunuz?`)) {
+                                                    // RLS bypass ile lisans doğrulama için ADM257SA67 anahtarını koru, tenant ID'yi değiştir.
+                                                    localStorage.setItem('currentTenantId', tenant.id);
+                                                    localStorage.setItem('licenseKey', 'ADM257SA67');
+                                                    window.location.reload();
+                                                }
+                                            }}
+                                            className="px-4 py-3 bg-primary/10 hover:bg-primary/20 rounded-xl text-primary font-black text-xs uppercase transition-all flex items-center gap-2"
+                                            title="Yönetim Paneline Git"
+                                        >
+                                            <Globe className="w-4 h-4" />
+                                            Giriş Yap
                                         </button>
                                          <button
                                             onClick={() => {

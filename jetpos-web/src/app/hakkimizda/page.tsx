@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { motion } from "framer-motion";
 import { Users, Globe, Award, ShieldCheck, Rocket, Heart } from "lucide-react";
 import Navbar from "@/components/Navbar";

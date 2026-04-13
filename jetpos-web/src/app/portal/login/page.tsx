@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Sparkles, Key, Mail, ArrowRight, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";

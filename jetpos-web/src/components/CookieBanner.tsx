@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Shield, Settings, X, Check } from "lucide-react";
 import Link from "next/link";
 

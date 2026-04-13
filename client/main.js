@@ -152,7 +152,7 @@ function createWindow() {
                 deviceName: printerName || "",
                 printBackground: true,
                 margins: { marginType: 'none' },
-                pageSize: { width: 80000, height: 297000 },
+                pageSize: { width: 80000, height: 2000000 }, // 2 metreye kadar uzun fiş desteği
             }, (success) => {
                 event.sender.send('silent-print-result', { success });
                 printWin.close();

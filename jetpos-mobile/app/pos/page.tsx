@@ -515,7 +515,7 @@ export default function POSPage() {
                             <ShoppingCart className="w-5 h-5 text-blue-500" />
                         </div>
                         <div>
-                            <h1 className="text-xl font-black text-white leading-none">Hızlı Satış</h1>
+                            <h1 className="text-xl font-black text-white leading-none">JetKasa</h1>
                             <p className="text-[10px] text-secondary font-bold tracking-widest uppercase mt-1">Mobil POS Terminali</p>
                         </div>
                     </div>

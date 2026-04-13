@@ -599,7 +599,7 @@ export default function EmployeeManager({ showToast }: any) {
                                     </h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
                                         {[
-                                            { id: 'can_access_pos', label: 'Hızlı Satış (POS) Erişimi', role: 'pos' },
+                                            { id: 'can_access_pos', label: 'JetKasa (POS) Erişimi', role: 'pos' },
                                             { id: 'can_access_adisyon', label: 'Adisyon/Masa Erişimi', role: 'adisyon' },
                                             { id: 'can_access_reports', label: 'Raporları Görüntüleme', role: 'reports' },
                                             { id: 'can_access_inventory', label: 'Stok Yönetimi / Ürünler', role: 'products' },

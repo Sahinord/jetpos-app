@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Phone, User, ArrowRight, Scan, CheckCircle, TrendingUp, ShoppingCart, Clock, Shield } from "lucide-react";
 import Image from "next/image";
 

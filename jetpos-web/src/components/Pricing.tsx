@@ -1,8 +1,8 @@
 "use client";
 
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Check, Zap, Star, Building2, ArrowRight } from "lucide-react";
-import { useState } from "react";
 import Link from "next/link";
 
 const plans = [
@@ -17,7 +17,7 @@ const plans = [
         popular: false,
         features: [
             "1 Kullanıcı",
-            "Hızlı Satış Sistemi",
+            "JetKasa Satış Sistemi",
             "Barkodlu Satış",
             "Stok Takibi",
             "Kasa & Gün Sonu",
@@ -38,7 +38,7 @@ const plans = [
         popular: true,
         features: [
             "3 Kullanıcı",
-            "Hızlı Satış Sistemi",
+            "JetKasa Satış Sistemi",
             "Barkodlu Satış",
             "Gelişmiş Stok & Depo",
             "E-Fatura & E-Arşiv",

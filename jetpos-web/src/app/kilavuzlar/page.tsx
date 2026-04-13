@@ -38,7 +38,7 @@ const GUIDES = [
     },
     {
         id: "pos",
-        title: "Hızlı Satış (POS) Kullanımı",
+        title: "JetKasa (POS) Kullanımı",
         desc: "Kasadaki işlem hızınızı %300 artıracak klavye kısayolları.",
         icon: ShoppingCart,
         color: "text-emerald-500",

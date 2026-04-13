@@ -335,9 +335,32 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
     };
 
     /* ─ print ─ */
-    const handlePrint = () => {
-        const toLabel = (p: Product, idx: number) => {
-            const bc = `bc-print-${p.id}-${idx}`;
+    const handlePrint = async () => {
+        showToast('Etiketler hazırlanıyor...');
+
+        // 1. Barkodları Data URL (Base64) olarak önceden üret
+        const generateBarcodeDataUrl = (barcode: string) => {
+            const canvas = document.createElement('canvas');
+            try {
+                JsBarcode(canvas, barcode, {
+                    format: 'CODE128',
+                    width: 2,
+                    height: 60,
+                    displayValue: true,
+                    fontSize: 14,
+                    margin: 5,
+                    textMargin: 2,
+                    lineColor: '#000000',
+                    background: '#ffffff'
+                });
+                return canvas.toDataURL('image/png');
+            } catch (e) {
+                console.error("Barcode generation error:", e);
+                return '';
+            }
+        };
+
+        const toLabel = (p: Product, idx: number, barcodeImg: string) => {
             const imgH = cfg.heightMm * 0.15;
             const aln = (id: ElemId) => alignments[id] ?? 'left';
             const fsMm = (id: ElemId, base: number) => base * (fontScales[id] ?? 1);
@@ -366,54 +389,54 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                     </div>
                 </div>`);
             }
-            if (cfg.showBarcode && p.barcode)
-                parts.push(`<div style="position:absolute;left:${getPos('barcode').xMm}mm;top:${getPos('barcode').yMm}mm;"><canvas id="${bc}"></canvas></div>`);
-            if (cfg.showLogo && logoUrl)
+            if (cfg.showBarcode && barcodeImg) {
+                parts.push(`<div style="position:absolute;left:${getPos('barcode').xMm}mm;top:${getPos('barcode').yMm}mm;"><img src="${barcodeImg}" style="height:${cfg.barcodeHMm}mm;width:auto;max-width:${cfg.widthMm - 5}mm;" /></div>`);
+            }
+            if (cfg.showLogo && logoUrl) {
                 parts.push(`<div style="position:absolute;left:${getPos('logo').xMm}mm;top:${getPos('logo').yMm}mm;"><img src="${logoUrl}" style="height:${imgH}mm;object-fit:contain;" /></div>`);
-            const rotStyle = isRotated ? `transform: rotate(90deg) translate(0, -${cfg.widthMm}mm); transform-origin: top left; width: ${cfg.heightMm}mm; height: ${cfg.widthMm}mm;` : `width: ${cfg.widthMm}mm; height: ${cfg.heightMm}mm;`;
+            }
             
-            return `<div style="position:relative; ${rotStyle} border:0.5px solid #ccc;background:#fff!important;font-family:Arial,sans-serif;overflow:hidden;box-sizing:border-box;page-break-inside:avoid;">${parts.join('')}</div>`;
+            const rotStyle = isRotated 
+                ? `transform: rotate(90deg) translateY(-${cfg.heightMm}mm); transform-origin: top left; width: ${cfg.heightMm}mm; height: ${cfg.widthMm}mm;` 
+                : `width: ${cfg.widthMm}mm; height: ${cfg.heightMm}mm;`;
+                
+            return `<div class="label-box" style="position:relative; overflow:hidden; ${rotStyle}">${parts.join('')}</div>`;
         };
-
-        const barcodeScripts = selectedProducts.flatMap(pid => {
-            const pr = products.find(p => p.id === pid);
-            if (!pr?.barcode) return [];
-            return Array.from({ length: labelCount[pid] || 1 }, (_, i) =>
-                `try{JsBarcode(document.getElementById('bc-print-${pid}-${i}'),'${pr.barcode}',{format:'CODE128',width:1.5,height:${Math.round(cfg.barcodeHMm * 3.78)},displayValue:true,fontSize:10,margin:2,textMargin:1,lineColor:'#000'});}catch(e){}`
-            );
-        });
 
         const labelsHtml = selectedProducts.flatMap(pid => {
             const pr = products.find(p => p.id === pid);
             if (!pr) return [];
-            return Array.from({ length: labelCount[pid] || 1 }, (_, i) => toLabel(pr, i));
+            const barcodeImg = pr.barcode ? generateBarcodeDataUrl(pr.barcode) : '';
+            return Array.from({ length: labelCount[pid] || 1 }, (_, i) => toLabel(pr, i, barcodeImg));
         }).join('');
 
-        const gridGap = isRotated ? '10mm' : '3mm';
-        const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Etiket Bas</title><style>
-@page{margin:5mm;size:auto}
-*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;color-adjust:exact}
-body{margin:0;font-family:Arial,sans-serif;background:#fff!important;padding:5mm;color:#000!important}
-.grid{display:flex;flex-wrap:wrap;gap:${gridGap}}
-div,span,p{color:#000!important}
-canvas{display:block}
-</style></head><body><div class="grid">${labelsHtml}</div>
-<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>
-// JsBarcode yüklendikten sonra barcodeları render et
-function renderBarcodes() {
-    if (typeof JsBarcode === 'undefined') {
-        setTimeout(renderBarcodes, 200);
-        return;
+        const finalWidth = isRotated ? cfg.heightMm : cfg.widthMm;
+        const finalHeight = isRotated ? cfg.widthMm : cfg.heightMm;
+
+        const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8">
+<style>
+    @page { margin: 0; size: ${finalWidth}mm ${finalHeight}mm; }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { 
+        margin: 0; 
+        background: #fff !important; 
+        color: #000 !important; 
+        font-family: Arial, sans-serif; 
+        width: ${finalWidth}mm;
+        height: ${finalHeight}mm;
+        overflow: hidden;
     }
-    ${barcodeScripts.join('\n')}
-}
-// Script yüklenince başlat
-if (document.readyState === 'complete') {
-    renderBarcodes();
-} else {
-    window.addEventListener('load', renderBarcodes);
-}
-<\/script></body></html>`;
+    .label-box { 
+        width: ${finalWidth}mm; 
+        height: ${finalHeight}mm; 
+        overflow: hidden; 
+        background: #fff !important;
+        page-break-after: always;
+        position: relative;
+    }
+    div, span, p { color: #000 !important; }
+    img { display: block; max-width: 100%; }
+</style></head><body>${labelsHtml}</body></html>`;
 
         // Sessiz Yazdırma (Electron ise)
         if (window.require) {
@@ -422,38 +445,30 @@ if (document.readyState === 'complete') {
                 ipcRenderer.send('silent-print', {
                     html: fullHtml,
                     printerName: printerName || "",
-                    width: isRotated ? cfg.heightMm : cfg.widthMm,
-                    height: isRotated ? cfg.widthMm : cfg.heightMm,
-                    delay: 600
+                    width: finalWidth - 0.5,
+                    height: finalHeight - 0.5,
+                    delay: 500 
                 });
-                showToast('Etiketler yazıcıya gönderildi (Sessiz)');
+                showToast('Etiketler yazıcıya gönderildi');
                 return;
             } catch (e) {
                 console.error('Sessiz yazdırma hatası:', e);
             }
         }
 
-        // iframe ile yazdır (Electron değilse veya hata varsay)
-        try {
-            const iframe = document.createElement('iframe');
-            iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:none;opacity:0;pointer-events:none;';
-            document.body.appendChild(iframe);
-
-            const doc = iframe.contentDocument || iframe.contentWindow?.document;
-            if (doc) {
-                doc.open();
-                doc.write(fullHtml);
-                doc.close();
-                showToast('Etiketler hazırlanıyor...');
-                // Otomatik temizleme (yazdırma bitince)
-                setTimeout(() => {
-                    try { document.body.removeChild(iframe); } catch {}
-                }, 15000);
-            } else {
-                showToast('İframe oluşturulamadı', 'error');
-            }
-        } catch {
-            showToast('Yazdırma hatası oluştu', 'error');
+        // iframe ile yazdır (Fallback)
+        const iframe = document.createElement('iframe');
+        iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:none;opacity:0;';
+        document.body.appendChild(iframe);
+        const doc = iframe.contentDocument || iframe.contentWindow?.document;
+        if (doc) {
+            doc.open();
+            doc.write(fullHtml);
+            doc.close();
+            setTimeout(() => {
+                iframe.contentWindow?.print();
+                setTimeout(() => { try { document.body.removeChild(iframe); } catch {} }, 1000);
+            }, 500);
         }
     };
 

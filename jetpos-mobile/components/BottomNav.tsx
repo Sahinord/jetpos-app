@@ -59,7 +59,7 @@ export default function BottomNav() {
 
     const sidebarItems = [
         { name: 'Pano', icon: LayoutDashboard, path: '/dashboard', show: true },
-        { name: 'Hızlı Satış (POS)', icon: Wallet, path: '/pos', show: true },
+        { name: 'JetKasa (POS)', icon: Wallet, path: '/pos', show: true },
         { name: 'Barkod Okuyucu', icon: ScanLine, path: '/scanner', show: true },
         { name: 'Ürün Yönetimi', icon: Package, path: '/products', show: true },
         { name: 'Cari Hesaplar', icon: Users, path: '/cari', show: true },

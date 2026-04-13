@@ -127,52 +127,52 @@ export default function Home() {
     }
   }, [activeTab]);
 
-    useEffect(() => {
-        if (!tenantLoading && currentTenant) {
-            fetchData();
+  useEffect(() => {
+    if (!tenantLoading && currentTenant) {
+      fetchData();
 
-            // REALTIME: Listen for product and stock changes across all devices
-            const productsChannel = supabase
-                .channel(`dashboard_products_${currentTenant.id}`)
-                .on('postgres_changes', {
-                    event: '*',
-                    schema: 'public',
-                    table: 'products',
-                    filter: `tenant_id=eq.${currentTenant.id}`
-                }, () => {
-                    // Update products in state or re-fetch
-                    fetchData();
-                })
-                .subscribe();
+      // REALTIME: Listen for product and stock changes across all devices
+      const productsChannel = supabase
+        .channel(`dashboard_products_${currentTenant.id}`)
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'products',
+          filter: `tenant_id=eq.${currentTenant.id}`
+        }, () => {
+          // Update products in state or re-fetch
+          fetchData();
+        })
+        .subscribe();
 
-            // REALTIME: Listen for new sales for live analytics
-            const salesChannel = supabase
-                .channel(`dashboard_sales_${currentTenant.id}`)
-                .on('postgres_changes', {
-                    event: 'INSERT',
-                    schema: 'public',
-                    table: 'sales',
-                    filter: `tenant_id=eq.${currentTenant.id}`
-                }, () => {
-                    fetchData();
-                })
-                .subscribe();
+      // REALTIME: Listen for new sales for live analytics
+      const salesChannel = supabase
+        .channel(`dashboard_sales_${currentTenant.id}`)
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'sales',
+          filter: `tenant_id=eq.${currentTenant.id}`
+        }, () => {
+          fetchData();
+        })
+        .subscribe();
 
-            // Eğer localStorage'da receiptSettings yoksa, tenant adını default olarak ata
-            const saved = localStorage.getItem('receiptSettings');
-            if (!saved) {
-                setReceiptSettings((prev: any) => ({
-                    ...prev,
-                    storeName: currentTenant.company_name?.toUpperCase() || prev.storeName,
-                }));
-            }
+      // Eğer localStorage'da receiptSettings yoksa, tenant adını default olarak ata
+      const saved = localStorage.getItem('receiptSettings');
+      if (!saved) {
+        setReceiptSettings((prev: any) => ({
+          ...prev,
+          storeName: currentTenant.company_name?.toUpperCase() || prev.storeName,
+        }));
+      }
 
-            return () => {
-                supabase.removeChannel(productsChannel);
-                supabase.removeChannel(salesChannel);
-            };
-        }
-    }, [tenantLoading, currentTenant, activeWarehouse]);
+      return () => {
+        supabase.removeChannel(productsChannel);
+        supabase.removeChannel(salesChannel);
+      };
+    }
+  }, [tenantLoading, currentTenant, activeWarehouse]);
 
   useEffect(() => {
     const savedRate = localStorage.getItem('campaignRate');
@@ -764,7 +764,7 @@ export default function Home() {
             alacak: 0,
             para_birimi: 'TRY'
           }]);
-        
+
         if (cariError) console.error("Cari hareket kaydı hatası:", cariError);
       }
       // -----------------------------------
@@ -1030,9 +1030,9 @@ export default function Home() {
             <div className="max-w-[1500px] mx-auto w-full flex-1 flex flex-col min-h-0 relative">
               {(isEmployeeLoginEnabled && !isPOSAuthorized) ? (
                 <div className="flex-1 flex items-center justify-center p-8">
-                  <EmployeePinLogin 
-                    isModal 
-                    onSuccess={() => setIsPOSAuthorized(true)} 
+                  <EmployeePinLogin
+                    isModal
+                    onSuccess={() => setIsPOSAuthorized(true)}
                     onCancel={() => setActiveTab('home')}
                   />
                 </div>

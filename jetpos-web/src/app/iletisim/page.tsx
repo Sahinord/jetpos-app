@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { motion } from "framer-motion";
 import { Phone, Mail, MapPin, Send, MessageSquare, Clock, Globe } from "lucide-react";
 import Navbar from "@/components/Navbar";

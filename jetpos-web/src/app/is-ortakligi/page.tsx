@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Handshake, Zap, BarChart3, ShieldCheck, Mail, Send, Check, Loader2, ArrowRight } from "lucide-react";
 import Navbar from "@/components/Navbar";

@@ -48,7 +48,7 @@ interface HomePageProps {
 // Tüm kullanılabilir sayfalar
 export const ALL_PAGES: QuickAccessItem[] = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, color: "from-blue-500 to-blue-600", gradient: "bg-gradient-to-br from-blue-500/20 to-blue-600/20" },
-    { id: "pos", label: "Hızlı Satış", icon: ShoppingCart, color: "from-emerald-500 to-emerald-600", gradient: "bg-gradient-to-br from-emerald-500/20 to-emerald-600/20" },
+    { id: "pos", label: "JetKasa", icon: ShoppingCart, color: "from-emerald-500 to-emerald-600", gradient: "bg-gradient-to-br from-emerald-500/20 to-emerald-600/20" },
     { id: "products", label: "Ürünler", icon: Boxes, color: "from-purple-500 to-purple-600", gradient: "bg-gradient-to-br from-purple-500/20 to-purple-600/20" },
     { id: "history", label: "Satış Geçmişi", icon: History, color: "from-amber-500 to-orange-600", gradient: "bg-gradient-to-br from-amber-500/20 to-orange-600/20" },
     { id: "calculator", label: "Kâr Hesaplama", icon: Calculator, color: "from-cyan-500 to-cyan-600", gradient: "bg-gradient-to-br from-cyan-500/20 to-cyan-600/20" },

@@ -344,6 +344,31 @@ export default function LicenseGate({ onSuccess }: { onSuccess: () => void }) {
                                             {loading ? 'Kontrol Ediliyor...' : 'Devam Et'}
                                         </div>
                                     </button>
+
+                                    {/* Demo Licenses */}
+                                    <div className="pt-4 border-t border-white/5 space-y-4">
+                                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] text-center">Demo Lisanslar</p>
+                                        <div className="grid grid-cols-1 gap-2">
+                                            {[
+                                                { key: 'JETPOS-BASIC-2026', label: 'Basic Sürüm', color: 'text-blue-400' },
+                                                { key: 'JETPOS-PRO-2026', label: 'Pro Sürüm', color: 'text-indigo-400' },
+                                                { key: 'JETPOS-ENTERPRISE-2026', label: 'Enterprise Sürüm', color: 'text-purple-400' }
+                                            ].map((demo) => (
+                                                <button
+                                                    key={demo.key}
+                                                    onClick={() => {
+                                                        setLicenseKey(demo.key);
+                                                        // Küçük bir gecikme ile otomatik kontrol
+                                                        setTimeout(() => handleCheckLicense(), 100);
+                                                    }}
+                                                    className="w-full flex items-center justify-between px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl transition-all group"
+                                                >
+                                                    <span className={`text-xs font-bold ${demo.color}`}>{demo.label}</span>
+                                                    <span className="text-[10px] font-mono text-slate-500 group-hover:text-slate-400">{demo.key}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         ) : step === 'password' ? (

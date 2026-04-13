@@ -158,6 +158,27 @@ export default function TopBar({ activeTab, onMenuClick }: { activeTab: string, 
                         {getTitle(activeTab)}
                     </h1>
                 </div>
+
+                {/* Return to Admin Button (Impersonation check) */}
+                {typeof window !== 'undefined' && localStorage.getItem('licenseKey') === 'ADM257SA67' && currentTenant?.license_key !== 'ADM257SA67' && (
+                    <button
+                        onClick={() => {
+                            // Admin tenant ID'sini bul ve oraya dön. 
+                            // Not: Normalde Admin Tenant ID'sini bir yerden çekmek lazım ama biz license key ile tetikleyebiliriz.
+                            // find_tenant_by_license ile admin'i bulup ID'sini alacağız.
+                            // Ama şimdilik basitçe currentTenantId'yi silip sayfayı yenileyince LicenseGate'e atacak, 
+                            // orada admin key girince düzelecek.
+                            // Veya daha iyisi, Admin ID'sini sabit tutalım ya da context'e ekleyelim.
+                            localStorage.setItem('currentTenantId', '00000000-0000-0000-0000-000000000000'); // Fake ID to trigger re-login as admin
+                            localStorage.removeItem('currentTenantId');
+                            window.location.reload();
+                        }}
+                        className="ml-4 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-rose-500/20 transition-all flex items-center gap-2 animate-pulse"
+                    >
+                        <ShieldCheck className="w-4 h-4" />
+                        Yönetici Paneline Dön
+                    </button>
+                )}
             </div>
 
             {/* Right Section: Actions & Info */}

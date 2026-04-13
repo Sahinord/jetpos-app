@@ -969,6 +969,13 @@ export default function POS({
                                     >
                                         <Clock size={18} />
                                     </button>
+                                    <button
+                                        onClick={handleOpenCashDrawerManual}
+                                        className="aspect-square rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center hover:bg-amber-500/20 transition-all shadow-sm"
+                                        title="Kasa Aç"
+                                    >
+                                        <Wallet size={18} />
+                                    </button>
                                 </div>
                             </div>
 

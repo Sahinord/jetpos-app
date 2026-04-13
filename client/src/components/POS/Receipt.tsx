@@ -190,20 +190,22 @@ function generatePrintHTML(data: ReceiptData | null): string {
 <html>
 <head>
 <meta charset="utf-8">
-<style>
-    @page { margin: 0; size: 80mm auto; }
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body {
-        font-family: 'Courier New', Courier, monospace;
-        width: 80mm;
-        padding: 2mm;
-        color: #000 !important;
-        background: #fff !important;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-    }
-    div, span, p { color: #000 !important; }
-</style>
+    <style>
+        @page { margin: 0; size: 80mm auto; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            width: 70mm;
+            padding: 2mm 5mm;
+            margin: 0;
+            overflow: hidden;
+            color: #000 !important;
+            background: #fff !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        div, span, p { color: #000 !important; }
+    </style>
 </head>
 <body>
     <div style="text-align:center;margin-bottom:8px;">
@@ -214,7 +216,7 @@ function generatePrintHTML(data: ReceiptData | null): string {
         ${addressLine}
         ${phoneLine}
         ${taxLine}
-        <div style="margin:4px 0;font-weight:900;color:#000!important;">********************************</div>
+        <div style="margin:4px 0;font-weight:900;color:#000!important;">******************************</div>
     </div>
 
     <div style="font-size:12px;font-weight:900;margin-bottom:6px;color:#000!important;">
@@ -223,7 +225,7 @@ function generatePrintHTML(data: ReceiptData | null): string {
             <span>SAAT: ${data.date.toLocaleTimeString('tr-TR')}</span>
         </div>
         <div>FİŞ NO: ${data.saleId}</div>
-        <div style="margin:4px 0;color:#000!important;">--------------------------------</div>
+        <div style="margin:4px 0;color:#000!important;">------------------------------</div>
     </div>
 
     <div style="font-size:11px;font-weight:900;display:flex;border-bottom:2px solid #000;padding-bottom:2px;color:#000!important;">
@@ -236,7 +238,7 @@ function generatePrintHTML(data: ReceiptData | null): string {
         ${itemRows}
     </div>
 
-    <div style="font-weight:900;color:#000!important;">********************************</div>
+    <div style="font-weight:900;color:#000!important;">******************************</div>
 
     <div style="font-size:16px;font-weight:900;margin:4px 0;color:#000!important;">
         <div style="display:flex;justify-content:space-between;">
@@ -254,7 +256,7 @@ function generatePrintHTML(data: ReceiptData | null): string {
         </div>
     </div>
 
-    <div style="margin:8px 0;font-weight:900;color:#000!important;">--------------------------------</div>
+    <div style="margin:8px 0;font-weight:900;color:#000!important;">------------------------------</div>
 
     <div style="text-align:center;font-weight:900;color:#000!important;">
         ${s.footerMessage ? `<div style="font-size:10px;">${s.footerMessage}</div>` : ''}

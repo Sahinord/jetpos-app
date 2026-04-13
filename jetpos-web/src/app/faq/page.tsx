@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { motion } from "framer-motion";
 import { HelpCircle, Search, MessageCircle, ArrowRight } from "lucide-react";
 import Navbar from "@/components/Navbar";

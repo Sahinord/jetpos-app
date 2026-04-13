@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Check, Zap, Info, ArrowRight, ShoppingCart,
@@ -19,7 +19,7 @@ const FEATURE_GROUPS = [
         title: "Satış & Operasyon",
         icon: Barcode,
         features: [
-            { id: "hizli_satis", name: "Hızlı Satış POS", price: 150, description: "Saniyeler içinde satış yapmanızı sağlayan dokunmatik arayüz." },
+            { id: "hizli_satis", name: "JetKasa POS", price: 150, description: "Saniyeler içinde satış yapmanızı sağlayan dokunmatik arayüz." },
             { id: "barkodlu_satis", name: "Modern Barkod Sistemi", price: 100, description: "Tüm barkod türlerini ve el terminallerini destekler." },
             { id: "mobil_barkod", name: "Mobil Satış Paneli", price: 120, description: "Telefon kamerasını barkod okuyucu olarak kullanma." },
             { id: "magaza_takip", name: "Merkezi Yönetim", price: 200, description: "Tüm şubeleri tek panelden anlık izleme." },

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -28,7 +28,7 @@ const plans = [
         cta: "14 Gün Ücretsiz Dene",
         users: "1 Kullanıcı",
         features: [
-            { text: "Hızlı Satış Sistemi" },
+            { text: "JetKasa Satış Sistemi" },
             { text: "Barkodlu Satış" },
             { text: "Mobil Barkod Okuma" },
             { text: "Stok Takibi" },
@@ -139,7 +139,7 @@ const featureCategories = [
         title: "Satış & POS",
         icon: Barcode,
         features: [
-            { name: "Hızlı Satış Sistemi", plans: [true, true, true, true] },
+            { name: "JetKasa Satış Sistemi", plans: [true, true, true, true] },
             { name: "Barkodlu Satış", plans: [true, true, true, true] },
             { name: "Mobil Barkod Okuma", plans: [true, true, true, true] },
             { name: "Kasiyer Takip", plans: [true, true, true, true] },
@@ -500,7 +500,7 @@ function FiyatlandirmaContent() {
     const FEATURES = [
         { 
             id: "pos", 
-            label: "Hızlı Satış (POS)", 
+            label: "JetKasa (POS)", 
             description: "Market, mağaza ve perakende noktaları için ultra hızlı barkodlu satış terminali.",
             detailed: "Saniyeler içinde fiş kesmenizi sağlar. Online/Offline çalışma özelliğiyle internet kesilse bile satışa devam edebilirsiniz. Terazi entegrasyonu ve dokunmatik ekran desteği mevcuttur.",
             benefit: "Kasa kuyruklarını %40 azaltın, saniyeler içinde fiş kesin.",

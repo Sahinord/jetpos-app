@@ -12,7 +12,7 @@ interface Feature {
 }
 
 const AVAILABLE_FEATURES: Feature[] = [
-    { id: 'pos', label: 'Hızlı Satış (POS)', description: 'Satış terminali ekranı' },
+    { id: 'pos', label: 'JetKasa (POS)', description: 'Satış terminali ekranı' },
     { id: 'products', label: 'Ürün Yönetimi', description: 'Ürün ekleme, düzenleme, silme' },
     { id: 'sales_history', label: 'Satış Geçmişi', description: 'Geçmiş satış kayıtları' },
     { id: 'profit_calculator', label: 'Kâr Hesaplama', description: 'Kar-zarar hesaplama aracı' },
@@ -93,9 +93,9 @@ export default function FeatureManager() {
                 </button>
             </div>
 
-            {/* Current License Info */}
-            <div className="glass-card p-6 border-l-4 border-l-primary">
-                <div className="flex items-center justify-between">
+            {/* Current License Info & Plan Presets */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 glass-card p-6 border-l-4 border-l-primary flex items-center justify-between">
                     <div>
                         <p className="text-sm text-secondary font-bold uppercase tracking-wider">Aktif Lisans</p>
                         <h3 className="text-xl font-black text-white mt-1">{currentTenant.company_name}</h3>
@@ -103,6 +103,46 @@ export default function FeatureManager() {
                     <div className="text-right">
                         <p className="text-sm text-secondary font-bold uppercase tracking-wider">Lisans Anahtarı</p>
                         <p className="text-lg font-mono font-bold text-primary mt-1">{currentTenant.license_key}</p>
+                    </div>
+                </div>
+
+                <div className="glass-card p-6 border border-white/10 space-y-3">
+                    <p className="text-[10px] font-black text-secondary/50 uppercase tracking-[0.2em]">Hızlı Paket Tanımla</p>
+                    <div className="grid grid-cols-3 gap-2">
+                        {[
+                            { 
+                                id: 'basic', 
+                                label: 'Basic', 
+                                color: 'bg-blue-500/10 border-blue-500/20 text-blue-400',
+                                features: ['pos', 'products']
+                            },
+                            { 
+                                id: 'pro', 
+                                label: 'Pro', 
+                                color: 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400',
+                                features: ['pos', 'products', 'sales_history', 'profit_calculator', 'price_simulator', 'reports']
+                            },
+                            { 
+                                id: 'enterprise', 
+                                label: 'Enterprise', 
+                                color: 'bg-purple-500/10 border-purple-500/20 text-purple-400',
+                                features: AVAILABLE_FEATURES.map(f => f.id)
+                            }
+                        ].map((plan) => (
+                            <button
+                                key={plan.id}
+                                onClick={() => {
+                                    const newFeatures: Record<string, boolean> = {};
+                                    AVAILABLE_FEATURES.forEach(f => {
+                                        newFeatures[f.id] = plan.features.includes(f.id);
+                                    });
+                                    setFeatures(newFeatures);
+                                }}
+                                className={`px-2 py-3 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all hover:brightness-125 ${plan.color}`}
+                            >
+                                {plan.label}
+                            </button>
+                        ))}
                     </div>
                 </div>
             </div>

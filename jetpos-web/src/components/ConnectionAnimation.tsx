@@ -1,11 +1,12 @@
 "use client";
 
+import React from "react";
 import Image from "next/image";
 import { FileText, ShoppingCart, Package, CreditCard, BarChart3, User, Zap } from "lucide-react";
 
 const leftItems = [
     { label: "E-Fatura", icon: FileText },
-    { label: "Hızlı Satış", icon: ShoppingCart },
+    { label: "JetKasa", icon: ShoppingCart },
     { label: "Stok Takibi", icon: Package },
     { label: "Kasa Takibi", icon: CreditCard },
     { label: "Raporlama", icon: BarChart3 },

@@ -1,3 +1,5 @@
+import JsBarcode from "jsbarcode";
+
 /**
  * JetPOS Hardware Integration Library
  * Web Serial API and Web USB based drivers
@@ -47,46 +49,110 @@ export async function readScaleWeight(): Promise<number> {
     }
 }
 
+
 /**
- * Barkod Yazıcı (iframe tabanlı - kasa çekmecesi tetiklemez, yeni pencere açmaz)
+ * Barkod Yazıcı (JsBarcode & Electron Destekli)
  */
 export async function printBarcodeLabel(product: any, settings: any = {}) {
-    // iframe tabanlı yazdırma: window.open açmaz, kasa çekmecesiyle çakışmaz
-    return new Promise<void>((resolve) => {
-        const iframe = document.createElement('iframe');
-        iframe.style.position = 'fixed';
-        iframe.style.right = '0';
-        iframe.style.bottom = '0';
-        iframe.style.width = '0';
-        iframe.style.height = '0';
-        iframe.style.border = 'none';
-        iframe.style.opacity = '0';
-        iframe.style.pointerEvents = 'none';
-        document.body.appendChild(iframe);
+    const labelWidth = settings.width || 40; // mm
+    const labelHeight = settings.height || 30; // mm
+    const printerName = settings.printerName || "";
 
-        const html = `<!DOCTYPE html>
+    // 1. JsBarcode ile yüksek çözünürlüklü barkod oluştur (SVG/Canvas)
+    const canvas = document.createElement('canvas');
+    JsBarcode(canvas, product.barcode, {
+        format: "CODE128",
+        width: 2,
+        height: 60,
+        displayValue: false,
+        margin: 0,
+        background: "#ffffff",
+        lineColor: "#000000"
+    });
+    const barcodeDataUrl = canvas.toDataURL("image/png");
+
+    const html = `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
     <style>
-        @page { size: ${settings.width || '40mm'} ${settings.height || '30mm'}; margin: 0; }
+        @page { size: ${labelWidth}mm ${labelHeight}mm; margin: 0; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Libre Barcode 39', 'Courier New', monospace; padding: 3px; text-align: center; background: #fff; }
-        .name { font-family: Arial, sans-serif; font-size: 10px; font-weight: bold; margin-bottom: 2px; color: #000; }
-        .price { font-family: Arial, sans-serif; font-size: 14px; font-weight: 900; color: #000; margin-bottom: 2px; }
-        .barcode { font-family: 'Libre Barcode 39', cursive; font-size: 36px; line-height: 1; color: #000; letter-spacing: 2px; }
-        .barcode-text { font-family: 'Courier New', monospace; font-size: 7px; color: #000; letter-spacing: 1px; margin-top: 1px; }
+        body { 
+            width: ${labelWidth}mm; 
+            height: ${labelHeight}mm;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+            color: #000;
+            overflow: hidden;
+            padding: 2mm;
+        }
+        .name { 
+            font-family: Arial, sans-serif; 
+            font-size: 9pt; 
+            font-weight: 800; 
+            text-align: center;
+            width: 100%;
+            margin-bottom: 1mm;
+            line-height: 1.1;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .price { 
+            font-family: Arial, sans-serif; 
+            font-size: 14pt; 
+            font-weight: 900; 
+            margin-bottom: 1mm;
+        }
+        .barcode-img {
+            width: 90%;
+            height: 10mm;
+            object-fit: stretch;
+        }
+        .barcode-text { 
+            font-family: 'Courier New', monospace; 
+            font-size: 7pt; 
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin-top: 0.5mm;
+        }
     </style>
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&display=swap" as="style" onload="this.rel='stylesheet'">
-    <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="name">${product.name}</div>
-    <div class="price">&#8378;${Number(product.sale_price).toFixed(2)}</div>
-    <div class="barcode">*${product.barcode}*</div>
+    <div class="price">₺${Number(product.sale_price).toFixed(2)}</div>
+    <img src="${barcodeDataUrl}" class="barcode-img" />
     <div class="barcode-text">${product.barcode}</div>
 </body>
 </html>`;
+
+    // 2. Electron ortamındaysak Sessiz Yazdırma (Silent Print) kullan
+    if (window.require) {
+        try {
+            const { ipcRenderer } = window.require('electron');
+            ipcRenderer.send('silent-print', {
+                html: html,
+                printerName: printerName,
+                width: labelWidth,
+                height: labelHeight
+            });
+            return;
+        } catch (e) {
+            console.error("Electron IPC error:", e);
+        }
+    }
+
+    // 3. Web/Fallback: iframe tabanlı yazdırma
+    return new Promise<void>((resolve) => {
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'fixed';
+        iframe.style.opacity = '0';
+        document.body.appendChild(iframe);
 
         const doc = iframe.contentDocument || iframe.contentWindow?.document;
         if (doc) {
@@ -94,18 +160,18 @@ export async function printBarcodeLabel(product: any, settings: any = {}) {
             doc.write(html);
             doc.close();
 
-            // Font yüklenmesini bekle, sonra yazdır
+            iframe.contentWindow?.focus();
             setTimeout(() => {
                 try {
                     iframe.contentWindow?.print();
                 } catch (e) {
-                    console.error('Yazdırma hatası:', e);
+                    console.error('Print error:', e);
                 }
                 setTimeout(() => {
-                    try { document.body.removeChild(iframe); } catch { }
+                    document.body.removeChild(iframe);
                     resolve();
                 }, 500);
-            }, 1200); // Font yüklenme süresi için bekleme
+            }, 500);
         } else {
             document.body.removeChild(iframe);
             resolve();
