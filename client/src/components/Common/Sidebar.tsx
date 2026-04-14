@@ -130,7 +130,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
     const menuCategories: MenuCategory[] = [
         {
             id: "main",
-            label: "Ana Menü",
+            label: "Ana Menutest",
             icon: LayoutDashboard,
             defaultOpen: true,
             items: [

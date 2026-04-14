@@ -129,7 +129,7 @@ export default function InvoicePanel() {
             setSales(salesRes.data || []);
             setTrendyolOrders(trendyolRes.data || []);
             setArchive(archiveRes.data || []);
-            
+
             // Ayarları tenants tablosundan veya RPC'den alabiliriz
             if (qnbRes.data) setInvoiceConfig(qnbRes.data);
 
@@ -158,13 +158,13 @@ export default function InvoicePanel() {
 
             // KDV Hariç Birim Fiyat (Hassas hesaplama)
             const basePrice = grossPrice / (1 + vatRate / 100);
-            
+
             // Satır Toplamı (Net)
             const lineTotal = Math.round((qty * basePrice) * 100) / 100;
-            
+
             // Satır KDV Tutarı
             const vatAmount = Math.round((lineTotal * (vatRate / 100)) * 100) / 100;
-            
+
             // Satır Genel Toplam
             const fullTotal = lineTotal + vatAmount;
 
