@@ -33,7 +33,7 @@ jobs:
       - name: Build & Publish Electron App
         run: npm run publish:client
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # GitHub'ın kendi sağladığı token yeterlidir
+          GH_TOKEN: ${{ secrets.GH_TOKEN }} # Manuel eklediğimiz yetkili anahtarı kullanıyoruz
           # Sertifikaların varsa buraya eklenmeli:
           # WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
           # WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
