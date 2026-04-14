@@ -9,6 +9,10 @@ on:
 jobs:
   release:
     runs-on: windows-latest
+    env:
+      GH_TOKEN: ${{ secrets.GH_TOKEN }} # Job seviyesinde tanımlayalım
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
     steps:
       - name: Checkout Code
@@ -29,11 +33,13 @@ jobs:
       - name: Build & Publish Electron App
         run: npm run publish:client
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          # Sertifikaların varsa buraya eklenmeli:
-          # WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
-          # WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
-          # APPLE_ID: ${{ secrets.APPLE_ID }}
-          # APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+          NODE_OPTIONS: "--max-old-space-size=4096" # Bellek hatasını önleyelim
+
+      - name: Upload Build Artifacts (Backup)
+        uses: actions/upload-artifact@v4
+        with:
+          name: JetPos-Windows-EXE
+          path: |
+            client/dist/*.exe
+            client/dist/*.yml
+            client/dist/*.blockmap
