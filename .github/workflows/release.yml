@@ -29,7 +29,9 @@ jobs:
       - name: Build & Publish Electron App
         run: npm run publish:client
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }} # Manuel eklediğimiz yetkili anahtarı kullanıyoruz
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           # Sertifikaların varsa buraya eklenmeli:
           # WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
           # WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
