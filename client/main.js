@@ -4,6 +4,12 @@ const path = require('path');
 const isDev = require('electron-is-dev');
 const serve = require('electron-serve');
 const { autoUpdater } = require('electron-updater');
+const log = require('electron-log');
+
+// Loglama ayarları
+autoUpdater.logger = log;
+autoUpdater.logger.transports.file.level = 'info';
+log.info('App starting...');
 
 const loadURL = serve({ directory: 'out' });
 
@@ -38,9 +44,28 @@ ipcMain.on('install-update', () => {
 
 function checkUpdates() {
     if (!isDev) {
-        autoUpdater.checkForUpdatesAndNotify();
+        log.info('Checking for updates...');
+        autoUpdater.checkForUpdatesAndNotify().catch(err => {
+            log.error('Update check error:', err);
+        });
     }
 }
+
+autoUpdater.on('checking-for-update', () => {
+    log.info('Checking for update...');
+});
+autoUpdater.on('update-available', (info) => {
+    log.info('Update available:', info.version);
+    if (mainWindow) {
+        mainWindow.webContents.send('update-available', info);
+    }
+});
+autoUpdater.on('update-not-available', (info) => {
+    log.info('Update not available.');
+});
+autoUpdater.on('error', (err) => {
+    log.error('Error in auto-updater:', err);
+});
 
 function createWindow() {
     // Remove the menu completely
@@ -221,7 +246,8 @@ function createWindow() {
 
 app.whenReady().then(() => {
     createWindow();
-    checkUpdates();
+    // Renderer'ın hazır olması için 5 saniye bekleyip sonra kontrol et
+    setTimeout(checkUpdates, 5000);
 });
 
 app.on('window-all-closed', () => {
