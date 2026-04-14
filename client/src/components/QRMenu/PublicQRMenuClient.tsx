@@ -336,7 +336,7 @@ export default function PublicQRMenuClient({ params }: { params: Promise<{ slug:
                         <input 
                             type="text" 
                             placeholder="Nefis bir şeyler ara..."
-                            value={searchQuery}
+                            value={searchQuery || ""}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className={`w-full pl-12 pr-4 py-4 sm:py-5 rounded-3xl text-sm font-bold outline-none border transition-all ${
                                 settings.dark_mode_enabled 

@@ -61,20 +61,37 @@ Türkiye'deki **TÖDEB** ve Açık Bankacılık mevzuatına göre finansal harek
 
 ---
 
-## 4. Teknik Gereksinimler & Yapılacaklar Listesi
+## 4. Çoklu POS & Donanım Entegrasyonu (Multi-Provider)
 
-- [ ] **DB Şeması:** `external_listings` ve `integration_settings` tablolarının oluşturulması.
-- [ ] **Eşleştirme Ekranı:** Kullanıcının JetPOS ürünlerini Getir/Trendyol ürünleriyle eşleyebileceği UI.
-- [ ] **Sipariş Webhook'u:** Pazaryerlerinden gelen sipariş verilerini standart JetPOS sipariş formatına dönüştüren API endpoint.
-- [ ] **Stok Sync İşçisi (Worker):** Edge function üzerinde çalışan ve API limitlerini (Rate Limit) yöneten senkronizasyon servisi.
+JetPOS'un farklı ölçekteki işletmelere hizmet verebilmesi için fiziksel ödeme terminalleri ile entegre çalışması:
+
+### A. Hugin (Yazar Kasa POS)
+- **Bağlantı Şekli:** Yerel Ağ (TCP/IP) üzerinden **Kablo (Ethernet)** veya **WiFi**.
+- **Protokol:** GMP3 (GİB Onaylı Maliye Protokolü).
+- **Yöntem:** JetPOS PC/Mobile uygulaması TCP Client olarak yazar kasaya bağlanır, tutarı gönderir ve mali fiş verisini loglar.
+
+### B. Ödeal (Yeni Nesil ÖKC & Sanal POS)
+- **Donanım:** SadePos ve E-FaturaPos cihazları ile entegrasyon.
+- **Kabiliyet:** Link ile ödeme, Sanal POS ve fiziki terminal üzerinden tahsilat.
+- **Yorum:** KOBİ'ler için en hızlı devreye alınabilen "nakit akış" odaklı çözümdür.
 
 ---
 
-## 5. Müşteriye Faydası (Value Proposition)
+## 5. Teknik Gereksinimler & Yapılacaklar Listesi
 
-1. **İptallere Son:** "Elimizde kalmadı" diyerek iptal edilen siparişler biter, mağaza puanı korunur.
-2. **Zaman Tasarrufu:** 3-4 farklı tableti kontrol etme yükü kalkar, her şey tek ekrandan yönetilir.
-3. **Finansal Netlik:** Banka, Kasa ve Pazaryeri alacakları tek bir raporda birleşir.
+- [ ] **DB Şeması:** `external_listings` ve `integration_settings` (POS IP, Port, API Key) tablolarının oluşturulması.
+- [ ] **POS Adapter Layer:** `IPOSProvider` interface'i ile Hugin ve Ödeal için driver'ların yazılması.
+- [ ] **Raw Log Sistemi:** Cihazlardan dönen tüm mali cevapların (response) tenant bazlı loglanması.
+- [ ] **Eşleştirme Ekranı:** Kullanıcının JetPOS ürünlerini Getir/Trendyol ürünleriyle eşleyebileceği UI.
+- [ ] **Sipariş Webhook'u:** Pazaryerlerinden gelen sipariş verilerini JetPOS'a aktaran endpoint.
+
+---
+
+## 6. Müşteriye Faydası (Value Proposition)
+
+1. **İptallere Son:** Tam zamanlı stok senkronizasyonu ile "elimizde kalmadı" sorununa veda.
+2. **Donanım Özgürlüğü:** İşletme istediği POS markasını (Hugin, Ödeal vb.) tek tıkla sisteme bağlar.
+3. **Tek Ekran Yönetimi:** Kasa, Banka, Pazaryeri ve Stok takibi tek bir merkezden yönetilir.
 
 ---
 *Hazırlayan: JetPOS AI Entegrasyon Ekibi*

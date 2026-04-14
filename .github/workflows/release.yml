@@ -1,0 +1,41 @@
+name: Build & Publish JetPos
+
+on:
+  push:
+    tags:
+      - 'v*' # v1.1.5 gibi bir tag atanıp pushlandığında çalışır
+  workflow_dispatch: # Manuel olarak da tetiklenebilir
+
+jobs:
+  release:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Root Dependencies
+        run: npm install
+
+      - name: Install Client Dependencies
+        run: npm install --prefix client
+
+      - name: Build & Publish Electron App
+        run: npm run publish:client
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # GitHub'ın kendi sağladığı token yeterlidir
+          # Sertifikaların varsa buraya eklenmeli:
+          # WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          # WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+          # APPLE_ID: ${{ secrets.APPLE_ID }}
+          # APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}

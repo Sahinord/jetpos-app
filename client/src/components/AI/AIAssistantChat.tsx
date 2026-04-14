@@ -217,7 +217,7 @@ export default function AIAssistantChat() {
                     <div className="flex gap-3">
                         <input
                             type="password"
-                            value={apiKey}
+                            value={apiKey || ""}
                             onChange={(e) => setApiKey(e.target.value)}
                             placeholder="DeepSeek API Key (sk-...)"
                             className="flex-1 bg-black/30 border border-purple-500/30 rounded-xl px-4 py-2 text-sm text-white focus:border-purple-500 outline-none transition-all"
@@ -292,7 +292,7 @@ export default function AIAssistantChat() {
                     <div className="relative flex gap-3">
                         <input
                             type="text"
-                            value={input}
+                            value={input || ""}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                             placeholder="Mesajınızı yazın..."

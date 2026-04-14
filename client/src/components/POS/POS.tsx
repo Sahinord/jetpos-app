@@ -31,6 +31,7 @@ export default function POS({
     isCashDrawerEnabled = false,
     cashDrawerPrinterName = "",
     receiptPrinterName = "",
+    labelPrinterName = "",
     setActiveTab,
     initialCart = [],
     onCartCleared,
@@ -1340,7 +1341,7 @@ export default function POS({
                             <button
                                 onClick={async () => {
                                     const { printBarcodeLabel } = await import("@/lib/hardware");
-                                    printBarcodeLabel(contextMenu.product);
+                                    printBarcodeLabel(contextMenu.product, { printerName: labelPrinterName || receiptPrinterName });
                                     setContextMenu(null);
                                 }}
                                 className="w-full text-left px-4 py-2.5 hover:bg-emerald-500/10 rounded-lg text-sm font-bold text-emerald-400 flex items-center gap-3 transition-colors"

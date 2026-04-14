@@ -7,9 +7,34 @@ const { autoUpdater } = require('electron-updater');
 
 const loadURL = serve({ directory: 'out' });
 
-// Auto-updater configuration
-autoUpdater.autoDownload = true;
-autoUpdater.allowPrerelease = false;
+let mainWindow;
+
+// Periyodik güncelleme kontrolü (Her 1 saatte bir)
+setInterval(() => {
+    if (!isDev) autoUpdater.checkForUpdates();
+}, 60 * 60 * 1000);
+
+autoUpdater.on('update-available', (info) => {
+    if (mainWindow) {
+        mainWindow.webContents.send('update-available', info);
+    }
+});
+
+autoUpdater.on('download-progress', (progressObj) => {
+    if (mainWindow) {
+        mainWindow.webContents.send('update-download-progress', progressObj);
+    }
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+    if (mainWindow) {
+        mainWindow.webContents.send('update-ready', info);
+    }
+});
+
+ipcMain.on('install-update', () => {
+    autoUpdater.quitAndInstall();
+});
 
 function checkUpdates() {
     if (!isDev) {
@@ -17,28 +42,11 @@ function checkUpdates() {
     }
 }
 
-autoUpdater.on('update-available', () => {
-    // Optionally notify user
-});
-
-autoUpdater.on('update-downloaded', () => {
-    dialog.showMessageBox({
-        type: 'info',
-        title: 'Güncelleme Hazır',
-        message: 'Yeni bir sürüm indirildi. Uygulamanın güncellenmesi için yeniden başlatılması gerekiyor.',
-        buttons: ['Şimdi Yeniden Başlat', 'Sonra']
-    }).then((result) => {
-        if (result.response === 0) {
-            autoUpdater.quitAndInstall();
-        }
-    });
-});
-
 function createWindow() {
     // Remove the menu completely
     Menu.setApplicationMenu(null);
 
-    const win = new BrowserWindow({
+    mainWindow = new BrowserWindow({
         width: 1280,
         height: 800,
         frame: false, // Custom title bar
@@ -53,23 +61,23 @@ function createWindow() {
         acceptFirstMouse: true, // Focus on first click
     });
 
-    win.once('ready-to-show', () => {
-        win.show();
-        win.focus();
+    mainWindow.once('ready-to-show', () => {
+        mainWindow.show();
+        mainWindow.focus();
     });
 
     // Fix for focus issues on some Windows versions
-    win.on('focus', () => {
-        win.webContents.send('window-focused', true);
+    mainWindow.on('focus', () => {
+        mainWindow.webContents.send('window-focused', true);
     });
 
     // IPC Handlers for custom title bar
-    ipcMain.on('window-minimize', () => win.minimize());
+    ipcMain.on('window-minimize', () => mainWindow.minimize());
     ipcMain.on('window-maximize', () => {
-        if (win.isMaximized()) win.unmaximize();
-        else win.maximize();
+        if (mainWindow.isMaximized()) mainWindow.unmaximize();
+        else mainWindow.maximize();
     });
-    ipcMain.on('window-close', () => win.close());
+    ipcMain.on('window-close', () => mainWindow.close());
 
     // --- KASA ÇEKMECESİ AÇMA (ELECTRON - RAW BYTES) ---
     ipcMain.on('open-cash-drawer', (event, { printerName }) => {
@@ -103,7 +111,7 @@ function createWindow() {
     });
 
     // --- GENEL SESSİZ YAZDIRMA (ETİKET, FİŞ VB.) ---
-    ipcMain.on('silent-print', (event, { html, printerName, width, height, delay = 500 }) => {
+    ipcMain.on('silent-print', (event, { html, printerName, width, height, delay = 800 }) => {
         const printWin = new BrowserWindow({
             show: false,
             width: 800,
@@ -114,21 +122,44 @@ function createWindow() {
             }
         });
 
-        printWin.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
+        const dataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
+        printWin.loadURL(dataUrl);
 
         printWin.webContents.on('did-finish-load', () => {
+            // Render garantisi için ek gecikme (özellikle barkod resimleri için)
             setTimeout(() => {
-                printWin.webContents.print({
+                const printOptions = {
                     silent: true,
                     deviceName: printerName || "",
                     printBackground: true,
                     margins: { marginType: 'none' },
-                    pageSize: (width && height) ? { width: Math.round(width * 1000), height: Math.round(height * 1000) } : 'A4', 
-                }, (success, failureReason) => {
-                    if (!success) console.error('Sessiz yazdırma hatası:', failureReason);
-                    setTimeout(() => printWin.close(), 2000);
+                };
+
+                // Eğer genişlik ve yükseklik mm cinsinden geldiyse microns'a çevir
+                if (width && height) {
+                    Object.assign(printOptions, {
+                        pageSize: { 
+                            width: Math.round(width * 1000), 
+                            height: Math.round(height * 1000) 
+                        }
+                    });
+                } else {
+                    Object.assign(printOptions, { pageSize: 'A4' });
+                }
+
+                printWin.webContents.print(printOptions, (success, failureReason) => {
+                    if (!success) {
+                        console.error('Sessiz yazdırma hatası:', failureReason);
+                        event.sender.send('silent-print-result', { success: false, error: failureReason });
+                    } else {
+                        event.sender.send('silent-print-result', { success: true });
+                    }
+                    // Pencereyi hemen kapatma, yazdırma işlemi kuyruğa girsin
+                    setTimeout(() => {
+                        if (!printWin.isDestroyed()) printWin.close();
+                    }, 1000);
                 });
-            }, delay + 500);
+            }, delay);
         });
     });
 
@@ -182,9 +213,9 @@ function createWindow() {
     });
 
     if (isDev) {
-        win.loadURL('http://127.0.0.1:3005');
+        mainWindow.loadURL('http://127.0.0.1:3005');
     } else {
-        loadURL(win);
+        loadURL(mainWindow);
     }
 }
 

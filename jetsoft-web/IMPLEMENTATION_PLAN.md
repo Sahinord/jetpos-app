@@ -1,24 +1,31 @@
-# JetSoft Web - Uygulama Planı
+# JetSoft Bilgi Teknolojileri - Uygulama Planı
 
-Bu plan, **JetSoft** markasını profesyonel, güvenilir ve teknolojik olarak rakiplerinden (Akınsoft vb.) üstün gösterecek bir web sitesi oluşturmak için hazırlanmıştır.
+Bu plan, **JetSoft**'un sadece bir ürün değil, kapsamlı bir **Yazılım Evi (Software House)** olduğunu vurgulayacak şekilde tasarlanmıştır. JetSoft çatısı altında toplanan tüm alt ürünlerin ve ekosistemin profesyonel sunumunu içerir.
 
 ## 1. Tasarım Dili & Estetik (Aesthetics)
+- **Kurumsal Kimlik:** JetSoft (Parent Brand) - JetPOS (Amiral Gemisi).
 - **Tema:** Dark Mode (Derin Uzay Mavisi/Siyah arka plan).
 - **Vurgu Renkleri:** Neon Kırmızı (`#ef4444`) ve Elektrik Mavisi (`#3b82f6`).
-- **Efektler:** Glassmorphism (Buzlu cam), Gradient Borderlar, Parallax Kaydırma.
-- **Font:** Modern Sans-Serif (Inter veya Outfit).
+- **Efektler:** Glassmorphism, 3D Mockup sunumları.
 
 ## 2. Sayfa Yapısı (Sections)
 
 ### A. Header (Navigasyon)
-- Sabit (Sticky), blur efektli transparan menü.
-- Menü: Ürünler, Sektörler, e-Dönüşüm, Donanım, İletişim.
-- "Ücretsiz Demo" butonu (Neon parlamalı).
+- **Kurumsal:** Hakkımızda, Biz Kimiz?
+- **Ürünlerimiz:** (Dropdown): JetPOS, JetReporting, JetMenu, JetPay.
+- **İletişim:** Destek ve Bayi Başvurusu.
 
-### B. Hero Section (Giriş)
-- **Görsel:** JetPOS arayüzünün göründüğü 3D bir terminal görseli.
-- **Metin:** "İşiniz Jet Hızında. Türkiye'nin En Modern POS Sistemi."
-- **CTA:** "Hemen İncele" ve "WhatsApp Satış Hattı".
+### B. Hero Section (Kurumsal Vizyon)
+- **Slogan:** "Yazılımla Şekillenen Gelecek."
+- **Alt Başlık:** JetSoft Bilgi Teknolojileri olarak, işletmenizi uçtan uca dijitalleştiren yenilikçi yazılım çözümleri üretiyoruz.
+
+### C. Ürün Ekosistemimiz (Alt Ürünler)
+Bu bölümde JetSoft'un tüm gücü alt markalarla gösterilecek:
+1. **JetPOS:** Masaüstü Barkodlu Satış ve Otomasyon Sistemi.
+2. **JetReporting (Mobil):** Patronun cebindeki anlık ciro ve stok raporlama uygulaması.
+3. **JetMenu:** Restoranlar için QR Menü ve Dijital Sipariş Sistemi.
+4. **JetCari:** Bulut tabanlı müşteri ve tedarikçi yönetim paneli.
+5. **JetLabel:** Bugün geliştirdiğimiz gelişmiş etiket tasarım ve baskı modülü.
 
 ### C. Güven ve Sosyal Kanıt
 - EDM Bilişim, Hugin, Paraşüt logolarının geçtiği sonsuz kayan bir bant (Infinite Loop).

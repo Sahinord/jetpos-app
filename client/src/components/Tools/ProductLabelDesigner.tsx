@@ -173,7 +173,16 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
     const [searchTerm, setSearchTerm] = useState('');
 
     /* ─ template ─ */
-    const [templateId, setTemplateId] = useState<TemplateId>('raf');
+    const [templateId, setTemplateId] = useState<TemplateId>(() => {
+        if (typeof window !== 'undefined') {
+            return (localStorage.getItem('last_label_template') as TemplateId) || 'raf';
+        }
+        return 'raf';
+    });
+    
+    useEffect(() => {
+        localStorage.setItem('last_label_template', templateId);
+    }, [templateId]);
     const [customNames, setCustomNames] = useState<Record<string, string>>({});
     const [editingNameId, setEditingNameId] = useState<string | null>(null);
     const [editingNameVal, setEditingNameVal] = useState('');
