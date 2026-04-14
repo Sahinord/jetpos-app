@@ -21,10 +21,10 @@ jobs:
           cache: 'npm'
 
       - name: Install Root Dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
 
       - name: Install Client Dependencies
-        run: npm install --prefix client
+        run: npm install --prefix client --legacy-peer-deps
 
       - name: Build & Publish Electron App
         run: npm run publish:client
