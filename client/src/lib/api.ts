@@ -8,7 +8,7 @@ const IS_ELECTRON = typeof window !== 'undefined' &&
                     navigator.userAgent.indexOf('Electron') >= 0);
 
 // Production Vercel URL
-const PROD_API_BASE = 'https://jetpos-app.vercel.app';
+const PROD_API_BASE = 'https://jetpos-app-71jf.vercel.app';
 
 export async function apiFetch(path: string, options: RequestInit = {}) {
     let url = path;
