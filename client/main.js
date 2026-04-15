@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const path = require('path');
 const { exec } = require('child_process');
 const isDev = require('electron-is-dev');
+const CryptoJS = require('crypto-js');
 
 let autoUpdater;
 try {
@@ -277,6 +278,11 @@ function createWindow() {
         // PRODUCTION: Load from live Vercel
         mainWindow.loadURL(PROD_URL);
     }
+
+    // Inject Device ID for security headers
+    mainWindow.webContents.on('did-finish-load', () => {
+        mainWindow.webContents.executeJavaScript(`window.jetpos_device_id = "${deviceId}";`);
+    });
 }
 
 app.whenReady().then(() => {

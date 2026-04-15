@@ -1,13 +1,9 @@
 import CryptoJS from 'crypto-js';
 
-/**
- * JetPos API Fetch Utility
- * Enhanced with HWID + HMAC Security Layer (v1.2.8)
- */
-
 const IS_ELECTRON = typeof window !== 'undefined' && 
                    (window.process?.type === 'renderer' || 
-                    navigator.userAgent.indexOf('Electron') >= 0);
+                    navigator.userAgent.indexOf('Electron') >= 0 ||
+                    (window as any).process?.versions?.electron);
 
 // Production Vercel URL
 const PROD_API_BASE = 'https://jetpos-app-71jf.vercel.app';
@@ -21,12 +17,18 @@ const APP_SECRET = 'jetpos_secure_v1_2_8_gatekeeper';
 function getDeviceId(): string {
     if (!IS_ELECTRON) return 'web-client';
     try {
-        // Node integration is enabled in this project
-        const { machineIdSync } = (window as any).require('node-machine-id');
-        return machineIdSync();
+        // First try to get it from global if we pushed it from main
+        if ((window as any).jetpos_device_id) return (window as any).jetpos_device_id;
+        
+        // Node integration fallback
+        const nodeRequire = (window as any).require;
+        if (nodeRequire) {
+            const { machineIdSync } = nodeRequire('node-machine-id');
+            return machineIdSync();
+        }
+        return 'electron-remote-active';
     } catch (e) {
-        console.warn('HWID reading failed, falling back...');
-        return 'unknown-dev';
+        return 'electron-dev-id';
     }
 }
 
