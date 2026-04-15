@@ -1,4 +1,5 @@
 // Trendyol GO ( by Uber Eats) API Client
+import { apiFetch } from './api';
 // Hızlı Market Entegrasyonu - Stok, Sipariş ve İade İşlemleri
 
 interface TrendyolGoConfig {
@@ -118,7 +119,7 @@ export class TrendyolGoClient {
         }
 
         // Client-side: Proxy üzerinden istek (CORS bypass)
-        const response = await fetch('/api/proxy', {
+        const response = await apiFetch('/api/proxy', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

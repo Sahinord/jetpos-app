@@ -350,10 +350,11 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
         // 1. Barkodları Data URL (Base64) olarak önceden üret
         const generateBarcodeDataUrl = (barcode: string) => {
             const canvas = document.createElement('canvas');
+            const isEAN13 = /^\d{13}$/.test(barcode);
             try {
                 JsBarcode(canvas, barcode, {
-                    format: 'CODE128',
-                    width: 2,
+                    format: isEAN13 ? 'EAN13' : 'CODE128',
+                    width: isEAN13 ? 1.5 : 2, // EAN13 needs slightly more precision
                     height: 60,
                     displayValue: true,
                     fontSize: 14,

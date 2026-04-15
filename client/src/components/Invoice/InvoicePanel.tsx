@@ -10,6 +10,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import { useTenant } from '@/lib/tenant-context';
 import { TURKEY_LOCATIONS } from '@/lib/turkey-locations';
+import { apiFetch } from '@/lib/api';
 
 export default function InvoicePanel() {
     const { currentTenant } = useTenant();
@@ -115,7 +116,7 @@ export default function InvoicePanel() {
             if (isFirstLoad) setLoading(true);
 
             // Arka planda senkronizasyonu başlat (await etmiyoruz, arkada çalışsın)
-            const syncPromise = fetch(`/api/trendyol/sync-orders?tenantId=${currentTenant.id}&days=5`, { method: 'POST' })
+            const syncPromise = apiFetch(`/api/trendyol/sync-orders?tenantId=${currentTenant.id}&days=5`, { method: 'POST' })
                 .catch(err => console.error('Sync Error:', err));
 
             // Ana verileri hızlıca çek (Supabase ve Archive API)
@@ -123,7 +124,7 @@ export default function InvoicePanel() {
                 supabase.from('sales').select('*').eq('tenant_id', currentTenant.id).order('created_at', { ascending: false }).limit(50),
                 supabase.from('trendyol_go_orders').select('*').order('created_at', { ascending: false }).limit(200),
                 supabase.rpc('get_integration_settings', { p_tenant_id: currentTenant.id, p_type: 'qnb_efinans' }),
-                fetch(`/api/invoices/archive?tenantId=${currentTenant.id}`, { method: 'POST' }).then(r => r.json()).catch(() => ({ success: false, data: [] }))
+                apiFetch(`/api/invoices/archive?tenantId=${currentTenant.id}`, { method: 'POST' }).then(r => r.json()).catch(() => ({ success: false, data: [] }))
             ]);
 
             setSales(salesRes.data || []);
@@ -315,7 +316,7 @@ export default function InvoicePanel() {
                 carrierName: editModal.carrierName
             };
 
-            const response = await fetch('/api/invoices/send', {
+            const response = await apiFetch('/api/invoices/send', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(invoicePayload)
@@ -522,7 +523,7 @@ export default function InvoicePanel() {
                                                 <button
                                                     onClick={async () => {
                                                         try {
-                                                            const res = await fetch(`/api/invoices/status?id=${item.id}`, { method: 'POST' });
+                                                            const res = await apiFetch(`/api/invoices/status?id=${item.id}`, { method: 'POST' });
                                                             const data = await res.json();
                                                             if (data.success) {
                                                                 fetchData();
@@ -542,7 +543,7 @@ export default function InvoicePanel() {
                                                     onClick={async () => {
                                                         if (confirm('Bu faturayı silmek istediğinize emin misiniz?')) {
                                                             try {
-                                                                const res = await fetch(`/api/invoices/archive?id=${item.id}`, { method: 'DELETE' });
+                                                                const res = await apiFetch(`/api/invoices/archive?id=${item.id}`, { method: 'DELETE' });
                                                                 const data = await res.json();
                                                                 if (data.success) {
                                                                     fetchData();
