@@ -1,6 +1,6 @@
 {
   "name": "jetpos",
-  "version": "1.2.7",
+  "version": "1.3.0",
   "description": "JetPos - İşiniz Jet Hızında",
   "author": "JetPos",
   "homepage": "./",
@@ -32,17 +32,20 @@
       "createStartMenuShortcut": true
     },
     "asar": true,
-    "files": [
-      "main.js",
-      "out/**/*",
-      "package.json"
-    ],
     "publish": [
       {
         "provider": "github",
         "owner": "Sahinord",
         "repo": "jetpos-app"
       }
+    ],
+    "files": [
+      "main.js",
+      "preload.js",
+      ".next/**/*",
+      "public/**/*",
+      "node_modules/**/*",
+      "package.json"
     ]
   },
   "dependencies": {

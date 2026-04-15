@@ -1,29 +1,49 @@
-const { app, BrowserWindow, Menu, ipcMain, dialog } = require('electron');
-const { exec } = require('child_process');
+const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const path = require('path');
+const { exec } = require('child_process');
 const isDev = require('electron-is-dev');
 const serve = require('electron-serve');
-const { autoUpdater } = require('electron-updater');
+
+let autoUpdater;
+try {
+    autoUpdater = require('electron-updater').autoUpdater;
+} catch (e) {
+    autoUpdater = {
+        logger: null,
+        checkForUpdates: () => {},
+        checkForUpdatesAndNotify: () => Promise.resolve(),
+        on: () => {},
+        quitAndInstall: () => {}
+    };
+}
+
 let log;
 try {
     log = require('electron-log');
 } catch (e) {
-    // Fallback if electron-log is missing during packaging
     log = { info: console.log, error: console.error, warn: console.warn, transports: { file: { level: 'info' } } };
 }
-const { machineIdSync } = require('node-machine-id');
+
+let machineIdSync;
+try {
+    machineIdSync = require('node-machine-id').machineIdSync;
+} catch (e) {
+    machineIdSync = () => 'unknown';
+}
 
 // Get Machine ID for security
 let deviceId = 'unknown';
 try {
     deviceId = machineIdSync();
 } catch (e) {
-    console.error('Failed to capture machine id', e);
+    log.error('Failed to capture machine id', e);
 }
 
 // Loglama ayarları
 autoUpdater.logger = log;
-autoUpdater.logger.transports.file.level = 'info';
+if (autoUpdater.logger && autoUpdater.logger.transports && autoUpdater.logger.transports.file) {
+    autoUpdater.logger.transports.file.level = 'info';
+}
 log.info('App starting...');
 
 const loadURL = serve({ directory: 'out' });
