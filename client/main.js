@@ -4,7 +4,22 @@ const path = require('path');
 const isDev = require('electron-is-dev');
 const serve = require('electron-serve');
 const { autoUpdater } = require('electron-updater');
-const log = require('electron-log');
+let log;
+try {
+    log = require('electron-log');
+} catch (e) {
+    // Fallback if electron-log is missing during packaging
+    log = { info: console.log, error: console.error, warn: console.warn, transports: { file: { level: 'info' } } };
+}
+const { machineIdSync } = require('node-machine-id');
+
+// Get Machine ID for security
+let deviceId = 'unknown';
+try {
+    deviceId = machineIdSync();
+} catch (e) {
+    console.error('Failed to capture machine id', e);
+}
 
 // Loglama ayarları
 autoUpdater.logger = log;
