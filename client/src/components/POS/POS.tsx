@@ -508,138 +508,120 @@ export default function POS({
     return (
         <div className="flex flex-col h-[calc(100vh-10px)] gap-2 select-none">
             {/* Premium Top Info Bar */}
-            <div className="relative flex items-center justify-between bg-gradient-to-r from-card/60 via-card/40 to-card/60 backdrop-blur-xl border-2 border-border/40 p-2 rounded-xl shadow-xl overflow-hidden mt-2">
-                {/* Background Glow */}
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 opacity-50" />
-                <div className="absolute -left-20 -top-20 w-40 h-40 bg-primary/10 rounded-full blur-3xl" />
-                <div className="absolute -right-20 -top-20 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl" />
-
-                <div className="relative flex items-center gap-6">
-                    {/* Online Status */}
-                    <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-600 rounded-xl border border-emerald-500/30 backdrop-blur-sm">
-                        <div className="relative">
-                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                            <div className="absolute inset-0 w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+            <div className="flex items-center justify-between p-2.5 bg-[#020617] backdrop-blur-3xl border-b border-white/5 mt-1 rounded-2xl mx-1 shadow-2xl">
+                {/* 1. Status & Terminal Section */}
+                <div className="flex items-center gap-2">
+                    <div className="flex items-center h-12 px-4 bg-slate-900/50 border border-white/5 rounded-xl shadow-inner">
+                        <div className="relative mr-3 flex items-center justify-center">
+                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                            <div className="absolute inset-0 w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping opacity-30" />
                         </div>
-                        <span className="text-xs font-black tracking-wider">SİSTEM ÇEVRİMİÇİ</span>
+                        <div className="flex flex-col leading-none">
+                            <span className="text-[8px] font-black text-slate-500 tracking-[1.5px] uppercase mb-0.5">SİSTEM</span>
+                            <span className="text-[11px] font-black text-emerald-500 uppercase">ONLINE</span>
+                        </div>
                     </div>
 
-                    {/* Terminal Info */}
-                    <div className="flex items-center gap-2 px-4 py-2 bg-primary/5 rounded-xl border border-border backdrop-blur-sm">
-                        <Monitor size={16} className="text-primary" />
-                        <span className="text-xs font-black text-secondary uppercase tracking-wider">Terminal #01</span>
+                    <div className="flex items-center h-12 px-4 bg-slate-900/50 border border-white/5 rounded-xl shadow-inner">
+                        <Monitor size={16} className="text-primary mr-3" />
+                        <div className="flex flex-col leading-none">
+                            <span className="text-[8px] font-black text-slate-500 tracking-[1.5px] uppercase mb-0.5">TERMİNAL</span>
+                            <span className="text-[11px] font-black text-slate-200 uppercase">T-01</span>
+                        </div>
                     </div>
+                </div>
 
-                    {/* Kasa Aç Butonu */}
+                {/* 2. Primary Actions (Kasa & Müşteri) */}
+                <div className="flex items-center h-12 p-1 bg-slate-900/80 border border-white/5 rounded-xl shadow-inner">
                     <button
                         onClick={handleOpenCashDrawerManual}
-                        className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 rounded-xl border border-amber-500/30 transition-all font-black text-xs uppercase tracking-wider"
+                        className="flex items-center gap-3 px-5 h-full hover:bg-white/5 rounded-lg transition-all group"
                     >
-                        <Wallet size={16} />
-                        KASA AÇ
+                        <Wallet size={16} className="text-amber-500 group-hover:scale-110 transition-transform" />
+                        <span className="text-[11px] font-black text-slate-300 uppercase tracking-wider">KASA AÇ</span>
                     </button>
-
-                    {/* User Info */}
-                    <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl border border-primary/20 backdrop-blur-sm">
-                        <User size={16} className="text-primary" />
-                        <span className="text-xs font-black text-foreground uppercase tracking-wider">
-                            {activeEmployee ? `${activeEmployee.first_name} ${activeEmployee.last_name}` : 'YÖNETİCİ'}
+                    <div className="w-px h-6 bg-white/10 mx-1" />
+                    <button
+                        onClick={() => setIsCariModalOpen(true)}
+                        className="flex items-center gap-3 px-5 h-full hover:bg-white/5 rounded-lg transition-all group"
+                    >
+                        <Users size={16} className="text-primary group-hover:scale-110 transition-transform" />
+                        <span className="text-[11px] font-black text-slate-300 uppercase tracking-wider truncate max-w-[150px]">
+                            {selectedCari ? selectedCari.unvani : 'MÜŞTERİ SEÇ'}
                         </span>
-                        {activeEmployee?.position && (
-                            <span className="text-[8px] font-bold text-secondary uppercase opacity-70">({activeEmployee.position})</span>
-                        )}
-                    </div>
-
-                    {/* Müşteri Seçimi (CRM) */}
-                    <div className="flex items-center gap-2">
-                        {!selectedCari ? (
+                        {selectedCari && (
                             <button
-                                onClick={() => { setIsCariModalOpen(true); }}
-                                className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-primary/10 text-secondary hover:text-primary rounded-xl border border-border hover:border-primary/30 transition-all font-black text-xs uppercase tracking-wider"
+                                onClick={(e) => { e.stopPropagation(); setSelectedCari(null); }}
+                                className="ml-1 p-1 hover:bg-rose-500/20 rounded-full text-rose-500/50 hover:text-rose-500 transition-all"
                             >
-                                <Users size={16} />
-                                MÜŞTERİ SEÇ
+                                <X size={12} />
                             </button>
-                        ) : (
-                            <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-500 border-emerald-500/30 rounded-xl border backdrop-blur-sm group">
-                                <Users size={16} />
-                                <div className="flex flex-col">
-                                    <span className="text-[10px] font-black uppercase tracking-widest">{selectedCari.unvani}</span>
-                                    <span className="text-[8px] opacity-70">Puan: {selectedCari.loyalty_points_total || 0}</span>
-                                </div>
-                                <button
-                                    onClick={() => setSelectedCari(null)}
-                                    className="ml-2 hover:bg-rose-500/20 p-1 rounded-full text-rose-500/50 hover:text-rose-500 transition-all"
-                                >
-                                    <X size={14} />
-                                </button>
-                            </div>
                         )}
-                    </div>
+                    </button>
+                </div>
 
-                    {/* Warehouse/Store Selector */}
-                    {warehouses.length > 0 && (
-                        <div className="flex items-center gap-2 px-4 py-1.5 bg-indigo-500/10 rounded-xl border border-indigo-500/30 backdrop-blur-sm">
-                            <Building2 size={16} className="text-indigo-400" />
+                {/* 3. Branch & Context Info */}
+                <div className="flex items-center h-12 px-5 bg-slate-900/50 border border-white/5 rounded-xl shadow-inner gap-6">
+                    <div className="flex flex-col leading-none">
+                        <span className="text-[8px] font-black text-slate-500 tracking-[1.5px] uppercase mb-1">ŞUBE</span>
+                        {warehouses.length > 0 && (
                             <select
                                 value={activeWarehouse?.id || ""}
                                 onChange={(e) => {
                                     const selected = warehouses.find(w => w.id === e.target.value);
                                     if (selected) {
-                                        if (cart.length > 0) {
-                                            if (confirm("Mağaza değişince sepetinizdeki fiyatlar güncellenmeyebilir. Sepeti temizlemek ister misiniz?")) {
-                                                setCart([]);
-                                            }
-                                        }
+                                        if (cart.length > 0 && confirm("Sepet temizlensin mi?")) setCart([]);
                                         setActiveWarehouse(selected);
-                                        if (showToast) {
-                                            showToast(`${selected.name} mağazasına geçildi.`, "success");
-                                        }
                                     }
                                 }}
-                                className="bg-transparent text-xs font-bold text-indigo-200 outline-none cursor-pointer"
+                                className="bg-transparent text-[11px] font-black text-slate-200 outline-none cursor-pointer uppercase tracking-tight"
                             >
                                 {warehouses.map((w: any) => (
-                                    <option key={w.id} value={w.id} className="bg-slate-900 text-white">
-                                        {w.name} {w.type === 'virtual' ? '(Online)' : ''}
-                                    </option>
+                                    <option key={w.id} value={w.id} className="bg-slate-900 text-white">{w.name}</option>
                                 ))}
                             </select>
+                        )}
+                    </div>
+                    <div className="w-px h-6 bg-white/10" />
+                    <div className="flex flex-col leading-none">
+                        <span className="text-[8px] font-black text-slate-500 tracking-[1.5px] uppercase mb-1">FİYAT MODU</span>
+                        <div className="flex items-center gap-2">
+                            <BadgePercent size={14} className={isPriceSyncEnabled ? 'text-amber-500' : 'text-emerald-500'} />
+                            <span className={`text-[10px] font-black ${isPriceSyncEnabled ? 'text-amber-500' : 'text-emerald-500'}`}>
+                                {isPriceSyncEnabled ? 'SENKRONİZE' : 'MAĞAZA BAZLI'}
+                            </span>
                         </div>
-                    )}
-
-                    {/* Pricing Mode Badge */}
-                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border backdrop-blur-sm ${isPriceSyncEnabled ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500'}`}>
-                        <BadgePercent size={14} />
-                        <span className="text-[10px] font-black uppercase tracking-tighter">
-                            {isPriceSyncEnabled ? "Fiyatlar Senkronize" : "Mağaza Bazlı Fiyatlar"}
-                        </span>
                     </div>
                 </div>
 
-                <div className="relative flex items-center gap-4">
-                    {/* Settings Button */}
-                    <button
-                        onClick={() => setActiveTab("settings")}
-                        className="group p-2.5 bg-primary/5 hover:bg-primary/10 rounded-xl border border-border hover:border-primary/30 text-secondary hover:text-primary transition-all flex items-center gap-2 backdrop-blur-sm"
-                    >
-                        <Calculator size={16} className="group-hover:rotate-12 transition-transform" />
-                        <span className="text-xs font-bold tracking-wide hidden xl:block">AYARLAR</span>
-                    </button>
+                {/* 4. Personnel & Time Section */}
+                <div className="flex items-center gap-2">
+                    <div className="flex items-center h-12 px-4 bg-slate-900/50 border border-white/5 rounded-xl shadow-inner">
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center mr-3">
+                            <User size={16} className="text-primary" />
+                        </div>
+                        <div className="flex flex-col leading-none mr-4">
+                            <span className="text-[8px] font-black text-slate-500 tracking-[1.5px] uppercase mb-0.5">OPERATÖR</span>
+                            <span className="text-[11px] font-black text-white uppercase">{activeEmployee ? activeEmployee.first_name : 'ADMİN'}</span>
+                        </div>
+                        <button
+                            onClick={() => setActiveTab("settings")}
+                            className="w-8 h-8 flex items-center justify-center hover:bg-white/5 rounded-lg transition-all text-slate-500 hover:text-white"
+                        >
+                            <Calculator size={16} />
+                        </button>
+                    </div>
 
-                    {/* Date & Time */}
-                    <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-2 bg-primary/5 px-4 py-2 rounded-xl border border-border backdrop-blur-sm">
-                            <Clock size={14} className="text-secondary" />
-                            <span className="font-black text-sm text-secondary">
-                                {currentTime.toLocaleDateString('tr-TR')}
+                    <div className="flex items-center h-12 px-6 bg-primary rounded-xl shadow-[0_0_20px_rgba(59,130,246,0.3)] group transition-all hover:shadow-[0_0_30px_rgba(59,130,246,0.5)]">
+                        <div className="flex flex-col items-end pr-5 mr-5 border-r border-white/20 leading-none">
+                            <span className="text-xs font-black text-white mb-0.5">{currentTime.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' })}</span>
+                            <span className="text-[8px] font-bold text-white/60 tracking-[1px] uppercase">
+                                {currentTime.toLocaleDateString('tr-TR', { weekday: 'long' })}
                             </span>
                         </div>
-                        <div className="bg-gradient-to-r from-primary/20 to-primary/10 px-4 py-2 rounded-xl border-2 border-primary/30 backdrop-blur-sm">
-                            <span className="font-black text-sm text-primary animate-pulse">
-                                {currentTime.toLocaleTimeString('tr-TR')}
-                            </span>
-                        </div>
+                        <span className="text-xl font-black text-white tabular-nums tracking-tighter">
+                            {currentTime.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
                     </div>
                 </div>
             </div>
@@ -1484,4 +1466,3 @@ export default function POS({
         </div>
     );
 }
-
