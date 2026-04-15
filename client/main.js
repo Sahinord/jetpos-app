@@ -2,7 +2,6 @@ const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const path = require('path');
 const { exec } = require('child_process');
 const isDev = require('electron-is-dev');
-const serve = require('electron-serve');
 
 let autoUpdater;
 try {
@@ -46,7 +45,7 @@ if (autoUpdater.logger && autoUpdater.logger.transports && autoUpdater.logger.tr
 }
 log.info('App starting...');
 
-const loadURL = serve({ directory: 'out' });
+const PROD_URL = 'https://jetpos-app-71jf.vercel.app';
 
 let mainWindow;
 
@@ -275,7 +274,8 @@ function createWindow() {
     if (isDev) {
         mainWindow.loadURL('http://127.0.0.1:3005');
     } else {
-        loadURL(mainWindow);
+        // PRODUCTION: Load from live Vercel
+        mainWindow.loadURL(PROD_URL);
     }
 }
 
