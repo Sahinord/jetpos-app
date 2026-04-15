@@ -242,6 +242,14 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                         console.error(`Error updating product ${productId}:`, error.message);
                     } else {
                         successCount++;
+                        try {
+                            const q = JSON.parse(localStorage.getItem('jetpos_label_queue') || '[]');
+                            if (!q.includes(productId)) {
+                                q.push(productId);
+                                localStorage.setItem('jetpos_label_queue', JSON.stringify(q));
+                            }
+                        } catch(e) {}
+
                         logs.push({
                             product_id: productId,
                             product_name: product.name,

@@ -373,6 +373,7 @@ export default function Home() {
       }
 
       const productId = editingProduct ? (editingProduct as any).id : null;
+      let needsLabel = !editingProduct || Number(formData.sale_price) !== Number((editingProduct as any).sale_price);
 
       const productPayload: any = {
         name: formData.name,
@@ -444,6 +445,16 @@ export default function Home() {
 
           if (wsError) throw wsError;
         }
+      }
+
+      if (needsLabel && savedProductId) {
+        try {
+          const q = JSON.parse(localStorage.getItem('jetpos_label_queue') || '[]');
+          if (!q.includes(savedProductId)) {
+            q.push(savedProductId);
+            localStorage.setItem('jetpos_label_queue', JSON.stringify(q));
+          }
+        } catch(e) {}
       }
 
       showToast(editingProduct ? "Ürün güncellendi" : "Yeni ürün eklendi");

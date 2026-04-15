@@ -124,7 +124,7 @@ export default function InvoicePanel() {
                 supabase.from('sales').select('*').eq('tenant_id', currentTenant.id).order('created_at', { ascending: false }).limit(50),
                 supabase.from('trendyol_go_orders').select('*').order('created_at', { ascending: false }).limit(200),
                 supabase.rpc('get_integration_settings', { p_tenant_id: currentTenant.id, p_type: 'qnb_efinans' }),
-                apiFetch(`/api/invoices/archive?tenantId=${currentTenant.id}`, { method: 'POST' }).then(r => r.json()).catch(() => ({ success: false, data: [] }))
+                apiFetch(`/api/invoices/archive?tenantId=${currentTenant.id}`, { method: 'GET' }).catch(() => ({ success: false, data: [] }))
             ]);
 
             setSales(salesRes.data || []);
@@ -316,15 +316,13 @@ export default function InvoicePanel() {
                 carrierName: editModal.carrierName
             };
 
-            const response = await apiFetch('/api/invoices/send', {
+            const result = await apiFetch('/api/invoices/send', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(invoicePayload)
             });
 
-            const result = await response.json();
-
-            if (result.success) {
+            if (result && result.success) {
                 if (editModal.platform === 'JetPos') {
                     await supabase.from('sales').update({ status: 'invoiced' }).eq('id', editModal.id);
                 } else if (editModal.platform === 'Trendyol') {
@@ -523,12 +521,11 @@ export default function InvoicePanel() {
                                                 <button
                                                     onClick={async () => {
                                                         try {
-                                                            const res = await apiFetch(`/api/invoices/status?id=${item.id}`, { method: 'POST' });
-                                                            const data = await res.json();
-                                                            if (data.success) {
+                                                            const data = await apiFetch(`/api/invoices/status/${item.id}`, { method: 'GET' });
+                                                            if (data && data.success) {
                                                                 fetchData();
                                                             } else {
-                                                                alert('Hata: ' + data.error);
+                                                                alert('Hata: ' + (data?.error || 'Bilinmeyen hata'));
                                                             }
                                                         } catch (err) {
                                                             console.error('Sync Error:', err);
@@ -543,12 +540,11 @@ export default function InvoicePanel() {
                                                     onClick={async () => {
                                                         if (confirm('Bu faturayı silmek istediğinize emin misiniz?')) {
                                                             try {
-                                                                const res = await apiFetch(`/api/invoices/archive?id=${item.id}`, { method: 'DELETE' });
-                                                                const data = await res.json();
-                                                                if (data.success) {
+                                                                const data = await apiFetch(`/api/invoices/archive?id=${item.id}`, { method: 'DELETE' });
+                                                                if (data && data.success) {
                                                                     fetchData();
                                                                 } else {
-                                                                    alert('Silme Hatası: ' + data.error);
+                                                                    alert('Silme Hatası: ' + (data?.error || 'Bilinmeyen hata'));
                                                                 }
                                                             } catch (err) {
                                                                 console.error('Delete Error:', err);

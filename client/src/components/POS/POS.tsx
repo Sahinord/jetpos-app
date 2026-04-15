@@ -6,7 +6,8 @@ import {
     Plus, Minus, Printer, Pause, Play, Delete,
     ChevronLeft, ChevronRight, Hash, BadgePercent,
     Calculator, MousePointer2, User, Clock, Monitor, X,
-    Wallet, Building2, Sparkles, TrendingUp, Camera, Users
+    Wallet, Building2, Sparkles, TrendingUp, Camera, Users,
+    BarChart3
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PrintReceiptButton, triggerManualPrint, ReceiptPreview } from "./Receipt";
@@ -531,40 +532,31 @@ export default function POS({
                     </div>
                 </div>
 
-                {/* 2. Primary Actions (Kasa & Müşteri) */}
-                <div className="flex items-center h-12 p-1 bg-slate-900/80 border border-white/5 rounded-xl shadow-inner">
+                {/* 2. Management Section - Ledger & Reports */}
+                <div className="flex items-center gap-1 h-12 px-3 bg-slate-900/50 border border-white/5 rounded-xl shadow-inner">
                     <button
-                        onClick={handleOpenCashDrawerManual}
-                        className="flex items-center gap-3 px-5 h-full hover:bg-white/5 rounded-lg transition-all group"
+                        onClick={() => setActiveTab("cari_hesaplar")}
+                        className="flex items-center gap-2 px-3 py-1.5 hover:bg-white/5 rounded-lg transition-all group"
                     >
-                        <Wallet size={16} className="text-amber-500 group-hover:scale-110 transition-transform" />
-                        <span className="text-[11px] font-black text-slate-300 uppercase tracking-wider">KASA AÇ</span>
+                        <Users size={14} className="text-amber-500 group-hover:scale-110 transition-transform" />
+                        <span className="text-[10px] font-black text-white/90 uppercase tracking-widest">CARİ REHBER</span>
                     </button>
                     <div className="w-px h-6 bg-white/10 mx-1" />
                     <button
-                        onClick={() => setIsCariModalOpen(true)}
-                        className="flex items-center gap-3 px-5 h-full hover:bg-white/5 rounded-lg transition-all group"
+                        onClick={() => setActiveTab("reports")}
+                        className="flex items-center gap-2 px-3 py-1.5 hover:bg-white/5 rounded-lg transition-all group"
                     >
-                        <Users size={16} className="text-primary group-hover:scale-110 transition-transform" />
-                        <span className="text-[11px] font-black text-slate-300 uppercase tracking-wider truncate max-w-[150px]">
-                            {selectedCari ? selectedCari.unvani : 'MÜŞTERİ SEÇ'}
-                        </span>
-                        {selectedCari && (
-                            <button
-                                onClick={(e) => { e.stopPropagation(); setSelectedCari(null); }}
-                                className="ml-1 p-1 hover:bg-rose-500/20 rounded-full text-rose-500/50 hover:text-rose-500 transition-all"
-                            >
-                                <X size={12} />
-                            </button>
-                        )}
+                        <BarChart3 size={14} className="text-indigo-400 group-hover:scale-110 transition-transform" />
+                        <span className="text-[10px] font-black text-white/90 uppercase tracking-widest">RAPORLAR</span>
                     </button>
                 </div>
 
-                {/* 3. Branch & Context Info */}
-                <div className="flex items-center h-12 px-5 bg-slate-900/50 border border-white/5 rounded-xl shadow-inner gap-6">
+                {/* 3. Terminal Settings & Price Mode */}
+                <div className="flex items-center gap-6 h-12 px-6 bg-slate-900/50 border border-white/5 rounded-xl shadow-inner">
                     <div className="flex flex-col leading-none">
                         <span className="text-[8px] font-black text-slate-500 tracking-[1.5px] uppercase mb-1">ŞUBE</span>
-                        {warehouses.length > 0 && (
+                        <div className="flex items-center gap-2">
+                            <Building2 size={12} className="text-primary" />
                             <select
                                 value={activeWarehouse?.id || ""}
                                 onChange={(e) => {
@@ -574,13 +566,13 @@ export default function POS({
                                         setActiveWarehouse(selected);
                                     }
                                 }}
-                                className="bg-transparent text-[11px] font-black text-slate-200 outline-none cursor-pointer uppercase tracking-tight"
+                                className="bg-transparent text-[10px] font-black text-white outline-none cursor-pointer focus:text-primary transition-colors appearance-none pr-4"
                             >
                                 {warehouses.map((w: any) => (
                                     <option key={w.id} value={w.id} className="bg-slate-900 text-white">{w.name}</option>
                                 ))}
                             </select>
-                        )}
+                        </div>
                     </div>
                     <div className="w-px h-6 bg-white/10" />
                     <div className="flex flex-col leading-none">
@@ -791,36 +783,36 @@ export default function POS({
                     </div>
                 </div>
 
-                {/* RIGHT: Grid & Actions */}
-                <div className="flex-1 flex flex-col gap-3 overflow-hidden">
-                    {/* Categories & Search - Enhanced */}
-                    <div className="flex gap-4">
-                        {/* Search Bar with Glow Effect */}
-                        <div className="relative w-full max-w-[600px] group">
-                            <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/5 rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300" />
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-secondary group-focus-within:text-primary w-5 h-5 transition-colors" />
-                            <input
-                                type="text"
-                                placeholder="Ürün ara veya barkod okut..."
-                                className="relative w-full bg-card/50 border border-border/60 focus:border-primary/40 rounded-xl py-4 pl-12 pr-12 outline-none font-medium placeholder:text-secondary/40 transition-all focus:shadow-lg focus:shadow-primary/5 backdrop-blur-sm"
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                autoFocus
-                            />
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                                {search && (
-                                    <button
-                                        onClick={() => setSearch("")}
-                                        className="p-1.5 hover:bg-white/10 rounded-lg transition-all"
-                                    >
-                                        <X size={18} className="text-secondary hover:text-rose-500" />
-                                    </button>
-                                )}
+                {/* RIGHT: Grid & Actions - Parent Layout Fix */}
+                <div className="flex-1 flex flex-row gap-4 overflow-hidden items-stretch h-full">
+                    <div className="flex-1 flex flex-col gap-4 overflow-hidden min-h-0">
+                        {/* Categories & Search - Enhanced */}
+                        <div className="flex gap-4">
+                            {/* Search Bar with Glow Effect */}
+                            <div className="relative w-full max-w-[570px] group">
+                                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/5 rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300" />
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-secondary group-focus-within:text-primary w-5 h-5 transition-colors" />
+                                <input
+                                    type="text"
+                                    placeholder="Ürün ara veya barkod okut..."
+                                    className="relative w-full bg-card/50 border border-border/60 focus:border-primary/40 rounded-xl py-4 pl-12 pr-12 outline-none font-medium placeholder:text-secondary/40 transition-all focus:shadow-lg focus:shadow-primary/5 backdrop-blur-sm"
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    autoFocus
+                                />
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                                    {search && (
+                                        <button
+                                            onClick={() => setSearch("")}
+                                            className="p-1.5 hover:bg-white/10 rounded-lg transition-all"
+                                        >
+                                            <X size={18} className="text-secondary hover:text-rose-500" />
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div className="flex-1 flex gap-4 min-h-0">
                         <div ref={gridContainerRef} className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
                             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 content-start">
                                 {filteredProducts.slice(0, displayLimit).map((p: any) => (
@@ -903,73 +895,119 @@ export default function POS({
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        {/* RIGHT: Grid & Actions - Ergonomic Layout */}
-                        <div className="w-[340px] flex flex-col gap-3 overflow-y-auto max-h-full pr-2 custom-scrollbar">
+                    {/* RIGHT Sidebar (Scroll & Alignment Re-architecture) */}
+                    <div className="w-[340px] h-full overflow-hidden">
+                        <div className="h-full overflow-y-auto flex flex-col gap-3 justify-start items-stretch pr-2 pt-0 custom-scrollbar">
+                            {/* Suspend/Resume Actions */}
+                            <div className="grid grid-cols-2 gap-2">
+                                <button onClick={suspendSale} className="py-3 bg-primary/5 border border-border text-secondary font-bold rounded-xl hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all text-[9px] tracking-widest uppercase flex items-center justify-center gap-2">
+                                    <Pause size={12} /> ASKIYA AL
+                                </button>
+                                <button onClick={() => setShowSuspendedModal(true)} className="py-3 bg-primary/5 border border-border text-secondary font-bold rounded-xl hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all text-[9px] tracking-widest uppercase flex items-center justify-center gap-2 relative">
+                                    <Play size={12} /> ASKIYI AÇ
+                                    {suspendedSales.length > 0 && <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-[9px] rounded-full flex items-center justify-center border-2 border-card">{suspendedSales.length}</span>}
+                                </button>
+                            </div>
 
-
-
-                            {/* NEW POSITION: Actions moved UP */}
-                            <div className="flex flex-col gap-3">
-                                {/* Suspend/Resume Actions */}
-                                <div className="grid grid-cols-2 gap-2">
-                                    <button onClick={suspendSale} className="py-3 bg-primary/5 border border-border text-secondary font-bold rounded-xl hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all text-[9px] tracking-widest uppercase flex items-center justify-center gap-2">
-                                        <Pause size={12} /> ASKIYA AL
-                                    </button>
-                                    <button onClick={() => setShowSuspendedModal(true)} className="py-3 bg-primary/5 border border-border text-secondary font-bold rounded-xl hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all text-[9px] tracking-widest uppercase flex items-center justify-center gap-2 relative">
-                                        <Play size={12} /> ASKIYI AÇ
-                                        {suspendedSales.length > 0 && <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-[9px] rounded-full flex items-center justify-center border-2 border-card">{suspendedSales.length}</span>}
-                                    </button>
-                                </div>
-
-                                {/* Secondary Actions (Fiyat Gör, Müşteri, vb.) */}
-                                <div className="grid grid-cols-4 gap-2">
-                                    <button onClick={() => { setActiveInput(activeInput === "quantity" ? "discount" : "quantity"); }} className={`aspect-square rounded-xl flex items-center justify-center transition-all border ${activeInput === "discount" ? 'bg-primary text-white border-primary shadow-md' : 'bg-primary/5 border-border text-secondary hover:bg-primary/10'}`} title="Mod Değiştir">
-                                        <BadgePercent size={18} />
-                                    </button>
-                                    <button onClick={() => { setIsPriceCheckMode(!isPriceCheckMode); }} className={`aspect-square rounded-xl flex items-center justify-center transition-all border ${isPriceCheckMode ? 'bg-primary text-white border-primary' : 'bg-primary/5 border-border text-secondary hover:bg-primary/10'}`} title="Fiyat Gör">
-                                        <Search size={18} />
-                                    </button>
-                                    <button onClick={() => setIsScannerOpen(true)} className="aspect-square rounded-xl bg-primary/5 border border-border text-primary flex items-center justify-center hover:bg-primary/10 transition-all shadow-sm" title="Barkod Tara">
-                                        <Camera size={18} />
-                                    </button>
-                                    <button onClick={() => setCart(cart.slice(0, -1))} className="aspect-square rounded-xl bg-primary/5 border border-border text-rose-500 flex items-center justify-center hover:bg-rose-500/10 transition-all shadow-sm" title="Son Satırı Sil">
-                                        <Delete size={18} />
-                                    </button>
-                                    <button onClick={() => setCart([])} className="aspect-square rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-center justify-center hover:bg-rose-500/20 transition-all shadow-sm" title="Belge İptal">
-                                        <X size={18} />
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            if (lastTransaction && lastTransaction.items) {
-                                                setCart([...lastTransaction.items]);
-                                                showToast("Son satıştaki ürünler sepete geri yüklendi", "success");
-                                            }
-                                        }}
-                                        className={`aspect-square rounded-xl flex items-center justify-center transition-all border ${lastTransaction ? 'bg-amber-500/10 border-amber-500/30 text-amber-500 hover:bg-amber-500/20 shadow-sm' : 'bg-primary/5 border-border text-secondary/20 cursor-not-allowed'}`}
-                                        title="Son Fişi Sepete Geri Yükle"
-                                        disabled={!lastTransaction}
-                                    >
-                                        <Clock size={18} />
-                                    </button>
-                                    <button
-                                        onClick={handleOpenCashDrawerManual}
-                                        className="aspect-square rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center hover:bg-amber-500/20 transition-all shadow-sm"
-                                        title="Kasa Aç"
-                                    >
-                                        <Wallet size={18} />
-                                    </button>
+                            {/* Active Customer Info Bar */}
+                            <div className="mx-0">
+                                <div className={`
+                                    group relative overflow-hidden flex items-center justify-between p-3 rounded-xl border transition-all duration-300
+                                    ${selectedCari 
+                                        ? 'bg-amber-500/10 border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.05)]' 
+                                        : 'bg-slate-900/40 border-white/5 hover:border-white/10'
+                                    }
+                                `}>
+                                    <div className="flex items-center gap-3">
+                                        <div className={`
+                                            w-8 h-8 rounded-lg flex items-center justify-center transition-colors
+                                            ${selectedCari ? 'bg-amber-500 text-black' : 'bg-slate-800 text-slate-500'}
+                                        `}>
+                                            <User size={16} className={selectedCari ? 'animate-pulse' : ''} />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[8px] font-black text-slate-500 tracking-[0.1em] uppercase">MÜŞTERİ</span>
+                                            <span className={`text-[11px] font-black uppercase truncate max-w-[180px] ${selectedCari ? 'text-amber-500' : 'text-slate-400'}`}>
+                                                {selectedCari ? selectedCari.unvani : 'PERAKENDE MÜŞTERİ'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    {selectedCari && (
+                                        <button 
+                                            onClick={() => setSelectedCari(null)}
+                                            className="p-1.5 hover:bg-rose-500/20 text-rose-500 rounded-md transition-colors"
+                                            title="Müşteriyi Kaldır"
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                    )}
                                 </div>
                             </div>
 
+                            {/* Secondary Actions (8 Butonlu Tam Panel) */}
+                            <div className="grid grid-cols-4 gap-2">
+                                <button onClick={() => { setActiveInput(activeInput === "quantity" ? "discount" : "quantity"); }} className={`relative aspect-square rounded-xl flex flex-col items-center justify-center transition-all border ${activeInput === "discount" ? 'bg-primary text-white border-primary shadow-md' : 'bg-primary/5 border-border text-primary hover:bg-primary/10'}`} title="Mod Değiştir">
+                                    <BadgePercent size={10} className="absolute top-1.5 left-1.5 opacity-40" />
+                                    <span className="text-[9px] font-black uppercase tracking-tighter text-center leading-tight">MOD<br/>DEĞİŞ</span>
+                                </button>
+                                <button onClick={() => { setIsPriceCheckMode(!isPriceCheckMode); }} className={`relative aspect-square rounded-xl flex flex-col items-center justify-center transition-all border ${isPriceCheckMode ? 'bg-primary text-white border-primary' : 'bg-primary/5 border-border text-secondary hover:bg-primary/10'}`} title="Fiyat Gör">
+                                    <Search size={10} className="absolute top-1.5 left-1.5 opacity-40" />
+                                    <span className="text-[9px] font-black uppercase tracking-tighter text-center leading-tight">FİYAT<br/>GÖR</span>
+                                </button>
+                                <button onClick={() => setIsScannerOpen(true)} className="relative aspect-square rounded-xl bg-primary/5 border border-border text-primary flex flex-col items-center justify-center hover:bg-primary/10 transition-all shadow-sm" title="Barkod Tara">
+                                    <Camera size={10} className="absolute top-1.5 left-1.5 opacity-40" />
+                                    <span className="text-[9px] font-black uppercase tracking-tighter text-center leading-tight">BARKOD<br/>TARA</span>
+                                </button>
+                                <button onClick={() => setCart(cart.slice(0, -1))} className="relative aspect-square rounded-xl bg-primary/5 border border-border text-rose-500 flex flex-col items-center justify-center hover:bg-rose-500/10 transition-all shadow-sm" title="Son Satırı Sil">
+                                    <Delete size={10} className="absolute top-1.5 left-1.5 opacity-40" />
+                                    <span className="text-[9px] font-black uppercase tracking-tighter text-center leading-tight">ÜRÜN<br/>SİL</span>
+                                </button>
+                                <button onClick={() => setCart([])} className="relative aspect-square rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 flex flex-col items-center justify-center hover:bg-rose-500/20 transition-all shadow-sm" title="Satışı İptal Et">
+                                    <X size={10} className="absolute top-1.5 left-1.5 opacity-40" />
+                                    <span className="text-[9px] font-black uppercase tracking-tighter text-center leading-tight">SATIŞ<br/>İPTAL</span>
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        if (lastTransaction && lastTransaction.items) {
+                                            setCart([...lastTransaction.items]);
+                                            showToast("Son satıştaki ürünler sepete geri yüklendi", "success");
+                                        }
+                                    }}
+                                    className={`relative aspect-square rounded-xl flex flex-col items-center justify-center transition-all border ${lastTransaction ? 'bg-amber-500/10 border-amber-500/30 text-amber-500 hover:bg-amber-500/20 shadow-sm' : 'bg-primary/5 border-border text-secondary/20 cursor-not-allowed'}`}
+                                    title="Son Fişi Sepete Geri Yükle"
+                                    disabled={!lastTransaction}
+                                >
+                                    <Clock size={10} className="absolute top-1.5 left-1.5 opacity-40" />
+                                    <span className="text-[9px] font-black uppercase tracking-tighter text-center leading-tight">FİŞ<br/>GERİ</span>
+                                </button>
+                                <button
+                                    onClick={handleOpenCashDrawerManual}
+                                    className="relative aspect-square rounded-xl bg-amber-500/20 border-2 border-amber-400/50 text-amber-400 flex flex-col items-center justify-center hover:bg-amber-500/30 transition-all shadow-[0_0_15px_rgba(245,158,11,0.1)] active:scale-95"
+                                    title="Kasa Aç"
+                                >
+                                    <Wallet size={10} className="absolute top-1.5 left-1.5 opacity-60" />
+                                    <span className="text-[9px] font-black uppercase tracking-tighter text-center leading-tight text-amber-400">KASA<br/>AÇ</span>
+                                </button>
+                                <button
+                                    onClick={() => setIsCariModalOpen(true)}
+                                    className="relative aspect-square rounded-xl bg-primary/5 border border-primary/20 text-primary flex flex-col items-center justify-center hover:bg-primary/10 transition-all shadow-sm active:scale-95"
+                                    title="Müşteri Seç"
+                                >
+                                    <Users size={10} className="absolute top-1.5 left-1.5 opacity-40" />
+                                    <span className="text-[9px] font-black uppercase tracking-tighter text-center leading-tight">MÜŞTERİ<br/>SEÇ</span>
+                                </button>
+                            </div>
+
                             {/* Keyboard Input Box */}
-                            <div className="relative group/input text-right py-2 border-b border-primary/20 mb-2">
+                            <div className="relative group/input text-right py-1 border-b border-primary/20">
                                 <input
                                     type="text"
                                     value={numpadValue}
                                     onChange={(e) => {
                                         const val = e.target.value.replace(',', '.');
-                                        // Allow numbers and decimal point
                                         if (val === '' || /^\d*\.?\d*$/.test(val)) {
                                             setNumpadValue(val);
                                         }
@@ -988,90 +1026,77 @@ export default function POS({
                                 </span>
                             </div>
 
-                            {/* Numpad Buttons */}
-                            <div className="grid grid-cols-4 gap-2.5 bg-card/40 p-3 rounded-xl border border-border/40">
-                                <div className="col-span-3 grid grid-cols-3 gap-2.5">
-                                    {[7, 8, 9, 4, 5, 6, 1, 2, 3, 0, '.', 'C'].map((num, i) => (
-                                        <button
-                                            key={i}
-                                            onClick={() => {
-                                                if (num === 'C') return setNumpadValue("");
-                                                if (num === '.') return setNumpadValue(prev => prev.includes('.') ? prev : prev + '.');
-                                                setNumpadValue(prev => prev + num);
-                                            }}
-                                            className={`w-full aspect-square rounded-lg ${s.button} text-xl font-bold transition-all active:scale-90 flex items-center justify-center hover:shadow-md`}
-                                        >
-                                            {num}
-                                        </button>
-                                    ))}
+                            {/* Premium Numpad Design */}
+                            <div className="grid grid-cols-4 gap-2.5 bg-[#020617]/40 p-3 rounded-2xl border border-white/5 backdrop-blur-md shadow-2xl">
+                                <div className="col-span-3 grid grid-cols-3 gap-2">
+                                    {[7, 8, 9, 4, 5, 6, 1, 2, 3, 0, '.', 'C'].map((num, i) => {
+                                        const isClear = num === 'C';
+                                        const isDot = num === '.';
+                                        return (
+                                            <button
+                                                key={i}
+                                                onClick={() => {
+                                                    if (num === 'C') return setNumpadValue("");
+                                                    if (num === '.') return setNumpadValue(prev => prev.includes('.') ? prev : prev + '.');
+                                                    setNumpadValue(prev => prev + num);
+                                                }}
+                                                className={`w-full aspect-square rounded-xl flex items-center justify-center text-xl font-black transition-all active:scale-90 border shadow-sm
+                                                    ${isClear ? 'bg-rose-500/10 border-rose-500/20 text-rose-500 hover:bg-rose-500/20' : 
+                                                      isDot ? 'bg-slate-800/40 border-white/5 text-secondary hover:bg-slate-800/60' :
+                                                      'bg-slate-900/60 border-white/5 text-white hover:bg-primary/20 hover:border-primary/30 hover:text-primary shadow-inner'}`}
+                                            >
+                                                {num}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
-                                <div className="grid grid-rows-3 gap-2.5">
-                                    <button onClick={() => setNumpadValue(prev => prev.slice(0, -1))} className="row-span-1 w-full rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-center justify-center hover:bg-rose-500/20 active:scale-90 transition-all"><Delete size={18} /></button>
-                                    <button onClick={applyNumpadAction} className="row-span-2 w-full rounded-xl bg-primary text-white flex items-center justify-center hover:bg-primary/90 shadow-md shadow-primary/20 active:scale-95 transition-all outline-none">
-                                        <div className="flex flex-col items-center gap-1 font-black">
-                                            <Plus size={20} />
-                                            <span className="text-[8px]">OK</span>
+                                <div className="grid grid-rows-3 gap-2">
+                                    <button onClick={() => setNumpadValue(prev => prev.slice(0, -1))} className="row-span-1 w-full rounded-xl bg-slate-800/40 border border-white/5 text-secondary flex items-center justify-center hover:bg-slate-800/60 transition-all active:scale-90 shadow-inner">
+                                        <Delete size={20} />
+                                    </button>
+                                    <button onClick={applyNumpadAction} className="row-span-2 w-full rounded-2xl bg-gradient-to-br from-primary to-blue-600 text-white flex items-center justify-center hover:shadow-[0_0_20px_rgba(59,130,246,0.4)] hover:scale-[1.02] active:scale-95 transition-all outline-none border border-white/10">
+                                        <div className="flex flex-col items-center gap-1 font-black uppercase tracking-widest text-[10px]">
+                                            <Plus size={24} strokeWidth={3} />
+                                            <span>EKLE</span>
                                         </div>
                                     </button>
                                 </div>
                             </div>
 
-                            {/* Payment Buttons - Modern 2x2 Grid */}
-                            <div>
-                                <div className="grid grid-cols-2 gap-3">
-                                    {/* NAKİT */}
-                                    <button
-                                        onClick={() => {
-                                            if (cart.length === 0) return;
-                                            updateDisplayStatus('payment', { paymentMethod: 'NAKİT' });
-                                            setTimeout(() => handleCheckout("NAKİT"), 800);
-                                        }}
-                                        className="group relative flex flex-col items-center justify-center p-3 rounded-xl bg-primary text-white hover:scale-[1.01] transition-all shadow-md shadow-primary/20 active:scale-95 border border-primary/20 overflow-hidden"
-                                    >
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        <Banknote size={20} className="mb-1.5 group-hover:scale-105 transition-transform relative z-10" />
-                                        <span className="text-[10px] font-bold tracking-wider relative z-10">NAKİT</span>
-                                        <span className="text-[7px] opacity-70 mt-0.5 relative z-10">CASH</span>
-                                    </button>
-
-                                    {/* KART */}
-                                    <button
-                                        onClick={() => {
-                                            if (cart.length === 0) return;
-                                            updateDisplayStatus('payment', { paymentMethod: 'KART' });
-                                            // Simulate terminal wait or just go to checkout after slight delay for effect
-                                            setTimeout(() => handleCheckout("KART"), 1500);
-                                        }}
-                                        className="group relative flex flex-col items-center justify-center p-3 rounded-xl bg-primary text-white hover:scale-[1.01] transition-all shadow-md shadow-primary/20 active:scale-95 border border-primary/20 overflow-hidden"
-                                    >
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        <CreditCard size={20} className="mb-1.5 group-hover:scale-105 transition-transform relative z-10" />
-                                        <span className="text-[10px] font-bold tracking-wider relative z-10">KART</span>
-                                        <span className="text-[7px] opacity-70 mt-0.5 relative z-10">CARD</span>
-                                    </button>
-
-                                    {/* VERESİYE */}
-                                    <button
-                                        onClick={() => handleCheckout("VERESİYE")}
-                                        className="group relative flex flex-col items-center justify-center p-3 rounded-xl bg-primary text-white hover:scale-[1.01] transition-all shadow-md shadow-primary/20 active:scale-95 border border-primary/20 overflow-hidden"
-                                    >
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        <Wallet size={20} className="mb-1.5 group-hover:scale-105 transition-transform relative z-10" />
-                                        <span className="text-[10px] font-bold tracking-wider relative z-10">VERESİYE</span>
-                                        <span className="text-[7px] opacity-70 mt-0.5 relative z-10">CREDIT</span>
-                                    </button>
-
-                                    {/* HAVALE/EFT */}
-                                    <button
-                                        onClick={() => handleCheckout("HAVALE/EFT")}
-                                        className="group relative flex flex-col items-center justify-center p-3 rounded-xl bg-primary text-white hover:scale-[1.01] transition-all shadow-md shadow-primary/20 active:scale-95 border border-primary/20 overflow-hidden"
-                                    >
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        <Building2 size={20} className="mb-1.5 group-hover:scale-105 transition-transform relative z-10" />
-                                        <span className="text-[10px] font-bold tracking-wider relative z-10">HAVALE/EFT</span>
-                                        <span className="text-[7px] opacity-70 mt-0.5 relative z-10">TRANSFER</span>
-                                    </button>
-                                </div>
+                            {/* Payment Buttons */}
+                            <div className="grid grid-cols-2 gap-3 pb-4">
+                                <button
+                                    onClick={() => {
+                                        if (cart.length === 0) return;
+                                        updateDisplayStatus('payment', { paymentMethod: 'NAKİT' });
+                                        setTimeout(() => handleCheckout("NAKİT"), 800);
+                                    }}
+                                    className="group relative flex flex-col items-center justify-center p-3 rounded-xl bg-primary text-white hover:scale-[1.01] transition-all shadow-md shadow-primary/20 active:scale-95 border border-primary/20 overflow-hidden"
+                                >
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    <Banknote size={20} className="mb-1.5 group-hover:scale-105 transition-transform relative z-10" />
+                                    <span className="text-[10px] font-bold tracking-wider relative z-10">NAKİT</span>
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        if (cart.length === 0) return;
+                                        updateDisplayStatus('payment', { paymentMethod: 'KART' });
+                                        setTimeout(() => handleCheckout("KART"), 1500);
+                                    }}
+                                    className="group relative flex flex-col items-center justify-center p-3 rounded-xl bg-primary text-white hover:scale-[1.01] transition-all shadow-md shadow-primary/20 active:scale-95 border border-primary/20 overflow-hidden"
+                                >
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    <CreditCard size={20} className="mb-1.5 group-hover:scale-105 transition-transform relative z-10" />
+                                    <span className="text-[10px] font-bold tracking-wider relative z-10">KART</span>
+                                </button>
+                                <button onClick={() => handleCheckout("VERESİYE")} className="group relative flex flex-col items-center justify-center p-3 rounded-xl bg-primary text-white hover:scale-[1.01] transition-all shadow-md shadow-primary/20 active:scale-95 border border-primary/20 overflow-hidden">
+                                    <Wallet size={20} className="mb-1.5 z-10" />
+                                    <span className="text-[10px] font-bold z-10">VERESİYE</span>
+                                </button>
+                                <button onClick={() => handleCheckout("HAVALE/EFT")} className="group relative flex flex-col items-center justify-center p-3 rounded-xl bg-primary text-white hover:scale-[1.01] transition-all shadow-md shadow-primary/20 active:scale-95 border border-primary/20 overflow-hidden">
+                                    <Building2 size={20} className="mb-1.5 z-10" />
+                                    <span className="text-[10px] font-bold z-10">HAVALE/EFT</span>
+                                </button>
                             </div>
                         </div>
                     </div>

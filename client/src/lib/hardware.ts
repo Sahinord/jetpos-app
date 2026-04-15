@@ -19,18 +19,18 @@ export async function readScaleWeight(): Promise<number> {
         await port.open({ baudRate: 9600 });
 
         const reader = port.readable.getReader();
-        
+
         // Genellikle terazi sürekli veri basar: "ST,GS,+  0.150kg" veya benzeri
         let rawData = "";
         const startTime = Date.now();
-        
+
         while (Date.now() - startTime < 3000) { // Max 3 saniye denesin
             const { value, done } = await reader.read();
             if (done) break;
-            
+
             const chunk = new TextDecoder().decode(value);
             rawData += chunk;
-            
+
             // Basit bir regex ile kg değerini ayıkla (Örn: 0.150 veya 1.250)
             const match = rawData.match(/(\d+\.\d{3})/);
             if (match) {
@@ -39,7 +39,7 @@ export async function readScaleWeight(): Promise<number> {
                 return parseFloat(match[1]);
             }
         }
-        
+
         reader.releaseLock();
         await port.close();
         throw new Error("Zaman aşımı: Teraziden veri okunamadı.");
@@ -59,7 +59,7 @@ export async function printBarcodeLabel(product: any, settings: any = {}) {
     let labelHeight = settings.height || 30; // mm
     const printerName = settings.printerName || "";
     const templateId = settings.templateId || localStorage.getItem('last_label_template') || 'standard';
-    
+
     // Kayıtlı tasarımı yüklemeye çalış
     let savedPositions: any = {};
     let savedStyles: any = {};
@@ -94,7 +94,7 @@ export async function printBarcodeLabel(product: any, settings: any = {}) {
 
     // 3. HTML Şablonunu Oluştur (Absolute Positioning)
     const [priceInt, priceDec] = Number(product.sale_price).toFixed(2).split('.');
-    
+
     // Varsayılan Pozisyonlar (Eğer kayıtlı yoksa)
     const pos = (id: string, defX: number, defY: number) => {
         const p = savedPositions[id] || { xMm: defX, yMm: defY };
@@ -160,17 +160,34 @@ export async function printBarcodeLabel(product: any, settings: any = {}) {
 </body>
 </html>`;
 
-    // 4. Electron ortamındaysak Sessiz Yazdırma (Silent Print) kullan
+    // 4. Electron ortamındaysak Yazdırmayı Tetikle
     if (window.require) {
         try {
             const { ipcRenderer } = window.require('electron');
-            ipcRenderer.send('silent-print', {
-                html: html,
-                printerName: printerName,
-                width: labelWidth,
-                height: labelHeight,
-                delay: 800 // Resimlerin render edilmesi için biraz daha süre tanı
-            });
+
+            // RP80 veya Etiket yazıcısı tespiti durumunda TSPL (RAW) Gönder
+            const isLabelPrinter = printerName.toLowerCase().includes('label') ||
+                printerName.toLowerCase().includes('rp80') ||
+                templateId === 'rp80';
+
+            if (isLabelPrinter) {
+                console.log("🚀 TSPL Modunda yazdırılıyor...");
+                ipcRenderer.send('print-label-tspl', {
+                    printerName,
+                    product,
+                    width: labelWidth,
+                    height: labelHeight
+                });
+            } else {
+                console.log("📄 HTML Modunda yazdırılıyor...");
+                ipcRenderer.send('silent-print', {
+                    html: html,
+                    printerName: printerName,
+                    width: labelWidth,
+                    height: labelHeight,
+                    delay: 800
+                });
+            }
             return;
         } catch (e) {
             console.error("Electron IPC error:", e);

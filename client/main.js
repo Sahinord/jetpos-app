@@ -10,10 +10,10 @@ try {
 } catch (e) {
     autoUpdater = {
         logger: null,
-        checkForUpdates: () => {},
+        checkForUpdates: () => { },
         checkForUpdatesAndNotify: () => Promise.resolve(),
-        on: () => {},
-        quitAndInstall: () => {}
+        on: () => { },
+        quitAndInstall: () => { }
     };
 }
 
@@ -162,11 +162,52 @@ function createWindow() {
                 if (error) {
                     console.error(`Kasa açma hatası: ${error.message}`);
                 }
-                try { fs.unlinkSync(tempFile); } catch (e) {}
+                try { fs.unlinkSync(tempFile); } catch (e) { }
                 console.log("RAW Kasa açma komutu gönderildi.");
             });
         } catch (err) {
             console.error("Kasa açma dosya hazırlama hatası:", err);
+        }
+    });
+
+    // --- ETİKET YAZDIRMA (TSPL - RAW) ---
+    ipcMain.on('print-label-tspl', (event, { printerName, product, width = 80, height = 40 }) => {
+        if (!printerName) return;
+
+        console.log(`🏷️ TSPL Etiket Yazdırılıyor: ${printerName}`);
+
+        const fs = require('fs');
+        const tempFile = path.join(app.getPath('temp'), `jetpos_label_${Date.now()}.bin`);
+
+        try {
+            // TSPL Komutları Oluştur
+            const name = (product.name || "").substring(0, 32).toUpperCase();
+            const barcode = product.barcode || "";
+            const price = `${Number(product.sale_price).toFixed(2)} TL`;
+
+            const tspl = [
+                `SIZE ${width} mm,${height} mm`,
+                `GAP 3 mm,0 mm`,
+                `DIRECTION 1`,
+                `CLS`,
+                `TEXT 20,20,"3",0,1,1,"${name}"`,
+                `BARCODE 20,60,"128",60,1,0,2,2,"${barcode}"`,
+                `TEXT 20,150,"4",0,1,1,"${price}"`,
+                `PRINT 1,1`,
+                `\r\n`
+            ].join('\r\n');
+
+            fs.writeFileSync(tempFile, tspl, 'binary');
+
+            const command = `powershell -Command "Get-Content -Path '${tempFile}' -Raw -Encoding String | Out-Printer -Name '${printerName}'"`;
+
+            exec(command, (error) => {
+                if (error) console.error(`Label Print Error: ${error.message}`);
+                try { fs.unlinkSync(tempFile); } catch (e) { }
+                event.sender.send('silent-print-result', { success: !error });
+            });
+        } catch (err) {
+            console.error("TSPL hazırlama hatası:", err);
         }
     });
 
@@ -198,9 +239,9 @@ function createWindow() {
                 // Eğer genişlik ve yükseklik mm cinsinden geldiyse microns'a çevir
                 if (width && height) {
                     Object.assign(printOptions, {
-                        pageSize: { 
-                            width: Math.round(width * 1000), 
-                            height: Math.round(height * 1000) 
+                        pageSize: {
+                            width: Math.round(width * 1000),
+                            height: Math.round(height * 1000)
                         }
                     });
                 } else {

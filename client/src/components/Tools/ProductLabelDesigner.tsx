@@ -14,7 +14,11 @@ interface Product {
     id: string; name: string; barcode: string;
     sale_price: number; purchase_price: number; vat_rate: number;
 }
-type TemplateId = 'raf' | 'fiyat' | 'yanyan' | 'market' | 'standard' | 'mini' | 'large' | 'square-40' | 'vertical-30-50' | 'price-only';
+const showToast = (msg: string, type: string = 'info') => {
+    // JetKasa'da genelde window.dispatchEvent veya prop olarak gelir ama burada basit bir log/alert veya varsa UI sistemini kullanabiliriz
+    console.log(`[Toast] ${type}: ${msg}`);
+};
+type TemplateId = 'raf' | 'fiyat' | 'yanyan' | 'market' | 'standard' | 'mini' | 'large' | 'rp80' | 'square-40' | 'vertical-30-50' | 'price-only';
 type ElemId = 'brand' | 'name' | 'price' | 'barcode' | 'logo';
 interface Pos { xMm: number; yMm: number; }
 interface LabelConfig {
@@ -110,6 +114,18 @@ const TEMPLATES: LabelConfig[] = [
         defaultPos: { brand: { xMm: 2, yMm: 2 }, name: { xMm: 2, yMm: 9 }, logo: { xMm: 2, yMm: 40 }, barcode: { xMm: 40, yMm: 2 }, price: { xMm: 40, yMm: 22 } },
     },
     {
+        id: 'rp80', name: '🖨️ Rongta RP80 (80×30mm/40mm)',
+        widthMm: 80, heightMm: 40,
+        showLogo: false, showBrand: true, showName: true, showBarcode: true, showPrice: true, showVat: true,
+        nameFontMm: 7, priceFontMm: 13, brandFontMm: 4.5, barcodeHMm: 10,
+        defaultPos: {
+            name: { xMm: 4, yMm: 4 },
+            barcode: { xMm: 4, yMm: 15 },
+            price: { xMm: 4, yMm: 28 },
+            brand: { xMm: 45, yMm: 28 }
+        },
+    },
+    {
         id: 'square-40', name: '🔲 Kare (40×40mm)',
         widthMm: 40, heightMm: 40,
         showLogo: false, showBrand: true, showName: true, showBarcode: true, showPrice: true, showVat: false,
@@ -171,6 +187,26 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
     const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
     const [labelCount, setLabelCount] = useState<Record<string, number>>({});
     const [searchTerm, setSearchTerm] = useState('');
+    const [priceQueue, setPriceQueue] = useState<string[]>([]);
+
+    useEffect(() => {
+        try {
+            const q = JSON.parse(localStorage.getItem('jetpos_label_queue') || '[]');
+            setPriceQueue(q);
+        } catch (e) { }
+    }, []);
+
+    const selectPriceChanges = () => {
+        const changed = products.filter(p => priceQueue.includes(p.id)).map(p => p.id);
+        setSelectedProducts(prev => Array.from(new Set([...prev, ...changed])));
+        if (changed.length > 0) showToast(`${changed.length} yeni ürün seçildi`);
+    };
+
+    const clearQueue = () => {
+        localStorage.removeItem('jetpos_label_queue');
+        setPriceQueue([]);
+        showToast("Liste temizlendi");
+    };
 
     /* ─ template ─ */
     const [templateId, setTemplateId] = useState<TemplateId>(() => {
@@ -179,7 +215,7 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
         }
         return 'raf';
     });
-    
+
     useEffect(() => {
         localStorage.setItem('last_label_template', templateId);
     }, [templateId]);
@@ -216,6 +252,7 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
     const [elemWidths, setElemWidths] = useState<Partial<Record<ElemId, number>>>({});
     const [colors, setColors] = useState<Partial<Record<ElemId, string>>>({});
     const [fontStyles, setFontStyles] = useState<Partial<Record<ElemId, { b: boolean; i: boolean }>>>({});
+    const [barcodeNarrow, setBarcodeNarrow] = useState(2);
     const [showGuides, setShowGuides] = useState<{ x: boolean; y: boolean }>({ x: false, y: false });
 
     const resizeDragRef = useRef<{ id: ElemId; handle: string; startX: number; startY: number; origW: number; origS: number } | null>(null);
@@ -298,15 +335,19 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
             const { id, handle, startX, startY, origW, origS } = resizeDragRef.current;
             const dx = e.clientX - startX;
             const dy = e.clientY - startY;
-            if (handle === 'mr' || handle === 'br') setElemWidths(p => ({ ...p, [id]: Math.max(20, origW + dx) }));
-            if (handle === 'bc' || handle === 'br') setFontScales(p => ({ ...p, [id]: Math.max(0.3, Math.min(5, origS + dy * 0.015)) }));
+            if (id === 'barcode') {
+                // Resize disabled for barcode
+            } else {
+                if (handle === 'mr' || handle === 'br') setElemWidths(p => ({ ...p, [id]: Math.max(20, origW + dx) }));
+                if (handle === 'bc' || handle === 'br') setFontScales(p => ({ ...p, [id]: Math.max(0.3, Math.min(5, origS + dy * 0.015)) }));
+            }
             return;
         }
         if (!dragRef.current) return;
         const { id, startX, startY, origX, origY } = dragRef.current;
         const dx = (e.clientX - startX) / PS;
         const dy = (e.clientY - startY) / PS;
-        
+
         let newX = origX + dx;
         let newY = origY + dy;
 
@@ -314,13 +355,13 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
         const centerX = cfg.widthMm / 2;
         const centerY = cfg.heightMm / 2;
         const snapDist = 2; // mm
-        
+
         const guides = { x: false, y: false };
         if (Math.abs(newX - centerX) < snapDist) { newX = centerX; guides.x = true; }
         if (Math.abs(newY - centerY) < snapDist) { newY = centerY; guides.y = true; }
-        
+
         setShowGuides(guides);
-        
+
         const boundedX = Math.max(0, Math.min(cfg.widthMm - 3, newX));
         const boundedY = Math.max(0, Math.min(cfg.heightMm - 2, newY));
         setPositions(prev => ({ ...prev, [id]: { xMm: boundedX, yMm: boundedY } }));
@@ -405,11 +446,11 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
             if (cfg.showLogo && logoUrl) {
                 parts.push(`<div style="position:absolute;left:${getPos('logo').xMm}mm;top:${getPos('logo').yMm}mm;"><img src="${logoUrl}" style="height:${imgH}mm;object-fit:contain;" /></div>`);
             }
-            
-            const rotStyle = isRotated 
-                ? `transform: rotate(90deg) translateY(-${cfg.heightMm}mm); transform-origin: top left; width: ${cfg.heightMm}mm; height: ${cfg.widthMm}mm;` 
+
+            const rotStyle = isRotated
+                ? `transform: rotate(90deg) translateY(-${cfg.heightMm}mm); transform-origin: top left; width: ${cfg.heightMm}mm; height: ${cfg.widthMm}mm;`
                 : `width: ${cfg.widthMm}mm; height: ${cfg.heightMm}mm;`;
-                
+
             return `<div class="label-box" style="position:relative; overflow:hidden; ${rotStyle}">${parts.join('')}</div>`;
         };
 
@@ -452,14 +493,38 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
         if (window.require) {
             try {
                 const { ipcRenderer } = window.require('electron');
-                ipcRenderer.send('silent-print', {
-                    html: fullHtml,
-                    printerName: printerName || "",
-                    width: finalWidth - 0.5,
-                    height: finalHeight - 0.5,
-                    delay: 500 
-                });
-                showToast('Etiketler yazıcıya gönderildi');
+
+                // Eğer RP80 şablonu seçiliyse veya etiket yazıcısıysa RAW (TSPL) moduna geç
+                const isLabelMode = templateId === 'rp80' || (printerName || "").toLowerCase().includes('label');
+
+                if (isLabelMode) {
+                    // TSPL çoklu baskı için döngüde gönderiyoruz (veya tek seferde toplu TSPL oluşturulabilir)
+                    // Burada basitleştirilmiş haliyle her ürün için ayrı gönderiyoruz
+                    selectedProducts.forEach(pid => {
+                        const pr = products.find(p => p.id === pid);
+                        if (!pr) return;
+                        const count = labelCount[pid] || 1;
+                        for (let i = 0; i < count; i++) {
+                            ipcRenderer.send('print-label-tspl', {
+                                printerName: printerName || "",
+                                product: pr,
+                                width: finalWidth,
+                                height: finalHeight
+                            });
+                        }
+                    });
+                } else {
+                    ipcRenderer.send('silent-print', {
+                        html: fullHtml,
+                        printerName: printerName || "",
+                        width: finalWidth,
+                        height: finalHeight,
+                        delay: 500
+                    });
+                }
+                showToast('Yazdırma işlemi başlatıldı');
+                // Yazdırma işlemi tamamlandığında kuyruğu can sıkmadan ufaktan temizleyelim mi?
+                // Veya kullanıcıya bir buton sunalım. Şimdilik kalsın ama bir seçenek olsun.
                 return;
             } catch (e) {
                 console.error('Sessiz yazdırma hatası:', e);
@@ -477,7 +542,7 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
             doc.close();
             setTimeout(() => {
                 iframe.contentWindow?.print();
-                setTimeout(() => { try { document.body.removeChild(iframe); } catch {} }, 1000);
+                setTimeout(() => { try { document.body.removeChild(iframe); } catch { } }, 1000);
             }, 500);
         }
     };
@@ -652,6 +717,10 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                             <input type="range" min={6} max={22} value={cfg.priceFontMm}
                                 onChange={e => setCfgOverrides(p => ({ ...p, priceFontMm: +e.target.value }))}
                                 className="w-full accent-primary" />
+                            <label className="block text-xs font-bold text-secondary uppercase">Barkod Boyu: {cfg.barcodeHMm}mm</label>
+                            <input type="range" min={5} max={35} value={cfg.barcodeHMm}
+                                onChange={e => setCfgOverrides(p => ({ ...p, barcodeHMm: +e.target.value }))}
+                                className="w-full accent-primary" />
                         </div>
                     </div>
                 </div>
@@ -659,13 +728,39 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                 {/* ── ORTA: Ürün ── */}
                 <div className="glass-card flex flex-col">
                     <div className="flex items-center justify-between border-b border-border pb-3 mb-3">
-                        <h3 className="font-black uppercase text-sm flex items-center gap-2">
-                            <Package size={16} className="text-primary" /> Ürünler
-                        </h3>
-                        <button onClick={() => setSelectedProducts(selectedProducts.length === filtered.length ? [] : filtered.map(p => p.id))} className="text-xs font-bold text-primary hover:underline uppercase">
-                            {selectedProducts.length === filtered.length ? 'Hiçbiri' : 'Tümü'}
-                        </button>
+                        <div className="flex items-center gap-3">
+                            <h3 className="font-black uppercase text-sm flex items-center gap-2">
+                                <Package size={16} className="text-primary" /> Ürünler
+                            </h3>
+                            {priceQueue.length > 0 && (
+                                <span className="bg-amber-500 text-black text-[10px] px-1.5 py-0.5 rounded-full font-black animate-pulse">
+                                    {priceQueue.length} YENİ
+                                </span>
+                            )}
+                        </div>
+                        <div className="flex gap-3">
+                            {priceQueue.length > 0 && (
+                                <button
+                                    onClick={selectPriceChanges}
+                                    title="Fiyatı Değişenleri Otomatik Seç"
+                                    className="text-[10px] font-black text-amber-500 hover:text-amber-400 uppercase flex items-center gap-1 border border-amber-500/30 px-2 py-1 rounded-lg transition-all"
+                                >
+                                    FİYATI DEĞİŞENLER ({priceQueue.length})
+                                </button>
+                            )}
+                            <button onClick={() => setSelectedProducts(selectedProducts.length === filtered.length ? [] : filtered.map(p => p.id))} className="text-[10px] font-bold text-primary hover:underline uppercase">
+                                {selectedProducts.length === filtered.length ? 'Hiçbiri' : 'Tümü'}
+                            </button>
+                        </div>
                     </div>
+                    {priceQueue.length > 0 && (
+                        <div className="mb-3 p-2 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-between">
+                            <span className="text-[10px] text-amber-200 uppercase font-bold flex items-center gap-1">
+                                <RotateCcw size={10} className="animate-spin-slow" /> Henüz etiketi basılmamış fiyat değişimleri!
+                            </span>
+                            <button onClick={clearQueue} className="text-[10px] text-rose-400 hover:text-rose-300 font-bold uppercase underline">Listeyi Temizle</button>
+                        </div>
+                    )}
                     <div className="relative mb-3">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary w-4 h-4" />
                         <input type="text" placeholder="Ürün ara..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
@@ -682,7 +777,12 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                                             {isSelected && <Check size={10} className="text-white" />}
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="font-semibold text-sm truncate">{product.name}</p>
+                                            <div className="flex items-center gap-2">
+                                                <p className="font-semibold text-sm truncate">{product.name}</p>
+                                                {priceQueue.includes(product.id) && (
+                                                    <span className="bg-amber-500 text-black text-[8px] px-1 rounded font-black leading-tight">YENİ</span>
+                                                )}
+                                            </div>
                                             <p className="text-[10px] text-secondary font-mono">{product.barcode}</p>
                                         </div>
                                         <p className="font-black text-primary text-sm flex-shrink-0">₺{product.sale_price?.toFixed(2)}</p>
@@ -731,7 +831,7 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                                         }[selectedElem] : 'Eleman seç'}
                                     </span>
                                 </div>
-                                
+
                                 {/* Bold / Italic */}
                                 <div className="flex bg-white/5 rounded-lg border border-white/10 p-0.5">
                                     <button onClick={() => { if (!selectedElem) return; const s = fontStyles[selectedElem] || { b: false, i: false }; setFontStyles(p => ({ ...p, [selectedElem]: { ...s, b: !s.b } })); }}
@@ -876,11 +976,13 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                                     {cfg.showBarcode && previewProduct.barcode && (() => {
                                         const id: ElemId = 'barcode';
                                         const isSel = selectedElem === id;
+                                        const fS = fontScales[id] ?? 1;
+                                        const wPx = getEW(id, cfg.widthMm * PS * 0.45);
                                         return (
-                                            <div style={{ position: 'absolute', left: getPos(id).xMm * PS, top: getPos(id).yMm * PS, cursor: 'grab', outline: isSel ? '2px solid #6366f1' : 'none', outlineOffset: 4, borderRadius: 2, zIndex: isSel ? 50 : 10 }}
+                                            <div style={{ position: 'absolute', left: getPos(id).xMm * PS, top: getPos(id).yMm * PS, cursor: 'grab', outline: isSel ? '2px solid #6366f1' : 'none', outlineOffset: 4, borderRadius: 2, zIndex: isSel ? 50 : 10, width: wPx, background: '#fff', overflow: 'visible' }}
                                                 onMouseDown={e => { startDrag(e, id); setSelectedElem(id); }}
                                             >
-                                                <canvas id={`bc-prev-${previewProduct.id}`} style={{ display: 'block', maxWidth: cfg.widthMm * PS * 0.48 }} />
+                                                <canvas id={`bc-prev-${previewProduct.id}`} style={{ width: '100%', height: cfg.barcodeHMm * PS, display: 'block' }} />
                                             </div>
                                         );
                                     })()}
