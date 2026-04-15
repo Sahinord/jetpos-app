@@ -8,6 +8,9 @@ const IS_ELECTRON = typeof window !== 'undefined' &&
 // Production Vercel URL
 const PROD_API_BASE = 'https://jetpos-app-71jf.vercel.app';
 
+// Geliştirme modunda isek ve localde çalışıyorsak relative path kullanalım
+const API_BASE = (process.env.NODE_ENV === 'development') ? '' : PROD_API_BASE;
+
 // Security Secret (Should match JETPOS_API_SECRET in Vercel Env)
 const APP_SECRET = 'jetpos_secure_v1_2_8_gatekeeper'; 
 
@@ -37,7 +40,7 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
 
     // Electron environment specific logic
     if (IS_ELECTRON && path.startsWith('/api/')) {
-        url = `${PROD_API_BASE}${path}`;
+        url = `${API_BASE}${path}`;
         
         const timestamp = Date.now().toString();
         const deviceId = getDeviceId();
@@ -58,7 +61,22 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
 
     try {
         const response = await fetch(url, options);
-        return response;
+        const contentType = response.headers.get('content-type');
+        
+        let data;
+        if (contentType && contentType.includes('application/json')) {
+            data = await response.json();
+        } else {
+            // HTML veya başka bir şey geldi (Muhtemelen 404 veya 500 hatası)
+            const text = await response.text();
+            throw new Error(`API returned non-JSON response (${response.status}): ${text.substring(0, 50)}...`);
+        }
+        
+        if (!response.ok) {
+            throw new Error(data.error || `HTTP Error: ${response.status}`);
+        }
+        
+        return data;
     } catch (error) {
         console.error(`[API Fetch Error] ${url}:`, error);
         throw error;

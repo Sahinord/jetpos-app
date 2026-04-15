@@ -14,6 +14,11 @@ const APP_SECRET = 'jetpos_secure_v1_2_8_gatekeeper';
 export function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
+    // Skip security checks in development mode for easier debugging
+    if (process.env.NODE_ENV === 'development') {
+        return NextResponse.next();
+    }
+
     // Only protect /api routes
     if (pathname.startsWith('/api/') && !pathname.includes('/auth/callback')) {
         const signature = request.headers.get('x-jetpos-signature');

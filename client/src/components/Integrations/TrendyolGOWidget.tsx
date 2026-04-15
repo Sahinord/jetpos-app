@@ -8,9 +8,11 @@ interface TrendyolGoSettings {
     agentName: string;
     token?: string;
     isStage: boolean;
+    isStockSyncActive: boolean;
 }
 
 import { useState, useEffect } from "react";
+import { apiFetch } from '@/lib/api';
 import {
     Package,
     TrendingUp,
@@ -44,7 +46,8 @@ export default function TrendyolGOWidget() {
         apiSecret: "",
         agentName: "JetPos_Entegrasyon",
         token: "",
-        isStage: false
+        isStage: false,
+        isStockSyncActive: false
     });
 
     const [stats, setStats] = useState({
@@ -144,7 +147,8 @@ export default function TrendyolGOWidget() {
                     apiSecret: config.apiSecret || "",
                     agentName: config.agentName || "JetPos_Entegrasyon",
                     token: config.token || "",
-                    isStage: config.isStage || config.stage || false
+                    isStage: config.isStage || config.stage || false,
+                    isStockSyncActive: config.isStockSyncActive || false
                 });
                 setIsConfigured(intData.is_active);
                 setStats(prev => ({ ...prev, lastSync: intData.last_sync_at }));
@@ -172,22 +176,24 @@ export default function TrendyolGOWidget() {
                 setIsConfigured(true);
             } else {
                 // 3. Hiçbiri yoksa Sistem Ayarlarını (.env.local) kontrol et
-                const res = await fetch('/api/trendyol/settings');
-                const sys = await res.json();
-
-                if (sys.isSystemConfigured) {
-                    setSettings(prev => ({
-                        ...prev,
-                        sellerId: sys.sellerId,
-                        storeId: sys.storeId,
-                        apiKey: sys.apiKey,
-                        apiSecret: sys.apiSecret,
-                        agentName: sys.agentName,
-                        token: sys.token,
-                        isStage: sys.isStage
-                    }));
-                    setIsConfigured(true);
-                    setIsSystemLevel(true);
+                try {
+                    const sys = await apiFetch('/api/trendyol/settings');
+                    if (sys && sys.isSystemConfigured) {
+                        setSettings(prev => ({
+                            ...prev,
+                            sellerId: sys.sellerId,
+                            storeId: sys.storeId,
+                            apiKey: sys.apiKey,
+                            apiSecret: sys.apiSecret,
+                            agentName: sys.agentName,
+                            token: sys.token,
+                            isStage: sys.isStage
+                        }));
+                        setIsConfigured(true);
+                        setIsSystemLevel(true);
+                    }
+                } catch (settingsErr) {
+                    console.log("System settings fetch failed, ignoring...");
                 }
             }
         } catch (err) {
@@ -227,9 +233,10 @@ export default function TrendyolGOWidget() {
         if (!isConfigured || !currentTenant?.id) return;
         setSyncing(true);
         try {
-            // Arka planda API üzerinden senkronizasyon yap (RLS hatalarını önlemek için)
-            const response = await fetch(`/api/trendyol/sync-orders?tenantId=${currentTenant.id}&days=${days}`);
-            const result = await response.json();
+            // Arka planda API üzerinden senkronizasyon yap (SECURE API FETCH - v1.3.2)
+            const result = await apiFetch(`/api/trendyol/sync-orders?tenantId=${currentTenant.id}&days=${days}`, { 
+                method: 'POST' 
+            });
 
             if (result.success) {
                 // Stats güncelle
@@ -239,19 +246,42 @@ export default function TrendyolGOWidget() {
                     status: "success"
                 }));
 
+                // Sadece siparişleri sessizce çek, sayfayı yenileme kanka
                 await fetchOrders(days);
-
-                if (result.count > 0) {
-                    alert(`✅ ${result.count} sipariş başarıyla çekildi ve güncellendi.`);
-                } else {
-                    alert(`ℹ️ Belirtilen aralıkta yeni siparişe rastlanmadı.`);
-                }
             } else {
                 throw new Error(result.error || 'Senkronizasyon başarısız.');
             }
         } catch (err: any) {
             console.error("Sync Error:", err);
-            alert("❌ Senkronizasyon hatası: " + err.message);
+        } finally {
+            setSyncing(false);
+        }
+    };
+
+    const handleSyncStock = async () => {
+        if (!isConfigured || !currentTenant?.id) return;
+        
+        // ŞALTER KONTROLÜ (v1.3.9)
+        if (!settings.isStockSyncActive) {
+            alert("⚠️ Stok senkronizasyonu şu an kapalı. Lütfen ayarlardan aktif edin.");
+            return;
+        }
+
+        setSyncing(true);
+        try {
+            // Stokları Trendyol'a gönder (SECURE API FETCH - v1.3.8)
+            const result = await apiFetch(`/api/trendyol/sync-stock?tenantId=${currentTenant.id}`, { 
+                method: 'POST' 
+            });
+
+            if (result.success) {
+                alert(`✅ ${result.count} ürünün stoğu başarıyla Trendyol'a güncellendi.`);
+            } else {
+                throw new Error(result.error || 'Stok senkronizasyonu başarısız.');
+            }
+        } catch (err: any) {
+            console.error("Stock Sync Error:", err);
+            alert("❌ Stok hatası: " + err.message);
         } finally {
             setSyncing(false);
         }
@@ -415,6 +445,23 @@ export default function TrendyolGOWidget() {
                             </div>
                         </label>
 
+                        {/* STOK ŞALTERİ (v1.3.9) */}
+                        <label className="flex items-center gap-2 cursor-pointer group">
+                            <div className="relative">
+                                <input
+                                    type="checkbox"
+                                    checked={settings.isStockSyncActive}
+                                    onChange={e => setSettings({ ...settings, isStockSyncActive: e.target.checked })}
+                                    className="peer hidden"
+                                />
+                                <div className="w-10 h-6 bg-slate-800 rounded-full peer-checked:bg-emerald-500 transition-all after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:w-4 after:h-4 after:rounded-full after:transition-all peer-checked:after:translate-x-4"></div>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-xs font-bold text-white group-hover:text-emerald-400 transition-colors">Stok Senkronizasyonu</span>
+                                <span className="text-[10px] text-slate-500 font-medium">Aktif et (Stokları gönder)</span>
+                            </div>
+                        </label>
+
                         <div className="flex gap-2">
                             <button
                                 onClick={() => setShowSettings(false)}
@@ -499,25 +546,36 @@ export default function TrendyolGOWidget() {
                             </div>
                         </div>
 
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => handleSyncOrders(syncDays)}
-                                disabled={syncing || !isConfigured}
-                                className={`flex-1 flex items-center justify-center gap-2 px-5 py-3.5 bg-orange-500 hover:bg-orange-600 rounded-2xl text-white font-black transition-all active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 shadow-xl ${isConfigured ? 'shadow-orange-500/20' : ''}`}
-                            >
-                                <RefreshCw className={`w-5 h-5 ${syncing ? 'animate-spin' : ''}`} />
-                                <span className="tracking-wide">
-                                    {syncing ? 'SENKRONİZE EDİLİYOR...' : `${syncDays === 1 ? 'SİPARİŞLERİ ÇEK' : `SON ${syncDays} GÜNÜ ÇEK`}`}
-                                </span>
-                            </button>
+                        <div className="flex flex-col gap-2">
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => handleSyncOrders(syncDays)}
+                                    disabled={syncing || !isConfigured}
+                                    className={`flex-1 flex items-center justify-center gap-2 px-5 py-3.5 bg-orange-500 hover:bg-orange-600 rounded-2xl text-white font-black transition-all active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 shadow-xl ${isConfigured ? 'shadow-orange-500/20' : ''}`}
+                                >
+                                    <RefreshCw className={`w-5 h-5 ${syncing ? 'animate-spin' : ''}`} />
+                                    <span className="tracking-wide">
+                                        {syncing ? 'İŞLEM YAPILIYOR...' : `${syncDays === 1 ? 'SİPARİŞLERİ ÇEK' : `SON ${syncDays} GÜNÜ ÇEK`}`}
+                                    </span>
+                                </button>
+
+                                <button
+                                    onClick={handleTestConnection}
+                                    disabled={syncing || !isConfigured}
+                                    className="p-3.5 bg-white/5 hover:bg-white/10 rounded-2xl text-secondary hover:text-emerald-400 transition-all border border-white/5 hover:border-emerald-500/30 group"
+                                    title="Bağlantıyı Test Et"
+                                >
+                                    <CheckCircle className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                                </button>
+                            </div>
 
                             <button
-                                onClick={handleTestConnection}
+                                onClick={handleSyncStock}
                                 disabled={syncing || !isConfigured}
-                                className="p-3.5 bg-white/5 hover:bg-white/10 rounded-2xl text-secondary hover:text-emerald-400 transition-all border border-white/5 hover:border-emerald-500/30 group"
-                                title="Bağlantıyı Test Et"
+                                className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-slate-900 hover:bg-slate-800 border border-white/5 hover:border-orange-500/30 rounded-2xl text-white/80 hover:text-white font-bold transition-all disabled:opacity-50 active:scale-[0.99]"
                             >
-                                <CheckCircle className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                                <Package className={`w-4 h-4 ${syncing ? 'animate-bounce' : ''}`} />
+                                <span>STOKLARI TRENDYOL'A GÜNCELLE</span>
                             </button>
                         </div>
                     </div>
