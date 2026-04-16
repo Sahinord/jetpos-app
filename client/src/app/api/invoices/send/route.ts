@@ -1,5 +1,6 @@
-
 import { NextRequest, NextResponse } from 'next/server';
+
+export const dynamic = 'force-dynamic';
 import { getInvoiceProvider } from '@/lib/invoice-providers';
 import { getTenantSettings } from '@/lib/tenant-settings';
 import crypto from 'crypto';
