@@ -176,7 +176,8 @@ export async function printBarcodeLabel(product: any, settings: any = {}) {
                     printerName,
                     product,
                     width: labelWidth,
-                    height: labelHeight
+                    height: labelHeight,
+                    html: html // Send the custom design HTML!
                 });
             } else {
                 console.log("📄 HTML Modunda yazdırılıyor...");

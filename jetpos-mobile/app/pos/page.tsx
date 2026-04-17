@@ -76,7 +76,7 @@ export default function POSPage() {
     });
 
     const lowStockAlerts = useMemo(() => {
-        return products.filter(p => (p.stock_quantity || 0) < 5);
+        return products.filter((p: Product) => (p.stock_quantity || 0) < 5);
     }, [products]);
 
     // Scanner State
@@ -101,13 +101,13 @@ export default function POSPage() {
                 schema: 'public',
                 table: 'products',
                 filter: `tenant_id=eq.${tenantId}`
-            }, (payload) => {
+            }, (payload: any) => {
                 if (payload.eventType === 'INSERT') {
-                    setProducts(prev => [...prev, payload.new as Product]);
+                    setProducts((prev: Product[]) => [...prev, payload.new as Product]);
                 } else if (payload.eventType === 'UPDATE') {
-                    setProducts(prev => prev.map(p => p.id === payload.new.id ? { ...p, ...payload.new } : p));
+                    setProducts((prev: Product[]) => prev.map((p: Product) => p.id === payload.new.id ? { ...p, ...payload.new } : p));
                 } else if (payload.eventType === 'DELETE') {
-                    setProducts(prev => prev.filter(p => p.id === payload.old.id));
+                    setProducts((prev: Product[]) => prev.filter((p: Product) => p.id === payload.old.id));
                 }
             })
             .subscribe();
@@ -193,8 +193,8 @@ export default function POSPage() {
 
     // Barcode Map for O(1) Lookups
     const barcodeMap = useMemo(() => {
-        const map = new Map();
-        products.forEach(p => {
+        const map = new Map<string, Product>();
+        products.forEach((p: Product) => {
             if (p.barcode) map.set(p.barcode.toLowerCase(), p);
         });
         return map;
@@ -206,7 +206,7 @@ export default function POSPage() {
 
         // 1. Category Filter
         if (selectedCategory !== "all") {
-            result = result.filter(p => p.category_id === selectedCategory);
+            result = result.filter((p: Product) => p.category_id === selectedCategory);
         }
 
         // 2. Search Filter
@@ -215,7 +215,7 @@ export default function POSPage() {
             const exactMatch = barcodeMap.get(lower);
             if (exactMatch) return [exactMatch];
 
-            result = result.filter(p =>
+            result = result.filter((p: Product) =>
                 p.name.toLowerCase().includes(lower) ||
                 p.barcode?.includes(lower)
             );
@@ -317,7 +317,7 @@ export default function POSPage() {
             if (matches && Array.isArray(matches)) {
                 let addedCount = 0;
                 matches.forEach((match: any) => {
-                    const product = products.find(p => p.id === match.id);
+                    const product = products.find((p: Product) => p.id === match.id);
                     if (product) {
                         for (let i = 0; i < (match.quantity || 1); i++) {
                             addToCart(product);
@@ -361,7 +361,7 @@ export default function POSPage() {
                 readerRef.current.decodeFromVideoDevice(
                     undefined,
                     videoRef.current,
-                    (result) => {
+                    (result: any) => {
                         if (result) {
                             const barcode = result.getText().toLowerCase();
                             const product = barcodeMap.get(barcode);
@@ -386,7 +386,7 @@ export default function POSPage() {
 
     const stopScanner = () => {
         if (streamRef.current) {
-            streamRef.current.getTracks().forEach(track => track.stop());
+            streamRef.current.getTracks().forEach((track: MediaStreamTrack) => track.stop());
             streamRef.current = null;
         }
         if (readerRef.current) {
@@ -412,10 +412,10 @@ export default function POSPage() {
 
     // Cart Actions
     const addToCart = (product: Product) => {
-        setCart(prev => {
-            const existing = prev.find(p => p.id === product.id);
+        setCart((prev: CartItem[]) => {
+            const existing = prev.find((p: CartItem) => p.id === product.id);
             if (existing) {
-                return prev.map(p => p.id === product.id ? { ...p, quantity: p.quantity + 1 } : p);
+                return prev.map((p: CartItem) => p.id === product.id ? { ...p, quantity: p.quantity + 1 } : p);
             }
             return [...prev, { ...product, quantity: 1 }];
         });
@@ -423,7 +423,7 @@ export default function POSPage() {
     };
 
     const updateQuantity = (id: string, delta: number) => {
-        setCart(prev => prev.map(item => {
+        setCart((prev: CartItem[]) => prev.map((item: CartItem) => {
             if (item.id === id) {
                 const newQty = Math.max(1, item.quantity + delta);
                 return { ...item, quantity: newQty };
@@ -433,11 +433,11 @@ export default function POSPage() {
     };
 
     const removeFromCart = (id: string) => {
-        setCart(prev => prev.filter(item => item.id !== id));
+        setCart((prev: CartItem[]) => prev.filter((item: CartItem) => item.id !== id));
     };
 
     // Calculations
-    const totalAmount = cart.reduce((sum, item) => sum + (item.sale_price * item.quantity), 0);
+    const totalAmount = cart.reduce((sum: number, item: CartItem) => sum + (item.sale_price * item.quantity), 0);
 
     // Checkout Logic
     const handleCheckout = async (method: string) => {
@@ -451,7 +451,7 @@ export default function POSPage() {
                 await setCurrentTenant(tenantId);
             }
 
-            const totalCost = cart.reduce((sum, item) => sum + (item.purchase_price * item.quantity), 0);
+            const totalCost = cart.reduce((sum: number, item: CartItem) => sum + (item.purchase_price * item.quantity), 0);
 
             // Prepare Data for RPC
             const invoiceData = {
@@ -468,7 +468,7 @@ export default function POSPage() {
                 notes: `Mobil POS Satışı - ${method}`
             };
 
-            const itemsData = cart.map(item => ({
+            const itemsData = cart.map((item: CartItem) => ({
                 product_id: item.id,
                 item_name: item.name,
                 item_code: item.barcode,
@@ -551,13 +551,13 @@ export default function POSPage() {
                             type="text"
                             placeholder="Ürün ara veya barkod..."
                             value={search}
-                            onChange={(e) => setSearch(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
                             className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-24 py-3 text-sm text-white focus:outline-none focus:border-blue-500/50 focus:bg-white/10 transition-all placeholder:text-secondary/50"
                         />
                         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-4">
                             <button
                                 type="button"
-                                onClick={(e) => {
+                                onClick={(e: React.MouseEvent) => {
                                     e.stopPropagation();
                                     startListening();
                                 }}
@@ -568,7 +568,7 @@ export default function POSPage() {
                             </button>
                             <button
                                 type="button"
-                                onClick={(e) => {
+                                onClick={(e: React.MouseEvent) => {
                                     e.stopPropagation();
                                     setIsScannerOpen(true);
                                 }}
@@ -589,7 +589,7 @@ export default function POSPage() {
                         >
                             TÜMÜ
                         </button>
-                        {categories.map(cat => (
+                        {categories.map((cat: Category) => (
                             <button
                                 key={cat.id}
                                 onClick={() => setSelectedCategory(cat.id)}
@@ -632,7 +632,7 @@ export default function POSPage() {
                     </div>
                 ) : (
                     <div className="grid grid-cols-2 gap-3">
-                        {displayedProducts.map(product => (
+                        {displayedProducts.map((product: Product) => (
                             <button
                                 key={product.id}
                                 onClick={() => addToCart(product)}
@@ -672,7 +672,7 @@ export default function POSPage() {
                                     {filteredProducts.length} üründen {visibleCount} tanesi gösteriliyor
                                 </p>
                                 <button
-                                    onClick={() => setVisibleCount(prev => prev + 50)}
+                                    onClick={() => setVisibleCount((prev: number) => prev + 50)}
                                     className="px-10 py-4 bg-blue-500 hover:bg-blue-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl shadow-blue-500/20 active:scale-95 transition-all"
                                 >
                                     Daha Fazla Ürün Yükle
@@ -698,7 +698,7 @@ export default function POSPage() {
                         >
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                                    <span className="font-black text-white">{cart.reduce((a, b) => a + b.quantity, 0)}</span>
+                                    <span className="font-black text-white">{cart.reduce((a: number, b: CartItem) => a + b.quantity, 0)}</span>
                                 </div>
                                 <div className="text-left">
                                     <p className="text-[10px] font-bold text-blue-200 uppercase tracking-wider">Sepet Toplamı</p>
@@ -767,7 +767,7 @@ export default function POSPage() {
                                             <X
                                                 size={16}
                                                 className="text-white"
-                                                onClick={(e) => {
+                                                onClick={(e: React.MouseEvent) => {
                                                     e.stopPropagation();
                                                     setSelectedCustomer(null);
                                                 }}
@@ -781,7 +781,7 @@ export default function POSPage() {
 
                             {/* Cart Items */}
                             <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                                {cart.map(item => (
+                                {cart.map((item: CartItem) => (
                                     <div key={item.id} className="flex items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/5">
                                         <div className="w-16 h-16 rounded-xl bg-black/40 overflow-hidden flex-shrink-0">
                                             {item.image_url ? (
@@ -891,15 +891,15 @@ export default function POSPage() {
                                         placeholder="Müşteri ara..."
                                         className="w-full bg-black/20 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white focus:outline-none focus:border-blue-500/50"
                                         value={customerSearch}
-                                        onChange={(e) => setCustomerSearch(e.target.value)}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomerSearch(e.target.value)}
                                     />
                                 </div>
                             </div>
 
                             <div className="flex-1 overflow-y-auto p-4 space-y-2">
                                 {customers
-                                    .filter(c => c.name.toLowerCase().includes(customerSearch.toLowerCase()))
-                                    .map(customer => (
+                                    .filter((c: Customer) => c.name.toLowerCase().includes(customerSearch.toLowerCase()))
+                                    .map((customer: Customer) => (
                                         <button
                                             key={customer.id}
                                             onClick={() => {
@@ -1048,7 +1048,7 @@ export default function POSPage() {
                                 </div>
 
                                 <div className="space-y-3 mb-8">
-                                    {lowStockAlerts.slice(0, 3).map(p => (
+                                    {lowStockAlerts.slice(0, 3).map((p: Product) => (
                                         <div key={p.id} className="flex items-center justify-between p-4 bg-white/5 rounded-[1.5rem] border border-white/5 backdrop-blur-md">
                                             <span className="text-sm font-bold text-white truncate max-w-[180px]">{p.name}</span>
                                             <span className="text-xs font-black text-rose-400 bg-rose-500/10 px-3 py-1.5 rounded-xl border border-rose-500/20">

@@ -1,7 +1,7 @@
 import CryptoJS from 'crypto-js';
 
 const IS_ELECTRON = typeof window !== 'undefined' && 
-                   (window.process?.type === 'renderer' || 
+                   ((window as any).process?.type === 'renderer' || 
                     navigator.userAgent.indexOf('Electron') >= 0 ||
                     (window as any).process?.versions?.electron);
 

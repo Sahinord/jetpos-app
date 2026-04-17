@@ -89,6 +89,7 @@ const ReceiptPreview = ({ data }: { data: ReceiptData | null }) => {
             {/* Items Header */}
             <div style={{ display: 'flex', padding: '6px 12px', fontSize: '10px', fontWeight: 900, color: '#000', borderBottom: '2px solid #000', textTransform: 'uppercase', letterSpacing: '1px' }}>
                 <span style={{ flex: 1 }}>ÜRÜN</span>
+                <span style={{ width: '30px', textAlign: 'center' }}>KDV</span>
                 <span style={{ width: '40px', textAlign: 'center' }}>AD</span>
                 <span style={{ width: '70px', textAlign: 'right' }}>TUTAR</span>
             </div>
@@ -98,9 +99,11 @@ const ReceiptPreview = ({ data }: { data: ReceiptData | null }) => {
                 {data.items.map((item, index) => (
                     <div key={index} style={{ padding: '6px 0', borderBottom: '1px dashed #ccc' }}>
                         <div style={{ fontSize: '12px', fontWeight: 900, color: '#000', textTransform: 'uppercase' }}>{item.name}</div>
+                        {item.barcode && <div style={{ fontSize: '9px', color: '#666', marginBottom: '2px' }}>{item.barcode}</div>}
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontWeight: 800, color: '#222' }}>
-                            <span>{item.quantity} {item.unit || 'AD'} X ₺{item.sale_price.toFixed(2)}</span>
-                            <span style={{ fontWeight: 900, color: '#000' }}>₺{(item.sale_price * item.quantity).toFixed(2)}</span>
+                            <span style={{ flex: 1 }}>{item.quantity} {item.unit || 'AD'} X ₺{item.sale_price.toFixed(2)}</span>
+                            <span style={{ width: '30px', textAlign: 'center' }}>%{item.vat_rate || 0}</span>
+                            <span style={{ width: '70px', textAlign: 'right', fontWeight: 900, color: '#000' }}>₺{(item.sale_price * item.quantity).toFixed(2)}</span>
                         </div>
                     </div>
                 ))}
@@ -161,9 +164,11 @@ function generatePrintHTML(data: ReceiptData | null): string {
     const itemRows = data.items.map(item => `
         <div style="padding:4px 0;border-bottom:1px dashed #000;">
             <div style="font-size:13px;font-weight:900;color:#000;text-transform:uppercase;">${item.name}</div>
+            ${item.barcode ? `<div style="font-size:10px;color:#333;margin-bottom:2px;">${item.barcode}</div>` : ''}
             <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:900;color:#000;">
-                <span>${item.quantity} ${item.unit || 'AD'} X ₺${item.sale_price.toFixed(2)}</span>
-                <span>₺${(item.sale_price * item.quantity).toFixed(2)}</span>
+                <span style="flex:1">${item.quantity} ${item.unit || 'AD'} X ₺${item.sale_price.toFixed(2)}</span>
+                <span style="width:30px;text-align:center;">%${item.vat_rate || 0}</span>
+                <span style="width:70px;text-align:right;">₺${(item.sale_price * item.quantity).toFixed(2)}</span>
             </div>
         </div>
     `).join('');
@@ -230,6 +235,7 @@ function generatePrintHTML(data: ReceiptData | null): string {
 
     <div style="font-size:11px;font-weight:900;display:flex;border-bottom:2px solid #000;padding-bottom:2px;color:#000!important;">
         <span style="flex:1">ÜRÜN</span>
+        <span style="width:30px;text-align:center;">KDV</span>
         <span style="width:40px;text-align:center;">AD</span>
         <span style="width:60px;text-align:right;">TUTAR</span>
     </div>

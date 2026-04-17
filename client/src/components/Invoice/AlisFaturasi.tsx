@@ -181,11 +181,15 @@ export default function AlisFaturasi() {
     }, [enrichedItems]);
 
     const fetchCariList = async () => {
-        const { data } = await supabase
+        const query = supabase
             .from('cari_hesaplar')
-            .select('*')
-            .eq('cari_tipi', 'Tedarikçi')
-            .order('cari_unvan');
+            .select('*');
+
+        if (currentTenant) {
+            query.eq('tenant_id', currentTenant.id);
+        }
+
+        const { data } = await query.order('cari_unvan');
         if (data) setCariList(data);
     };
 

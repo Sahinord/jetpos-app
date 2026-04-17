@@ -15,6 +15,7 @@ interface Tenant {
     settings?: any;
     openrouter_api_key?: string;
     max_stores?: number;
+    max_online_stores?: number;
     master_pin?: string;
     created_at: string;
 }

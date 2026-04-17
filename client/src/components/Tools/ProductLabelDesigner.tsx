@@ -254,6 +254,7 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
     const [fontStyles, setFontStyles] = useState<Partial<Record<ElemId, { b: boolean; i: boolean }>>>({});
     const [barcodeNarrow, setBarcodeNarrow] = useState(2);
     const [showGuides, setShowGuides] = useState<{ x: boolean; y: boolean }>({ x: false, y: false });
+    const [printOffsets, setPrintOffsets] = useState({ x: 0, y: 0 }); // mm calibration
 
     const resizeDragRef = useRef<{ id: ElemId; handle: string; startX: number; startY: number; origW: number; origS: number } | null>(null);
 
@@ -269,6 +270,7 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                 if (data.elemWidths) setElemWidths(data.elemWidths);
                 if (data.colors) setColors(data.colors);
                 if (data.fontStyles) setFontStyles(data.fontStyles);
+                if (data.printOffsets) setPrintOffsets(data.printOffsets);
             } catch (e) { console.error("Load error", e); }
         } else {
             // No save found, reset to defaults
@@ -286,9 +288,9 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
     }, [templateId]);
 
     useEffect(() => {
-        const data = { positions, alignments, fontScales, elemWidths, colors, fontStyles };
+        const data = { positions, alignments, fontScales, elemWidths, colors, fontStyles, printOffsets };
         localStorage.setItem(`label_design_${templateId}`, JSON.stringify(data));
-    }, [templateId, positions, alignments, fontScales, elemWidths, colors, fontStyles]);
+    }, [templateId, positions, alignments, fontScales, elemWidths, colors, fontStyles, printOffsets]);
 
     const getAlign = (id: ElemId): Align => alignments[id] ?? 'left';
     const setAlign = (align: Align) => {
@@ -451,7 +453,9 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                 ? `transform: rotate(90deg) translateY(-${cfg.heightMm}mm); transform-origin: top left; width: ${cfg.heightMm}mm; height: ${cfg.widthMm}mm;`
                 : `width: ${cfg.widthMm}mm; height: ${cfg.heightMm}mm;`;
 
-            return `<div class="label-box" style="position:relative; overflow:hidden; ${rotStyle}">${parts.join('')}</div>`;
+            const offsetStyle = `margin-left: ${printOffsets.x}mm; margin-top: ${printOffsets.y}mm;`;
+
+            return `<div class="label-box" style="position:relative; overflow:hidden; ${rotStyle} ${offsetStyle}">${parts.join('')}</div>`;
         };
 
         const labelsHtml = selectedProducts.flatMap(pid => {
@@ -489,42 +493,28 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
     img { display: block; max-width: 100%; }
 </style></head><body>${labelsHtml}</body></html>`;
 
+        console.log('[LabelPrint] fullHtml length:', fullHtml.length);
+        console.log('[LabelPrint] printerName:', printerName);
+        console.log('[LabelPrint] dimensions:', finalWidth, 'x', finalHeight, 'mm');
+        console.log('[LabelPrint] labelsHtml length:', labelsHtml.length);
+        console.log('[LabelPrint] selectedProducts:', selectedProducts.length);
+
         // Sessiz Yazdırma (Electron ise)
         if (window.require) {
             try {
                 const { ipcRenderer } = window.require('electron');
 
-                // Eğer RP80 şablonu seçiliyse veya etiket yazıcısıysa RAW (TSPL) moduna geç
-                const isLabelMode = templateId === 'rp80' || (printerName || "").toLowerCase().includes('label');
+                // Her zaman tam HTML belgesi (fullHtml) ile silent-print kullan
+                // Bu yöntem @page, body ve .label-box CSS'ini doğru şekilde içerir
+                ipcRenderer.send('silent-print', {
+                    html: fullHtml,
+                    printerName: printerName || "",
+                    width: finalWidth,
+                    height: finalHeight,
+                    delay: 1500
+                });
 
-                if (isLabelMode) {
-                    // TSPL çoklu baskı için döngüde gönderiyoruz (veya tek seferde toplu TSPL oluşturulabilir)
-                    // Burada basitleştirilmiş haliyle her ürün için ayrı gönderiyoruz
-                    selectedProducts.forEach(pid => {
-                        const pr = products.find(p => p.id === pid);
-                        if (!pr) return;
-                        const count = labelCount[pid] || 1;
-                        for (let i = 0; i < count; i++) {
-                            ipcRenderer.send('print-label-tspl', {
-                                printerName: printerName || "",
-                                product: pr,
-                                width: finalWidth,
-                                height: finalHeight
-                            });
-                        }
-                    });
-                } else {
-                    ipcRenderer.send('silent-print', {
-                        html: fullHtml,
-                        printerName: printerName || "",
-                        width: finalWidth,
-                        height: finalHeight,
-                        delay: 500
-                    });
-                }
                 showToast('Yazdırma işlemi başlatıldı');
-                // Yazdırma işlemi tamamlandığında kuyruğu can sıkmadan ufaktan temizleyelim mi?
-                // Veya kullanıcıya bir buton sunalım. Şimdilik kalsın ama bir seçenek olsun.
                 return;
             } catch (e) {
                 console.error('Sessiz yazdırma hatası:', e);
@@ -721,6 +711,27 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                             <input type="range" min={5} max={35} value={cfg.barcodeHMm}
                                 onChange={e => setCfgOverrides(p => ({ ...p, barcodeHMm: +e.target.value }))}
                                 className="w-full accent-primary" />
+                        </div>
+
+                        {/* Calibration */}
+                        <div className="mt-4 pt-4 border-t border-white/5 space-y-3">
+                            <h4 className="text-[10px] font-black text-amber-500 uppercase flex items-center gap-2">
+                                <RotateCcw size={12} /> Yazıcı Kalibrasyonu (Kayma Varsa)
+                            </h4>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1">
+                                    <label className="text-[9px] text-secondary font-bold uppercase">X (Sol) Kayma: {printOffsets.x}mm</label>
+                                    <input type="range" min={-10} max={10} step={0.5} value={printOffsets.x}
+                                        onChange={e => setPrintOffsets(p => ({ ...p, x: +e.target.value }))}
+                                        className="w-full accent-amber-500" />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[9px] text-secondary font-bold uppercase">Y (Üst) Kayma: {printOffsets.y}mm</label>
+                                    <input type="range" min={-10} max={10} step={0.5} value={printOffsets.y}
+                                        onChange={e => setPrintOffsets(p => ({ ...p, y: +e.target.value }))}
+                                        className="w-full accent-amber-500" />
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

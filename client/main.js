@@ -170,63 +170,119 @@ function createWindow() {
         }
     });
 
-    // --- ETİKET YAZDIRMA (TSPL - RAW) ---
-    ipcMain.on('print-label-tspl', (event, { printerName, product, width = 80, height = 40 }) => {
-        if (!printerName) return;
+    // --- RONGTA RP80 SESSİZ FİŞ YAZDIRMA ---
+    ipcMain.on('print-label-tspl', (event, { printerName, product, width = 80, height = 40, html }) => {
+        if (!printerName || !product) return;
 
-        console.log(`🏷️ TSPL Etiket Yazdırılıyor: ${printerName}`);
+        // Görünmez bir pencere oluşturuyoruz
+        const printWin = new BrowserWindow({
+            show: false,
+            webPreferences: { nodeIntegration: true, contextIsolation: false }
+        });
+
+        const pName = (product.name || "").toUpperCase();
+        const pBarcode = product.barcode || "";
+        const pPrice = `${Number(product.sale_price || 0).toFixed(2)} TL`;
+
+        // Eğer dışarıdan HTML gelmişse onu kullan, yoksa varsayılan basit şablonu kullan
+        const finalHtml = html || `
+            <html>
+            <style>
+                body { 
+                    width: ${width}mm; 
+                    margin: 0; padding: 5px; 
+                    font-family: 'Courier New', Courier, monospace; 
+                    text-align: center;
+                }
+                .title { font-size: 14px; font-weight: bold; margin-bottom: 5px; }
+                .barcode { font-size: 30px; font-family: 'Libre Barcode 128', cursive; margin: 10px 0; }
+                .price { font-size: 18px; font-weight: bold; border-top: 1px dashed #000; padding-top: 5px; }
+            </style>
+            <body>
+                <div class="title">${pName}</div>
+                <div style="font-size: 12px;">${pBarcode}</div>
+                <div class="price">${pPrice}</div>
+            </body>
+            </html>
+        `;
+
+        printWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(finalHtml)}`);
+
+        printWin.webContents.on('did-finish-load', () => {
+            const options = {
+                silent: true,
+                deviceName: printerName,
+                printBackground: true,
+                margins: { marginType: 'none' },
+                pageSize: { 
+                    width: Math.round((width || 80) * 1000), 
+                    height: Math.round((height || 40) * 1000) 
+                }
+            };
+
+            printWin.webContents.print(options, (success, errorType) => {
+                if (!success) console.error('Yazdırma Hatası:', errorType);
+                printWin.close(); 
+                event.sender.send('silent-print-result', { success });
+            });
+        });
+    });
+
+    // --- DIRECT TSPL/RAW PRINTING (HARDWARE NATIVE) ---
+    ipcMain.on('print-raw-tspl', (event, { printerName, commands }) => {
+        if (!printerName || !commands) return;
 
         const fs = require('fs');
-        const tempFile = path.join(app.getPath('temp'), `jetpos_label_${Date.now()}.bin`);
+        const tempFile = path.join(app.getPath('temp'), `jetpos_tspl_${Date.now()}.bin`);
 
         try {
-            // TSPL Komutları Oluştur
-            const name = (product.name || "").substring(0, 32).toUpperCase();
-            const barcode = product.barcode || "";
-            const price = `${Number(product.sale_price).toFixed(2)} TL`;
+            // TSPL commands are usually ASCII/UTF-8
+            fs.writeFileSync(tempFile, commands, 'utf8');
 
-            const tspl = [
-                `SIZE ${width} mm,${height} mm`,
-                `GAP 3 mm,0 mm`,
-                `DIRECTION 1`,
-                `CLS`,
-                `TEXT 20,20,"3",0,1,1,"${name}"`,
-                `BARCODE 20,60,"128",60,1,0,2,2,"${barcode}"`,
-                `TEXT 20,150,"4",0,1,1,"${price}"`,
-                `PRINT 1,1`,
-                `\r\n`
-            ].join('\r\n');
-
-            fs.writeFileSync(tempFile, tspl, 'binary');
-
-            const command = `powershell -Command "Get-Content -Path '${tempFile}' -Raw -Encoding String | Out-Printer -Name '${printerName}'"`;
+            const command = `powershell -Command "Get-Content -Path '${tempFile}' -Raw | Out-Printer -Name '${printerName}'"`;
 
             exec(command, (error) => {
-                if (error) console.error(`Label Print Error: ${error.message}`);
+                if (error) console.error(`TSPL Yazdırma hatası: ${error.message}`);
                 try { fs.unlinkSync(tempFile); } catch (e) { }
                 event.sender.send('silent-print-result', { success: !error });
             });
         } catch (err) {
-            console.error("TSPL hazırlama hatası:", err);
+            console.error("TSPL Hazırlama hatası:", err);
+            event.sender.send('silent-print-result', { success: false, error: err.message });
         }
     });
 
     // --- GENEL SESSİZ YAZDIRMA (ETİKET, FİŞ VB.) ---
     ipcMain.on('silent-print', (event, { html, printerName, width, height, delay = 800 }) => {
+        const fs = require('fs');
+        const tempFile = path.join(app.getPath('temp'), `jetpos_print_${Date.now()}.html`);
+        
+        try {
+            // HTML'i temp dosyaya yaz (data URL boyut limitini aşmamak için)
+            fs.writeFileSync(tempFile, html, 'utf8');
+            log.info(`[PRINT] Temp dosya yazıldı: ${tempFile} (${html.length} byte)`);
+            log.info(`[PRINT] Yazıcı: ${printerName}, Boyut: ${width}mm x ${height}mm`);
+        } catch (writeErr) {
+            log.error('[PRINT] Temp dosya yazma hatası:', writeErr);
+            event.sender.send('silent-print-result', { success: false, error: writeErr.message });
+            return;
+        }
+
         const printWin = new BrowserWindow({
             show: false,
-            width: 800,
-            height: 600,
+            width: Math.max(400, Math.round((width || 80) * 4)),
+            height: Math.max(300, Math.round((height || 40) * 4)),
             webPreferences: {
                 nodeIntegration: false,
                 contextIsolation: true,
             }
         });
 
-        const dataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
-        printWin.loadURL(dataUrl);
+        // Temp dosyadan yükle (data URL yerine - çok daha güvenilir)
+        printWin.loadFile(tempFile);
 
         printWin.webContents.on('did-finish-load', () => {
+            log.info('[PRINT] Sayfa yüklendi, render bekleniyor...');
             // Render garantisi için ek gecikme (özellikle barkod resimleri için)
             setTimeout(() => {
                 const printOptions = {
@@ -234,6 +290,7 @@ function createWindow() {
                     deviceName: printerName || "",
                     printBackground: true,
                     margins: { marginType: 'none' },
+                    scaleFactor: 100,
                 };
 
                 // Eğer genişlik ve yükseklik mm cinsinden geldiyse microns'a çevir
@@ -248,19 +305,27 @@ function createWindow() {
                     Object.assign(printOptions, { pageSize: 'A4' });
                 }
 
+                log.info('[PRINT] Yazdırma başlatılıyor:', JSON.stringify(printOptions));
+
                 printWin.webContents.print(printOptions, (success, failureReason) => {
                     if (!success) {
-                        console.error('Sessiz yazdırma hatası:', failureReason);
+                        log.error('[PRINT] Yazdırma hatası:', failureReason);
                         event.sender.send('silent-print-result', { success: false, error: failureReason });
                     } else {
+                        log.info('[PRINT] Yazdırma başarılı!');
                         event.sender.send('silent-print-result', { success: true });
                     }
-                    // Pencereyi hemen kapatma, yazdırma işlemi kuyruğa girsin
+                    // Pencereyi ve temp dosyayı temizle
                     setTimeout(() => {
                         if (!printWin.isDestroyed()) printWin.close();
-                    }, 1000);
+                        try { fs.unlinkSync(tempFile); } catch (e) { }
+                    }, 2000);
                 });
             }, delay);
+        });
+
+        printWin.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+            log.error(`[PRINT] Sayfa yükleme hatası: ${errorCode} - ${errorDescription}`);
         });
     });
 

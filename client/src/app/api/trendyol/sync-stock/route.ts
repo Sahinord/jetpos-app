@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
         // 2. Fetch all products from JetPos with barcodes
         const { data: products, error: productsError } = await supabaseAdmin
             .from('products')
-            .select('barcode, stock_quantity, name')
+            .select('barcode, stock_quantity, name, sale_price')
             .eq('tenant_id', tenantId)
             .not('barcode', 'is', null)
             .neq('barcode', '');
@@ -42,7 +42,8 @@ export async function POST(req: NextRequest) {
         // 3. Prepare Batch for Trendyol
         const batch = products.map(p => ({
             barcode: p.barcode,
-            quantity: Math.max(0, p.stock_quantity || 0) // Minimum 0
+            quantity: Math.max(0, p.stock_quantity || 0), // Minimum 0
+            sellingPrice: p.sale_price || 0
         }));
 
         console.log(`[Stock Sync] Pushing ${batch.length} products to Trendyol for tenant ${tenantId}...`);

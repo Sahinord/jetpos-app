@@ -171,7 +171,8 @@ export default function TrendyolGOWidget() {
                     apiSecret: tg.apiSecret || "",
                     agentName: "JetPos_Entegrasyon",
                     token: tg.token || "",
-                    isStage: tg.stage || false
+                    isStage: tg.stage || false,
+                    isStockSyncActive: tg.isStockSyncActive || false
                 });
                 setIsConfigured(true);
             } else {
@@ -187,7 +188,8 @@ export default function TrendyolGOWidget() {
                             apiSecret: sys.apiSecret,
                             agentName: sys.agentName,
                             token: sys.token,
-                            isStage: sys.isStage
+                            isStage: sys.isStage,
+                            isStockSyncActive: sys.isStockSyncActive || false
                         }));
                         setIsConfigured(true);
                         setIsSystemLevel(true);
