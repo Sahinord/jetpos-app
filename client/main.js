@@ -128,7 +128,7 @@ function createWindow() {
         mainWindow.show();
         mainWindow.focus();
         // Geliştirme aşamasında hataları görmek için DevTools'u açalım
-        if (isDev) mainWindow.webContents.openDevTools();
+        // if (isDev) mainWindow.webContents.openDevTools();
     });
 
     // Fix for focus issues on some Windows versions
