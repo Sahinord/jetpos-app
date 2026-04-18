@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
     Volume2, VolumeX, Monitor,
@@ -32,6 +33,17 @@ export default function AppSettings({
     cfdSettings,
     setCfdSettings
 }: any) {
+    const [systemPrinters, setSystemPrinters] = useState<{name: string; isDefault: boolean; status: number}[]>([]);
+
+    useEffect(() => {
+        const electron = (window as any).electron;
+        if (electron?.invoke) {
+            electron.invoke('get-printers').then((printers: any[]) => {
+                setSystemPrinters(printers || []);
+            }).catch(() => {});
+        }
+    }, []);
+
     const themes = [
         { id: 'modern', name: 'MODERN DARK', color: 'bg-primary', desc: 'Sleek ve modern bir arayüz' },
         { id: 'light', name: 'GÜNEŞ IŞIĞI', color: 'bg-white', desc: 'Aydınlık ve ferah çalışma alanı' },
@@ -181,26 +193,24 @@ export default function AppSettings({
                                     <div className="flex items-center justify-between gap-4">
                                         <div className="flex-1 space-y-2">
                                             <label className="text-[10px] font-black text-secondary tracking-widest uppercase">YAZICI ADI (SİSTEMDEKİ ADI)</label>
-                                            <input 
-                                                type="text"
+                                            <select 
                                                 value={cashDrawerPrinterName || ""}
                                                 onChange={(e) => setCashDrawerPrinterName(e.target.value)}
-                                                placeholder="Örn: Rongta RP80"
                                                 className="w-full bg-card border border-border rounded-xl px-4 py-3 text-xs font-bold text-foreground outline-none focus:border-primary transition-all"
-                                            />
+                                            >
+                                                <option value="">Yazıcı seçin...</option>
+                                                {systemPrinters.map(p => (
+                                                    <option key={p.name} value={p.name}>{p.name}{p.isDefault ? ' ⭐' : ''}</option>
+                                                ))}
+                                            </select>
                                         </div>
                                         <button
                                             onClick={() => {
-                                                if (!cashDrawerPrinterName) return showToast("Önce yazıcı adını giriniz", "error");
-                                                if (window.require) {
-                                                    try {
-                                                        const { ipcRenderer } = window.require('electron');
-                                                        ipcRenderer.send('open-cash-drawer', { printerName: cashDrawerPrinterName });
-                                                        showToast("Kasa açma komutu gönderildi (Rongta)", "info");
-                                                    } catch (err) {
-                                                        console.error("Test hatası:", err);
-                                                        showToast("Test işlemi başarısız", "error");
-                                                    }
+                                                if (!cashDrawerPrinterName) return showToast("Önce yazıcı seçiniz", "error");
+                                                const electron = (window as any).electron;
+                                                if (electron?.send) {
+                                                    electron.send('open-cash-drawer', { printerName: cashDrawerPrinterName });
+                                                    showToast("Kasa açma komutu gönderildi: " + cashDrawerPrinterName, "info");
                                                 }
                                             }}
                                             className="px-6 py-3 self-end bg-primary/10 hover:bg-primary/20 border border-primary/30 rounded-xl text-[10px] font-black text-primary transition-all active:scale-95"
@@ -231,27 +241,24 @@ export default function AppSettings({
                                 <div className="flex items-center justify-between gap-4">
                                     <div className="flex-1 space-y-2">
                                         <label className="text-[10px] font-black text-secondary tracking-widest uppercase">FİŞ YAZICI ADI</label>
-                                        <input
-                                            type="text"
+                                        <select
                                             value={receiptPrinterName || ""}
                                             onChange={(e) => setReceiptPrinterName(e.target.value)}
-                                            placeholder="Örn: Epson TM-T20, Rongta RP80"
                                             className="w-full bg-card border border-border rounded-xl px-4 py-3 text-xs font-bold text-foreground outline-none focus:border-primary transition-all"
-                                        />
+                                        >
+                                            <option value="">Yazıcı seçin...</option>
+                                            {systemPrinters.map(p => (
+                                                <option key={p.name} value={p.name}>{p.name}{p.isDefault ? ' ⭐' : ''}</option>
+                                            ))}
+                                        </select>
                                     </div>
                                     <button
                                         onClick={() => {
-                                            if (!receiptPrinterName) return showToast("Önce yazıcı adını giriniz", "error");
-                                            if (window.require) {
-                                                try {
-                                                    const { ipcRenderer } = window.require('electron');
-                                                    ipcRenderer.send('test-receipt-printer', { printerName: receiptPrinterName });
-                                                    showToast("Test fişi gönderildi: " + receiptPrinterName, "info");
-                                                } catch (err) {
-                                                    showToast("Test işlemi başarısız", "error");
-                                                }
-                                            } else {
-                                                showToast("Test: " + receiptPrinterName + " seçildi", "info");
+                                            if (!receiptPrinterName) return showToast("Önce yazıcı seçiniz", "error");
+                                            const electron = (window as any).electron;
+                                            if (electron?.send) {
+                                                electron.send('test-receipt-printer', { printerName: receiptPrinterName });
+                                                showToast("Test fişi gönderildi: " + receiptPrinterName, "info");
                                             }
                                         }}
                                         className="px-6 py-3 self-end bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 rounded-xl text-[10px] font-black text-emerald-500 transition-all active:scale-95"
@@ -281,27 +288,24 @@ export default function AppSettings({
                                 <div className="flex items-center justify-between gap-4">
                                     <div className="flex-1 space-y-2">
                                         <label className="text-[10px] font-black text-secondary tracking-widest uppercase">ETİKET YAZICI ADI</label>
-                                        <input
-                                            type="text"
+                                        <select
                                             value={labelPrinterName || ""}
                                             onChange={(e) => setLabelPrinterName(e.target.value)}
-                                            placeholder="Örn: Xprinter, Rongta RP80"
                                             className="w-full bg-card border border-border rounded-xl px-4 py-3 text-xs font-bold text-foreground outline-none focus:border-primary transition-all"
-                                        />
+                                        >
+                                            <option value="">Fiş yazıcısıyla aynı (boş bırak)</option>
+                                            {systemPrinters.map(p => (
+                                                <option key={p.name} value={p.name}>{p.name}{p.isDefault ? ' ⭐' : ''}</option>
+                                            ))}
+                                        </select>
                                     </div>
                                     <button
                                         onClick={() => {
-                                            if (!labelPrinterName) return showToast("Önce yazıcı adını giriniz", "error");
-                                            if (window.require) {
-                                                try {
-                                                    const { ipcRenderer } = window.require('electron');
-                                                    ipcRenderer.send('test-receipt-printer', { printerName: labelPrinterName });
-                                                    showToast("Test etiketi gönderildi: " + labelPrinterName, "info");
-                                                } catch (err) {
-                                                    showToast("Test işlemi başarısız", "error");
-                                                }
-                                            } else {
-                                                showToast("Test: " + labelPrinterName + " seçildi", "info");
+                                            if (!labelPrinterName) return showToast("Önce yazıcı seçiniz", "error");
+                                            const electron = (window as any).electron;
+                                            if (electron?.send) {
+                                                electron.send('test-receipt-printer', { printerName: labelPrinterName });
+                                                showToast("Test etiketi gönderildi: " + labelPrinterName, "info");
                                             }
                                         }}
                                         className="px-6 py-3 self-end bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded-xl text-[10px] font-black text-amber-500 transition-all active:scale-95"

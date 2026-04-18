@@ -279,7 +279,7 @@ function generatePrintHTML(data: ReceiptData | null): string {
 // ELECTRON KONTROL
 // ──────────────────────────────────────────────
 function isElectron(): boolean {
-    return typeof window !== 'undefined' && !!(window as any).require;
+    return typeof window !== 'undefined' && (!!((window as any).electron?.isElectron) || !!(window as any).require);
 }
 
 // ──────────────────────────────────────────────
@@ -293,6 +293,16 @@ async function silentPrint(data: ReceiptData | null, printerName?: string): Prom
     }
 
     const html = generatePrintHTML(data);
+
+    const electron = (window as any).electron;
+    if (electron?.isElectron) {
+        return new Promise((resolve) => {
+            electron.once('silent-print-result', (result: { success: boolean }) => {
+                resolve(result.success);
+            });
+            electron.send('silent-print-receipt', { html, printerName: printerName || null });
+        });
+    }
 
     try {
         const { ipcRenderer } = (window as any).require('electron');
@@ -315,6 +325,15 @@ async function manualPrint(data: ReceiptData | null): Promise<boolean> {
     const html = generatePrintHTML(data);
 
     if (isElectron()) {
+        const electron = (window as any).electron;
+        if (electron?.isElectron) {
+            return new Promise((resolve) => {
+                electron.once('silent-print-result', (result: { success: boolean }) => {
+                    resolve(result.success);
+                });
+                electron.send('silent-print-receipt', { html });
+            });
+        }
         try {
             const { ipcRenderer } = (window as any).require('electron');
             return new Promise((resolve) => {

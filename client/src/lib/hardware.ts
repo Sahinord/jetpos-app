@@ -160,33 +160,31 @@ export async function printBarcodeLabel(product: any, settings: any = {}) {
 </body>
 </html>`;
 
-    // 4. Electron ortamındaysak Yazdırmayı Tetikle
-    if (window.require) {
+    // 4. Electron ortamındaysak Yazdırmayı Tetikle (preload.js köprüsü)
+    const electron = (window as any).electron;
+    if (electron?.isElectron) {
         try {
-            const { ipcRenderer } = window.require('electron');
-
-            // RP80 veya Etiket yazıcısı tespiti durumunda TSPL (RAW) Gönder
+            // RP80 veya Etiket yazıcısı tespiti
             const isLabelPrinter = printerName.toLowerCase().includes('label') ||
                 printerName.toLowerCase().includes('rp80') ||
+                printerName.toLowerCase().includes('rongta') ||
                 templateId === 'rp80';
 
             if (isLabelPrinter) {
-                console.log("🚀 TSPL Modunda yazdırılıyor...");
-                ipcRenderer.send('print-label-tspl', {
+                console.log("🚀 RAW ESC/POS Modunda yazdırılıyor...");
+                electron.send('print-label-tspl', {
                     printerName,
                     product,
                     width: labelWidth,
-                    height: labelHeight,
-                    html: html // Send the custom design HTML!
+                    height: labelHeight
                 });
             } else {
-                console.log("📄 HTML Modunda yazdırılıyor...");
-                ipcRenderer.send('silent-print', {
+                console.log("📄 PDF RAW Modunda yazdırılıyor...");
+                electron.send('silent-print', {
                     html: html,
                     printerName: printerName,
                     width: labelWidth,
-                    height: labelHeight,
-                    delay: 800
+                    height: labelHeight
                 });
             }
             return;
@@ -195,7 +193,27 @@ export async function printBarcodeLabel(product: any, settings: any = {}) {
         }
     }
 
-    // 3. Web/Fallback: iframe tabanlı yazdırma
+    // Eski yöntem fallback (contextIsolation olmadan çalışan eski versiyonlar için)
+    if ((window as any).require) {
+        try {
+            const { ipcRenderer } = (window as any).require('electron');
+            const isLabelPrinter = printerName.toLowerCase().includes('label') ||
+                printerName.toLowerCase().includes('rp80') ||
+                printerName.toLowerCase().includes('rongta') ||
+                templateId === 'rp80';
+
+            if (isLabelPrinter) {
+                ipcRenderer.send('print-label-tspl', { printerName, product, width: labelWidth, height: labelHeight });
+            } else {
+                ipcRenderer.send('silent-print', { html, printerName, width: labelWidth, height: labelHeight });
+            }
+            return;
+        } catch (e) {
+            console.error("Legacy IPC error:", e);
+        }
+    }
+
+    // 5. Web/Fallback: iframe tabanlı yazdırma (SADECE tarayıcıda çalışırken)
     return new Promise<void>((resolve) => {
         const iframe = document.createElement('iframe');
         iframe.style.position = 'fixed';

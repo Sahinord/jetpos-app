@@ -1,7 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54321';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'no_key_for_build';
+// Electron renderer sürecinde bazen process.env boş gelebildiği için 
+// .env.local'deki değerleri doğrudan yedek (fallback) olarak ekliyoruz.
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://grlwmcuxobbgubphovhd.supabase.co';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdybHdtY3V4b2JiZ3VicGhvdmhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwNzM1MzAsImV4cCI6MjA4MzY0OTUzMH0.REYSFxWZe4ky5rX14nB7uILiuJZf_e7wwPMK34H0Aeo';
+
+if (typeof window !== 'undefined') {
+    console.log("🌐 [Supabase] URL initialized:", supabaseUrl);
+}
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 

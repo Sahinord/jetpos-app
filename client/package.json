@@ -7,7 +7,7 @@
   "private": true,
   "main": "main.js",
   "scripts": {
-    "dev": "TURBOPACK=0 next dev -p 3005 -H 127.0.0.1",
+    "dev": "next dev -p 3005 -H 127.0.0.1",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -51,6 +51,7 @@
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.90.1",
+    "@types/crypto-js": "^4.2.2",
     "chart.js": "^4.5.1",
     "clsx": "^2.1.1",
     "crypto-js": "^4.2.0",

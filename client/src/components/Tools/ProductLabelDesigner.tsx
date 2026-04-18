@@ -4,10 +4,12 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import {
     Tag, Printer, Eye, Package, Building2,
     RotateCcw, Layers, Upload, Check, Search, Move,
-    AlignLeft, AlignCenter, AlignRight, Bold, Italic, Palette
+    AlignLeft, AlignCenter, AlignRight, Bold, Italic, Palette, Square,
+    Plus, X, Trash2
 } from "lucide-react";
 import JsBarcode from "jsbarcode";
 import { useTenant } from "@/lib/tenant-context";
+import { supabase } from "@/lib/supabase";
 
 /* ── Types ── */
 interface Product {
@@ -29,6 +31,7 @@ interface LabelConfig {
     nameFontMm: number; priceFontMm: number; brandFontMm: number; barcodeHMm: number;
     defaultPos: Partial<Record<ElemId, Pos>>;
     isRotated?: boolean;
+    isStaticMarket?: boolean;
 }
 
 const PS = 3.5; // preview px per mm
@@ -65,27 +68,6 @@ function TemplateThumbnail({ t }: { t: LabelConfig }) {
 /* ── Templates ── */
 const TEMPLATES: LabelConfig[] = [
     {
-        id: 'raf', name: '🏷️ Raf Etiketi (100×38mm)',
-        widthMm: 100, heightMm: 38,
-        showLogo: true, showBrand: true, showName: true, showBarcode: true, showPrice: true, showVat: true,
-        nameFontMm: 8, priceFontMm: 14, brandFontMm: 4.5, barcodeHMm: 10,
-        defaultPos: { brand: { xMm: 2, yMm: 2 }, name: { xMm: 2, yMm: 7 }, logo: { xMm: 2, yMm: 27 }, price: { xMm: 60, yMm: 5 }, barcode: { xMm: 57, yMm: 19 } },
-    },
-    {
-        id: 'fiyat', name: '💰 Fiyat Etiketi (90×30mm)',
-        widthMm: 90, heightMm: 30,
-        showLogo: false, showBrand: true, showName: true, showBarcode: true, showPrice: true, showVat: true,
-        nameFontMm: 6.5, priceFontMm: 13, brandFontMm: 4, barcodeHMm: 14,
-        defaultPos: { name: { xMm: 2, yMm: 2 }, price: { xMm: 2, yMm: 12 }, brand: { xMm: 53, yMm: 21 }, barcode: { xMm: 51, yMm: 3 } },
-    },
-    {
-        id: 'yanyan', name: '🎟️ Yanlamasına Etiket (90×38mm)',
-        widthMm: 90, heightMm: 38,
-        showLogo: true, showBrand: true, showName: true, showBarcode: true, showPrice: true, showVat: true,
-        nameFontMm: 9.5, priceFontMm: 15, brandFontMm: 4.5, barcodeHMm: 13,
-        defaultPos: { brand: { xMm: 2, yMm: 1.5 }, name: { xMm: 2, yMm: 6 }, price: { xMm: 2, yMm: 24 }, barcode: { xMm: 56, yMm: 2 }, logo: { xMm: 56, yMm: 30 } },
-    },
-    {
         id: 'market', name: '🏪 Market Etiketi (58×40mm)',
         widthMm: 58, heightMm: 40,
         showLogo: false, showBrand: true, showName: true, showBarcode: true, showPrice: true, showVat: false,
@@ -100,13 +82,6 @@ const TEMPLATES: LabelConfig[] = [
         defaultPos: { name: { xMm: 2.5, yMm: 2 }, barcode: { xMm: 2.5, yMm: 10 }, price: { xMm: 2.5, yMm: 22 } },
     },
     {
-        id: 'mini', name: 'Mini – Barkod (40×20mm)',
-        widthMm: 40, heightMm: 20,
-        showLogo: false, showBrand: false, showName: false, showBarcode: true, showPrice: true, showVat: false,
-        nameFontMm: 5, priceFontMm: 7, brandFontMm: 4, barcodeHMm: 8,
-        defaultPos: { barcode: { xMm: 2, yMm: 1 }, price: { xMm: 2, yMm: 13 } },
-    },
-    {
         id: 'large', name: 'Büyük (80×50mm)',
         widthMm: 80, heightMm: 50,
         showLogo: true, showBrand: true, showName: true, showBarcode: true, showPrice: true, showVat: true,
@@ -114,51 +89,40 @@ const TEMPLATES: LabelConfig[] = [
         defaultPos: { brand: { xMm: 2, yMm: 2 }, name: { xMm: 2, yMm: 9 }, logo: { xMm: 2, yMm: 40 }, barcode: { xMm: 40, yMm: 2 }, price: { xMm: 40, yMm: 22 } },
     },
     {
-        id: 'rp80', name: '🖨️ Rongta RP80 (80×30mm/40mm)',
+        id: 'rp80', name: '🖨️ Rongta RP80 (80×40mm)',
         widthMm: 80, heightMm: 40,
         showLogo: false, showBrand: true, showName: true, showBarcode: true, showPrice: true, showVat: true,
-        nameFontMm: 7, priceFontMm: 13, brandFontMm: 4.5, barcodeHMm: 10,
+        nameFontMm: 8.5, priceFontMm: 18, brandFontMm: 5.5, barcodeHMm: 12,
         defaultPos: {
-            name: { xMm: 4, yMm: 4 },
-            barcode: { xMm: 4, yMm: 15 },
-            price: { xMm: 4, yMm: 28 },
-            brand: { xMm: 45, yMm: 28 }
+            name: { xMm: 3, yMm: 4 },
+            barcode: { xMm: 1, yMm: 18 },
+            price: { xMm: 55, yMm: 16 },
+            brand: { xMm: 30, yMm: 35 }
         },
     },
     {
         id: 'square-40', name: '🔲 Kare (40×40mm)',
         widthMm: 40, heightMm: 40,
         showLogo: false, showBrand: true, showName: true, showBarcode: true, showPrice: true, showVat: false,
-        nameFontMm: 7, priceFontMm: 10, brandFontMm: 4, barcodeHMm: 10,
-        defaultPos: { name: { xMm: 2, yMm: 2 }, barcode: { xMm: 2, yMm: 15 }, price: { xMm: 2, yMm: 28 }, brand: { xMm: 2, yMm: 35 } },
+        nameFontMm: 7, priceFontMm: 10, brandFontMm: 4, barcodeHMm: 15,
+        defaultPos: { name: { xMm: 2, yMm: 2 }, barcode: { xMm: 2, yMm: 11 }, price: { xMm: 2, yMm: 28 }, brand: { xMm: 2, yMm: 35 } },
     },
-    {
-        id: 'vertical-30-50', name: '📐 Dikey (30×50mm)',
-        widthMm: 30, heightMm: 50,
-        showLogo: false, showBrand: true, showName: true, showBarcode: true, showPrice: true, showVat: false,
-        nameFontMm: 6, priceFontMm: 9, brandFontMm: 4, barcodeHMm: 8,
-        defaultPos: { name: { xMm: 2, yMm: 2 }, barcode: { xMm: 2, yMm: 15 }, price: { xMm: 2, yMm: 30 }, brand: { xMm: 2, yMm: 42 } },
-    },
-    {
-        id: 'price-only', name: 'Sadece Fiyat (30×20mm)',
-        widthMm: 30, heightMm: 20,
-        showLogo: false, showBrand: false, showName: true, showBarcode: false, showPrice: true, showVat: false,
-        nameFontMm: 5.5, priceFontMm: 11, brandFontMm: 4, barcodeHMm: 0,
-        defaultPos: { name: { xMm: 2, yMm: 2 }, price: { xMm: 2, yMm: 9 } },
-    },
+
 ];
 
 /* ── Price renderer helpers ── */
 function PriceDisplay({ cfg, product, scale }: { cfg: LabelConfig; product: Product; scale: number }) {
     const [int, dec] = product.sale_price.toFixed(2).split('.');
     return (
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 2 * scale }}>
-            <span style={{ fontSize: cfg.priceFontMm * scale, fontWeight: 900, color: '#111', letterSpacing: -1, lineHeight: 1 }}>{int}</span>
-            <div style={{ display: 'flex', flexDirection: 'column', marginTop: scale * 0.5 }}>
-                <span style={{ fontSize: cfg.priceFontMm * 0.55 * scale, fontWeight: 900, color: '#111', lineHeight: 1 }}>,{dec}</span>
-                <span style={{ fontSize: cfg.brandFontMm * 0.9 * scale, fontWeight: 700, color: '#111' }}>TL</span>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 1 * scale }}>
+            <span style={{ fontSize: cfg.priceFontMm * scale, fontWeight: 900, color: '#111', letterSpacing: -2, lineHeight: 0.9 }}>{int}</span>
+            <div style={{ display: 'flex', flexDirection: 'column', marginTop: scale * 1.5 }}>
+                <span style={{ fontSize: cfg.priceFontMm * 0.45 * scale, fontWeight: 900, color: '#111', lineHeight: 1, letterSpacing: -0.5 }}>
+                    <span style={{ verticalAlign: 'top' }}>.{dec}</span>
+                    <span style={{ marginLeft: scale * 1 }}>TL</span>
+                </span>
                 {cfg.showVat && (
-                    <span style={{ fontSize: cfg.brandFontMm * 0.6 * scale, color: '#666', fontStyle: 'italic', whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: cfg.brandFontMm * 0.8 * scale, color: '#333', fontStyle: 'italic', whiteSpace: 'nowrap', marginTop: scale * 1, letterSpacing: -0.5 }}>
                         KDV Dahil
                     </span>
                 )}
@@ -169,12 +133,13 @@ function PriceDisplay({ cfg, product, scale }: { cfg: LabelConfig; product: Prod
 
 function priceHtmlMm(cfg: LabelConfig, product: Product, pos: Pos): string {
     const [int, dec] = product.sale_price.toFixed(2).split('.');
-    return `<div style="position:absolute;left:${pos.xMm}mm;top:${pos.yMm}mm;display:flex;align-items:flex-start;gap:1mm;">
-  <span style="font-size:${cfg.priceFontMm}mm;font-weight:900;color:#111;letter-spacing:-1px;line-height:1;">${int}</span>
-  <div style="display:flex;flex-direction:column;margin-top:0.5mm;">
-    <span style="font-size:${cfg.priceFontMm * 0.55}mm;font-weight:900;color:#111;line-height:1;">,${dec}</span>
-    <span style="font-size:${cfg.brandFontMm * 0.9}mm;font-weight:700;color:#111;">TL</span>
-    ${cfg.showVat ? `<span style="font-size:${cfg.brandFontMm * 0.6}mm;color:#666;font-style:italic;">KDV Dahil</span>` : ''}
+    return `<div style="position:absolute;left:${pos.xMm}mm;top:${pos.yMm}mm;display:flex;align-items:flex-start;gap:0.5mm;">
+  <span style="font-size:${cfg.priceFontMm}mm;font-weight:900;color:#111;letter-spacing:-2px;line-height:0.9;">${int}</span>
+  <div style="display:flex;flex-direction:column;margin-top:1.5mm;">
+    <span style="font-size:${cfg.priceFontMm * 0.45}mm;font-weight:900;color:#111;line-height:1;letter-spacing:-0.5px;">
+        <span style="vertical-align:top;">.${dec}</span><span style="margin-left:1mm;">TL</span>
+    </span>
+    ${cfg.showVat ? `<span style="font-size:${cfg.brandFontMm * 0.8}mm;color:#333;font-style:italic;margin-top:1mm;letter-spacing:-0.5px;">KDV Dahil</span>` : ''}
   </div>
 </div>`;
 }
@@ -251,19 +216,42 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
     const [fontScales, setFontScales] = useState<Partial<Record<ElemId, number>>>({});
     const [elemWidths, setElemWidths] = useState<Partial<Record<ElemId, number>>>({});
     const [colors, setColors] = useState<Partial<Record<ElemId, string>>>({});
-    const [fontStyles, setFontStyles] = useState<Partial<Record<ElemId, { b: boolean; i: boolean }>>>({});
+    const [fontStyles, setFontStyles] = useState<Partial<Record<ElemId, { b: boolean; i: boolean; box?: boolean }>>>({});
     const [barcodeNarrow, setBarcodeNarrow] = useState(2);
+    const [globalBorder, setGlobalBorder] = useState(false);
     const [showGuides, setShowGuides] = useState<{ x: boolean; y: boolean }>({ x: false, y: false });
     const [printOffsets, setPrintOffsets] = useState({ x: 0, y: 0 }); // mm calibration
 
     const resizeDragRef = useRef<{ id: ElemId; handle: string; startX: number; startY: number; origW: number; origS: number } | null>(null);
 
+    /* ─ custom dynamic templates ─ */
+    const [customTemplates, setCustomTemplates] = useState<LabelConfig[]>([]);
+    const [showAddTemplateModal, setShowAddTemplateModal] = useState(false);
+    const [newTemp, setNewTemp] = useState({ name: '', w: 50, h: 30 });
+
+    useEffect(() => {
+        if (currentTenant?.settings?.custom_label_templates_v1) {
+            setCustomTemplates(currentTenant.settings.custom_label_templates_v1);
+        }
+    }, [currentTenant]);
+
+    const allTemplates = [...TEMPLATES, ...customTemplates];
+
     /* ─ persistence (auto-save) ─ */
     useEffect(() => {
-        const saved = localStorage.getItem(`label_design_${templateId}`);
-        if (saved) {
+        const tenantKey = `label_design_${templateId}`;
+        const savedStr = localStorage.getItem(tenantKey);
+        const tenantSaved = currentTenant?.settings?.[tenantKey];
+
+        let data = null;
+        if (tenantSaved && Object.keys(tenantSaved).length > 0) {
+            data = tenantSaved;
+        } else if (savedStr) {
+            try { data = JSON.parse(savedStr); } catch (e) { }
+        }
+
+        if (data) {
             try {
-                const data = JSON.parse(saved);
                 if (data.positions) setPositions(data.positions);
                 if (data.alignments) setAlignments(data.alignments);
                 if (data.fontScales) setFontScales(data.fontScales);
@@ -271,6 +259,9 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                 if (data.colors) setColors(data.colors);
                 if (data.fontStyles) setFontStyles(data.fontStyles);
                 if (data.printOffsets) setPrintOffsets(data.printOffsets);
+                if (data.customTexts) setCustomTexts(data.customTexts);
+                if (data.globalBorder !== undefined) setGlobalBorder(data.globalBorder);
+                if (data.cfgOverrides) setCfgOverrides(data.cfgOverrides);
             } catch (e) { console.error("Load error", e); }
         } else {
             // No save found, reset to defaults
@@ -288,9 +279,9 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
     }, [templateId]);
 
     useEffect(() => {
-        const data = { positions, alignments, fontScales, elemWidths, colors, fontStyles, printOffsets };
+        const data = { positions, alignments, fontScales, elemWidths, colors, fontStyles, printOffsets, customTexts, globalBorder };
         localStorage.setItem(`label_design_${templateId}`, JSON.stringify(data));
-    }, [templateId, positions, alignments, fontScales, elemWidths, colors, fontStyles, printOffsets]);
+    }, [templateId, positions, alignments, fontScales, elemWidths, colors, fontStyles, printOffsets, customTexts, globalBorder]);
 
     const getAlign = (id: ElemId): Align => alignments[id] ?? 'left';
     const setAlign = (align: Align) => {
@@ -298,7 +289,7 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
         setAlignments(prev => ({ ...prev, [selectedElem]: align }));
     };
 
-    const cfg: LabelConfig = { ...TEMPLATES.find(t => t.id === templateId)!, ...cfgOverrides };
+    const cfg: LabelConfig = { ...allTemplates.find(t => t.id === templateId)!, ...cfgOverrides };
     const brandName = customBrandName || currentTenant?.company_name || 'JetPOS';
     const logoUrl = customLogo || currentTenant?.logo_url || '';
 
@@ -308,20 +299,45 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
 
 
     /* ─ barcode drawing ─ */
-    const drawBarcode = useCallback((canvasId: string, barcode: string, heightMm: number) => {
+    const drawBarcode = useCallback((canvasId: string, product: Product, heightMm: number) => {
         try {
             const el = document.getElementById(canvasId) as HTMLCanvasElement | null;
-            if (!el || !barcode) return;
-            JsBarcode(el, barcode, { format: 'CODE128', width: 1.2, height: Math.round(heightMm * PS), displayValue: true, fontSize: 8, margin: 2, textMargin: 1 });
+            if (!el || !product.barcode) return;
+
+            // Ana Barkod (Full Width, İri Rakamlı)
+            JsBarcode(el, product.barcode, {
+                format: 'CODE128',
+                width: 2.5,
+                height: Math.round((heightMm || 10) * PS),
+                displayValue: true,
+                fontSize: 35,
+                fontOptions: "bold",
+                margin: 10,
+                textMargin: 0
+            });
+
+            // Küçük Barkod (Süpermarket şablonu için)
+            if (cfg.isStaticMarket) {
+                const smallEl = document.getElementById(`bc-small-${product.id}`) as HTMLCanvasElement;
+                if (smallEl) {
+                    JsBarcode(smallEl, product.barcode, {
+                        format: 'CODE128',
+                        width: 1.5,
+                        height: Math.round(10 * PS),
+                        displayValue: false, // Rakam yok
+                        margin: 0
+                    });
+                }
+            }
         } catch { /* */ }
-    }, []);
+    }, [cfg]);
 
     const previewProduct = selectedProducts.map(id => products.find(p => p.id === id)).filter(Boolean)[0] as Product | undefined;
 
     useEffect(() => {
         if (!showPreview || !previewProduct?.barcode) return;
         const id = `bc-prev-${previewProduct.id}`;
-        setTimeout(() => drawBarcode(id, previewProduct.barcode, cfg.barcodeHMm), 50);
+        setTimeout(() => drawBarcode(id, previewProduct, cfg.barcodeHMm), 50);
     }, [showPreview, previewProduct, cfg, drawBarcode, positions]);
 
     /* ─ drag handlers ─ */
@@ -386,154 +402,128 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
             onMouseDown={e => { e.preventDefault(); e.stopPropagation(); resizeDragRef.current = { id, handle: h, startX: e.clientX, startY: e.clientY, origW: wPx, origS: fS }; }} />;
     };
 
-    /* ─ print ─ */
+    /* ─ print (Raster Image – Ön İzleme Birebir Basılır) ─ */
     const handlePrint = async () => {
-        showToast('Etiketler hazırlanıyor...');
-
-        // 1. Barkodları Data URL (Base64) olarak önceden üret
-        const generateBarcodeDataUrl = (barcode: string) => {
-            const canvas = document.createElement('canvas');
-            const isEAN13 = /^\d{13}$/.test(barcode);
-            try {
-                JsBarcode(canvas, barcode, {
-                    format: isEAN13 ? 'EAN13' : 'CODE128',
-                    width: isEAN13 ? 1.5 : 2, // EAN13 needs slightly more precision
-                    height: 60,
-                    displayValue: true,
-                    fontSize: 14,
-                    margin: 5,
-                    textMargin: 2,
-                    lineColor: '#000000',
-                    background: '#ffffff'
-                });
-                return canvas.toDataURL('image/png');
-            } catch (e) {
-                console.error("Barcode generation error:", e);
-                return '';
-            }
-        };
-
-        const toLabel = (p: Product, idx: number, barcodeImg: string) => {
-            const imgH = cfg.heightMm * 0.15;
-            const aln = (id: ElemId) => alignments[id] ?? 'left';
-            const fsMm = (id: ElemId, base: number) => base * (fontScales[id] ?? 1);
-            const wMm = (id: ElemId, def: number) => (elemWidths[id] ?? (def * PS)) / PS;
-            const clr = (id: ElemId, def: string) => colors[id] ?? def;
-            const sty = (id: ElemId) => fontStyles[id] || { b: false, i: false };
-
-            const parts: string[] = [];
-            if (cfg.showBrand && brandName) {
-                const s = sty('brand');
-                parts.push(`<div style="position:absolute;left:${getPos('brand').xMm}mm;top:${getPos('brand').yMm}mm;font-size:${fsMm('brand', cfg.brandFontMm)}mm;font-weight:900;font-style:${s.i ? 'italic' : 'normal'};color:${clr('brand', '#000')}!important;text-transform:uppercase;text-align:${aln('brand')};max-width:${wMm('brand', cfg.widthMm * 0.45)}mm;word-wrap:break-word;line-height:1.2;">${getTxt('brand', brandName)}</div>`);
-            }
-            if (cfg.showName) {
-                const s = sty('name');
-                parts.push(`<div style="position:absolute;left:${getPos('name').xMm}mm;top:${getPos('name').yMm}mm;font-size:${fsMm('name', cfg.nameFontMm)}mm;font-weight:900;font-style:${s.i ? 'italic' : 'normal'};color:#000!important;text-align:${aln('name')};max-width:${wMm('name', cfg.widthMm * 0.58)}mm;word-wrap:break-word;line-height:1.2;">${getTxt('name', p.name)}</div>`);
-            }
-            if (cfg.showPrice) {
-                const s = sty('price');
-                const [int, dec] = p.sale_price.toFixed(2).split('.');
-                parts.push(`<div style="position:absolute;left:${getPos('price').xMm}mm;top:${getPos('price').yMm}mm;color:#000!important;font-weight:900;font-style:${s.i ? 'italic' : 'normal'};display:flex;align-items:flex-start;gap:1.5mm;zoom:${fontScales['price'] ?? 1};transform-origin:top left;">
-                    <span style="font-size:${cfg.priceFontMm}mm;font-weight:900;line-height:1;color:#000!important;">${int}</span>
-                    <div style="display:flex;flex-direction:column;margin-top:0.5mm;">
-                        <span style="font-size:${cfg.priceFontMm * 0.55}mm;font-weight:900;line-height:1;color:#000!important;">,${dec}</span>
-                        <span style="font-size:${cfg.brandFontMm * 0.9}mm;font-weight:900;color:#000!important;">TL</span>
-                        ${cfg.showVat ? `<span style="font-size:${cfg.brandFontMm * 0.6}mm;color:#000!important;font-style:italic;white-space:nowrap;">KDV Dahil</span>` : ''}
-                    </div>
-                </div>`);
-            }
-            if (cfg.showBarcode && barcodeImg) {
-                parts.push(`<div style="position:absolute;left:${getPos('barcode').xMm}mm;top:${getPos('barcode').yMm}mm;"><img src="${barcodeImg}" style="height:${cfg.barcodeHMm}mm;width:auto;max-width:${cfg.widthMm - 5}mm;" /></div>`);
-            }
-            if (cfg.showLogo && logoUrl) {
-                parts.push(`<div style="position:absolute;left:${getPos('logo').xMm}mm;top:${getPos('logo').yMm}mm;"><img src="${logoUrl}" style="height:${imgH}mm;object-fit:contain;" /></div>`);
-            }
-
-            const rotStyle = isRotated
-                ? `transform: rotate(90deg) translateY(-${cfg.heightMm}mm); transform-origin: top left; width: ${cfg.heightMm}mm; height: ${cfg.widthMm}mm;`
-                : `width: ${cfg.widthMm}mm; height: ${cfg.heightMm}mm;`;
-
-            const offsetStyle = `margin-left: ${printOffsets.x}mm; margin-top: ${printOffsets.y}mm;`;
-
-            return `<div class="label-box" style="position:relative; overflow:hidden; ${rotStyle} ${offsetStyle}">${parts.join('')}</div>`;
-        };
-
-        const labelsHtml = selectedProducts.flatMap(pid => {
-            const pr = products.find(p => p.id === pid);
-            if (!pr) return [];
-            const barcodeImg = pr.barcode ? generateBarcodeDataUrl(pr.barcode) : '';
-            return Array.from({ length: labelCount[pid] || 1 }, (_, i) => toLabel(pr, i, barcodeImg));
-        }).join('');
-
-        const finalWidth = isRotated ? cfg.heightMm : cfg.widthMm;
-        const finalHeight = isRotated ? cfg.widthMm : cfg.heightMm;
-
-        const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8">
-<style>
-    @page { margin: 0; size: ${finalWidth}mm ${finalHeight}mm; }
-    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    body { 
-        margin: 0; 
-        background: #fff !important; 
-        color: #000 !important; 
-        font-family: Arial, sans-serif; 
-        width: ${finalWidth}mm;
-        height: ${finalHeight}mm;
-        overflow: hidden;
-    }
-    .label-box { 
-        width: ${finalWidth}mm; 
-        height: ${finalHeight}mm; 
-        overflow: hidden; 
-        background: #fff !important;
-        page-break-after: always;
-        position: relative;
-    }
-    div, span, p { color: #000 !important; }
-    img { display: block; max-width: 100%; }
-</style></head><body>${labelsHtml}</body></html>`;
-
-        console.log('[LabelPrint] fullHtml length:', fullHtml.length);
-        console.log('[LabelPrint] printerName:', printerName);
-        console.log('[LabelPrint] dimensions:', finalWidth, 'x', finalHeight, 'mm');
-        console.log('[LabelPrint] labelsHtml length:', labelsHtml.length);
-        console.log('[LabelPrint] selectedProducts:', selectedProducts.length);
-
-        // Sessiz Yazdırma (Electron ise)
-        if (window.require) {
-            try {
-                const { ipcRenderer } = window.require('electron');
-
-                // Her zaman tam HTML belgesi (fullHtml) ile silent-print kullan
-                // Bu yöntem @page, body ve .label-box CSS'ini doğru şekilde içerir
-                ipcRenderer.send('silent-print', {
-                    html: fullHtml,
-                    printerName: printerName || "",
-                    width: finalWidth,
-                    height: finalHeight,
-                    delay: 1500
-                });
-
-                showToast('Yazdırma işlemi başlatıldı');
-                return;
-            } catch (e) {
-                console.error('Sessiz yazdırma hatası:', e);
-            }
+        if (selectedProducts.length === 0) {
+            showToast('Lütfen en az bir ürün seçin', 'error');
+            return;
         }
 
-        // iframe ile yazdır (Fallback)
-        const iframe = document.createElement('iframe');
-        iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:none;opacity:0;';
-        document.body.appendChild(iframe);
-        const doc = iframe.contentDocument || iframe.contentWindow?.document;
-        if (doc) {
-            doc.open();
-            doc.write(fullHtml);
-            doc.close();
-            setTimeout(() => {
-                iframe.contentWindow?.print();
-                setTimeout(() => { try { document.body.removeChild(iframe); } catch { } }, 1000);
-            }, 500);
+        const electron = (window as any).electron;
+        if (!electron?.isElectron) {
+            showToast('Yazdırma yalnızca masaüstü uygulamada çalışır.', 'error');
+            return;
+        }
+
+        const sourceDiv = canvasRef.current;
+        if (!sourceDiv) {
+            showToast('Editörü açıp ürün seçin', 'error');
+            return;
+        }
+
+        const targetPrinter = printerName || 'RONGTA 80mm Series Printer';
+        showToast('Etiket hazırlanıyor...', 'info');
+
+        try {
+            const html2canvas = (await import('html2canvas')).default;
+
+            const previewW = cfg.widthMm * PS;              // 800px
+            const previewH = cfg.heightMm * PS;             // 400px
+
+            // Sabitler
+            const PRINT_WIDTH = cfg.widthMm >= 80 ? 576 : 520; // 80mm olanlar tam boyut (576), küçükler 520 px.
+            const PRINT_HEIGHT = Math.round((PRINT_WIDTH / previewW) * previewH);
+            const SCALE = 3;                                // Okunabilirlik için yüksek çözünürlük
+            const THRESHOLD = 130;                          // Monochrome eşik
+
+            console.log('[Raster] ═════════════════════════════════════');
+            console.log(`[Raster] Kağıt: ${cfg.widthMm}×${cfg.heightMm}mm`);
+            console.log(`[Raster] Print: ${PRINT_WIDTH}×${PRINT_HEIGHT} dot`);
+            console.log(`[Raster] Scale: ${SCALE}x | Threshold: ${THRESHOLD}`);
+
+            // ── 1. html2canvas ile ön izleme div'ini yakala ──
+            const rawCanvas = await html2canvas(sourceDiv, {
+                scale: SCALE,
+                backgroundColor: '#ffffff',
+                useCORS: true,
+                logging: false,
+                width: previewW,
+                height: previewH,
+                imageSmoothingEnabled: false, // Keskinliği artır (anti-aliasing kapat)
+                onclone: (doc: Document) => {
+                    // Editör UI elemanlarını temizle (outline, guide, handle)
+                    doc.querySelectorAll('div').forEach(d => {
+                        const el = d as HTMLElement;
+                        if (el.style.outline?.includes('6366f1')) el.style.outline = 'none';
+                        if (el.style.background === '#6366f1' || el.style.background === 'rgb(99, 102, 241)') el.style.display = 'none';
+                        if (el.style.borderRadius === '50%' && el.style.borderColor) el.style.display = 'none';
+                    });
+                }
+            });
+
+            console.log(`[Raster] Yakalanan: ${rawCanvas.width}×${rawCanvas.height}px`);
+
+            // ── 2. Tam yazıcı boyutuna resize (nearest-neighbor) ──
+            const printCanvas = document.createElement('canvas');
+            printCanvas.width = PRINT_WIDTH;
+            printCanvas.height = PRINT_HEIGHT;
+            const ctx = printCanvas.getContext('2d')!;
+            ctx.imageSmoothingEnabled = false;  // Nearest-neighbor: barkod çizgileri net kalır
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, PRINT_WIDTH, PRINT_HEIGHT);
+            ctx.drawImage(rawCanvas, 0, 0, PRINT_WIDTH, PRINT_HEIGHT);
+
+            // ── 3. Monochrome bitmap'e dönüştür ──
+            const imgData = ctx.getImageData(0, 0, PRINT_WIDTH, PRINT_HEIGHT);
+            const px = imgData.data;
+            const widthBytes = Math.ceil(PRINT_WIDTH / 8);  // 576/8 = 72
+            const bitmap: number[] = [];
+
+            for (let y = 0; y < PRINT_HEIGHT; y++) {
+                for (let xB = 0; xB < widthBytes; xB++) {
+                    let byte = 0;
+                    for (let bit = 0; bit < 8; bit++) {
+                        const x = xB * 8 + bit;
+                        if (x < PRINT_WIDTH) {
+                            const i = (y * PRINT_WIDTH + x) * 4;
+                            // Grayscale
+                            let gray = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+
+                            // Contrast Boost (Linear 1.5, -30) - Siyahları patlatır
+                            gray = (gray * 1.5) - 30;
+
+                            // Threshold (145) - En ufak tırtıkları da yok eder
+                            if (gray <= 145) byte |= (0x080 >> bit); // 0x80 >> bit corrected internally if needed, wait, I'll use 0x80 >> bit correctly.
+
+                        }
+                    }
+                    bitmap.push(byte);
+                }
+            }
+
+            console.log(`[Raster] Bitmap: ${widthBytes}×${PRINT_HEIGHT} = ${bitmap.length} byte`);
+
+            // ── 4. Her seçili ürün için gönder ──
+            // Not: Raster modda aynı resim gönderilir (ön izlemedeki ürün)
+            const previewProd = products.find(p => p.id === selectedProducts[0]);
+            const count = labelCount[selectedProducts[0]] || 1;
+
+            for (let i = 0; i < count; i++) {
+                electron.send('print-label-image', {
+                    printerName: targetPrinter,
+                    bitmap,
+                    widthBytes,
+                    heightDots: PRINT_HEIGHT,
+                });
+            }
+
+            showToast(`${count} etiket gönderildi ✅ (${PRINT_WIDTH}×${PRINT_HEIGHT} raster)`);
+            console.log(`[Raster] ${count}x "${previewProd?.name}" gönderildi`);
+            console.log('[Raster] ═════════════════════════════════════');
+
+        } catch (err) {
+            console.error('[Raster] HATA:', err);
+            showToast(`Hata: ${(err as Error).message}`, 'error');
         }
     };
 
@@ -585,25 +575,80 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                 </div>
             </div>
 
+            {/* ── YENİ ŞABLON MODALI ── */}
+            {showAddTemplateModal && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-slate-900 border border-primary/30 rounded-2xl w-full max-w-sm overflow-hidden flex flex-col shadow-2xl">
+                        <div className="p-4 border-b border-white/10 flex justify-between items-center bg-primary/10">
+                            <h3 className="font-bold text-white flex items-center gap-2"><Plus size={18} className="text-primary"/> Yeni Özel Şablon</h3>
+                            <button onClick={() => setShowAddTemplateModal(false)} className="text-white/50 hover:text-white"><X size={20}/></button>
+                        </div>
+                        <div className="p-5 space-y-4">
+                            <div>
+                                <label className="text-xs font-bold text-secondary mb-1 block">Şablon Adı</label>
+                                <input autoFocus type="text" value={newTemp.name} onChange={e => setNewTemp(p=>({...p, name: e.target.value}))} placeholder="Örn: Kasap Etiketi" className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-primary" />
+                            </div>
+                            <div className="flex gap-4">
+                                <div className="flex-1">
+                                    <label className="text-xs font-bold text-secondary mb-1 block">Genişlik (mm)</label>
+                                    <input type="number" min="10" max="120" value={newTemp.w} onChange={e => setNewTemp(p=>({...p, w: Number(e.target.value)}))} className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-primary" />
+                                </div>
+                                <div className="flex-1">
+                                    <label className="text-xs font-bold text-secondary mb-1 block">Yükseklik (mm)</label>
+                                    <input type="number" min="10" max="120" value={newTemp.h} onChange={e => setNewTemp(p=>({...p, h: Number(e.target.value)}))} className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-primary" />
+                                </div>
+                            </div>
+                            <button 
+                                onClick={async () => {
+                                    if(!newTemp.name.trim()) return showToast('Lütfen şablon ismi girin', 'error');
+                                    const newId = 'custom_' + Date.now();
+                                    const newConfig: LabelConfig = {
+                                        id: newId, name: '✏️ ' + newTemp.name, widthMm: newTemp.w || 50, heightMm: newTemp.h || 30,
+                                        showLogo: false, showBrand: true, showName: true, showBarcode: true, showPrice: true, showVat: false,
+                                        nameFontMm: 7, priceFontMm: 12, brandFontMm: 4, barcodeHMm: 10, defaultPos: {}
+                                    };
+                                    const updated = [...customTemplates, newConfig];
+                                    setCustomTemplates(updated);
+                                    setTemplateId(newId);
+                                    setShowAddTemplateModal(false);
+                                    setNewTemp({name:'', w:50, h:30});
+                                    if(currentTenant) {
+                                        await supabase.from('tenants').update({ settings: { ...currentTenant.settings, custom_label_templates_v1: updated } }).eq('id', currentTenant.id);
+                                        showToast('Yeni şablon buluta ( Tenant ) eklendi', 'success');
+                                    }
+                                }}
+                                className="w-full py-3 mt-4 bg-primary text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors"
+                            >
+                                <Plus size={18} /> Şablonu Oluştur
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
                 {/* ── SOL: Ayarlar ── */}
                 <div className="space-y-4">
                     {/* Şablon */}
-                    <div className="glass-card">
-                        <h3 className="font-black uppercase text-sm mb-3 flex items-center gap-2">
-                            <Layers size={16} className="text-primary" /> Şablon
+                    <div className="glass-card flex flex-col relative">
+                        <h3 className="font-black uppercase text-sm mb-3 flex items-center justify-between">
+                            <span className="flex items-center gap-2"><Layers size={16} className="text-primary" /> Şablon</span>
+                            <button onClick={() => setShowAddTemplateModal(true)} className="w-6 h-6 rounded-md bg-primary/20 text-primary flex items-center justify-center hover:bg-primary/40 transition-colors hover:scale-110" title="Yeni Özel Şablon Ekle">
+                                <Plus size={14} />
+                            </button>
                         </h3>
                         <div className="space-y-2">
-                            {TEMPLATES.map(t => {
+                            {allTemplates.map(t => {
                                 const displayName = customNames[t.id] || t.name;
                                 const isActive = templateId === t.id;
                                 const isEditing = editingNameId === t.id;
+                                const isCustom = t.id.startsWith('custom_');
                                 return (
                                     <div
                                         key={t.id}
                                         onClick={() => setTemplateId(t.id)}
                                         onDoubleClick={() => { setEditingNameId(t.id); setEditingNameVal(displayName); }}
-                                        className={`w-full p-2 rounded-xl border-2 transition-all cursor-pointer flex items-center gap-3 ${isActive ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/30'}`}
+                                        className={`w-full p-2 rounded-xl border-2 transition-all cursor-pointer flex items-center gap-3 relative group ${isActive ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/30'}`}
                                     >
                                         {/* Thumbnail */}
                                         <div className="flex-shrink-0 opacity-90">
@@ -622,11 +667,30 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                                                     className="w-full bg-transparent text-xs font-bold text-primary outline-none border-b border-primary"
                                                 />
                                             ) : (
-                                                <span className="font-bold text-xs leading-tight block" title="Çift tıkla → İsim değiştir">{displayName}</span>
+                                                <span className="font-bold text-xs leading-tight block truncate pr-5" title="Çift tıkla → İsim değiştir">{displayName}</span>
                                             )}
                                             <span className="text-[10px] text-secondary/60">{t.widthMm}×{t.heightMm}mm</span>
                                         </div>
                                         {isActive && !isEditing && <Check size={14} className="text-primary flex-shrink-0" />}
+                                        {isCustom && (
+                                            <button 
+                                                onClick={async (e) => {
+                                                    e.stopPropagation();
+                                                    if(window.confirm('Bu özel şablonu silmek istediğinize emin misiniz?')) {
+                                                        const updated = customTemplates.filter(ct => ct.id !== t.id);
+                                                        setCustomTemplates(updated);
+                                                        if(isActive) setTemplateId(TEMPLATES[0].id);
+                                                        if(currentTenant) {
+                                                            await supabase.from('tenants').update({ settings: { ...currentTenant.settings, custom_label_templates_v1: updated } }).eq('id', currentTenant.id);
+                                                        }
+                                                    }
+                                                }}
+                                                className="absolute right-2 top-2 w-6 h-6 rounded-md bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
+                                                title="Şablonu Sil"
+                                            >
+                                                <Trash2 size={12} />
+                                            </button>
+                                        )}
                                     </div>
                                 );
                             })}
@@ -819,9 +883,37 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                     <h3 className="font-black uppercase text-sm flex items-center justify-between border-b border-border pb-3 mb-4">
                         <span className="flex items-center gap-2"><Eye size={16} className="text-primary" /> Canva Editör</span>
                         {showPreview && (
-                            <button onClick={() => setPositions({})} className="text-xs text-secondary/60 hover:text-rose-400 flex items-center gap-1 transition-colors">
-                                <RotateCcw size={11} /> Sıfırla
-                            </button>
+                            <div className="flex items-center gap-4">
+                                <button onClick={async () => {
+                                    const designPayload = { positions, alignments, fontScales, elemWidths, colors, fontStyles, printOffsets, customTexts, globalBorder, cfgOverrides };
+                                    localStorage.setItem(`label_design_${templateId}`, JSON.stringify(designPayload));
+
+                                    if (currentTenant) {
+                                        const updatedSettings = {
+                                            ...(currentTenant.settings || {}),
+                                            [`label_design_${templateId}`]: designPayload
+                                        };
+                                        const { error } = await supabase
+                                            .from('tenants')
+                                            .update({ settings: updatedSettings })
+                                            .eq('id', currentTenant.id);
+
+                                        if (error) {
+                                            showToast('Buluta (Tenant) kaydedilemedi!', 'error');
+                                        } else {
+                                            showToast('Şablon tasarımı tüm cihazlar için buluta kaydedildi!', 'success');
+                                            // currentTenant local state'i hemen yenilenmediği için LS'den okumasına devam eder, sorun yok.
+                                        }
+                                    } else {
+                                        showToast('Sadece bu cihaza kaydedildi (Tenant yok)', 'success');
+                                    }
+                                }} className="text-xs text-primary font-bold hover:underline flex items-center gap-1 transition-colors">
+                                    <Check size={12} /> Kaydet
+                                </button>
+                                <button onClick={() => { setPositions({}); setCustomTexts({}); setGlobalBorder(false); setFontStyles({}); setColors({}); setAlignments({}); }} className="text-xs text-secondary/60 hover:text-rose-400 flex items-center gap-1 transition-colors">
+                                    <RotateCcw size={11} /> Sıfırla
+                                </button>
+                            </div>
                         )}
                     </h3>
 
@@ -843,7 +935,7 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                                     </span>
                                 </div>
 
-                                {/* Bold / Italic */}
+                                {/* B/I/Box */}
                                 <div className="flex bg-white/5 rounded-lg border border-white/10 p-0.5">
                                     <button onClick={() => { if (!selectedElem) return; const s = fontStyles[selectedElem] || { b: false, i: false }; setFontStyles(p => ({ ...p, [selectedElem]: { ...s, b: !s.b } })); }}
                                         disabled={!selectedElem || selectedElem === 'barcode' || selectedElem === 'logo'}
@@ -854,6 +946,12 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                                         disabled={!selectedElem || selectedElem === 'barcode' || selectedElem === 'logo'}
                                         className={`p-1.5 rounded-md transition-all ${selectedElem && fontStyles[selectedElem]?.i ? 'bg-primary text-white' : 'text-secondary hover:text-white'}`}>
                                         <Italic size={14} />
+                                    </button>
+                                    <button onClick={() => { if (!selectedElem) return; const s = fontStyles[selectedElem] || { b: false, i: false }; setFontStyles(p => ({ ...p, [selectedElem]: { ...s, box: !s.box } })); }}
+                                        disabled={!selectedElem || selectedElem === 'barcode' || selectedElem === 'logo'}
+                                        className={`p-1.5 rounded-md transition-all ${selectedElem && fontStyles[selectedElem]?.box ? 'bg-primary text-white' : 'text-secondary hover:text-white'}`}
+                                        title="Kutu / Çerçeve Ekle">
+                                        <Square size={14} />
                                     </button>
                                 </div>
 
@@ -880,6 +978,12 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                                         onChange={e => { if (selectedElem) setColors(p => ({ ...p, [selectedElem]: e.target.value })); }}
                                         className="w-5 h-5 bg-transparent border-none cursor-pointer" />
                                 </div>
+                                <div className="flex ml-auto bg-white/5 rounded-lg border border-white/10 p-0.5">
+                                    <button onClick={() => setGlobalBorder(p => !p)}
+                                        className={`px-3 py-1.5 flex items-center gap-1.5 text-[10px] font-black rounded-md transition-all ${globalBorder ? 'bg-amber-500 text-black' : 'text-amber-500 hover:bg-amber-500/10'}`}>
+                                        <Square size={12} /> ANA ÇERÇEVE
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl px-3 py-2 flex items-center gap-2">
@@ -896,7 +1000,6 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                                         width: cfg.widthMm * PS,
                                         height: cfg.heightMm * PS,
                                         background: '#fff',
-                                        border: '1.5px solid #999',
                                         overflow: 'hidden',
                                         flexShrink: 0,
                                         userSelect: 'none',
@@ -906,6 +1009,19 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                                     onMouseUp={stopDrag}
                                     onMouseLeave={stopDrag}
                                 >
+                                    {/* ── BORDER RENDERER LAYER ── */}
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: cfg.widthMm >= 80 ? 6 : 0,
+                                        left: cfg.widthMm >= 80 ? 6 : 0,
+                                        right: cfg.widthMm >= 80 ? 20 : 12,
+                                        bottom: cfg.widthMm >= 80 ? 6 : 0,
+                                        border: cfg.isStaticMarket ? '4px solid #111' : (globalBorder ? '3px solid #111' : '1px solid #ddd'),
+                                        boxSizing: 'border-box',
+                                        pointerEvents: 'none',
+                                        zIndex: 999
+                                    }} />
+
                                     {/* Guides */}
                                     {showGuides.x && <div style={{ position: 'absolute', left: (cfg.widthMm / 2) * PS, top: 0, bottom: 0, width: 1, background: '#6366f1', zIndex: 0, opacity: 0.5 }} />}
                                     {showGuides.y && <div style={{ position: 'absolute', top: (cfg.heightMm / 2) * PS, left: 0, right: 0, height: 1, background: '#6366f1', zIndex: 0, opacity: 0.5 }} />}
@@ -930,7 +1046,7 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                                                         onKeyDown={e => { if (e.key === 'Escape') { setCustomTexts(p => ({ ...p, [id]: e.currentTarget.value })); setEditingElem(null); } }}
                                                         onClick={e => e.stopPropagation()} />
                                                 ) : (
-                                                    <div style={{ fontSize: getFS(id, cfg.brandFontMm), fontWeight: sty.b ? 900 : 'bold', fontStyle: sty.i ? 'italic' : 'normal', color: clr, textTransform: 'uppercase', lineHeight: 1.2, textAlign: getAlign(id), wordBreak: 'break-word' }}>{txt}</div>
+                                                    <div style={{ fontSize: getFS(id, cfg.brandFontMm), fontWeight: sty.b ? 900 : 'bold', fontStyle: sty.i ? 'italic' : 'normal', color: clr, textTransform: 'uppercase', lineHeight: 1.2, textAlign: getAlign(id), wordBreak: 'break-word', border: sty.box ? `2px solid ${clr}` : 'none', padding: sty.box ? '0.5mm 1mm' : '0' }}>{txt}</div>
                                                 )}
                                                 {isSel && !isEdit && <>{mkH(id, 'mr', wPx, fS)}{mkH(id, 'bc', wPx, fS)}{mkH(id, 'br', wPx, fS)}</>}
                                             </div>
@@ -958,7 +1074,7 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                                                         onKeyDown={e => { if (e.key === 'Escape') { setCustomTexts(p => ({ ...p, [id]: e.currentTarget.value })); setEditingElem(null); } }}
                                                         onClick={e => e.stopPropagation()} />
                                                 ) : (
-                                                    <div style={{ fontSize: getFS(id, cfg.nameFontMm), fontWeight: sty.b ? 900 : 800, fontStyle: sty.i ? 'italic' : 'normal', color: clr, lineHeight: 1.2, textAlign: getAlign(id), wordBreak: 'break-word' }}>{txt}</div>
+                                                    <div style={{ fontSize: getFS(id, cfg.nameFontMm), fontWeight: sty.b ? 900 : 800, fontStyle: sty.i ? 'italic' : 'normal', color: clr, lineHeight: 1.2, textAlign: getAlign(id), wordBreak: 'break-word', border: sty.box ? `2px solid ${clr}` : 'none', padding: sty.box ? '0.5mm 1mm' : '0' }}>{txt}</div>
                                                 )}
                                                 {isSel && !isEdit && <>{mkH(id, 'mr', wPx, fS)}{mkH(id, 'bc', wPx, fS)}{mkH(id, 'br', wPx, fS)}</>}
                                             </div>
@@ -974,7 +1090,7 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                                         const clr = colors[id] || '#111';
                                         const sty = fontStyles[id] || { b: false, i: false };
                                         return (
-                                            <div style={{ position: 'absolute', left: getPos(id).xMm * PS, top: getPos(id).yMm * PS, cursor: 'grab', outline: isSel ? '2px solid #6366f1' : 'none', outlineOffset: 4, borderRadius: 2, zIndex: isSel ? 50 : 10, transform: `scale(${fS})`, transformOrigin: 'top left', color: clr, fontWeight: sty.b ? 900 : 'normal', fontStyle: sty.i ? 'italic' : 'normal' }}
+                                            <div style={{ position: 'absolute', left: getPos(id).xMm * PS, top: getPos(id).yMm * PS, cursor: 'grab', outline: isSel ? '2px solid #6366f1' : 'none', outlineOffset: 4, borderRadius: 2, zIndex: isSel ? 50 : 10, transform: `scale(${fS})`, transformOrigin: 'top left', color: clr, fontWeight: sty.b ? 900 : 'normal', fontStyle: sty.i ? 'italic' : 'normal', border: sty.box ? `2px solid ${clr}` : 'none', padding: sty.box ? '1mm' : '0', boxSizing: 'border-box' }}
                                                 onMouseDown={e => { startDrag(e, id); setSelectedElem(id); }}
                                             >
                                                 <PriceDisplay cfg={cfg} product={previewProduct} scale={PS} />
@@ -988,12 +1104,12 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                                         const id: ElemId = 'barcode';
                                         const isSel = selectedElem === id;
                                         const fS = fontScales[id] ?? 1;
-                                        const wPx = getEW(id, cfg.widthMm * PS * 0.45);
+                                        const wPx = getEW(id, cfg.widthMm * PS * 0.65); // Çoğu alanı kaplar
                                         return (
                                             <div style={{ position: 'absolute', left: getPos(id).xMm * PS, top: getPos(id).yMm * PS, cursor: 'grab', outline: isSel ? '2px solid #6366f1' : 'none', outlineOffset: 4, borderRadius: 2, zIndex: isSel ? 50 : 10, width: wPx, background: '#fff', overflow: 'visible' }}
                                                 onMouseDown={e => { startDrag(e, id); setSelectedElem(id); }}
                                             >
-                                                <canvas id={`bc-prev-${previewProduct.id}`} style={{ width: '100%', height: cfg.barcodeHMm * PS, display: 'block' }} />
+                                                <canvas id={`bc-prev-${previewProduct.id}`} style={{ width: '100%', height: 'auto', display: 'block' }} />
                                             </div>
                                         );
                                     })()}

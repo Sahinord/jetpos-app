@@ -110,13 +110,31 @@ export default function ReceiptDesigner({ receiptSettings, setReceiptSettings, s
     <div style="height:20mm;"></div>
 </body></html>`;
 
-        // Electron silent print veya iframe print
-        const isElectronEnv = typeof window !== 'undefined' && !!(window as any).require;
-        if (isElectronEnv) {
-            // 5 sn timeout - yanıt gelmezse reset
+        // Electron silent print (preload köprüsü)
+        const electron = (window as any).electron;
+        if (electron?.isElectron) {
             const timeout = setTimeout(() => {
                 setIsPrinting(false);
                 showToast('Yazıcıdan yanıt alınamadı. Yazıcı bağlantısını kontrol edin.', 'error');
+            }, 5000);
+
+            try {
+                electron.once('silent-print-result', (result: { success: boolean }) => {
+                    clearTimeout(timeout);
+                    setIsPrinting(false);
+                    showToast(result.success ? 'Test fişi yazdırıldı!' : 'Yazdırma başarısız. Yazıcı bağlı mı?', result.success ? 'success' : 'error');
+                });
+                electron.send('silent-print-receipt', { html });
+            } catch {
+                clearTimeout(timeout);
+                setIsPrinting(false);
+                showToast('Electron yazdırma hatası', 'error');
+            }
+        } else if ((window as any).require) {
+            // Legacy fallback
+            const timeout = setTimeout(() => {
+                setIsPrinting(false);
+                showToast('Yazıcıdan yanıt alınamadı.', 'error');
             }, 5000);
 
             try {
@@ -124,7 +142,7 @@ export default function ReceiptDesigner({ receiptSettings, setReceiptSettings, s
                 ipcRenderer.once('silent-print-result', (_event: any, result: { success: boolean }) => {
                     clearTimeout(timeout);
                     setIsPrinting(false);
-                    showToast(result.success ? 'Test fişi yazdırıldı!' : 'Yazdırma başarısız. Yazıcı bağlı mı?', result.success ? 'success' : 'error');
+                    showToast(result.success ? 'Test fişi yazdırıldı!' : 'Yazdırma başarısız.', result.success ? 'success' : 'error');
                 });
                 ipcRenderer.send('silent-print-receipt', { html });
             } catch {

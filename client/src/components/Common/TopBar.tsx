@@ -27,10 +27,9 @@ export default function TopBar({ activeTab, onMenuClick }: { activeTab: string, 
     }, []);
 
     const handleWindowAction = (action: 'window-minimize' | 'window-maximize' | 'window-close') => {
-        if (typeof window !== 'undefined' && (window as any).require) {
+        if (typeof window !== 'undefined' && (window as any).electron) {
             try {
-                const { ipcRenderer } = (window as any).require('electron');
-                ipcRenderer.send(action);
+                (window as any).electron.send(action);
             } catch (e) {
                 console.error("Electron IPC Error:", e);
             }

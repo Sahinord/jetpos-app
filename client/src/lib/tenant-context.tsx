@@ -78,78 +78,77 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
     const fetchTenants = async () => {
         setLoading(true);
+        console.log("🚀 [TenantContext] fetchTenants started...");
+        
+        // Failsafe: 10 saniye sonra her ne olursa olsun loading'i kapat
+        const failsafeTimeout = setTimeout(() => {
+            console.warn("⚠️ [TenantContext] Failsafe timeout reached. Forcing loading to false.");
+            setLoading(false);
+        }, 10000);
+
         try {
-            console.log("🔍 Checking tenant context...");
-            
             // LocalStorage'dan lisans kontrolü
             const savedLicenseKey = localStorage.getItem('licenseKey');
             const savedTenantId = localStorage.getItem('currentTenantId');
 
-            console.log("📍 LocalStorage state:", { savedLicenseKey, savedTenantId });
+            console.log("📍 [TenantContext] LocalStorage state:", { savedLicenseKey, savedTenantId });
 
             if (!savedLicenseKey || !savedTenantId) {
-                console.log("ℹ️ No saved license or tenant ID found. Redirecting to license gate.");
+                console.log("ℹ️ [TenantContext] No saved license or tenant ID. Showing LicenseGate.");
                 setLoading(false);
+                clearTimeout(failsafeTimeout);
                 return;
             }
 
-            // UUID format kontrolü (validate_license RPC hatasını önlemek için)
             const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
             if (!uuidRegex.test(savedTenantId)) {
-                console.error("❌ Invalid Tenant ID format in localStorage:", savedTenantId);
+                console.error("❌ [TenantContext] Invalid Tenant ID format:", savedTenantId);
                 localStorage.removeItem('currentTenantId');
                 localStorage.removeItem('licenseKey');
                 setLoading(false);
+                clearTimeout(failsafeTimeout);
                 return;
             }
 
-            // Lisans var - RPC ile güvenli doğrula (Timeout eklenmiş)
-            console.log("📡 Validating license via RPC...");
+            console.log("📡 [TenantContext] Validating license via RPC...");
             
-            // Timeout promise
             const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error("Supabase RPC timeout")), 15000)
+                setTimeout(() => reject(new Error("Supabase RPC timeout")), 8000)
             );
 
-            // RPC call promise
             const rpcPromise = supabase.rpc('validate_license', {
                 p_tenant_id:   savedTenantId,
                 p_license_key: savedLicenseKey
             });
 
-            // Race them
             const { data, error } = await Promise.race([rpcPromise, timeoutPromise]) as any;
 
             if (error || !data) {
-                console.error("❌ License validation failed or returned no data:", error);
-
-                // Sadece kesin "bulunamadı" ise temizle
+                console.error("❌ [TenantContext] License validation failed:", error);
                 if (!data && !error) {
-                    console.log("🗑️ Tenant not found, clearing local state.");
+                    console.log("🗑️ [TenantContext] Tenant not found, clearing state.");
                     localStorage.removeItem('licenseKey');
                     localStorage.removeItem('currentTenantId');
                 }
                 setLoading(false);
+                clearTimeout(failsafeTimeout);
                 return;
             }
 
-            console.log("✅ License validated successfully for:", data.company_name);
-
-            // Geçerli lisans - tenant'ı set et
+            console.log("✅ [TenantContext] License validated for:", data.company_name);
             setCurrentTenant(data);
             setAvailableTenants([data]);
 
-            // 🔥 RLS için tenant context'i set et
-            console.log("🔐 Setting RLS tenant context...");
+            console.log("🔐 [TenantContext] Setting RLS context...");
             await setRLSTenant(data.id);
-            console.log("🚀 Tenant initialization complete.");
+            console.log("🚀 [TenantContext] Initialization complete.");
 
         } catch (error: any) {
-            console.error('🔥 Critical Tenant fetch error:', error.message || error);
-            // Kritik hata durumunda temizleme yapmadan önce bir kez daha düşün
-            // localStorage.clear(); 
+            console.error('🔥 [TenantContext] Critical Error:', error.message || error);
         } finally {
+            console.log("🏁 [TenantContext] fetchTenants finished.");
             setLoading(false);
+            clearTimeout(failsafeTimeout);
         }
     };
 
