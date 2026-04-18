@@ -19,6 +19,26 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
         is_campaign: false,
         image_url: "",
     });
+ 
+    // Pricing suggestions settings
+    const [pricingPrefs, setPricingPrefs] = useState({
+        margin: 30,
+        commission: 0,
+        withholding: 0
+    });
+ 
+    const [showAdvancedPricing, setShowAdvancedPricing] = useState(false);
+ 
+    useEffect(() => {
+        const saved = localStorage.getItem('pricingPrefs');
+        if (saved) {
+            try { setPricingPrefs(JSON.parse(saved)); } catch (e) { }
+        }
+    }, []);
+ 
+    useEffect(() => {
+        localStorage.setItem('pricingPrefs', JSON.stringify(pricingPrefs));
+    }, [pricingPrefs]);
 
     useEffect(() => {
         if (product) setFormData({
@@ -48,7 +68,13 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
     const stats = calculateProfit(formData.purchase_price, formData.sale_price);
 
     const handleSuggestPrice = () => {
-        const suggested = suggestSalePrice(formData.purchase_price, 30, formData.vat_rate);
+        const suggested = suggestSalePrice(
+            formData.purchase_price,
+            pricingPrefs.margin,
+            formData.vat_rate,
+            pricingPrefs.commission,
+            pricingPrefs.withholding
+        );
         setFormData({ ...formData, sale_price: suggested });
     };
 
@@ -177,10 +203,15 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                 <div>
                                     <label className="block text-sm font-medium text-secondary mb-1.5">Alış Fiyatı (₺)</label>
                                     <input
-                                        type="number"
+                                        type="text"
+                                        inputMode="decimal"
                                         className="w-full bg-background border border-border rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary/50 outline-none text-foreground"
-                                        value={!formData.purchase_price ? "" : formData.purchase_price}
-                                        onChange={(e) => setFormData({ ...formData, purchase_price: e.target.value === "" ? 0 : parseFloat(e.target.value) })}
+                                        value={formData.purchase_price === 0 ? "" : formData.purchase_price}
+                                        onFocus={(e) => e.target.select()}
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace(/[^0-9.]/g, '').replace(/^0+(?=\d)/, '');
+                                            setFormData({ ...formData, purchase_price: val === "" ? 0 : parseFloat(val) });
+                                        }}
                                     />
                                 </div>
                                 <div>
@@ -210,11 +241,83 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                     </button>
                                 </label>
                                 <input
-                                    type="number"
+                                    type="text"
+                                    inputMode="decimal"
                                     className="w-full bg-background border border-border rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary/50 outline-none"
-                                    value={!formData.sale_price ? "" : formData.sale_price}
-                                    onChange={(e) => setFormData({ ...formData, sale_price: e.target.value === "" ? 0 : parseFloat(e.target.value) })}
+                                    value={formData.sale_price === 0 ? "" : formData.sale_price}
+                                    onFocus={(e) => e.target.select()}
+                                    onChange={(e) => {
+                                        const val = e.target.value.replace(/[^0-9.]/g, '').replace(/^0+(?=\d)/, '');
+                                        setFormData({ ...formData, sale_price: val === "" ? 0 : parseFloat(val) });
+                                    }}
                                 />
+ 
+                                <button 
+                                    onClick={() => setShowAdvancedPricing(!showAdvancedPricing)}
+                                    className="mt-2 text-[10px] font-bold text-secondary hover:text-primary flex items-center gap-1 transition-all"
+                                >
+                                    <Calculator className="w-3 h-3" />
+                                    {showAdvancedPricing ? "GELİŞMİŞ AYARLARI GİZLE" : "GELİŞMİŞ HESAPLAMA AYARLARI"}
+                                </button>
+ 
+                                <AnimatePresence>
+                                    {showAdvancedPricing && (
+                                        <motion.div 
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: "auto", opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            className="overflow-hidden mt-3 space-y-3 p-3 bg-white/5 rounded-xl border border-border/50"
+                                        >
+                                            <div className="grid grid-cols-3 gap-2">
+                                                <div>
+                                                    <label className="block text-[10px] font-bold text-secondary mb-1">HEDEF KAR (%)</label>
+                                                    <input 
+                                                        type="text" 
+                                                        inputMode="decimal"
+                                                        className="w-full bg-background border border-border rounded-lg px-2 py-1.5 text-xs outline-none"
+                                                        value={pricingPrefs.margin === 0 ? "" : pricingPrefs.margin}
+                                                        onFocus={(e) => e.target.select()}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value.replace(/[^0-9.]/g, '').replace(/^0+(?=\d)/, '');
+                                                            setPricingPrefs({...pricingPrefs, margin: val === "" ? 0 : parseFloat(val)});
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[10px] font-bold text-secondary mb-1">POS KOM. (%)</label>
+                                                    <input 
+                                                        type="text" 
+                                                        inputMode="decimal"
+                                                        className="w-full bg-background border border-border rounded-lg px-2 py-1.5 text-xs outline-none"
+                                                        value={pricingPrefs.commission === 0 ? "" : pricingPrefs.commission}
+                                                        onFocus={(e) => e.target.select()}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value.replace(/[^0-9.]/g, '').replace(/^0+(?=\d)/, '');
+                                                            setPricingPrefs({...pricingPrefs, commission: val === "" ? 0 : parseFloat(val)});
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[10px] font-bold text-secondary mb-1">STOPAJ (%)</label>
+                                                    <input 
+                                                        type="text" 
+                                                        inputMode="decimal"
+                                                        className="w-full bg-background border border-border rounded-lg px-2 py-1.5 text-xs outline-none"
+                                                        value={pricingPrefs.withholding === 0 ? "" : pricingPrefs.withholding}
+                                                        onFocus={(e) => e.target.select()}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value.replace(/[^0-9.]/g, '').replace(/^0+(?=\d)/, '');
+                                                            setPricingPrefs({...pricingPrefs, withholding: val === "" ? 0 : parseFloat(val)});
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <p className="text-[9px] text-secondary/60 leading-tight">
+                                                * Öneri al dediğinizde bu oranlar maliyetin üzerine eklenerek satış fiyatı brütleştirilir.
+                                            </p>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </div>
 
                             <div className="bg-primary/5 rounded-xl p-4 border border-dashed border-border mt-2">
@@ -252,11 +355,15 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                     </div>
                                 </label>
                                 <input
-                                    type="number"
+                                    type="text"
+                                    inputMode="decimal"
                                     className="w-full bg-background border border-border rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary/50 outline-none text-lg font-bold text-foreground"
-                                    value={!formData.stock_quantity ? "" : formData.stock_quantity}
-                                    onChange={(e) => setFormData({ ...formData, stock_quantity: e.target.value === "" ? 0 : parseFloat(e.target.value) })}
-                                    step="0.001"
+                                    value={formData.stock_quantity === 0 ? "" : formData.stock_quantity}
+                                    onFocus={(e) => e.target.select()}
+                                    onChange={(e) => {
+                                        const val = e.target.value.replace(/[^0-9.]/g, '').replace(/^0+(?=\d)/, '');
+                                        setFormData({ ...formData, stock_quantity: val === "" ? 0 : parseFloat(val) });
+                                    }}
                                     placeholder="0"
                                 />
                             </div>

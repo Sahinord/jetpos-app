@@ -24,10 +24,30 @@ export const calculateProfit = (purchasePrice: number, salePrice: number) => {
 /**
  * Suggests a sale price based on target profit margin and VAT
  */
-export const suggestSalePrice = (purchasePrice: number, targetProfitMargin: number = 30, vatRate: number = 20) => {
+export const suggestSalePrice = (
+  purchasePrice: number,
+  targetProfitMargin: number = 30,
+  vatRate: number = 20,
+  commissionRate: number = 0,
+  withholdingRate: number = 0
+) => {
+  // 1. Base price with profit
   const baseWithProfit = purchasePrice * (1 + targetProfitMargin / 100);
-  const totalWithVat = baseWithProfit * (1 + vatRate / 100);
-  return parseFloat(totalWithVat.toFixed(2));
+
+  // 2. Price with VAT
+  const withVat = baseWithProfit * (1 + vatRate / 100);
+
+  // 3. Gross up for deductions (POS Commission and Withholding/Stopaj)
+  // Logic: FinalPrice * (1 - (Comm + Stopaj)/100) = WithVat
+  // FinalPrice = WithVat / (1 - (Comm + Stopaj)/100)
+  const totalDeductionRate = (commissionRate + withholdingRate) / 100;
+
+  // Protect against division by zero if totalDeductionRate >= 1 (unlikely but safe)
+  const finalPrice = totalDeductionRate < 1
+    ? withVat / (1 - totalDeductionRate)
+    : withVat;
+
+  return parseFloat(finalPrice.toFixed(2));
 };
 
 /**

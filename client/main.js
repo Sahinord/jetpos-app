@@ -151,7 +151,7 @@ function createWindow() {
 
     mainWindow.once('ready-to-show', () => {
         mainWindow.show();
-        mainWindow.webContents.openDevTools();
+        // mainWindow.webContents.openDevTools();
     });
 
     ipcMain.on('window-minimize', () => mainWindow.minimize());
@@ -222,6 +222,13 @@ function createWindow() {
 
                     printWin.webContents.print(options, (success, failureReason) => {
                         log.info(`[${type}] Result: ${success ? 'OK' : 'FAIL'} | Reason: ${failureReason || 'None'}`);
+                        
+                        // Fiş yazdırıldıysa kağıdı otomatik kes
+                        if (success && type === 'RECEIPT' && finalDeviceName) {
+                            const cutBuffer = Buffer.from([0x1B, 0x64, 0x05, 0x1D, 0x56, 0x42, 0x00]); // 5 satır besle ve kes
+                            sendRawToPrinter(finalDeviceName, cutBuffer);
+                        }
+
                         if (!printWin.isDestroyed()) printWin.close();
                         try { fs.unlinkSync(tempHtml); } catch (e) { }
                         event.sender.send('silent-print-result', { success, error: failureReason });

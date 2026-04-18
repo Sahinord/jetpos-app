@@ -103,9 +103,14 @@ const TEMPLATES: LabelConfig[] = [
     {
         id: 'square-40', name: '🔲 Kare (40×40mm)',
         widthMm: 40, heightMm: 40,
-        showLogo: false, showBrand: true, showName: true, showBarcode: true, showPrice: true, showVat: false,
-        nameFontMm: 7, priceFontMm: 10, brandFontMm: 4, barcodeHMm: 15,
-        defaultPos: { name: { xMm: 2, yMm: 2 }, barcode: { xMm: 2, yMm: 11 }, price: { xMm: 2, yMm: 28 }, brand: { xMm: 2, yMm: 35 } },
+        showLogo: false, showBrand: true, showName: true, showBarcode: true, showPrice: true, showVat: true,
+        nameFontMm: 4.8, priceFontMm: 10, brandFontMm: 3.5, barcodeHMm: 9,
+        defaultPos: { 
+            name: { xMm: 3, yMm: 4 }, 
+            barcode: { xMm: 3, yMm: 13 }, 
+            price: { xMm: 3, yMm: 24 }, 
+            brand: { xMm: 3, yMm: 33 } 
+        },
     },
 
 ];
@@ -218,9 +223,11 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
     const [colors, setColors] = useState<Partial<Record<ElemId, string>>>({});
     const [fontStyles, setFontStyles] = useState<Partial<Record<ElemId, { b: boolean; i: boolean; box?: boolean }>>>({});
     const [barcodeNarrow, setBarcodeNarrow] = useState(2);
+    const [barcodeWidth, setBarcodeWidth] = useState(2); // Bar thickness (1-4)
+    const [barcodeScale, setBarcodeScale] = useState(1); // Overall scale factor (0.5 - 1.5)
     const [globalBorder, setGlobalBorder] = useState(false);
     const [showGuides, setShowGuides] = useState<{ x: boolean; y: boolean }>({ x: false, y: false });
-    const [printOffsets, setPrintOffsets] = useState({ x: 0, y: 0 }); // mm calibration
+    const [printOffsets, setPrintOffsets] = useState({ x: 0, y: 0, scale: 100 }); // mm calibration / scale
 
     const resizeDragRef = useRef<{ id: ElemId; handle: string; startX: number; startY: number; origW: number; origS: number } | null>(null);
 
@@ -258,10 +265,12 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                 if (data.elemWidths) setElemWidths(data.elemWidths);
                 if (data.colors) setColors(data.colors);
                 if (data.fontStyles) setFontStyles(data.fontStyles);
-                if (data.printOffsets) setPrintOffsets(data.printOffsets);
+                if (data.printOffsets) setPrintOffsets({ x: 0, y: 0, scale: 100, ...data.printOffsets });
                 if (data.customTexts) setCustomTexts(data.customTexts);
                 if (data.globalBorder !== undefined) setGlobalBorder(data.globalBorder);
                 if (data.cfgOverrides) setCfgOverrides(data.cfgOverrides);
+                if (data.barcodeWidth) setBarcodeWidth(data.barcodeWidth);
+                if (data.barcodeScale) setBarcodeScale(data.barcodeScale);
             } catch (e) { console.error("Load error", e); }
         } else {
             // No save found, reset to defaults
@@ -279,9 +288,9 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
     }, [templateId]);
 
     useEffect(() => {
-        const data = { positions, alignments, fontScales, elemWidths, colors, fontStyles, printOffsets, customTexts, globalBorder };
+        const data = { positions, alignments, fontScales, elemWidths, colors, fontStyles, printOffsets, customTexts, globalBorder, barcodeWidth, barcodeScale };
         localStorage.setItem(`label_design_${templateId}`, JSON.stringify(data));
-    }, [templateId, positions, alignments, fontScales, elemWidths, colors, fontStyles, printOffsets, customTexts, globalBorder]);
+    }, [templateId, positions, alignments, fontScales, elemWidths, colors, fontStyles, printOffsets, customTexts, globalBorder, barcodeWidth, barcodeScale]);
 
     const getAlign = (id: ElemId): Align => alignments[id] ?? 'left';
     const setAlign = (align: Align) => {
@@ -307,13 +316,13 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
             // Ana Barkod (Full Width, İri Rakamlı)
             JsBarcode(el, product.barcode, {
                 format: 'CODE128',
-                width: 2.5,
+                width: barcodeWidth || 2,
                 height: Math.round((heightMm || 10) * PS),
                 displayValue: true,
-                fontSize: 35,
+                fontSize: 30, // Biraz küçülttük
                 fontOptions: "bold",
-                margin: 10,
-                textMargin: 0
+                margin: 0, // Dış boşluğu sıfırladık
+                textMargin: 2
             });
 
             // Küçük Barkod (Süpermarket şablonu için)
@@ -431,7 +440,9 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
             const previewH = cfg.heightMm * PS;             // 400px
 
             // Sabitler
-            const PRINT_WIDTH = cfg.widthMm >= 80 ? 576 : 520; // 80mm olanlar tam boyut (576), küçükler 520 px.
+            const scaleFactor = (printOffsets.scale || 100) / 100;
+            const PRINT_WIDTH_BASE = cfg.widthMm >= 80 ? 576 : (cfg.widthMm <= 40 ? 384 : 520); 
+            const PRINT_WIDTH = Math.round(PRINT_WIDTH_BASE * scaleFactor);
             const PRINT_HEIGHT = Math.round((PRINT_WIDTH / previewW) * previewH);
             const SCALE = 3;                                // Okunabilirlik için yüksek çözünürlük
             const THRESHOLD = 130;                          // Monochrome eşik
@@ -535,7 +546,7 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
     );
     const toggleProduct = (id: string) => setSelectedProducts(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
     const updateCount = (id: string, d: number) => setLabelCount(prev => ({ ...prev, [id]: Math.max(1, (prev[id] || 1) + d) }));
-    const resetEditor = () => { setPositions({}); setCfgOverrides({}); };
+    const resetEditor = () => { setPositions({}); setCfgOverrides({}); setPrintOffsets({ x: 0, y: 0, scale: 100 }); };
 
     const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const f = e.target.files?.[0]; if (!f) return;
@@ -775,6 +786,14 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                             <input type="range" min={5} max={35} value={cfg.barcodeHMm}
                                 onChange={e => setCfgOverrides(p => ({ ...p, barcodeHMm: +e.target.value }))}
                                 className="w-full accent-primary" />
+                            <label className="block text-xs font-bold text-secondary uppercase">Barkod Kalınlığı: {barcodeWidth}</label>
+                            <input type="range" min={1} max={4} step={0.5} value={barcodeWidth}
+                                onChange={e => setBarcodeWidth(+e.target.value)}
+                                className="w-full accent-primary" />
+                            <label className="block text-xs font-bold text-secondary uppercase">Barkod Ölçeği (Boyut): %{Math.round(barcodeScale * 100)}</label>
+                            <input type="range" min={0.3} max={1.5} step={0.05} value={barcodeScale}
+                                onChange={e => setBarcodeScale(+e.target.value)}
+                                className="w-full accent-primary" />
                         </div>
 
                         {/* Calibration */}
@@ -793,6 +812,15 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                                     <label className="text-[9px] text-secondary font-bold uppercase">Y (Üst) Kayma: {printOffsets.y}mm</label>
                                     <input type="range" min={-10} max={10} step={0.5} value={printOffsets.y}
                                         onChange={e => setPrintOffsets(p => ({ ...p, y: +e.target.value }))}
+                                        className="w-full accent-amber-500" />
+                                </div>
+                                <div className="col-span-2 space-y-1 mt-1">
+                                    <div className="flex justify-between items-center">
+                                        <label className="text-[9px] text-amber-400 font-black uppercase">Global Baskı Boyutu (Scale): %{printOffsets.scale || 100}</label>
+                                        <button onClick={() => setPrintOffsets(p => ({ ...p, scale: 100 }))} className="text-[9px] text-secondary hover:text-white underline">Sıfırla</button>
+                                    </div>
+                                    <input type="range" min={50} max={120} value={printOffsets.scale || 100}
+                                        onChange={e => setPrintOffsets(p => ({ ...p, scale: +e.target.value }))}
                                         className="w-full accent-amber-500" />
                                 </div>
                             </div>
@@ -885,7 +913,7 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                         {showPreview && (
                             <div className="flex items-center gap-4">
                                 <button onClick={async () => {
-                                    const designPayload = { positions, alignments, fontScales, elemWidths, colors, fontStyles, printOffsets, customTexts, globalBorder, cfgOverrides };
+                                    const designPayload = { positions, alignments, fontScales, elemWidths, colors, fontStyles, printOffsets, customTexts, globalBorder, cfgOverrides, barcodeWidth, barcodeScale };
                                     localStorage.setItem(`label_design_${templateId}`, JSON.stringify(designPayload));
 
                                     if (currentTenant) {
@@ -1014,7 +1042,7 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                                         position: 'absolute',
                                         top: cfg.widthMm >= 80 ? 6 : 0,
                                         left: cfg.widthMm >= 80 ? 6 : 0,
-                                        right: cfg.widthMm >= 80 ? 20 : 12,
+                                        right: cfg.widthMm >= 80 ? 45 : 12,
                                         bottom: cfg.widthMm >= 80 ? 6 : 0,
                                         border: cfg.isStaticMarket ? '4px solid #111' : (globalBorder ? '3px solid #111' : '1px solid #ddd'),
                                         boxSizing: 'border-box',
@@ -1103,13 +1131,11 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                                     {cfg.showBarcode && previewProduct.barcode && (() => {
                                         const id: ElemId = 'barcode';
                                         const isSel = selectedElem === id;
-                                        const fS = fontScales[id] ?? 1;
-                                        const wPx = getEW(id, cfg.widthMm * PS * 0.65); // Çoğu alanı kaplar
                                         return (
-                                            <div style={{ position: 'absolute', left: getPos(id).xMm * PS, top: getPos(id).yMm * PS, cursor: 'grab', outline: isSel ? '2px solid #6366f1' : 'none', outlineOffset: 4, borderRadius: 2, zIndex: isSel ? 50 : 10, width: wPx, background: '#fff', overflow: 'visible' }}
+                                            <div style={{ position: 'absolute', left: getPos(id).xMm * PS, top: getPos(id).yMm * PS, cursor: 'grab', outline: isSel ? '2px solid #6366f1' : 'none', outlineOffset: 4, borderRadius: 2, zIndex: isSel ? 50 : 10, transform: `scale(${barcodeScale})`, transformOrigin: 'top left', background: '#fff', overflow: 'visible' }}
                                                 onMouseDown={e => { startDrag(e, id); setSelectedElem(id); }}
                                             >
-                                                <canvas id={`bc-prev-${previewProduct.id}`} style={{ width: '100%', height: 'auto', display: 'block' }} />
+                                                <canvas id={`bc-prev-${previewProduct.id}`} style={{ height: 'auto', display: 'block' }} />
                                             </div>
                                         );
                                     })()}
