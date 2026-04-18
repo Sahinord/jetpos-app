@@ -44,6 +44,17 @@ const DEFAULT_SETTINGS: ReceiptSettings = {
     taxNumber: '',
 };
 
+function turkishToAscii(str: string) {
+    if (!str) return '';
+    const map: any = {
+        'ş': 's', 'Ş': 'S', 'ğ': 'g', 'Ğ': 'G',
+        'ü': 'u', 'Ü': 'U', 'ö': 'o', 'Ö': 'O',
+        'ç': 'c', 'Ç': 'C', 'ı': 'i', 'İ': 'I',
+        '₺': 'TL'
+    };
+    return str.replace(/[şŞğĞüÜöÖçÇıİ₺]/g, c => map[c] || c);
+}
+
 function getSettings(data: ReceiptData | null): ReceiptSettings {
     return { ...DEFAULT_SETTINGS, ...((data as any)?.receiptSettings || {}) };
 }
@@ -56,25 +67,27 @@ const ReceiptPreview = ({ data }: { data: ReceiptData | null }) => {
     const s = getSettings(data);
 
     return (
-        <div className="bg-white text-black rounded-lg shadow-2xl mx-auto overflow-hidden" style={{ width: '320px', fontFamily: '"Courier New", Courier, monospace' }}>
+        <div className="bg-white text-black rounded-lg shadow-2xl mx-auto overflow-hidden flex flex-col items-center" style={{ width: '320px', fontFamily: '"Courier New", Courier, monospace' }}>
             {/* Header */}
-            <div style={{ textAlign: 'center', padding: '16px 12px 8px', borderBottom: '2px dashed #333' }}>
+            <div className="flex flex-col items-center w-full" style={{ textAlign: 'center', padding: '16px 12px 8px', borderBottom: '2px dashed #333' }}>
                 {s.showLogo && s.logoUrl && (
                     <div style={{ marginBottom: '8px' }}>
-                        <img src={s.logoUrl} alt="Logo" style={{ maxWidth: '120px', maxHeight: '60px', margin: '0 auto', objectFit: 'contain' }} />
+                        <img src={s.logoUrl} alt="Logo" style={{ maxWidth: '120px', maxHeight: '60px', margin: '0 auto', display: 'block', objectFit: 'contain' }} />
                     </div>
                 )}
-                <div style={{ fontSize: '20px', fontWeight: 900, letterSpacing: '2px', color: '#000' }}>{s.storeName}</div>
-                {s.subtitle1 && <div style={{ fontSize: '10px', fontWeight: 700, color: '#333', marginTop: '2px' }}>{s.subtitle1}</div>}
-                {s.subtitle2 && <div style={{ fontSize: '10px', fontWeight: 700, color: '#333' }}>{s.subtitle2}</div>}
-                {s.address && <div style={{ fontSize: '9px', fontWeight: 700, color: '#555', marginTop: '3px' }}>{s.address}</div>}
-                {s.phone && <div style={{ fontSize: '9px', fontWeight: 700, color: '#555' }}>TEL: {s.phone}</div>}
-                {(s.taxOffice || s.taxNumber) && (
-                    <div style={{ fontSize: '9px', fontWeight: 700, color: '#555', marginTop: '2px' }}>
-                        {s.taxOffice && <span>V.D: {s.taxOffice} </span>}
-                        {s.taxNumber && <span>V.N: {s.taxNumber}</span>}
-                    </div>
-                )}
+                <div style={{ fontSize: '20px', fontWeight: 900, letterSpacing: '2px', color: '#000' }}>{(s.storeName || 'JETPOS MARKET').toUpperCase()}</div>
+                <div style={{ fontSize: '10px', fontWeight: 700, color: '#333', marginTop: '2px' }}>
+                    {s.subtitle1 && <div>{s.subtitle1.toUpperCase()}</div>}
+                    {s.subtitle2 && <div>{s.subtitle2.toUpperCase()}</div>}
+                    {s.address && <div style={{ marginTop: '2px' }}>{s.address.toUpperCase()}</div>}
+                    {s.phone && <div>TEL: {s.phone}</div>}
+                    {(s.taxOffice || s.taxNumber) && (
+                        <div style={{ marginTop: '2px' }}>
+                            {s.taxOffice && <span>V.D: {s.taxOffice.toUpperCase()} </span>}
+                            {s.taxNumber && <span>V.N: {s.taxNumber}</span>}
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Date & Info */}
@@ -191,86 +204,127 @@ function generatePrintHTML(data: ReceiptData | null): string {
     const taxLine = (s.taxOffice || s.taxNumber) ? `<div style="font-size:9px;font-weight:900;color:#000!important;">${s.taxOffice ? 'V.D: ' + s.taxOffice + ' ' : ''}${s.taxNumber ? 'V.N: ' + s.taxNumber : ''}</div>` : '';
     const logoLine = (s.showLogo && s.logoUrl) ? `<div style="margin-bottom:8px;"><img src="${s.logoUrl}" style="max-width:120px;max-height:60px;margin:0 auto;display:block;object-fit:contain;" /></div>` : '';
 
-    return `<!DOCTYPE html>
-<html>
+    return `
+<!DOCTYPE html>
+<html style="opacity: 1 !important; visibility: visible !important;">
 <head>
-<meta charset="utf-8">
+    <meta charset="utf-8">
     <style>
-        @page { margin: 0; size: 80mm auto; }
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body {
-            font-family: 'Courier New', Courier, monospace;
-            width: 70mm;
-            padding: 2mm 5mm;
-            margin: 0;
-            overflow: hidden;
-            color: #000 !important;
-            background: #fff !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
+        body { 
+            background-color: #ffffff !important; 
+            color: #000000 !important; 
+            margin: 0; 
+            padding: 0;
+            width: 100%; 
+            font-family: monospace;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            opacity: 1 !important;
+            visibility: visible !important;
         }
-        div, span, p { color: #000 !important; }
+        .wrapper { 
+            width: 72mm !important; 
+            min-width: 72mm !important;
+            margin: 0 auto !important; 
+            padding: 0; 
+            display: block;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+        .center-stack {
+            display: block;
+            text-align: center;
+            width: 100%;
+        }
+        .table { width: 100%; border-collapse: collapse; }
+        .bold { font-weight: 900; }
+        .font-lg { font-size: 22px; }
+        .font-md { font-size: 14px; }
+        .font-sm { font-size: 11px; }
+        .font-xs { font-size: 10px; }
+        .dashed-hr { border-bottom: 2px dashed #000; margin: 5px 0; width: 100%; }
+        .solid-hr { border-bottom: 3px solid #000; margin: 5px 0; width: 100%; }
     </style>
 </head>
 <body>
-    <div style="text-align:center;margin-bottom:8px;">
-        ${logoLine}
-        <div style="font-size:20px;font-weight:900;letter-spacing:2px;color:#000!important;">${s.storeName}</div>
-        ${s.subtitle1 ? `<div style="font-size:10px;font-weight:900;color:#000!important;">${s.subtitle1}</div>` : ''}
-        ${s.subtitle2 ? `<div style="font-size:10px;font-weight:900;color:#000!important;">${s.subtitle2}</div>` : ''}
-        ${addressLine}
-        ${phoneLine}
-        ${taxLine}
-        <div style="margin:4px 0;font-weight:900;color:#000!important;">******************************</div>
-    </div>
-
-    <div style="font-size:12px;font-weight:900;margin-bottom:6px;color:#000!important;">
-        <div style="display:flex;justify-content:space-between;">
-            <span>TARİH: ${data.date.toLocaleDateString('tr-TR')}</span>
-            <span>SAAT: ${data.date.toLocaleTimeString('tr-TR')}</span>
+    <div class="wrapper">
+        <div class="center-stack">
+            ${logoLine}
+            <div class="font-lg bold" style="margin-top:5px; letter-spacing: 2px;">${(s.storeName || 'JETPOS MARKET').toUpperCase()}</div>
+            <div class="font-xs" style="margin: 5px 0;">
+                ${s.subtitle1 ? `<div>${s.subtitle1.toUpperCase()}</div>` : ''}
+                ${s.subtitle2 ? `<div>${s.subtitle2.toUpperCase()}</div>` : ''}
+                ${addressLine}
+                ${phoneLine}
+                ${taxLine}
+            </div>
         </div>
-        <div>FİŞ NO: ${data.saleId}</div>
-        <div style="margin:4px 0;color:#000!important;">------------------------------</div>
-    </div>
-
-    <div style="font-size:11px;font-weight:900;display:flex;border-bottom:2px solid #000;padding-bottom:2px;color:#000!important;">
-        <span style="flex:1">ÜRÜN</span>
-        <span style="width:30px;text-align:center;">KDV</span>
-        <span style="width:40px;text-align:center;">AD</span>
-        <span style="width:60px;text-align:right;">TUTAR</span>
-    </div>
-
-    <div style="margin-bottom:6px;">
-        ${itemRows}
-    </div>
-
-    <div style="font-weight:900;color:#000!important;">******************************</div>
-
-    <div style="font-size:16px;font-weight:900;margin:4px 0;color:#000!important;">
-        <div style="display:flex;justify-content:space-between;">
-            <span>TOPLAM:</span>
-            <span>₺${data.total.toFixed(2)}</span>
+        
+        <div class="dashed-hr"></div>
+        
+        <table class="table font-sm">
+            <tr>
+                <td align="left">TARİH: ${data.date.toLocaleDateString('tr-TR')}</td>
+                <td align="right">SAAT: ${data.date.toLocaleTimeString('tr-TR')}</td>
+            </tr>
+            <tr>
+                <td colspan="2" align="left">FİŞ NO: ${data.saleId}</td>
+            </tr>
+        </table>
+        
+        <div class="dashed-hr"></div>
+        
+        <table class="table font-xs">
+            <tr>
+                <td align="left" width="60%">ÜRÜN</td>
+                <td align="center" width="20%">AD</td>
+                <td align="right" width="20%">TUTAR</td>
+            </tr>
+        </table>
+        <div style="border-bottom: 2px dashed #000; margin: 2px 0;"></div>
+        
+        <div class="font-sm" style="margin-top: 5px;">
+            ${data.items.map(item => `
+                <div style="margin-bottom: 8px;">
+                    <div>${turkishToAscii(item.name.toUpperCase())}</div>
+                    <table class="table">
+                        <tr>
+                            <td align="left">${item.quantity} AD X ₺${item.price.toFixed(2)}</td>
+                            <td align="right">₺${(item.price * item.quantity).toFixed(2)}</td>
+                        </tr>
+                    </table>
+                </div>
+            `).join('')}
         </div>
-    </div>
-
-    ${cashSection}
-
-    <div style="font-size:12px;font-weight:900;margin-top:4px;color:#000!important;">
-        <div style="display:flex;justify-content:space-between;">
-            <span>ÖDEME TİPİ:</span>
-            <span>${data.paymentMethod}</span>
+        
+        <div class="solid-hr" style="margin-top: 10px;"></div>
+        
+        <table class="table" style="margin: 5px 0;">
+            <tr>
+                <td align="left" class="font-lg bold">TOPLAM:</td>
+                <td align="right" class="font-lg bold">₺${data.total.toFixed(2)}</td>
+            </tr>
+        </table>
+        
+        <div class="dashed-hr"></div>
+        
+        <table class="table font-sm">
+            <tr>
+                <td align="left">ÖDEME TİPİ:</td>
+                <td align="right">${data.paymentMethod.toUpperCase()}</td>
+            </tr>
+        </table>
+        
+        <div class="dashed-hr"></div>
+        
+        <div class="center font-xs" style="margin-top:10px;">
+            <div>${(s.footerMessage || 'BİZİ TERCİH ETTİĞİNİZ İÇİN TEŞEKKÜRLER').toUpperCase()}</div>
+            <div style="margin: 3px 0;">MALİ DEĞERİ YOKTUR</div>
+            <div>BİLGİ FİŞİDİR</div>
         </div>
+        
+        <div style="height:40mm; text-align:center; font-size: 8px;">.</div>
     </div>
-
-    <div style="margin:8px 0;font-weight:900;color:#000!important;">------------------------------</div>
-
-    <div style="text-align:center;font-weight:900;color:#000!important;">
-        ${s.footerMessage ? `<div style="font-size:10px;">${s.footerMessage}</div>` : ''}
-        ${s.footerNote1 ? `<div style="margin-top:4px;font-size:12px;">${s.footerNote1}</div>` : ''}
-        ${s.footerNote2 ? `<div style="font-size:10px;">${s.footerNote2}</div>` : ''}
-    </div>
-
-    <div style="height:20mm;"></div>
 </body>
 </html>`;
 }
@@ -366,12 +420,14 @@ async function manualPrint(data: ReceiptData | null): Promise<boolean> {
             doc.close();
 
             iframe.onload = () => {
-                try {
-                    iframe.contentWindow?.print();
-                    resolve(true);
-                } catch {
-                    resolve(false);
-                }
+                setTimeout(() => {
+                    try {
+                        iframe.contentWindow?.print();
+                        resolve(true);
+                    } catch {
+                        resolve(false);
+                    }
+                }, 500);
                 setTimeout(() => {
                     document.body.removeChild(iframe);
                 }, 1000);

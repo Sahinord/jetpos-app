@@ -32,6 +32,9 @@
       "createStartMenuShortcut": true
     },
     "asar": true,
+    "asarUnpack": [
+      "rawprint.ps1"
+    ],
     "publish": [
       {
         "provider": "github",
@@ -42,6 +45,7 @@
     "files": [
       "main.js",
       "preload.js",
+      "rawprint.ps1",
       ".next/**/*",
       "public/**/*",
       "node_modules/**/*",
