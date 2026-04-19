@@ -23,6 +23,7 @@ const showToast = (msg: string, type: string = 'info') => {
 type TemplateId = 'raf' | 'market' | 'standard' | 'large' | 'rp80' | 'square-40' | 'vertical-30-50' | 'price-only' | string;
 type ElemId = 'brand' | 'name' | 'price' | 'barcode' | 'logo' | 'frame';
 interface Pos { xMm: number; yMm: number; }
+type Align = 'left' | 'center' | 'right';
 interface LabelConfig {
     id: TemplateId; name: string;
     widthMm: number; heightMm: number;
@@ -32,6 +33,7 @@ interface LabelConfig {
     defaultPos: Partial<Record<ElemId, Pos>>;
     defaultAligns?: Partial<Record<ElemId, Align>>;
     defaultWidths?: Partial<Record<ElemId, number>>;
+    defaultHeights?: Partial<Record<ElemId, number>>;
     isRotated?: boolean;
     isStaticMarket?: boolean;
 }
@@ -44,13 +46,13 @@ function TemplateThumbnail({ t }: { t: LabelConfig }) {
     const tw = t.widthMm * TS;
     const th = t.heightMm * TS;
     const ELEM_COLORS: Record<ElemId, string> = {
-        brand: '#1565C0', name: '#222', price: '#c62828', barcode: '#555', logo: '#888'
+        brand: '#1565C0', name: '#222', price: '#c62828', barcode: '#555', logo: '#888', frame: '#000'
     };
     const ELEM_HEIGHTS: Record<ElemId, number> = {
-        brand: t.brandFontMm * TS * 1.4, name: t.nameFontMm * TS * 1.8, price: t.priceFontMm * TS * 1.4, barcode: t.barcodeHMm * TS, logo: 4
+        brand: t.brandFontMm * TS * 1.4, name: t.nameFontMm * TS * 1.8, price: t.priceFontMm * TS * 1.4, barcode: t.barcodeHMm * TS, logo: 4, frame: 12
     };
     const ELEM_WIDTHS: Record<ElemId, number> = {
-        brand: t.widthMm * TS * 0.35, name: t.widthMm * TS * 0.5, price: t.priceFontMm * TS * 1.8, barcode: t.widthMm * TS * 0.32, logo: 8
+        brand: t.widthMm * TS * 0.35, name: t.widthMm * TS * 0.5, price: t.priceFontMm * TS * 1.8, barcode: t.widthMm * TS * 0.32, logo: 8, frame: 12
     };
     return (
         <div style={{ position: 'relative', width: tw, height: th, background: '#fff', border: '1px solid #ccc', flexShrink: 0, overflow: 'hidden', borderRadius: 2 }}>
