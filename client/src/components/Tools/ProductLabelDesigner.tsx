@@ -20,8 +20,8 @@ const showToast = (msg: string, type: string = 'info') => {
     // JetKasa'da genelde window.dispatchEvent veya prop olarak gelir ama burada basit bir log/alert veya varsa UI sistemini kullanabiliriz
     console.log(`[Toast] ${type}: ${msg}`);
 };
-type TemplateId = 'raf' | 'fiyat' | 'yanyan' | 'market' | 'standard' | 'mini' | 'large' | 'rp80' | 'square-40' | 'vertical-30-50' | 'price-only';
-type ElemId = 'brand' | 'name' | 'price' | 'barcode' | 'logo';
+type TemplateId = 'raf' | 'market' | 'standard' | 'large' | 'rp80' | 'square-40' | 'vertical-30-50' | 'price-only' | string;
+type ElemId = 'brand' | 'name' | 'price' | 'barcode' | 'logo' | 'frame';
 interface Pos { xMm: number; yMm: number; }
 interface LabelConfig {
     id: TemplateId; name: string;
@@ -30,6 +30,8 @@ interface LabelConfig {
     showBarcode: boolean; showPrice: boolean; showVat: boolean;
     nameFontMm: number; priceFontMm: number; brandFontMm: number; barcodeHMm: number;
     defaultPos: Partial<Record<ElemId, Pos>>;
+    defaultAligns?: Partial<Record<ElemId, Align>>;
+    defaultWidths?: Partial<Record<ElemId, number>>;
     isRotated?: boolean;
     isStaticMarket?: boolean;
 }
@@ -68,18 +70,51 @@ function TemplateThumbnail({ t }: { t: LabelConfig }) {
 /* ── Templates ── */
 const TEMPLATES: LabelConfig[] = [
     {
+        id: 'raf', name: '🏬 Market Raf (72×40mm)',
+        widthMm: 72, heightMm: 40,
+        showLogo: true, showBrand: true, showName: true, showBarcode: true, showPrice: true, showVat: false,
+        nameFontMm: 2.8, priceFontMm: 8, brandFontMm: 2.4, barcodeHMm: 3,
+        defaultPos: {
+            name: { xMm: 3, yMm: 2 },
+            barcode: { xMm: 3, yMm: 11 },
+            logo: { xMm: 3, yMm: 18 },
+            price: { xMm: 3, yMm: 24 },
+            brand: { xMm: 3, yMm: 34 },
+            frame: { xMm: 0, yMm: 0 }
+        },
+        defaultAligns: { name: 'center', price: 'right', brand: 'center', logo: 'left', barcode: 'left' },
+        defaultWidths: { name: 215, price: 215, brand: 215, frame: 0, logo: 120, barcode: 200 },
+        defaultHeights: { frame: 0 }
+    },
+    {
+        id: 'rp80', name: '💎 JetPOS Premium (80×40mm)',
+        widthMm: 72, heightMm: 40,
+        showLogo: false, showBrand: true, showName: true, showBarcode: true, showPrice: true, showVat: true,
+        nameFontMm: 9, priceFontMm: 18, brandFontMm: 6, barcodeHMm: 10,
+        defaultPos: {
+            brand: { xMm: 4, yMm: 4 },
+            barcode: { xMm: 36, yMm: 4 },
+            name: { xMm: 4, yMm: 14 },
+            price: { xMm: 4, yMm: 28 }
+        },
+        defaultAligns: { brand: 'left', name: 'left', price: 'left' },
+        defaultWidths: { brand: 110, name: 238, price: 238, barcode: 120 }
+    },
+    {
         id: 'market', name: '🏪 Market Etiketi (58×40mm)',
         widthMm: 58, heightMm: 40,
         showLogo: false, showBrand: true, showName: true, showBarcode: true, showPrice: true, showVat: false,
         nameFontMm: 7, priceFontMm: 11, brandFontMm: 4.5, barcodeHMm: 10,
         defaultPos: { brand: { xMm: 2, yMm: 2 }, name: { xMm: 2, yMm: 7 }, barcode: { xMm: 3, yMm: 19 }, price: { xMm: 3, yMm: 31 } },
+        defaultWidths: { name: 190, price: 180, barcode: 180 }
     },
     {
         id: 'standard', name: 'Standart (50×30mm)',
         widthMm: 50, heightMm: 30,
         showLogo: false, showBrand: false, showName: true, showBarcode: true, showPrice: true, showVat: false,
-        nameFontMm: 6.5, priceFontMm: 10, brandFontMm: 4, barcodeHMm: 9,
+        nameFontMm: 6, priceFontMm: 10, brandFontMm: 4, barcodeHMm: 9,
         defaultPos: { name: { xMm: 2.5, yMm: 2 }, barcode: { xMm: 2.5, yMm: 10 }, price: { xMm: 2.5, yMm: 22 } },
+        defaultWidths: { name: 160, price: 160, barcode: 160 }
     },
     {
         id: 'large', name: 'Büyük (80×50mm)',
@@ -87,59 +122,57 @@ const TEMPLATES: LabelConfig[] = [
         showLogo: true, showBrand: true, showName: true, showBarcode: true, showPrice: true, showVat: true,
         nameFontMm: 9, priceFontMm: 14, brandFontMm: 6, barcodeHMm: 14,
         defaultPos: { brand: { xMm: 2, yMm: 2 }, name: { xMm: 2, yMm: 9 }, logo: { xMm: 2, yMm: 40 }, barcode: { xMm: 40, yMm: 2 }, price: { xMm: 40, yMm: 22 } },
-    },
-    {
-        id: 'rp80', name: '🖨️ Rongta RP80 (80×40mm)',
-        widthMm: 80, heightMm: 40,
-        showLogo: false, showBrand: true, showName: true, showBarcode: true, showPrice: true, showVat: true,
-        nameFontMm: 8.5, priceFontMm: 18, brandFontMm: 5.5, barcodeHMm: 12,
-        defaultPos: {
-            name: { xMm: 3, yMm: 4 },
-            barcode: { xMm: 1, yMm: 18 },
-            price: { xMm: 55, yMm: 16 },
-            brand: { xMm: 30, yMm: 35 }
-        },
+        defaultWidths: { name: 260, price: 130, barcode: 130 }
     },
     {
         id: 'square-40', name: '🔲 Kare (40×40mm)',
         widthMm: 40, heightMm: 40,
         showLogo: false, showBrand: true, showName: true, showBarcode: true, showPrice: true, showVat: true,
         nameFontMm: 4.8, priceFontMm: 10, brandFontMm: 3.5, barcodeHMm: 9,
-        defaultPos: { 
-            name: { xMm: 3, yMm: 4 }, 
-            barcode: { xMm: 3, yMm: 13 }, 
-            price: { xMm: 3, yMm: 24 }, 
-            brand: { xMm: 3, yMm: 33 } 
+        defaultPos: {
+            name: { xMm: 3, yMm: 4 },
+            barcode: { xMm: 3, yMm: 13 },
+            price: { xMm: 3, yMm: 24 },
+            brand: { xMm: 3, yMm: 33 }
         },
+        defaultWidths: { name: 120, price: 120, barcode: 120 }
     },
-
 ];
 
 /* ── Price renderer helpers ── */
 function PriceDisplay({ cfg, product, scale }: { cfg: LabelConfig; product: Product; scale: number }) {
-    const [int, dec] = product.sale_price.toFixed(2).split('.');
+    const price = Number(product.sale_price) || 0;
+    const [int, dec] = price.toFixed(2).split('.');
+    const formattedInt = Number(int).toLocaleString('tr-TR');
+    const isRaf = cfg.id === 'raf';
+
     return (
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 1 * scale }}>
-            <span style={{ fontSize: cfg.priceFontMm * scale, fontWeight: 900, color: '#111', letterSpacing: -2, lineHeight: 0.9 }}>{int}</span>
-            <div style={{ display: 'flex', flexDirection: 'column', marginTop: scale * 1.5 }}>
-                <span style={{ fontSize: cfg.priceFontMm * 0.45 * scale, fontWeight: 900, color: '#111', lineHeight: 1, letterSpacing: -0.5 }}>
-                    <span style={{ verticalAlign: 'top' }}>.{dec}</span>
-                    <span style={{ marginLeft: scale * 1 }}>TL</span>
-                </span>
-                {cfg.showVat && (
-                    <span style={{ fontSize: cfg.brandFontMm * 0.8 * scale, color: '#333', fontStyle: 'italic', whiteSpace: 'nowrap', marginTop: scale * 1, letterSpacing: -0.5 }}>
-                        KDV Dahil
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', width: '100%', overflow: 'hidden', paddingRight: 4 * scale, boxSizing: 'border-box' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 0.1 * scale, maxWidth: '100%', boxSizing: 'border-box' }}>
+                <span style={{ fontSize: (isRaf ? cfg.priceFontMm * 0.9 : cfg.priceFontMm) * scale, fontWeight: 900, color: '#000', letterSpacing: isRaf ? -0.2 : -2, lineHeight: 0.9 }}>{formattedInt}</span>
+                <div style={{ display: 'flex', flexDirection: 'column', marginTop: scale * (isRaf ? 0.2 : 1.5), boxSizing: 'border-box' }}>
+                    <span style={{ fontSize: cfg.priceFontMm * 0.4 * scale, fontWeight: 900, color: '#111', lineHeight: 1 }}>
+                        <span style={{ verticalAlign: 'top' }}>.{dec}</span>
+                        <span style={{ marginLeft: scale * 0.1, fontSize: isRaf ? '0.7em' : '1.1em' }}>{isRaf ? '₺' : 'TL'}</span>
                     </span>
-                )}
+                    {cfg.showVat && !isRaf && (
+                        <span style={{ fontSize: cfg.brandFontMm * 0.7 * scale, color: '#000', fontStyle: 'normal', whiteSpace: 'nowrap', marginTop: scale * 0.5, letterSpacing: -0.5, fontWeight: 900 }}>
+                            KDV Dahil
+                        </span>
+                    )}
+                </div>
             </div>
+            {isRaf && <div style={{ fontSize: 6, fontWeight: 900, opacity: 0.8, marginTop: 2 }}>Ürt. Yeri:</div>}
         </div>
     );
 }
 
 function priceHtmlMm(cfg: LabelConfig, product: Product, pos: Pos): string {
-    const [int, dec] = product.sale_price.toFixed(2).split('.');
+    const price = Number(product.sale_price) || 0;
+    const [int, dec] = price.toFixed(2).split('.');
+    const formattedInt = Number(int).toLocaleString('tr-TR');
     return `<div style="position:absolute;left:${pos.xMm}mm;top:${pos.yMm}mm;display:flex;align-items:flex-start;gap:0.5mm;">
-  <span style="font-size:${cfg.priceFontMm}mm;font-weight:900;color:#111;letter-spacing:-2px;line-height:0.9;">${int}</span>
+  <span style="font-size:${cfg.priceFontMm}mm;font-weight:900;color:#111;letter-spacing:-2px;line-height:0.9;">${formattedInt}</span>
   <div style="display:flex;flex-direction:column;margin-top:1.5mm;">
     <span style="font-size:${cfg.priceFontMm * 0.45}mm;font-weight:900;color:#111;line-height:1;letter-spacing:-0.5px;">
         <span style="vertical-align:top;">.${dec}</span><span style="margin-left:1mm;">TL</span>
@@ -181,9 +214,9 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
     /* ─ template ─ */
     const [templateId, setTemplateId] = useState<TemplateId>(() => {
         if (typeof window !== 'undefined') {
-            return (localStorage.getItem('last_label_template') as TemplateId) || 'raf';
+            return (localStorage.getItem('last_label_template') as TemplateId) || 'rp80';
         }
-        return 'raf';
+        return 'rp80';
     });
 
     useEffect(() => {
@@ -209,6 +242,8 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
 
     /* ─ preview ─ */
     const [showPreview, setShowPreview] = useState(false);
+    const [activePrintProduct, setActivePrintProduct] = useState<Product | null>(null);
+    const [isPrintingProgress, setIsPrintingProgress] = useState(false);
 
     /* ─ text alignment (per text element) ─ */
     type Align = 'left' | 'center' | 'right';
@@ -244,7 +279,6 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
 
     const allTemplates = [...TEMPLATES, ...customTemplates];
 
-    /* ─ persistence (auto-save) ─ */
     useEffect(() => {
         const tenantKey = `label_design_${templateId}`;
         const savedStr = localStorage.getItem(tenantKey);
@@ -257,31 +291,54 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
             try { data = JSON.parse(savedStr); } catch (e) { }
         }
 
+        const target = allTemplates.find(t => t.id === templateId);
+
         if (data) {
             try {
-                if (data.positions) setPositions(data.positions);
-                if (data.alignments) setAlignments(data.alignments);
-                if (data.fontScales) setFontScales(data.fontScales);
-                if (data.elemWidths) setElemWidths(data.elemWidths);
-                if (data.colors) setColors(data.colors);
-                if (data.fontStyles) setFontStyles(data.fontStyles);
-                if (data.printOffsets) setPrintOffsets({ x: 0, y: 0, scale: 100, ...data.printOffsets });
-                if (data.customTexts) setCustomTexts(data.customTexts);
-                if (data.globalBorder !== undefined) setGlobalBorder(data.globalBorder);
-                if (data.cfgOverrides) setCfgOverrides(data.cfgOverrides);
+                setPositions(data.positions || target?.defaultPos || {});
+                setAlignments(data.alignments || target?.defaultAligns || {});
+                setFontScales(data.fontScales || {});
+                setElemWidths(data.elemWidths || target?.defaultWidths || {});
+                setColors(data.colors || {});
+                setFontStyles(data.fontStyles || {});
+                setPrintOffsets(data.printOffsets || { x: 0, y: 0, scale: 100 });
+                setCustomTexts(data.customTexts || {});
+                setGlobalBorder(data.globalBorder !== undefined ? data.globalBorder : false);
+                setCfgOverrides(data.cfgOverrides || {});
                 if (data.barcodeWidth) setBarcodeWidth(data.barcodeWidth);
-                if (data.barcodeScale) setBarcodeScale(data.barcodeScale);
+                setBarcodeScale(data.barcodeScale || (templateId === 'raf' ? 0.75 : 1));
             } catch (e) { console.error("Load error", e); }
-        } else {
-            // No save found, reset to defaults
-            setPositions({});
-            setCfgOverrides({});
-            setAlignments({});
-            setCustomTexts({});
+        } else if (target) {
+            // No save found, reset to defaults from template
+            setPositions(target.defaultPos || {});
+            setAlignments(target.defaultAligns || {});
+            setElemWidths(target.defaultWidths || {});
             setFontScales({});
-            setElemWidths({});
             setColors({});
-            setFontStyles({});
+
+            // Raf özel kutulu stil
+            if (templateId === 'raf') {
+                setFontStyles({
+                    name: { b: true, i: false, box: true },
+                    brand: { b: true, i: false, box: true },
+                    logo: { b: true, i: false, box: true }
+                });
+                setCustomTexts({
+                    brand: brandName + "\nET&TAVUK DÜNYASI",
+                    logo: "BİRİM FİYAT\n181.00 TL/KG"
+                });
+                setBarcodeScale(0.5);
+                setBarcodeWidth(1.2);
+            } else {
+                setFontStyles({});
+                setCustomTexts({});
+                setBarcodeScale(1);
+                setBarcodeWidth(2);
+            }
+
+            setPrintOffsets({ x: 0, y: 0, scale: 100 });
+            setGlobalBorder(false);
+            setCfgOverrides({});
         }
         setSelectedElem(null);
         setEditingElem(null);
@@ -314,15 +371,18 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
             if (!el || !product.barcode) return;
 
             // Ana Barkod (Full Width, İri Rakamlı)
+            // Barkod tipini basitçe belirle (EAN13 genelde 13 hane ve rakamdır)
+            const isEan13 = product.barcode.length === 13 && /^\d+$/.test(product.barcode);
+
             JsBarcode(el, product.barcode, {
-                format: 'CODE128',
+                format: isEan13 ? 'EAN13' : 'CODE128',
                 width: barcodeWidth || 2,
                 height: Math.round((heightMm || 10) * PS),
                 displayValue: true,
-                fontSize: 30, // Biraz küçülttük
+                fontSize: 14,
                 fontOptions: "bold",
-                margin: 0, // Dış boşluğu sıfırladık
-                textMargin: 2
+                margin: 0,
+                textMargin: 1
             });
 
             // Küçük Barkod (Süpermarket şablonu için)
@@ -341,7 +401,7 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
         } catch { /* */ }
     }, [cfg]);
 
-    const previewProduct = selectedProducts.map(id => products.find(p => p.id === id)).filter(Boolean)[0] as Product | undefined;
+    const previewProduct = activePrintProduct || (selectedProducts.map(id => products.find(p => p.id === id)).filter(Boolean)[0] as Product | undefined);
 
     useEffect(() => {
         if (!showPreview || !previewProduct?.barcode) return;
@@ -411,7 +471,7 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
             onMouseDown={e => { e.preventDefault(); e.stopPropagation(); resizeDragRef.current = { id, handle: h, startX: e.clientX, startY: e.clientY, origW: wPx, origS: fS }; }} />;
     };
 
-    /* ─ print (Raster Image – Ön İzleme Birebir Basılır) ─ */
+    /* ─ print (Raster Image – Tüm ürünler için sırayla) ─ */
     const handlePrint = async () => {
         if (selectedProducts.length === 0) {
             showToast('Lütfen en az bir ürün seçin', 'error');
@@ -426,115 +486,117 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
 
         const sourceDiv = canvasRef.current;
         if (!sourceDiv) {
-            showToast('Editörü açıp ürün seçin', 'error');
+            showToast('Editörü açıp ürün seçin (Canva div gereklidir)', 'error');
             return;
         }
 
         const targetPrinter = printerName || 'RONGTA 80mm Series Printer';
-        showToast('Etiket hazırlanıyor...', 'info');
+        const html2canvas = (await import('html2canvas')).default;
+
+        setIsPrintingProgress(true);
+        showToast(`Toplam ${selectedProducts.length} ürün hazırlanıyor...`, 'info');
 
         try {
-            const html2canvas = (await import('html2canvas')).default;
+            for (const productId of selectedProducts) {
+                const product = products.find(p => p.id === productId);
+                if (!product) continue;
 
-            const previewW = cfg.widthMm * PS;              // 800px
-            const previewH = cfg.heightMm * PS;             // 400px
+                // 1. Ürünü preview'a yerleştir ve DOM'un güncellenmesini bekle
+                setActivePrintProduct(product);
+                await new Promise(res => setTimeout(res, 300)); // Render + Barcode drawing wait
 
-            // Sabitler
-            const scaleFactor = (printOffsets.scale || 100) / 100;
-            const PRINT_WIDTH_BASE = cfg.widthMm >= 80 ? 576 : (cfg.widthMm <= 40 ? 384 : 520); 
-            const PRINT_WIDTH = Math.round(PRINT_WIDTH_BASE * scaleFactor);
-            const PRINT_HEIGHT = Math.round((PRINT_WIDTH / previewW) * previewH);
-            const SCALE = 3;                                // Okunabilirlik için yüksek çözünürlük
-            const THRESHOLD = 130;                          // Monochrome eşik
+                // 2. html2canvas ile yakala
+                const previewW = cfg.widthMm * PS;
+                const previewH = cfg.heightMm * PS;
 
-            console.log('[Raster] ═════════════════════════════════════');
-            console.log(`[Raster] Kağıt: ${cfg.widthMm}×${cfg.heightMm}mm`);
-            console.log(`[Raster] Print: ${PRINT_WIDTH}×${PRINT_HEIGHT} dot`);
-            console.log(`[Raster] Scale: ${SCALE}x | Threshold: ${THRESHOLD}`);
+                const rawCanvas = await html2canvas(sourceDiv, {
+                    scale: 2.5,
+                    backgroundColor: '#ffffff',
+                    useCORS: true,
+                    logging: false,
+                    width: previewW,
+                    height: previewH,
+                    onclone: (doc: Document) => {
+                        doc.querySelectorAll('div').forEach(d => {
+                            const el = d as HTMLElement;
+                            if (el.style.outline?.includes('6366f1')) el.style.outline = 'none';
+                            const isUi = el.style.background === 'rgb(99, 102, 241)' || el.style.background === '#6366f1' || (el.style.borderRadius === '50%' && el.style.borderColor);
+                            if (isUi) el.style.display = 'none';
+                        });
+                    }
+                });
 
-            // ── 1. html2canvas ile ön izleme div'ini yakala ──
-            const rawCanvas = await html2canvas(sourceDiv, {
-                scale: SCALE,
-                backgroundColor: '#ffffff',
-                useCORS: true,
-                logging: false,
-                width: previewW,
-                height: previewH,
-                imageSmoothingEnabled: false, // Keskinliği artır (anti-aliasing kapat)
-                onclone: (doc: Document) => {
-                    // Editör UI elemanlarını temizle (outline, guide, handle)
-                    doc.querySelectorAll('div').forEach(d => {
-                        const el = d as HTMLElement;
-                        if (el.style.outline?.includes('6366f1')) el.style.outline = 'none';
-                        if (el.style.background === '#6366f1' || el.style.background === 'rgb(99, 102, 241)') el.style.display = 'none';
-                        if (el.style.borderRadius === '50%' && el.style.borderColor) el.style.display = 'none';
+                // 3. Rasterlaştırma
+                const scaleFactor = (printOffsets.scale || 100) / 100;
+                // Yazıcı kafasına göre dot genişliği (Standart 203 DPI = 8 dots/mm)
+                const PRINT_WIDTH_BASE = Math.round(cfg.widthMm * 8);
+                const PRINT_WIDTH = Math.round(PRINT_WIDTH_BASE * scaleFactor);
+                const PRINT_HEIGHT = Math.round((PRINT_WIDTH / previewW) * previewH);
+
+                const printCanvas = document.createElement('canvas');
+                printCanvas.width = PRINT_WIDTH;
+                printCanvas.height = PRINT_HEIGHT;
+                const ctx = printCanvas.getContext('2d')!;
+                ctx.imageSmoothingEnabled = true; // Daha temiz barkod için soft scale
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, PRINT_WIDTH, PRINT_HEIGHT);
+                ctx.drawImage(rawCanvas, 0, 0, PRINT_WIDTH, PRINT_HEIGHT);
+
+                const imgData = ctx.getImageData(0, 0, PRINT_WIDTH, PRINT_HEIGHT);
+                const px = imgData.data;
+                const widthBytes = Math.ceil(PRINT_WIDTH / 8);
+
+                // Horizontal Offset (X) - 1mm = 8 dots (approx)
+                const offsetXBytes = Math.floor((printOffsets.x * 8) / 8);
+                const finalWidthBytes = widthBytes + offsetXBytes;
+                const bitmap: number[] = [];
+
+                for (let y = 0; y < PRINT_HEIGHT; y++) {
+                    // Padding Left (X Offset)
+                    for (let ox = 0; ox < offsetXBytes; ox++) bitmap.push(0);
+
+                    for (let xB = 0; xB < widthBytes; xB++) {
+                        let byte = 0;
+                        for (let bit = 0; bit < 8; bit++) {
+                            const x = xB * 8 + bit;
+                            if (x < PRINT_WIDTH - 4) { // Right side safety margin (4 dots)
+                                const i = (y * PRINT_WIDTH + x) * 4;
+                                let gray = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+                                // Contrast Boost (Dinamik eşikleme ile daha keskin baskı)
+                                if (gray <= 180) byte |= (0x80 >> bit);
+                            }
+                        }
+                        bitmap.push(byte);
+                    }
+                }
+
+                // 4. Yazıcıya Gönder (Adet kadar)
+                const count = labelCount[productId] || 1;
+
+                // Vertical Offset (Y) & Padding
+                const paddingLines = Math.max(30, Math.round(printOffsets.y * 8));
+                for (let p = 0; p < paddingLines * finalWidthBytes; p++) {
+                    bitmap.push(0);
+                }
+                const TOTAL_HEIGHT = PRINT_HEIGHT + paddingLines;
+
+                for (let i = 0; i < count; i++) {
+                    electron.send('print-label-image', {
+                        printerName: targetPrinter,
+                        bitmap,
+                        widthBytes: finalWidthBytes,
+                        heightDots: TOTAL_HEIGHT,
                     });
                 }
-            });
-
-            console.log(`[Raster] Yakalanan: ${rawCanvas.width}×${rawCanvas.height}px`);
-
-            // ── 2. Tam yazıcı boyutuna resize (nearest-neighbor) ──
-            const printCanvas = document.createElement('canvas');
-            printCanvas.width = PRINT_WIDTH;
-            printCanvas.height = PRINT_HEIGHT;
-            const ctx = printCanvas.getContext('2d')!;
-            ctx.imageSmoothingEnabled = false;  // Nearest-neighbor: barkod çizgileri net kalır
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, PRINT_WIDTH, PRINT_HEIGHT);
-            ctx.drawImage(rawCanvas, 0, 0, PRINT_WIDTH, PRINT_HEIGHT);
-
-            // ── 3. Monochrome bitmap'e dönüştür ──
-            const imgData = ctx.getImageData(0, 0, PRINT_WIDTH, PRINT_HEIGHT);
-            const px = imgData.data;
-            const widthBytes = Math.ceil(PRINT_WIDTH / 8);  // 576/8 = 72
-            const bitmap: number[] = [];
-
-            for (let y = 0; y < PRINT_HEIGHT; y++) {
-                for (let xB = 0; xB < widthBytes; xB++) {
-                    let byte = 0;
-                    for (let bit = 0; bit < 8; bit++) {
-                        const x = xB * 8 + bit;
-                        if (x < PRINT_WIDTH) {
-                            const i = (y * PRINT_WIDTH + x) * 4;
-                            // Grayscale
-                            let gray = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
-
-                            // Contrast Boost (Linear 1.5, -30) - Siyahları patlatır
-                            gray = (gray * 1.5) - 30;
-
-                            // Threshold (145) - En ufak tırtıkları da yok eder
-                            if (gray <= 145) byte |= (0x080 >> bit); // 0x80 >> bit corrected internally if needed, wait, I'll use 0x80 >> bit correctly.
-
-                        }
-                    }
-                    bitmap.push(byte);
-                }
             }
 
-            console.log(`[Raster] Bitmap: ${widthBytes}×${PRINT_HEIGHT} = ${bitmap.length} byte`);
-
-            // ── 4. Her seçili ürün için gönder ──
-            // Not: Raster modda aynı resim gönderilir (ön izlemedeki ürün)
-            const previewProd = products.find(p => p.id === selectedProducts[0]);
-            const count = labelCount[selectedProducts[0]] || 1;
-
-            for (let i = 0; i < count; i++) {
-                electron.send('print-label-image', {
-                    printerName: targetPrinter,
-                    bitmap,
-                    widthBytes,
-                    heightDots: PRINT_HEIGHT,
-                });
-            }
-
-            showToast(`${count} etiket gönderildi ✅ (${PRINT_WIDTH}×${PRINT_HEIGHT} raster)`);
-            console.log(`[Raster] ${count}x "${previewProd?.name}" gönderildi`);
-            console.log('[Raster] ═════════════════════════════════════');
-
+            showToast('Tüm etiketler başarıyla gönderildi ✅', 'success');
         } catch (err) {
-            console.error('[Raster] HATA:', err);
-            showToast(`Hata: ${(err as Error).message}`, 'error');
+            console.error('[Print Loop] HATA:', err);
+            showToast(`Yazdırma hatası: ${(err as Error).message}`, 'error');
+        } finally {
+            setActivePrintProduct(null);
+            setIsPrintingProgress(false);
         }
     };
 
@@ -546,7 +608,21 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
     );
     const toggleProduct = (id: string) => setSelectedProducts(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
     const updateCount = (id: string, d: number) => setLabelCount(prev => ({ ...prev, [id]: Math.max(1, (prev[id] || 1) + d) }));
-    const resetEditor = () => { setPositions({}); setCfgOverrides({}); setPrintOffsets({ x: 0, y: 0, scale: 100 }); };
+
+    const resetEditor = () => {
+        const target = allTemplates.find(t => t.id === templateId);
+        setPositions(target?.defaultPos || {});
+        setAlignments(target?.defaultAligns || {});
+        setElemWidths(target?.defaultWidths || {});
+        setFontScales({});
+        setColors({});
+        setFontStyles({});
+        setPrintOffsets({ x: 0, y: 0, scale: 100 });
+        setCustomTexts({});
+        setGlobalBorder(false);
+        setCfgOverrides({});
+        showToast('Tasarım varsayılana sıfırlandı');
+    };
 
     const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const f = e.target.files?.[0]; if (!f) return;
@@ -591,27 +667,27 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div className="bg-slate-900 border border-primary/30 rounded-2xl w-full max-w-sm overflow-hidden flex flex-col shadow-2xl">
                         <div className="p-4 border-b border-white/10 flex justify-between items-center bg-primary/10">
-                            <h3 className="font-bold text-white flex items-center gap-2"><Plus size={18} className="text-primary"/> Yeni Özel Şablon</h3>
-                            <button onClick={() => setShowAddTemplateModal(false)} className="text-white/50 hover:text-white"><X size={20}/></button>
+                            <h3 className="font-bold text-white flex items-center gap-2"><Plus size={18} className="text-primary" /> Yeni Özel Şablon</h3>
+                            <button onClick={() => setShowAddTemplateModal(false)} className="text-white/50 hover:text-white"><X size={20} /></button>
                         </div>
                         <div className="p-5 space-y-4">
                             <div>
                                 <label className="text-xs font-bold text-secondary mb-1 block">Şablon Adı</label>
-                                <input autoFocus type="text" value={newTemp.name} onChange={e => setNewTemp(p=>({...p, name: e.target.value}))} placeholder="Örn: Kasap Etiketi" className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-primary" />
+                                <input autoFocus type="text" value={newTemp.name} onChange={e => setNewTemp(p => ({ ...p, name: e.target.value }))} placeholder="Örn: Kasap Etiketi" className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-primary" />
                             </div>
                             <div className="flex gap-4">
                                 <div className="flex-1">
                                     <label className="text-xs font-bold text-secondary mb-1 block">Genişlik (mm)</label>
-                                    <input type="number" min="10" max="120" value={newTemp.w} onChange={e => setNewTemp(p=>({...p, w: Number(e.target.value)}))} className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-primary" />
+                                    <input type="number" min="10" max="120" value={newTemp.w} onChange={e => setNewTemp(p => ({ ...p, w: Number(e.target.value) }))} className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-primary" />
                                 </div>
                                 <div className="flex-1">
                                     <label className="text-xs font-bold text-secondary mb-1 block">Yükseklik (mm)</label>
-                                    <input type="number" min="10" max="120" value={newTemp.h} onChange={e => setNewTemp(p=>({...p, h: Number(e.target.value)}))} className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-primary" />
+                                    <input type="number" min="10" max="120" value={newTemp.h} onChange={e => setNewTemp(p => ({ ...p, h: Number(e.target.value) }))} className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-primary" />
                                 </div>
                             </div>
-                            <button 
+                            <button
                                 onClick={async () => {
-                                    if(!newTemp.name.trim()) return showToast('Lütfen şablon ismi girin', 'error');
+                                    if (!newTemp.name.trim()) return showToast('Lütfen şablon ismi girin', 'error');
                                     const newId = 'custom_' + Date.now();
                                     const newConfig: LabelConfig = {
                                         id: newId, name: '✏️ ' + newTemp.name, widthMm: newTemp.w || 50, heightMm: newTemp.h || 30,
@@ -622,8 +698,8 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                                     setCustomTemplates(updated);
                                     setTemplateId(newId);
                                     setShowAddTemplateModal(false);
-                                    setNewTemp({name:'', w:50, h:30});
-                                    if(currentTenant) {
+                                    setNewTemp({ name: '', w: 50, h: 30 });
+                                    if (currentTenant) {
                                         await supabase.from('tenants').update({ settings: { ...currentTenant.settings, custom_label_templates_v1: updated } }).eq('id', currentTenant.id);
                                         showToast('Yeni şablon buluta ( Tenant ) eklendi', 'success');
                                     }
@@ -684,14 +760,14 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                                         </div>
                                         {isActive && !isEditing && <Check size={14} className="text-primary flex-shrink-0" />}
                                         {isCustom && (
-                                            <button 
+                                            <button
                                                 onClick={async (e) => {
                                                     e.stopPropagation();
-                                                    if(window.confirm('Bu özel şablonu silmek istediğinize emin misiniz?')) {
+                                                    if (window.confirm('Bu özel şablonu silmek istediğinize emin misiniz?')) {
                                                         const updated = customTemplates.filter(ct => ct.id !== t.id);
                                                         setCustomTemplates(updated);
-                                                        if(isActive) setTemplateId(TEMPLATES[0].id);
-                                                        if(currentTenant) {
+                                                        if (isActive) setTemplateId(TEMPLATES[0].id);
+                                                        if (currentTenant) {
                                                             await supabase.from('tenants').update({ settings: { ...currentTenant.settings, custom_label_templates_v1: updated } }).eq('id', currentTenant.id);
                                                         }
                                                     }
@@ -797,32 +873,39 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                         </div>
 
                         {/* Calibration */}
-                        <div className="mt-4 pt-4 border-t border-white/5 space-y-3">
+                        <div className="mt-4 pt-4 border-t border-white/5 space-y-4">
                             <h4 className="text-[10px] font-black text-amber-500 uppercase flex items-center gap-2">
-                                <RotateCcw size={12} /> Yazıcı Kalibrasyonu (Kayma Varsa)
+                                <RotateCcw size={12} /> Yazıcı Kalibrasyonu (Baskı Kayması)
                             </h4>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="space-y-1">
-                                    <label className="text-[9px] text-secondary font-bold uppercase">X (Sol) Kayma: {printOffsets.x}mm</label>
-                                    <input type="range" min={-10} max={10} step={0.5} value={printOffsets.x}
-                                        onChange={e => setPrintOffsets(p => ({ ...p, x: +e.target.value }))}
-                                        className="w-full accent-amber-500" />
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-[9px] text-secondary font-bold uppercase">Y (Üst) Kayma: {printOffsets.y}mm</label>
-                                    <input type="range" min={-10} max={10} step={0.5} value={printOffsets.y}
-                                        onChange={e => setPrintOffsets(p => ({ ...p, y: +e.target.value }))}
-                                        className="w-full accent-amber-500" />
-                                </div>
-                                <div className="col-span-2 space-y-1 mt-1">
-                                    <div className="flex justify-between items-center">
-                                        <label className="text-[9px] text-amber-400 font-black uppercase">Global Baskı Boyutu (Scale): %{printOffsets.scale || 100}</label>
+                            <div className="space-y-4">
+                                <div className="flex-1">
+                                    <div className="flex justify-between items-center mb-1">
+                                        <label className="text-[9px] text-amber-400 font-black uppercase">Baskı Ölçeği (Scale): %{printOffsets.scale || 100}</label>
                                         <button onClick={() => setPrintOffsets(p => ({ ...p, scale: 100 }))} className="text-[9px] text-secondary hover:text-white underline">Sıfırla</button>
                                     </div>
                                     <input type="range" min={50} max={120} value={printOffsets.scale || 100}
                                         onChange={e => setPrintOffsets(p => ({ ...p, scale: +e.target.value }))}
                                         className="w-full accent-amber-500" />
                                 </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <div className="flex justify-between items-center mb-1">
+                                            <label className="text-[9px] text-primary font-black uppercase">Yatay Ofset (X): {printOffsets.x}mm</label>
+                                        </div>
+                                        <input type="range" min={-20} max={20} step={0.5} value={printOffsets.x || 0}
+                                            onChange={e => setPrintOffsets(p => ({ ...p, x: +e.target.value }))}
+                                            className="w-full accent-primary" />
+                                    </div>
+                                    <div>
+                                        <div className="flex justify-between items-center mb-1">
+                                            <label className="text-[9px] text-primary font-black uppercase">Dikey Ofset (Y): {printOffsets.y}mm</label>
+                                        </div>
+                                        <input type="range" min={-40} max={40} step={0.5} value={printOffsets.y || 0}
+                                            onChange={e => setPrintOffsets(p => ({ ...p, y: +e.target.value }))}
+                                            className="w-full accent-primary" />
+                                    </div>
+                                </div>
+                                <p className="text-[8px] text-secondary/50 text-center uppercase tracking-tighter italic">Etiket kağıda tam oturmuyorsa (kaymışsa) buradan ince ayar yapın</p>
                             </div>
                         </div>
                     </div>
@@ -1027,134 +1110,244 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                                         position: 'relative',
                                         width: cfg.widthMm * PS,
                                         height: cfg.heightMm * PS,
+                                        boxSizing: 'border-box',
+                                        padding: '0',
                                         background: '#fff',
                                         overflow: 'hidden',
                                         flexShrink: 0,
                                         userSelect: 'none',
                                         cursor: dragRef.current ? 'grabbing' : 'default',
+                                        boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
+                                        border: '1px solid #ddd',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
                                     }}
                                     onMouseMove={onMouseMove}
                                     onMouseUp={stopDrag}
                                     onMouseLeave={stopDrag}
                                 >
-                                    {/* ── BORDER RENDERER LAYER ── */}
-                                    <div style={{
-                                        position: 'absolute',
-                                        top: cfg.widthMm >= 80 ? 6 : 0,
-                                        left: cfg.widthMm >= 80 ? 6 : 0,
-                                        right: cfg.widthMm >= 80 ? 45 : 12,
-                                        bottom: cfg.widthMm >= 80 ? 6 : 0,
-                                        border: cfg.isStaticMarket ? '4px solid #111' : (globalBorder ? '3px solid #111' : '1px solid #ddd'),
-                                        boxSizing: 'border-box',
-                                        pointerEvents: 'none',
-                                        zIndex: 999
-                                    }} />
+                                    {templateId === 'raf' ? (
+                                        <div style={{ width: '420px', background: '#fff', color: '#000', padding: '5px 40px 0 0', margin: '0 auto', boxSizing: 'border-box', fontFamily: 'Arial, sans-serif' }}>
+                                            <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', border: '2px solid #000', color: '#000' }}>
+                                                <tbody>
+                                                    {/* Row 1: Name (No-Clip Update) */}
+                                                    <tr>
+                                                        <td colSpan={2} style={{ borderBottom: '2px solid #000', padding: '2px 5px 10px 5px', textAlign: 'center', color: '#000', verticalAlign: 'top' }}>
+                                                            <b style={{
+                                                                fontSize: previewProduct.name.length > 30 ? '12px' : '15px',
+                                                                color: '#000',
+                                                                lineHeight: '1.0',
+                                                                fontWeight: '900',
+                                                                display: 'block',
+                                                                fontFamily: 'Arial Narrow, Arial, sans-serif'
+                                                            }}>
+                                                                {getTxt('name', previewProduct.name)}
+                                                            </b>
+                                                        </td>
+                                                    </tr>
 
-                                    {/* Guides */}
-                                    {showGuides.x && <div style={{ position: 'absolute', left: (cfg.widthMm / 2) * PS, top: 0, bottom: 0, width: 1, background: '#6366f1', zIndex: 0, opacity: 0.5 }} />}
-                                    {showGuides.y && <div style={{ position: 'absolute', top: (cfg.heightMm / 2) * PS, left: 0, right: 0, height: 1, background: '#6366f1', zIndex: 0, opacity: 0.5 }} />}
-                                    {/* Brand */}
-                                    {cfg.showBrand && brandName && (() => {
-                                        const id: ElemId = 'brand';
-                                        const isSel = selectedElem === id;
-                                        const isEdit = editingElem === id;
-                                        const fS = fontScales[id] ?? 1;
-                                        const wPx = getEW(id, cfg.widthMm * PS * 0.45);
-                                        const txt = getTxt(id, brandName);
-                                        const clr = colors[id] || '#1565C0';
-                                        const sty = fontStyles[id] || { b: false, i: false };
-                                        return (
-                                            <div style={{ position: 'absolute', left: getPos(id).xMm * PS, top: getPos(id).yMm * PS, width: wPx, cursor: isEdit ? 'text' : 'grab', outline: isSel ? '2px solid #6366f1' : 'none', outlineOffset: 4, borderRadius: 2, zIndex: isSel || isEdit ? 50 : 10, overflow: 'visible' }}
-                                                onMouseDown={e => { if (isEdit) return; startDrag(e, id); setSelectedElem(id); }}
-                                                onDoubleClick={() => setEditingElem(id)}
-                                            >
-                                                {isEdit ? (
-                                                    <textarea autoFocus rows={2} defaultValue={txt} style={{ fontSize: getFS(id, cfg.brandFontMm), fontWeight: sty.b ? 900 : 'bold', fontStyle: sty.i ? 'italic' : 'normal', color: clr, textTransform: 'uppercase', textAlign: getAlign(id), lineHeight: 1.2, background: 'rgba(255,255,255,0.95)', border: 'none', outline: '1px dashed #6366f1', width: '100%', resize: 'none', fontFamily: 'Arial', padding: 1 }}
-                                                        onBlur={e => { setCustomTexts(p => ({ ...p, [id]: e.target.value })); setEditingElem(null); }}
-                                                        onKeyDown={e => { if (e.key === 'Escape') { setCustomTexts(p => ({ ...p, [id]: e.currentTarget.value })); setEditingElem(null); } }}
-                                                        onClick={e => e.stopPropagation()} />
-                                                ) : (
-                                                    <div style={{ fontSize: getFS(id, cfg.brandFontMm), fontWeight: sty.b ? 900 : 'bold', fontStyle: sty.i ? 'italic' : 'normal', color: clr, textTransform: 'uppercase', lineHeight: 1.2, textAlign: getAlign(id), wordBreak: 'break-word', border: sty.box ? `2px solid ${clr}` : 'none', padding: sty.box ? '0.5mm 1mm' : '0' }}>{txt}</div>
-                                                )}
-                                                {isSel && !isEdit && <>{mkH(id, 'mr', wPx, fS)}{mkH(id, 'bc', wPx, fS)}{mkH(id, 'br', wPx, fS)}</>}
-                                            </div>
-                                        );
-                                    })()}
+                                                    {/* Row 2: Middle Split 40/60 */}
+                                                    <tr>
+                                                        <td style={{ width: '40%', padding: '3px', borderRight: '2px solid #000', verticalAlign: 'top', color: '#000' }}>
+                                                            <div style={{ textAlign: 'left', color: '#000' }}>
+                                                                <canvas id={`bc-prev-${previewProduct.id}`} style={{ width: '100%', maxWidth: '110px', display: 'block', margin: '0 auto', filter: 'brightness(0)' }} />
+                                                                <div style={{ fontSize: '8px', color: '#000', marginTop: '2px', fontWeight: 'bold' }}>
+                                                                    Değ. Tarihi: {new Date().toLocaleDateString('tr-TR')}<br />
+                                                                    Üretim Yeri: TÜRKİYE
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td style={{ width: '60%', padding: '5px', textAlign: 'right', verticalAlign: 'middle', color: '#000' }}>
+                                                            <div style={{ fontSize: '36px', fontWeight: '900', color: '#000', letterSpacing: '-1px', lineHeight: '0.8' }}>
+                                                                {Math.floor(Number(previewProduct.sale_price))}
+                                                                <span style={{ fontSize: '14px', verticalAlign: 'top', color: '#000', marginLeft: '1px' }}>
+                                                                    ,{(Number(previewProduct.sale_price) % 1).toFixed(2).substring(2)}₺
+                                                                </span>
+                                                            </div>
+                                                            <div style={{ fontSize: '7.5px', fontWeight: 'bold', color: '#000', marginTop: '4px' }}>KDV Dahildir</div>
+                                                        </td>
+                                                    </tr>
 
-                                    {/* Name */}
-                                    {cfg.showName && (() => {
-                                        const id: ElemId = 'name';
-                                        const isSel = selectedElem === id;
-                                        const isEdit = editingElem === id;
-                                        const fS = fontScales[id] ?? 1;
-                                        const wPx = getEW(id, cfg.widthMm * PS * 0.6);
-                                        const txt = getTxt(id, previewProduct.name);
-                                        const clr = colors[id] || '#111';
-                                        const sty = fontStyles[id] || { b: false, i: false };
-                                        return (
-                                            <div style={{ position: 'absolute', left: getPos(id).xMm * PS, top: getPos(id).yMm * PS, width: wPx, cursor: isEdit ? 'text' : 'grab', outline: isSel ? '2px solid #6366f1' : 'none', outlineOffset: 4, borderRadius: 2, zIndex: isSel || isEdit ? 50 : 10, overflow: 'visible' }}
-                                                onMouseDown={e => { if (isEdit) return; startDrag(e, id); setSelectedElem(id); }}
-                                                onDoubleClick={() => setEditingElem(id)}
-                                            >
-                                                {isEdit ? (
-                                                    <textarea autoFocus rows={3} defaultValue={txt} style={{ fontSize: getFS(id, cfg.nameFontMm), fontWeight: sty.b ? 900 : 800, fontStyle: sty.i ? 'italic' : 'normal', color: clr, textAlign: getAlign(id), lineHeight: 1.2, background: 'rgba(255,255,255,0.95)', border: 'none', outline: '1px dashed #6366f1', width: '100%', resize: 'none', fontFamily: 'Arial', padding: 1 }}
-                                                        onBlur={e => { setCustomTexts(p => ({ ...p, [id]: e.target.value })); setEditingElem(null); }}
-                                                        onKeyDown={e => { if (e.key === 'Escape') { setCustomTexts(p => ({ ...p, [id]: e.currentTarget.value })); setEditingElem(null); } }}
-                                                        onClick={e => e.stopPropagation()} />
-                                                ) : (
-                                                    <div style={{ fontSize: getFS(id, cfg.nameFontMm), fontWeight: sty.b ? 900 : 800, fontStyle: sty.i ? 'italic' : 'normal', color: clr, lineHeight: 1.2, textAlign: getAlign(id), wordBreak: 'break-word', border: sty.box ? `2px solid ${clr}` : 'none', padding: sty.box ? '0.5mm 1mm' : '0' }}>{txt}</div>
-                                                )}
-                                                {isSel && !isEdit && <>{mkH(id, 'mr', wPx, fS)}{mkH(id, 'bc', wPx, fS)}{mkH(id, 'br', wPx, fS)}</>}
-                                            </div>
-                                        );
-                                    })()}
+                                                    {/* Row 3: Footer Branding */}
+                                                    <tr>
+                                                        <td colSpan={2} style={{ borderTop: '2px solid #000', padding: '3px', color: '#000' }}>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 3px', color: '#000' }}>
+                                                                <div style={{ fontSize: '8px', fontWeight: '900', color: '#000', textAlign: 'left', whiteSpace: 'pre-line', lineHeight: '1' }}>
+                                                                    {getTxt('brand', brandName + "\nET&TAVUK DÜNYASI")}
+                                                                </div>
+                                                                <img
+                                                                    src="https://ticaret.gov.tr/data/5ba20d5913b87610d0a032ca/buyuk/fff9b941b1322366ed66dc5e2188453c.jpg"
+                                                                    width="60"
+                                                                    alt="Yerli Üretim"
+                                                                    style={{ filter: 'grayscale(1) contrast(2)' }}
+                                                                />
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            {/* Frame Renderer */}
+                                            {(globalBorder || templateId === 'raf' || templateId === 'rp80') && (() => {
+                                                const id: ElemId = 'frame';
+                                                const isSel = selectedElem === id;
+                                                const fS = fontScales[id] ?? 1;
+                                                const wPx = getEW(id, cfg.widthMm * PS - 10);
+                                                const hPx = fontScales[id] ? (cfg.heightMm * PS * fS) : (cfg.defaultHeights?.[id] || (cfg.heightMm * PS - 40));
 
-                                    {/* Price */}
-                                    {cfg.showPrice && (() => {
-                                        const id: ElemId = 'price';
-                                        const isSel = selectedElem === id;
-                                        const fS = fontScales[id] ?? 1;
-                                        const wPx = getEW(id, cfg.widthMm * PS * 0.4);
-                                        const clr = colors[id] || '#111';
-                                        const sty = fontStyles[id] || { b: false, i: false };
-                                        return (
-                                            <div style={{ position: 'absolute', left: getPos(id).xMm * PS, top: getPos(id).yMm * PS, cursor: 'grab', outline: isSel ? '2px solid #6366f1' : 'none', outlineOffset: 4, borderRadius: 2, zIndex: isSel ? 50 : 10, transform: `scale(${fS})`, transformOrigin: 'top left', color: clr, fontWeight: sty.b ? 900 : 'normal', fontStyle: sty.i ? 'italic' : 'normal', border: sty.box ? `2px solid ${clr}` : 'none', padding: sty.box ? '1mm' : '0', boxSizing: 'border-box' }}
-                                                onMouseDown={e => { startDrag(e, id); setSelectedElem(id); }}
-                                            >
-                                                <PriceDisplay cfg={cfg} product={previewProduct} scale={PS} />
-                                                {isSel && <>{mkH(id, 'bc', wPx, fS)}</>}
-                                            </div>
-                                        );
-                                    })()}
+                                                return (
+                                                    <div style={{
+                                                        position: 'absolute',
+                                                        left: getPos(id).xMm * PS,
+                                                        top: getPos(id).yMm * PS,
+                                                        width: wPx,
+                                                        height: hPx,
+                                                        border: '3px solid #000',
+                                                        boxSizing: 'border-box',
+                                                        cursor: 'grab',
+                                                        outline: isSel ? '2px solid #6366f1' : 'none',
+                                                        outlineOffset: 4,
+                                                        zIndex: isSel ? 999 : 5,
+                                                        pointerEvents: 'auto'
+                                                    }}
+                                                        onMouseDown={e => { startDrag(e, id); setSelectedElem(id); }}
+                                                    >
+                                                        {isSel && <>{mkH(id, 'mr', wPx, fS)}{mkH(id, 'bc', wPx, fS)}{mkH(id, 'br', wPx, fS)}</>}
+                                                    </div>
+                                                );
+                                            })()}
 
-                                    {/* Barcode */}
-                                    {cfg.showBarcode && previewProduct.barcode && (() => {
-                                        const id: ElemId = 'barcode';
-                                        const isSel = selectedElem === id;
-                                        return (
-                                            <div style={{ position: 'absolute', left: getPos(id).xMm * PS, top: getPos(id).yMm * PS, cursor: 'grab', outline: isSel ? '2px solid #6366f1' : 'none', outlineOffset: 4, borderRadius: 2, zIndex: isSel ? 50 : 10, transform: `scale(${barcodeScale})`, transformOrigin: 'top left', background: '#fff', overflow: 'visible' }}
-                                                onMouseDown={e => { startDrag(e, id); setSelectedElem(id); }}
-                                            >
-                                                <canvas id={`bc-prev-${previewProduct.id}`} style={{ height: 'auto', display: 'block' }} />
-                                            </div>
-                                        );
-                                    })()}
+                                            {/* Guides */}
+                                            {/* Guides */}
+                                            {showGuides.x && <div style={{ position: 'absolute', left: (cfg.widthMm / 2) * PS, top: 0, bottom: 0, width: 1, background: '#6366f1', zIndex: 0, opacity: 0.5 }} />}
+                                            {showGuides.y && <div style={{ position: 'absolute', top: (cfg.heightMm / 2) * PS, left: 0, right: 0, height: 1, background: '#6366f1', zIndex: 0, opacity: 0.5 }} />}
 
-                                    {/* Logo */}
-                                    {cfg.showLogo && logoUrl && (() => {
-                                        const id: ElemId = 'logo';
-                                        const isSel = selectedElem === id;
-                                        const fS = fontScales[id] ?? 1;
-                                        const wPx = getEW(id, cfg.widthMm * PS * 0.15);
-                                        return (
-                                            <div style={{ position: 'absolute', left: getPos(id).xMm * PS, top: getPos(id).yMm * PS, cursor: 'grab', outline: isSel ? '2px solid #6366f1' : 'none', outlineOffset: 4, borderRadius: 2, zIndex: isSel ? 50 : 10 }}
-                                                onMouseDown={e => { startDrag(e, id); setSelectedElem(id); }}
-                                            >
-                                                <img src={logoUrl} style={{ height: (cfg.heightMm * PS * 0.15) * fS, objectFit: 'contain', display: 'block' }} alt="logo" />
-                                                {isSel && <>{mkH(id, 'br', wPx, fS)}</>}
-                                            </div>
-                                        );
-                                    })()}
+                                            {/* Logo / Birim Fiyat Kutusu */}
+                                            {cfg.showLogo && (() => {
+                                                const id: ElemId = 'logo';
+                                                const isSel = selectedElem === id;
+                                                const isRaf = templateId === 'raf';
+                                                if (isRaf) {
+                                                    const txt = getTxt(id, "BİRİM FİYAT\n181.00 TL/KG");
+                                                    return (
+                                                        <div style={{ position: 'absolute', left: getPos(id).xMm * PS, top: getPos(id).yMm * PS, width: getEW(id, 120), cursor: (isRaf ? 'default' : 'grab'), outline: isSel ? '2px solid #6366f1' : 'none', outlineOffset: 4, zIndex: isSel ? 50 : 10, boxSizing: 'border-box' }}
+                                                            onMouseDown={e => { if (isRaf) return; startDrag(e, id); setSelectedElem(id); }}
+                                                        >
+                                                            <div style={{ fontSize: 8, fontWeight: 900, color: '#000', textAlign: 'left', lineHeight: 1.0, border: '1px solid #000', padding: '1px 4px', boxSizing: 'border-box' }}>
+                                                                {txt.split('\n').map((line, i) => <div key={i} style={{ fontSize: i === 0 ? 6.5 : 7, letterSpacing: -0.2 }}>{line}</div>)}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }
+                                                return (
+                                                    <div style={{ position: 'absolute', left: getPos(id).xMm * PS, top: getPos(id).yMm * PS, width: 28 * PS, height: 16 * PS, cursor: 'grab', outline: isSel ? '2px solid #6366f1' : 'none', outlineOffset: 4, zIndex: isSel ? 50 : 10 }}
+                                                        onMouseDown={e => { startDrag(e, id); setSelectedElem(id); }}
+                                                    >
+                                                        <img src={customLogo || "/logo.png"} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                                                        {isSel && <>{mkH(id, 'mr', 28 * PS, 1)}</>}
+                                                    </div>
+                                                );
+                                            })()}
+
+                                            {/* Brand (Raf şablonunda Mağaza Adı Box olarak kullanacağız) */}
+                                            {cfg.showBrand && (() => {
+                                                const id: ElemId = 'brand';
+                                                const isSel = selectedElem === id;
+                                                const isEdit = editingElem === id;
+                                                const isRaf = templateId === 'raf';
+                                                const txt = getTxt(id, isRaf ? brandName + "\nET&TAVUK DÜNYASI" : brandName);
+                                                const clr = colors[id] || '#000';
+                                                const sty = fontStyles[id] || { b: false, i: false };
+                                                return (
+                                                    <div style={{ position: 'absolute', left: getPos(id).xMm * PS, top: getPos(id).yMm * PS, width: getEW(id, isRaf ? 232 : 140), cursor: isEdit ? 'text' : 'grab', outline: isSel ? '2px solid #6366f1' : 'none', outlineOffset: 4, zIndex: isSel || isEdit ? 50 : 10 }}
+                                                        onMouseDown={e => { if (isEdit) return; startDrag(e, id); setSelectedElem(id); }}
+                                                        onDoubleClick={() => setEditingElem(id)}
+                                                    >
+                                                        <div style={{
+                                                            fontSize: getFS(id, cfg.brandFontMm),
+                                                            fontWeight: 900,
+                                                            color: clr,
+                                                            whiteSpace: 'pre-line',
+                                                            lineHeight: 1.1,
+                                                            textAlign: 'center',
+                                                            fontFamily: 'Arial, sans-serif',
+                                                            border: isRaf || sty.box ? `1.5px solid ${clr}` : 'none',
+                                                            padding: '2px'
+                                                        }}>{txt}</div>
+                                                    </div>
+                                                );
+                                            })()}
+
+                                            {/* Name */}
+                                            {cfg.showName && (() => {
+                                                const id: ElemId = 'name';
+                                                const isSel = selectedElem === id;
+                                                const isEdit = editingElem === id;
+                                                const isRaf = templateId === 'raf';
+                                                const fS = fontScales[id] ?? 1;
+                                                const wPx = getEW(id, cfg.widthMm * PS * 0.8);
+                                                const txt = getTxt(id, previewProduct.name);
+                                                const clr = colors[id] || '#111';
+                                                const sty = fontStyles[id] || { b: false, i: false };
+
+                                                let baseFS = getFS(id, cfg.nameFontMm);
+                                                if (txt.length > 50) { baseFS *= 0.75; }
+                                                else if (txt.length > 30) { baseFS *= 0.88; }
+
+                                                return (
+                                                    <div style={{ position: 'absolute', left: getPos(id).xMm * PS, top: getPos(id).yMm * PS, width: wPx, cursor: isEdit ? 'text' : 'grab', outline: isSel ? '2px solid #6366f1' : 'none', outlineOffset: 4, borderRadius: 2, zIndex: isSel || isEdit ? 50 : 10, overflow: 'hidden' }}
+                                                        onMouseDown={e => { if (isEdit) return; startDrag(e, id); setSelectedElem(id); }}
+                                                        onDoubleClick={() => setEditingElem(id)}
+                                                    >
+                                                        {isEdit ? (
+                                                            <textarea autoFocus rows={3} defaultValue={txt} style={{ fontSize: baseFS, fontWeight: 900, color: clr, textAlign: getAlign(id), lineHeight: 1.2, background: 'rgba(255,255,255,0.95)', border: 'none', width: '100%', resize: 'none', fontFamily: 'Arial, sans-serif', padding: 2 }}
+                                                                onBlur={e => { setCustomTexts(p => ({ ...p, [id]: e.target.value })); setEditingElem(null); }}
+                                                                onKeyDown={e => { if (e.key === 'Escape') { setCustomTexts(p => ({ ...p, [id]: e.currentTarget.value })); setEditingElem(null); } }}
+                                                                onClick={e => e.stopPropagation()} />
+                                                        ) : (
+                                                            <div style={{ fontSize: baseFS, fontWeight: 900, color: clr, lineHeight: 1.1, textAlign: getAlign(id), wordBreak: 'break-word', border: isRaf || sty.box ? `1.5px solid ${clr}` : 'none', padding: 2, fontFamily: 'Arial, sans-serif', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{txt}</div>
+                                                        )}
+                                                        {isSel && !isEdit && <>{mkH(id, 'mr', wPx, fS)}</>}
+                                                    </div>
+                                                );
+                                            })()}
+
+                                            {/* Price */}
+                                            {cfg.showPrice && (() => {
+                                                const id: ElemId = 'price';
+                                                const isSel = selectedElem === id;
+                                                const isRaf = templateId === 'raf';
+                                                const fS = fontScales[id] ?? 1;
+                                                const wPx = getEW(id, isRaf ? 75 : 120);
+                                                return (
+                                                    <div style={{ position: 'absolute', left: getPos(id).xMm * PS, top: getPos(id).yMm * PS, width: wPx, cursor: 'grab', outline: isSel ? '2px solid #6366f1' : 'none', outlineOffset: 4, zIndex: isSel ? 50 : 10, transform: `scale(${fS})`, transformOrigin: 'top left', overflow: 'hidden' }}
+                                                        onMouseDown={e => { startDrag(e, id); setSelectedElem(id); }}
+                                                    >
+                                                        <PriceDisplay cfg={cfg} product={previewProduct} scale={PS} />
+                                                        {isSel && <>{mkH(id, 'mr', wPx, fS)}</>}
+                                                    </div>
+                                                );
+                                            })()}
+
+                                            {/* Barcode */}
+                                            {cfg.showBarcode && previewProduct.barcode && (() => {
+                                                const id: ElemId = 'barcode';
+                                                const isSel = selectedElem === id;
+                                                return (
+                                                    <div style={{ position: 'absolute', left: getPos(id).xMm * PS, top: getPos(id).yMm * PS, width: getEW(id, 85), cursor: 'grab', outline: isSel ? '2px solid #6366f1' : 'none', outlineOffset: 4, zIndex: isSel ? 50 : 10, transform: `scale(${barcodeScale})`, transformOrigin: 'top left', background: '#fff', overflow: 'hidden' }}
+                                                        onMouseDown={e => { startDrag(e, id); setSelectedElem(id); }}
+                                                    >
+                                                        <canvas id={`bc-prev-${previewProduct.id}`} style={{ height: 'auto', display: 'block', maxWidth: '100%' }} />
+                                                        {templateId === 'raf' && <div style={{ fontSize: 7, fontWeight: 900, marginTop: -4, textAlign: 'left' }}>Değ. Tarihi: {new Date().toLocaleDateString('tr-TR')}</div>}
+                                                        {isSel && <>{mkH(id, 'mr', getEW(id, 85), 10)}</>}
+                                                    </div>
+                                                );
+                                            })()}
+                                        </>
+                                    )}
                                 </div>
                             </div>
 
@@ -1163,6 +1356,23 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                                 <p>Şablon: <strong className="text-primary">{cfg.widthMm}×{cfg.heightMm}mm</strong></p>
                                 <p>Toplam: <strong className="text-emerald-400">{selectedProducts.reduce((s, id) => s + (labelCount[id] || 1), 0)} etiket</strong></p>
                             </div>
+
+                            {/* ── Printing Overlay ── */}
+                            {isPrintingProgress && (
+                                <div className="absolute inset-0 bg-black/80 backdrop-blur-md z-[100] flex flex-col items-center justify-center p-6 text-center rounded-xl">
+                                    <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+                                    <h4 className="text-xl font-black text-white uppercase tracking-widest animate-pulse">
+                                        Yazdırılıyor...
+                                    </h4>
+                                    <p className="text-secondary text-sm mt-2">
+                                        {activePrintProduct?.name} hazırlanıyor.<br />
+                                        Lütfen tarayıcıyı/pencereyi kapatmayın.
+                                    </p>
+                                    <div className="mt-6 w-full max-w-[200px] h-1 bg-white/10 rounded-full overflow-hidden">
+                                        <div className="h-full bg-primary animate-progress" />
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
