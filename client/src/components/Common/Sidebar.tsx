@@ -64,6 +64,9 @@ import {
     Monitor,
     Globe,
     ExternalLink,
+    Image as ImageIcon,
+    Coins,
+    QrCode as QrCodeIcon,
     type LucideIcon
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -140,12 +143,12 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
         },
         {
             id: "sales",
-            label: "Satış & POS",
+            label: "JetKasa",
             icon: ShoppingCart,
             items: [
-                { id: "pos", label: "JetKasa", icon: ShoppingCart, feature: "pos", description: "Hızlı nakit veya kartlı satış işlemlerini gerçekleştirebileceğiniz satış ekranı." },
+                { id: "pos", label: "Hızlı Satış", icon: ShoppingCart, feature: "pos", description: "Hızlı nakit veya kartlı satış işlemlerini gerçekleştirebileceğiniz satış ekranı." },
                 { id: "history", label: "Satış Geçmişi", icon: History, feature: "sales_history", description: "Geçmişte yapılan tüm satışların detaylı dökümü ve yönetimi." },
-                { id: "invoice", label: "E-Fatura", icon: FileText, feature: "invoice", description: "E-Fatura gönderimi ve takibi için entegrasyon ekranı." },
+                { id: "invoice", label: "Fatura İşlemleri", icon: FileText, feature: "invoice", description: "Elektronik fatura gönderimi ve takibi için entegrasyon ekranı." },
             ]
         },
         {
@@ -176,7 +179,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
         },
         {
             id: "products",
-            label: "Ürün Yönetimi",
+            label: "Jetstok",
             icon: Package,
             items: [
                 { id: "products", label: "Ürün Listesi", icon: Boxes, feature: "products", description: "Stoktaki ürünlerin listelenmesi, yeni ürün ekleme ve düzenleme işlemleri." },
@@ -415,6 +418,9 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
             icon: Layers,
             items: [
                 { id: "label_designer", label: "Ürün Etiketleri", icon: Tags, feature: "label_designer", description: "Barkodlu fiyat etiketleri tasarla ve yazdır." },
+                { id: "universal_converter", label: "Akıllı Dönüştürücü", icon: ImageIcon, feature: null, description: "Görsel, PDF ve Word dosyalarınız için hepsi bir arada dönüşüm aracı." },
+                { id: "qr_generator", label: "QR Kod Oluşturucu", icon: QrCodeIcon, feature: null, description: "WiFi, URL veya metinler için şık QR kodlar tasarlayın." },
+                { id: "currency_converter", label: "Döviz Çevirici", icon: Coins, feature: null, description: "Canlı kurlarla anlık döviz çeviri işlemleri yapın." },
                 { id: "receipt_designer", label: "Fiş Düzenleyicisi", icon: Receipt, feature: null, description: "Bilgi fişlerinizi özelleştirin: logo, mağaza adı, alt başlık, vergi bilgileri." },
             ]
         },

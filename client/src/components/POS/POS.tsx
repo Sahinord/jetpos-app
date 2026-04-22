@@ -509,10 +509,10 @@ export default function POS({
     return (
         <div className="flex flex-col h-[calc(100vh-10px)] gap-2 select-none">
             {/* Premium Top Info Bar */}
-            <div className="flex items-center justify-between p-2.5 bg-[#020617] backdrop-blur-3xl border-b border-white/5 mt-1 rounded-2xl mx-1 shadow-2xl">
+            <div className={`flex items-center justify-between p-2.5 ${theme === 'light' ? 'bg-slate-200/50' : 'bg-[#020617]'} backdrop-blur-3xl border-b border-white/5 mt-1 rounded-2xl mx-1 shadow-2xl`}>
                 {/* 1. Status & Terminal Section */}
                 <div className="flex items-center gap-2">
-                    <div className="flex items-center h-12 px-4 bg-slate-900/50 border border-white/5 rounded-xl shadow-inner">
+                    <div className={`flex items-center h-12 px-4 ${theme === 'light' ? 'bg-white' : 'bg-slate-900/50'} border border-white/5 rounded-xl shadow-inner`}>
                         <div className="relative mr-3 flex items-center justify-center">
                             <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
                             <div className="absolute inset-0 w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping opacity-30" />
@@ -523,17 +523,17 @@ export default function POS({
                         </div>
                     </div>
 
-                    <div className="flex items-center h-12 px-4 bg-slate-900/50 border border-white/5 rounded-xl shadow-inner">
+                    <div className={`flex items-center h-12 px-4 ${theme === 'light' ? 'bg-white' : 'bg-slate-900/50'} border border-white/5 rounded-xl shadow-inner`}>
                         <Monitor size={16} className="text-primary mr-3" />
                         <div className="flex flex-col leading-none">
                             <span className="text-[8px] font-black text-slate-500 tracking-[1.5px] uppercase mb-0.5">TERMİNAL</span>
-                            <span className="text-[11px] font-black text-slate-200 uppercase">T-01</span>
+                            <span className={`text-[11px] font-black ${theme === 'light' ? 'text-slate-800' : 'text-slate-200'} uppercase`}>T-01</span>
                         </div>
                     </div>
                 </div>
 
                 {/* 2. Management Section - Ledger & Reports */}
-                <div className="flex items-center gap-1 h-12 px-3 bg-slate-900/50 border border-white/5 rounded-xl shadow-inner">
+                <div className={`flex items-center gap-1 h-12 px-3 ${theme === 'light' ? 'bg-white' : 'bg-slate-900/50'} border border-white/5 rounded-xl shadow-inner`}>
                     <button
                         onClick={() => setActiveTab("cari_hesaplar")}
                         className="flex items-center gap-2 px-3 py-1.5 hover:bg-white/5 rounded-lg transition-all group"
@@ -552,7 +552,7 @@ export default function POS({
                 </div>
 
                 {/* 3. Terminal Settings & Price Mode */}
-                <div className="flex items-center gap-6 h-12 px-6 bg-slate-900/50 border border-white/5 rounded-xl shadow-inner">
+                <div className={`flex items-center gap-6 h-12 px-6 ${theme === 'light' ? 'bg-white' : 'bg-slate-900/50'} border border-white/5 rounded-xl shadow-inner`}>
                     <div className="flex flex-col leading-none">
                         <span className="text-[8px] font-black text-slate-500 tracking-[1.5px] uppercase mb-1">ŞUBE</span>
                         <div className="flex items-center gap-2">
@@ -588,13 +588,13 @@ export default function POS({
 
                 {/* 4. Personnel & Time Section */}
                 <div className="flex items-center gap-2">
-                    <div className="flex items-center h-12 px-4 bg-slate-900/50 border border-white/5 rounded-xl shadow-inner">
+                    <div className={`flex items-center h-12 px-4 ${theme === 'light' ? 'bg-white' : 'bg-slate-900/50'} border border-white/5 rounded-xl shadow-inner`}>
                         <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center mr-3">
                             <User size={16} className="text-primary" />
                         </div>
                         <div className="flex flex-col leading-none mr-4">
                             <span className="text-[8px] font-black text-slate-500 tracking-[1.5px] uppercase mb-0.5">OPERATÖR</span>
-                            <span className="text-[11px] font-black text-white uppercase">{activeEmployee ? activeEmployee.first_name : 'ADMİN'}</span>
+                            <span className={`text-[11px] font-black ${theme === 'light' ? 'text-slate-800' : 'text-white'} uppercase`}>{activeEmployee ? activeEmployee.first_name : 'ADMİN'}</span>
                         </div>
                         <button
                             onClick={() => setActiveTab("settings")}
@@ -787,7 +787,7 @@ export default function POS({
                 <div className="flex-1 flex flex-row gap-4 overflow-hidden items-stretch h-full">
                     <div className="flex-1 flex flex-col gap-4 overflow-hidden min-h-0">
                         {/* Categories & Search - Enhanced */}
-                        <div className="flex gap-4">
+                <div className="flex gap-4">
                             {/* Search Bar with Glow Effect */}
                             <div className="relative w-full max-w-[570px] group">
                                 <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/5 rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300" />
@@ -795,21 +795,26 @@ export default function POS({
                                 <input
                                     type="text"
                                     placeholder="Ürün ara veya barkod okut..."
-                                    className="relative w-full bg-card/50 border border-border/60 focus:border-primary/40 rounded-xl py-4 pl-12 pr-12 outline-none font-medium placeholder:text-secondary/40 transition-all focus:shadow-lg focus:shadow-primary/5 backdrop-blur-sm"
+                                    className={`relative w-full ${theme === 'light' ? 'bg-white border-primary/20 text-slate-900' : 'bg-card/50 border-border/60 text-white'} border rounded-xl py-4 pl-12 pr-12 outline-none font-medium placeholder:text-secondary/40 transition-all focus:shadow-lg focus:shadow-primary/5 backdrop-blur-sm`}
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     autoFocus
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && search.trim() !== "") {
+                                            const p = barcodeMap.get(search.toLowerCase());
+                                            if (p) {
+                                                addToCart(p);
+                                                setSearch("");
+                                            }
+                                        }
+                                    }}
                                 />
-                                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                                    {search && (
-                                        <button
-                                            onClick={() => setSearch("")}
-                                            className="p-1.5 hover:bg-white/10 rounded-lg transition-all"
-                                        >
-                                            <X size={18} className="text-secondary hover:text-rose-500" />
-                                        </button>
-                                    )}
-                                </div>
+                                {isPriceCheckMode && (
+                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                                        <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+                                        <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest">FİYAT GÖR</span>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -917,19 +922,19 @@ export default function POS({
                                     group relative overflow-hidden flex items-center justify-between p-3 rounded-xl border transition-all duration-300
                                     ${selectedCari 
                                         ? 'bg-amber-500/10 border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.05)]' 
-                                        : 'bg-slate-900/40 border-white/5 hover:border-white/10'
+                                        : theme === 'light' ? 'bg-white border-primary/20 shadow-sm' : 'bg-slate-900/40 border-white/5 hover:border-white/10'
                                     }
                                 `}>
                                     <div className="flex items-center gap-3">
                                         <div className={`
                                             w-8 h-8 rounded-lg flex items-center justify-center transition-colors
-                                            ${selectedCari ? 'bg-amber-500 text-black' : 'bg-slate-800 text-slate-500'}
+                                            ${selectedCari ? 'bg-amber-500 text-black' : theme === 'light' ? 'bg-primary/10 text-primary' : 'bg-slate-800 text-slate-500'}
                                         `}>
                                             <User size={16} className={selectedCari ? 'animate-pulse' : ''} />
                                         </div>
                                         <div className="flex flex-col">
                                             <span className="text-[8px] font-black text-slate-500 tracking-[0.1em] uppercase">MÜŞTERİ</span>
-                                            <span className={`text-[11px] font-black uppercase truncate max-w-[180px] ${selectedCari ? 'text-amber-500' : 'text-slate-400'}`}>
+                                            <span className={`text-[11px] font-black uppercase truncate max-w-[180px] ${selectedCari ? 'text-amber-500' : theme === 'light' ? 'text-slate-800' : 'text-slate-400'}`}>
                                                 {selectedCari ? selectedCari.unvani : 'PERAKENDE MÜŞTERİ'}
                                             </span>
                                         </div>
@@ -949,23 +954,23 @@ export default function POS({
 
                             {/* Secondary Actions (8 Butonlu Tam Panel) */}
                             <div className="grid grid-cols-4 gap-2">
-                                <button onClick={() => { setActiveInput(activeInput === "quantity" ? "discount" : "quantity"); }} className={`relative aspect-square rounded-xl flex flex-col items-center justify-center transition-all border ${activeInput === "discount" ? 'bg-primary text-white border-primary shadow-md' : 'bg-primary/5 border-border text-primary hover:bg-primary/10'}`} title="Mod Değiştir">
+                                <button onClick={() => { setActiveInput(activeInput === "quantity" ? "discount" : "quantity"); }} className={`relative aspect-square rounded-xl flex flex-col items-center justify-center transition-all border ${activeInput === "discount" ? 'bg-primary text-white border-primary shadow-md' : theme === 'light' ? 'bg-white border-primary/20 text-primary hover:bg-primary/5' : 'bg-primary/5 border-border text-primary hover:bg-primary/10'}`} title="Mod Değiştir">
                                     <BadgePercent size={10} className="absolute top-1.5 left-1.5 opacity-40" />
                                     <span className="text-[9px] font-black uppercase tracking-tighter text-center leading-tight">MOD<br/>DEĞİŞ</span>
                                 </button>
-                                <button onClick={() => { setIsPriceCheckMode(!isPriceCheckMode); }} className={`relative aspect-square rounded-xl flex flex-col items-center justify-center transition-all border ${isPriceCheckMode ? 'bg-primary text-white border-primary' : 'bg-primary/5 border-border text-secondary hover:bg-primary/10'}`} title="Fiyat Gör">
+                                <button onClick={() => { setIsPriceCheckMode(!isPriceCheckMode); }} className={`relative aspect-square rounded-xl flex flex-col items-center justify-center transition-all border ${isPriceCheckMode ? 'bg-primary text-white border-primary' : theme === 'light' ? 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50' : 'bg-primary/5 border-border text-secondary hover:bg-primary/10'}`} title="Fiyat Gör">
                                     <Search size={10} className="absolute top-1.5 left-1.5 opacity-40" />
                                     <span className="text-[9px] font-black uppercase tracking-tighter text-center leading-tight">FİYAT<br/>GÖR</span>
                                 </button>
-                                <button onClick={() => setIsScannerOpen(true)} className="relative aspect-square rounded-xl bg-primary/5 border border-border text-primary flex flex-col items-center justify-center hover:bg-primary/10 transition-all shadow-sm" title="Barkod Tara">
+                                <button onClick={() => setIsScannerOpen(true)} className={`relative aspect-square rounded-xl ${theme === 'light' ? 'bg-white border-primary/20 text-primary hover:bg-primary/5' : 'bg-primary/5 border-border text-primary hover:bg-primary/10'} border flex flex-col items-center justify-center transition-all shadow-sm`} title="Barkod Tara">
                                     <Camera size={10} className="absolute top-1.5 left-1.5 opacity-40" />
                                     <span className="text-[9px] font-black uppercase tracking-tighter text-center leading-tight">BARKOD<br/>TARA</span>
                                 </button>
-                                <button onClick={() => setCart(cart.slice(0, -1))} className="relative aspect-square rounded-xl bg-primary/5 border border-border text-rose-500 flex flex-col items-center justify-center hover:bg-rose-500/10 transition-all shadow-sm" title="Son Satırı Sil">
+                                <button onClick={() => setCart(cart.slice(0, -1))} className={`relative aspect-square rounded-xl ${theme === 'light' ? 'bg-white border-rose-200 text-rose-500 hover:bg-rose-50' : 'bg-primary/5 border-border text-rose-500 hover:bg-rose-500/10'} border flex flex-col items-center justify-center transition-all shadow-sm`} title="Son Satırı Sil">
                                     <Delete size={10} className="absolute top-1.5 left-1.5 opacity-40" />
                                     <span className="text-[9px] font-black uppercase tracking-tighter text-center leading-tight">ÜRÜN<br/>SİL</span>
                                 </button>
-                                <button onClick={() => setCart([])} className="relative aspect-square rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 flex flex-col items-center justify-center hover:bg-rose-500/20 transition-all shadow-sm" title="Satışı İptal Et">
+                                <button onClick={() => setCart([])} className={`relative aspect-square rounded-xl ${theme === 'light' ? 'bg-rose-50 border-rose-200 text-rose-600 hover:bg-rose-100' : 'bg-rose-500/10 border-rose-500/20 text-rose-500 hover:bg-rose-500/20'} border flex flex-col items-center justify-center transition-all shadow-sm`} title="Satışı İptal Et">
                                     <X size={10} className="absolute top-1.5 left-1.5 opacity-40" />
                                     <span className="text-[9px] font-black uppercase tracking-tighter text-center leading-tight">SATIŞ<br/>İPTAL</span>
                                 </button>
@@ -976,7 +981,7 @@ export default function POS({
                                             showToast("Son satıştaki ürünler sepete geri yüklendi", "success");
                                         }
                                     }}
-                                    className={`relative aspect-square rounded-xl flex flex-col items-center justify-center transition-all border ${lastTransaction ? 'bg-amber-500/10 border-amber-500/30 text-amber-500 hover:bg-amber-500/20 shadow-sm' : 'bg-primary/5 border-border text-secondary/20 cursor-not-allowed'}`}
+                                    className={`relative aspect-square rounded-xl flex flex-col items-center justify-center transition-all border ${lastTransaction ? (theme === 'light' ? 'bg-amber-50 border-amber-200 text-amber-600 hover:bg-amber-100 shadow-sm' : 'bg-amber-500/10 border-amber-500/30 text-amber-500 hover:bg-amber-500/20 shadow-sm') : (theme === 'light' ? 'bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed' : 'bg-primary/5 border-border text-secondary/20 cursor-not-allowed')}`}
                                     title="Son Fişi Sepete Geri Yükle"
                                     disabled={!lastTransaction}
                                 >
@@ -985,15 +990,15 @@ export default function POS({
                                 </button>
                                 <button
                                     onClick={handleOpenCashDrawerManual}
-                                    className="relative aspect-square rounded-xl bg-amber-500/20 border-2 border-amber-400/50 text-amber-400 flex flex-col items-center justify-center hover:bg-amber-500/30 transition-all shadow-[0_0_15px_rgba(245,158,11,0.1)] active:scale-95"
+                                    className={`relative aspect-square rounded-xl ${theme === 'light' ? 'bg-amber-50 border-amber-300 text-amber-600 hover:bg-amber-100' : 'bg-amber-500/20 border-2 border-amber-400/50 text-amber-400 hover:bg-amber-500/30'} border flex flex-col items-center justify-center transition-all shadow-sm active:scale-95`}
                                     title="Kasa Aç"
                                 >
                                     <Wallet size={10} className="absolute top-1.5 left-1.5 opacity-60" />
-                                    <span className="text-[9px] font-black uppercase tracking-tighter text-center leading-tight text-amber-400">KASA<br/>AÇ</span>
+                                    <span className={`text-[9px] font-black uppercase tracking-tighter text-center leading-tight ${theme === 'light' ? 'text-amber-600' : 'text-amber-400'}`}>KASA<br/>AÇ</span>
                                 </button>
                                 <button
                                     onClick={() => setIsCariModalOpen(true)}
-                                    className="relative aspect-square rounded-xl bg-primary/5 border border-primary/20 text-primary flex flex-col items-center justify-center hover:bg-primary/10 transition-all shadow-sm active:scale-95"
+                                    className={`relative aspect-square rounded-xl ${theme === 'light' ? 'bg-white border-primary/20 text-primary hover:bg-primary/5' : 'bg-primary/5 border border-primary/20 text-primary hover:bg-primary/10'} border flex flex-col items-center justify-center transition-all shadow-sm active:scale-95`}
                                     title="Müşteri Seç"
                                 >
                                     <Users size={10} className="absolute top-1.5 left-1.5 opacity-40" />
@@ -1027,7 +1032,7 @@ export default function POS({
                             </div>
 
                             {/* Premium Numpad Design */}
-                            <div className="grid grid-cols-4 gap-2.5 bg-[#020617]/40 p-3 rounded-2xl border border-white/5 backdrop-blur-md shadow-2xl">
+                            <div className={`grid grid-cols-4 gap-2.5 ${theme === 'light' ? 'bg-slate-200/50' : 'bg-[#020617]/40'} p-3 rounded-2xl border ${theme === 'light' ? 'border-primary/10' : 'border-white/5'} backdrop-blur-md shadow-2xl`}>
                                 <div className="col-span-3 grid grid-cols-3 gap-2">
                                     {[7, 8, 9, 4, 5, 6, 1, 2, 3, 0, '.', 'C'].map((num, i) => {
                                         const isClear = num === 'C';
@@ -1042,8 +1047,8 @@ export default function POS({
                                                 }}
                                                 className={`w-full aspect-square rounded-xl flex items-center justify-center text-xl font-black transition-all active:scale-90 border shadow-sm
                                                     ${isClear ? 'bg-rose-500/10 border-rose-500/20 text-rose-500 hover:bg-rose-500/20' : 
-                                                      isDot ? 'bg-slate-800/40 border-white/5 text-secondary hover:bg-slate-800/60' :
-                                                      'bg-slate-900/60 border-white/5 text-white hover:bg-primary/20 hover:border-primary/30 hover:text-primary shadow-inner'}`}
+                                                      isDot ? (theme === 'light' ? 'bg-white border-primary/10 text-slate-600 hover:bg-slate-50' : 'bg-slate-800/40 border-white/5 text-secondary hover:bg-slate-800/60') :
+                                                      (theme === 'light' ? 'bg-white border-primary/20 text-slate-900 hover:bg-primary/5 shadow-inner' : 'bg-slate-900/60 border-white/5 text-white hover:bg-primary/20 hover:border-primary/30 hover:text-primary shadow-inner')}`}
                                             >
                                                 {num}
                                             </button>
@@ -1051,7 +1056,7 @@ export default function POS({
                                     })}
                                 </div>
                                 <div className="grid grid-rows-3 gap-2">
-                                    <button onClick={() => setNumpadValue(prev => prev.slice(0, -1))} className="row-span-1 w-full rounded-xl bg-slate-800/40 border border-white/5 text-secondary flex items-center justify-center hover:bg-slate-800/60 transition-all active:scale-90 shadow-inner">
+                                    <button onClick={() => setNumpadValue(prev => prev.slice(0, -1))} className={`row-span-1 w-full rounded-xl ${theme === 'light' ? 'bg-white border-primary/20 text-slate-600 hover:bg-slate-50' : 'bg-slate-800/40 border-white/5 text-secondary hover:bg-slate-800/60'} flex items-center justify-center transition-all active:scale-90 border shadow-inner`}>
                                         <Delete size={20} />
                                     </button>
                                     <button onClick={applyNumpadAction} className="row-span-2 w-full rounded-2xl bg-gradient-to-br from-primary to-blue-600 text-white flex items-center justify-center hover:shadow-[0_0_20px_rgba(59,130,246,0.4)] hover:scale-[1.02] active:scale-95 transition-all outline-none border border-white/10">
@@ -1099,7 +1104,6 @@ export default function POS({
                                 </button>
                             </div>
                         </div>
-                    </div>
                 </div>
             </div>
 
@@ -1489,5 +1493,6 @@ export default function POS({
                 )}
             </AnimatePresence>
         </div>
+    </div>
     );
 }

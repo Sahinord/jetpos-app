@@ -5,11 +5,11 @@ import Image from "next/image";
 import { FileText, ShoppingCart, Package, CreditCard, BarChart3, User, Zap } from "lucide-react";
 
 const leftItems = [
-    { label: "E-Fatura", icon: FileText },
+    { label: "JetMuhasebe", icon: FileText },
     { label: "JetKasa", icon: ShoppingCart },
-    { label: "Stok Takibi", icon: Package },
-    { label: "Kasa Takibi", icon: CreditCard },
-    { label: "Raporlama", icon: BarChart3 },
+    { label: "JetStok", icon: Package },
+    { label: "JetAsistan", icon: CreditCard },
+    { label: "JetRapor", icon: BarChart3 },
 ];
 
 const W = 860;
@@ -76,7 +76,7 @@ export default function ConnectionAnimation() {
                                     <feMergeNode in="SourceGraphic" />
                                 </feMerge>
                             </filter>
-                            
+
                             <radialGradient id="ca-logo-glow" cx="50%" cy="50%" r="50%">
                                 <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.4" />
                                 <stop offset="70%" stopColor="#3b82f6" stopOpacity="0.1" />
@@ -237,34 +237,34 @@ export default function ConnectionAnimation() {
                         <g className="ca-logo-group">
                             {/* Outer Glow Ring */}
                             <circle cx={CX} cy={CY} r={LOGO_R + 12} fill="url(#ca-logo-glow)" />
-                            
+
                             {/* Rotating Orbit Ring */}
-                            <circle 
-                                cx={CX} cy={CY} r={LOGO_R + 4} 
-                                fill="none" 
-                                stroke="#3b82f6" 
-                                strokeWidth="1" 
-                                strokeDasharray="10 20" 
+                            <circle
+                                cx={CX} cy={CY} r={LOGO_R + 4}
+                                fill="none"
+                                stroke="#3b82f6"
+                                strokeWidth="1"
+                                strokeDasharray="10 20"
                                 opacity="0.3"
-                                style={{ transformOrigin: "center", animation: "spin 12s linear infinite" }} 
+                                style={{ transformOrigin: "center", animation: "spin 12s linear infinite" }}
                             />
 
                             {/* Main Circle Body (The border ring) */}
-                            <circle 
-                                cx={CX} cy={CY} r={LOGO_R} 
-                                fill="#040816" 
-                                stroke="rgba(59,130,246,0.5)" 
-                                strokeWidth="2" 
-                                filter="url(#ca-glow-v2)" 
+                            <circle
+                                cx={CX} cy={CY} r={LOGO_R}
+                                fill="#040816"
+                                stroke="rgba(59,130,246,0.5)"
+                                strokeWidth="2"
+                                filter="url(#ca-glow-v2)"
                             />
-                            
+
                             {/* The Logo Image clipped to a perfect circle */}
-                            <image 
-                                href="/logo.png" 
-                                x={CX - LOGO_R + 2} 
-                                y={CY - LOGO_R + 2} 
-                                width={(LOGO_R - 2) * 2} 
-                                height={(LOGO_R - 2) * 2} 
+                            <image
+                                href="/logo.png"
+                                x={CX - LOGO_R + 2}
+                                y={CY - LOGO_R + 2}
+                                width={(LOGO_R - 2) * 2}
+                                height={(LOGO_R - 2) * 2}
                                 clipPath="url(#logo-circle-clip)"
                                 preserveAspectRatio="xMidYMid slice"
                                 style={{ filter: "drop-shadow(0 0 10px rgba(59, 130, 246, 0.4))" }}

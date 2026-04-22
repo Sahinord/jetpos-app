@@ -12,8 +12,8 @@ interface Feature {
 }
 
 const AVAILABLE_FEATURES: Feature[] = [
-    { id: 'pos', label: 'JetKasa (POS)', description: 'Satış terminali ekranı' },
-    { id: 'products', label: 'Ürün Yönetimi', description: 'Ürün ekleme, düzenleme, silme' },
+    { id: 'pos', label: 'Hızlı Satış', description: 'Satış terminali ekranı' },
+    { id: 'products', label: 'Jetstok', description: 'Ürün ekleme, düzenleme, silme' },
     { id: 'sales_history', label: 'Satış Geçmişi', description: 'Geçmiş satış kayıtları' },
     { id: 'profit_calculator', label: 'Kâr Hesaplama', description: 'Kar-zarar hesaplama aracı' },
     { id: 'price_simulator', label: 'Fiyat Simülasyonu', description: 'Toplu fiyat güncelleme simülatörü' },
@@ -22,7 +22,7 @@ const AVAILABLE_FEATURES: Feature[] = [
     { id: 'bank_management', label: 'Banka İşlemleri', description: 'Banka hesapları ve hareketleri yönetimi' },
     { id: 'cash_management', label: 'Kasa İşlemleri', description: 'Kasa hesapları ve hareketleri yönetimi' },
     { id: 'trendyol_go', label: 'Trendyol GO', description: 'Trendyol GO entegrasyonu ve sipariş yönetimi' },
-    { id: 'invoice', label: 'E-Fatura Entegrasyonu', description: 'QNB eFinans üzerinden otomatik fatura kesme' },
+    { id: 'invoice', label: 'Fatura İşlemleri Entegrasyonu', description: 'QNB eFinans üzerinden otomatik fatura kesme' },
     { id: 'invoice_management', label: 'Fatura ve İrsaliye Yönetimi', description: 'Alış/Satış faturaları ve irsaliye takibi' },
     { id: 'ai_features', label: 'JetPos AI', description: 'Yapay zeka asistanı ve işletme öngörüleri' },
     { id: 'employee_module', label: 'Çalışan Yönetimi', description: 'Personel ve vardiya takip sistemi' },
@@ -110,21 +110,21 @@ export default function FeatureManager() {
                     <p className="text-[10px] font-black text-secondary/50 uppercase tracking-[0.2em]">Hızlı Paket Tanımla</p>
                     <div className="grid grid-cols-3 gap-2">
                         {[
-                            { 
-                                id: 'basic', 
-                                label: 'Basic', 
+                            {
+                                id: 'basic',
+                                label: 'Basic',
                                 color: 'bg-blue-500/10 border-blue-500/20 text-blue-400',
                                 features: ['pos', 'products']
                             },
-                            { 
-                                id: 'pro', 
-                                label: 'Pro', 
+                            {
+                                id: 'pro',
+                                label: 'Pro',
                                 color: 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400',
                                 features: ['pos', 'products', 'sales_history', 'profit_calculator', 'price_simulator', 'reports']
                             },
-                            { 
-                                id: 'enterprise', 
-                                label: 'Enterprise', 
+                            {
+                                id: 'enterprise',
+                                label: 'Enterprise',
                                 color: 'bg-purple-500/10 border-purple-500/20 text-purple-400',
                                 features: AVAILABLE_FEATURES.map(f => f.id)
                             }

@@ -45,6 +45,9 @@ import BankaPage from '@/components/Banka/BankaPage';
 import EmployeeManager from '@/components/Employee/EmployeeManager';
 import ShiftManager from '@/components/Employee/ShiftManager';
 import ProductLabelDesigner from '@/components/Tools/ProductLabelDesigner';
+import UniversalConverter from '@/components/Tools/UniversalConverter';
+import CurrencyConverter from '@/components/Tools/CurrencyConverter';
+import QRCodeGenerator from '@/components/Tools/QRCodeGenerator';
 import ReceiptDesigner from '@/components/Tools/ReceiptDesigner';
 import FinancialCalendar from '@/components/Calendar/FinancialCalendar';
 import InvoiceWaybillPage from '@/components/Waybill/InvoiceWaybillPage';
@@ -284,7 +287,7 @@ export default function Home() {
       let hasMore = true;
 
       while (hasMore) {
-        console.log(`Zırhlı Çekim: Sayfa ${page} (Dükkan: ${currentTenant.license_key})`);
+        // Log removed for security
 
         const { data, error } = await supabase
           .from('products')
@@ -308,12 +311,12 @@ export default function Home() {
         page++;
       }
       setProducts(allProducts);
-      console.log(`Final Success! Total: ${allProducts.length}`);
+      // Log removed for security
     } catch (error: any) {
       showToast(error.message, "error");
     } finally {
       setLoading(false);
-      if (activeTab === "trash") fetchTrashProducts();
+      fetchTrashProducts();
     }
   };
 
@@ -475,7 +478,7 @@ export default function Home() {
       setLoading(true);
       const { error } = await supabase.from('products')
         .update({
-          status: 'deleted',
+          status: 'passive',
           deleted_at: new Date().toISOString()
         })
         .eq('id', id)
@@ -853,7 +856,7 @@ export default function Home() {
                     }).eq('id', mapping.id).then();
                   });
               } else {
-                console.log(`[TEST MODU] Trendyol stok güncelleme atlandı: ${item.name} -> ${newQty}`);
+                // Log removed for security
               }
             }
           }
@@ -1314,6 +1317,27 @@ export default function Home() {
           {activeTab === "label_designer" && (
             <div className="max-w-[1500px] mx-auto w-full">
               <ProductLabelDesigner products={products} showToast={showToast} printerName={labelPrinterName || receiptPrinterName} />
+            </div>
+          )}
+
+          {/* Universal Converter - Akıllı Dönüştürücü (Görsel, PDF, Word) */}
+          {activeTab === "universal_converter" && (
+            <div className="max-w-[1500px] mx-auto w-full">
+              <UniversalConverter />
+            </div>
+          )}
+
+          {/* QR Code Generator - QR Kod Oluşturucu */}
+          {activeTab === "qr_generator" && (
+            <div className="max-w-[1500px] mx-auto w-full">
+              <QRCodeGenerator />
+            </div>
+          )}
+
+          {/* Currency Converter - Döviz Çevirici */}
+          {activeTab === "currency_converter" && (
+            <div className="max-w-[1500px] mx-auto w-full">
+              <CurrencyConverter />
             </div>
           )}
 

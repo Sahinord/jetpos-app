@@ -217,7 +217,7 @@ export default function TenantProfile() {
                                 { key: 'mobile_app', label: 'Mobil Uygulama' },
                                 { key: 'trendyol_go', label: 'Trendyol Entegr.' },
                                 { key: 'getir', label: 'Getir Yemek' },
-                                { key: 'qnb_invoice', label: 'E-Fatura (QNB)' },
+                                { key: 'qnb_invoice', label: 'Fatura İşlemleri (QNB)' },
                                 { key: 'ai_features', label: 'AI Asistan' },
                             ].map((f) => (
                                 <div key={f.key} className={`p-4 rounded-2xl border transition-all ${currentTenant?.features?.[f.key] ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-white/5 bg-slate-950/50 opacity-40'}`}>

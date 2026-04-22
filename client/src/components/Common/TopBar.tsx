@@ -45,7 +45,7 @@ export default function TopBar({ activeTab, onMenuClick }: { activeTab: string, 
             // Satış & POS
             "pos": "Satış Terminali",
             "history": "Satış Geçmişi",
-            "invoice": "E-Fatura",
+            "invoice": "Fatura İşlemleri",
             "alis_irsaliyesi": "Alış İrsaliyesi",
             "satis_irsaliyesi": "Satış İrsaliyesi",
             "satis_iade_irsaliyesi": "Satış İade İrsaliyesi",
@@ -65,7 +65,7 @@ export default function TopBar({ activeTab, onMenuClick }: { activeTab: string, 
             "fatura_kdv_listesi": "KDV Listesi",
             "kdv_analiz_raporu": "KDV Analiz Raporu",
 
-            // Ürün Yönetimi
+            // Jetstok
             "products": "Ürün Listesi",
             "alerts": "Stok Uyarıları",
             "label_designer": "Ürün Etiket Tasarımı",
@@ -126,7 +126,11 @@ export default function TopBar({ activeTab, onMenuClick }: { activeTab: string, 
             "showcase": "Vitrin Tasarımı",
             "settings": "Ayarlar",
             "profile": "Profil",
-            "support": "Destek"
+            "support": "Destek",
+            "image_converter": "Görsel Dönüştürücü",
+            "currency_converter": "Döviz Çevirici",
+            "universal_converter": "Akıllı Dönüştürücü",
+            "qr_generator": "QR Kod Oluşturucu"
         };
 
         return titles[tab] || "JetPos";
@@ -139,7 +143,7 @@ export default function TopBar({ activeTab, onMenuClick }: { activeTab: string, 
         >
             {/* Left Section: Mobile Menu + Tenant Switcher + Title */}
             <div className="flex items-center gap-3 lg:gap-4" style={{ WebkitAppRegion: 'no-drag' } as any}>
-                <button 
+                <button
                     onClick={onMenuClick}
                     className="p-2 -ml-2 text-secondary hover:text-primary transition-colors lg:hidden rounded-lg hover:bg-primary/5"
                 >

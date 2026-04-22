@@ -486,8 +486,8 @@ export default function EmployeeManager({ showToast }: any) {
                                         onChange={(e) => {
                                             const pos = e.target.value;
                                             const isPatronVal = pos.toLowerCase() === 'patron';
-                                            setFormData({ 
-                                                ...formData, 
+                                            setFormData({
+                                                ...formData,
                                                 position: pos,
                                                 permissions: isPatronVal ? Object.keys(formData.permissions).reduce((acc: any, key) => ({ ...acc, [key]: true }), {}) : formData.permissions
                                             });
@@ -599,7 +599,7 @@ export default function EmployeeManager({ showToast }: any) {
                                     </h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
                                         {[
-                                            { id: 'can_access_pos', label: 'JetKasa (POS) Erişimi', role: 'pos' },
+                                            { id: 'can_access_pos', label: 'Hızlı Satış Erişimi', role: 'pos' },
                                             { id: 'can_access_adisyon', label: 'Adisyon/Masa Erişimi', role: 'adisyon' },
                                             { id: 'can_access_reports', label: 'Raporları Görüntüleme', role: 'reports' },
                                             { id: 'can_access_inventory', label: 'Stok Yönetimi / Ürünler', role: 'products' },

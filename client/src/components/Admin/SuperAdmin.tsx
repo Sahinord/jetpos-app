@@ -21,8 +21,8 @@ interface Tenant {
 }
 
 const AVAILABLE_FEATURES = [
-    { id: "pos", label: "JetKasa (POS)" },
-    { id: 'products', label: 'Ürün Yönetimi' },
+    { id: "pos", label: "Hızlı Satış" },
+    { id: 'products', label: 'Jetstok' },
     { id: 'sales_history', label: 'Satış Geçmişi' },
     { id: 'profit_calculator', label: 'Kâr Hesaplama' },
     { id: 'price_simulator', label: 'Fiyat Simülasyonu' },
@@ -36,13 +36,16 @@ const AVAILABLE_FEATURES = [
     { id: 'master_pin_enabled', label: 'Master PIN (Patron Master Kodu)' },
     { id: 'label_designer', label: 'Ürün Etiket Tasarımı' },
     { id: 'trendyol_go', label: 'Trendyol GO' },
-    { id: 'invoice', label: 'E-Fatura Entegrasyonu' },
+    { id: 'invoice', label: 'Fatura İşlemleri Entegrasyonu' },
     { id: 'invoice_management', label: 'Fatura ve İrsaliye Yönetimi' },
     { id: 'ai_features', label: 'JetPos AI (Öngörüler & Asistan)' },
     { id: 'adisyon', label: 'Adisyon (Masa Yönetimi)' },
     { id: 'qrmenu', label: 'QR Menü Yönetimi' },
     { id: 'showcase', label: 'Vitrin Web Sitesi' },
     { id: 'cfd', label: 'Müşteri Ekranı (CFD)' },
+    { id: 'smart_converter', label: 'Akıllı Dönüştürücü (Görsel/PDF/Word)' },
+    { id: 'qr_generator', label: 'Gelişmiş QR Kod Oluşturucu' },
+    { id: 'currency_converter', label: 'Canlı Döviz Çevirici' },
 ];
 
 const MOBILE_FEATURES = [
@@ -61,7 +64,7 @@ export default function SuperAdmin() {
     const [saving, setSaving] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'suspended' | 'expired'>('all');
-    
+
     // Employee Management State for SuperAdmin
     const [employeeModal, setEmployeeModal] = useState<{ tenantId: string, tenantName: string } | null>(null);
     const [employeesList, setEmployeesList] = useState<any[]>([]);
@@ -94,7 +97,7 @@ export default function SuperAdmin() {
     // Trendyol GO states
     const [trendyolModal, setTrendyolModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
     const [trendyolSettings, setTrendyolSettings] = useState({ sellerId: '', storeId: '', apiKey: '', apiSecret: '', token: '', stage: false });
-    
+
     // Warehouse management states
     const [warehouseModal, setWarehouseModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
     const [warehousesList, setWarehousesList] = useState<any[]>([]);
@@ -275,7 +278,7 @@ export default function SuperAdmin() {
             logo_url: null,
             status: 'active',
             contact_email: '',
-                features: {
+            features: {
                 pos: true,
                 products: true
             },
@@ -479,7 +482,7 @@ export default function SuperAdmin() {
 
             if (error) throw error;
 
-            alert(`✅ ${invoiceModal.tenantName} için E-Fatura Ayarları güncellendi!`);
+            alert(`✅ ${invoiceModal.tenantName} için Fatura İşlemleri Ayarları güncellendi!`);
             setInvoiceModal(null);
             await fetchTenants();
         } catch (err: any) {
@@ -697,7 +700,7 @@ export default function SuperAdmin() {
                         <div className="flex items-center gap-3 w-full md:w-auto">
                             <div className="relative flex-1 md:w-64">
                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                                <input 
+                                <input
                                     type="text"
                                     placeholder="Firma veya Anahtar Ara..."
                                     value={searchTerm}
@@ -717,8 +720,8 @@ export default function SuperAdmin() {
                             <button
                                 key={status}
                                 onClick={() => setStatusFilter(status)}
-                                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest border transition-all ${statusFilter === status 
-                                    ? 'bg-primary border-primary text-white' 
+                                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest border transition-all ${statusFilter === status
+                                    ? 'bg-primary border-primary text-white'
                                     : 'bg-white/5 border-white/10 text-slate-500 hover:text-white'}`}
                             >
                                 {status === 'all' ? 'Tümü' : status === 'active' ? 'Aktif' : status === 'suspended' ? 'Askıda' : 'Süresi Dolmuş'}
@@ -730,196 +733,196 @@ export default function SuperAdmin() {
                         {tenants
                             .filter(t => t.license_key !== 'ADM257SA67')
                             .filter(t => statusFilter === 'all' || t.status === statusFilter)
-                            .filter(t => 
-                                !searchTerm || 
+                            .filter(t =>
+                                !searchTerm ||
                                 (t.company_name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
                                 (t.license_key?.toLowerCase().includes(searchTerm.toLowerCase()))
                             )
                             .map((tenant) => (
-                            <div key={tenant.id} className="glass-card p-6 border-l-4 border-l-primary hover:border-l-blue-400 transition-all group">
-                                <div className="flex items-start justify-between">
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-4 mb-4">
-                                            <div className="w-14 h-14 bg-gradient-to-br from-primary to-blue-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                                                <Building2 className="w-7 h-7 text-white" />
-                                            </div>
-                                            <div>
-                                                <h3 className="text-xl font-black text-white">{tenant.company_name || '(Kayıt Bekleniyor...)'}</h3>
-                                                <div className="flex items-center gap-3">
-                                                    <span className="text-sm text-primary font-mono font-bold tracking-widest">{tenant.license_key}</span>
-                                                    <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase ${tenant.status === 'active' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border border-rose-500/20'}`}>
-                                                        {tenant.status}
-                                                    </span>
+                                <div key={tenant.id} className="glass-card p-6 border-l-4 border-l-primary hover:border-l-blue-400 transition-all group">
+                                    <div className="flex items-start justify-between">
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-4 mb-4">
+                                                <div className="w-14 h-14 bg-gradient-to-br from-primary to-blue-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                                    <Building2 className="w-7 h-7 text-white" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-xl font-black text-white">{tenant.company_name || '(Kayıt Bekleniyor...)'}</h3>
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="text-sm text-primary font-mono font-bold tracking-widest">{tenant.license_key}</span>
+                                                        <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase ${tenant.status === 'active' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border border-rose-500/20'}`}>
+                                                            {tenant.status}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
+                                            <div className="flex flex-wrap gap-2">
+                                                {AVAILABLE_FEATURES.map(f => tenant.features?.[f.id] && (
+                                                    <span key={f.id} className="px-2 py-1 bg-white/5 border border-white/10 rounded-lg text-[10px] font-bold text-slate-400">{f.label}</span>
+                                                ))}
+                                            </div>
                                         </div>
-                                        <div className="flex flex-wrap gap-2">
-                                            {AVAILABLE_FEATURES.map(f => tenant.features?.[f.id] && (
-                                                <span key={f.id} className="px-2 py-1 bg-white/5 border border-white/10 rounded-lg text-[10px] font-bold text-slate-400">{f.label}</span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <button
-                                            onClick={() => setPasswordModal({ tenantId: tenant.id, tenantName: tenant.company_name || tenant.license_key })}
-                                            className="p-3 bg-white/5 hover:bg-amber-500/20 rounded-xl text-slate-400 hover:text-amber-500 transition-all"
-                                            title="Şifreyi Değiştir"
-                                        >
-                                            <Key className="w-5 h-5" />
-                                        </button>
-                                        <button
-                                            onClick={async () => {
-                                                setLoading(true);
-                                                try {
-                                                    const { data } = await supabase
-                                                        .from('integration_settings')
-                                                        .select('settings')
-                                                        .eq('tenant_id', tenant.id)
-                                                        .eq('type', 'gemini_ai')
-                                                        .single();
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => setPasswordModal({ tenantId: tenant.id, tenantName: tenant.company_name || tenant.license_key })}
+                                                className="p-3 bg-white/5 hover:bg-amber-500/20 rounded-xl text-slate-400 hover:text-amber-500 transition-all"
+                                                title="Şifreyi Değiştir"
+                                            >
+                                                <Key className="w-5 h-5" />
+                                            </button>
+                                            <button
+                                                onClick={async () => {
+                                                    setLoading(true);
+                                                    try {
+                                                        const { data } = await supabase
+                                                            .from('integration_settings')
+                                                            .select('settings')
+                                                            .eq('tenant_id', tenant.id)
+                                                            .eq('type', 'gemini_ai')
+                                                            .single();
 
-                                                    setAiModal({
+                                                        setAiModal({
+                                                            tenantId: tenant.id,
+                                                            tenantName: tenant.company_name || tenant.license_key,
+                                                            currentKey: data?.settings?.apiKey || ''
+                                                        });
+                                                        setTenantAiKey(data?.settings?.apiKey || '');
+                                                    } catch (err) {
+                                                        setAiModal({
+                                                            tenantId: tenant.id,
+                                                            tenantName: tenant.company_name || tenant.license_key,
+                                                            currentKey: ''
+                                                        });
+                                                    } finally {
+                                                        setLoading(false);
+                                                    }
+                                                }}
+                                                className="p-3 bg-white/5 hover:bg-purple-500/20 rounded-xl text-slate-400 hover:text-purple-500 transition-all font-bold"
+                                                title="AI API Key Tanımla"
+                                            >
+                                                <Sparkles className="w-5 h-5" />
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    const settings = tenant.settings || {};
+                                                    const currentQnb = settings.qnb || {};
+                                                    const currentParasut = settings.parasut || {};
+
+                                                    setInvoiceModal({
                                                         tenantId: tenant.id,
-                                                        tenantName: tenant.company_name || tenant.license_key,
-                                                        currentKey: data?.settings?.apiKey || ''
+                                                        tenantName: tenant.company_name || tenant.license_key
                                                     });
-                                                    setTenantAiKey(data?.settings?.apiKey || '');
-                                                } catch (err) {
-                                                    setAiModal({
+                                                    setInvoiceProvider(settings.invoice_provider || 'qnb');
+                                                    setQnbSettings({
+                                                        vkn: currentQnb.vkn || currentQnb.testVkn || '',
+                                                        username: currentQnb.earsivUsername || '',
+                                                        password: currentQnb.password || currentQnb.testPassword || '',
+                                                        erpCode: currentQnb.erpCode || 'JET31270',
+                                                        isTest: currentQnb.isTest !== false,
+                                                        branchCode: currentQnb.branchCode || '',
+                                                        counterCode: currentQnb.counterCode || ''
+                                                    });
+                                                    setParasutSettings({
+                                                        email: currentParasut.email || currentParasut.username || '',
+                                                        password: currentParasut.password || '',
+                                                        companyId: currentParasut.companyId || '',
+                                                        clientId: currentParasut.clientId || '',
+                                                        clientSecret: currentParasut.clientSecret || '',
+                                                        baseUrl: currentParasut.baseUrl || '',
+                                                        authUrl: currentParasut.authUrl || '',
+                                                        isTest: currentParasut.isTest === true
+                                                    });
+                                                }}
+                                                className="p-3 bg-white/5 hover:bg-emerald-500/20 rounded-xl text-slate-400 hover:text-emerald-500 transition-all font-bold"
+                                                title="Fatura İşlemleri Sağlayıcı Ayarları"
+                                            >
+                                                <FileText className="w-5 h-5" />
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    const currentTg = tenant.settings?.trendyolGo || {};
+                                                    setTrendyolModal({
                                                         tenantId: tenant.id,
-                                                        tenantName: tenant.company_name || tenant.license_key,
-                                                        currentKey: ''
+                                                        tenantName: tenant.company_name || tenant.license_key
                                                     });
-                                                } finally {
-                                                    setLoading(false);
-                                                }
-                                            }}
-                                            className="p-3 bg-white/5 hover:bg-purple-500/20 rounded-xl text-slate-400 hover:text-purple-500 transition-all font-bold"
-                                            title="AI API Key Tanımla"
-                                        >
-                                            <Sparkles className="w-5 h-5" />
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                const settings = tenant.settings || {};
-                                                const currentQnb = settings.qnb || {};
-                                                const currentParasut = settings.parasut || {};
-                                                
-                                                setInvoiceModal({
-                                                    tenantId: tenant.id,
-                                                    tenantName: tenant.company_name || tenant.license_key
-                                                });
-                                                setInvoiceProvider(settings.invoice_provider || 'qnb');
-                                                setQnbSettings({
-                                                    vkn: currentQnb.vkn || currentQnb.testVkn || '',
-                                                    username: currentQnb.earsivUsername || '',
-                                                    password: currentQnb.password || currentQnb.testPassword || '',
-                                                    erpCode: currentQnb.erpCode || 'JET31270',
-                                                    isTest: currentQnb.isTest !== false,
-                                                    branchCode: currentQnb.branchCode || '',
-                                                    counterCode: currentQnb.counterCode || ''
-                                                });
-                                                setParasutSettings({
-                                                    email: currentParasut.email || currentParasut.username || '',
-                                                    password: currentParasut.password || '',
-                                                    companyId: currentParasut.companyId || '',
-                                                    clientId: currentParasut.clientId || '',
-                                                    clientSecret: currentParasut.clientSecret || '',
-                                                    baseUrl: currentParasut.baseUrl || '',
-                                                    authUrl: currentParasut.authUrl || '',
-                                                    isTest: currentParasut.isTest === true
-                                                });
-                                            }}
-                                            className="p-3 bg-white/5 hover:bg-emerald-500/20 rounded-xl text-slate-400 hover:text-emerald-500 transition-all font-bold"
-                                            title="E-Fatura Sağlayıcı Ayarları"
-                                        >
-                                            <FileText className="w-5 h-5" />
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                const currentTg = tenant.settings?.trendyolGo || {};
-                                                setTrendyolModal({
-                                                    tenantId: tenant.id,
-                                                    tenantName: tenant.company_name || tenant.license_key
-                                                });
-                                                setTrendyolSettings({
-                                                    sellerId: currentTg.sellerId || '',
-                                                    storeId: currentTg.storeId || '',
-                                                    apiKey: currentTg.apiKey || '',
-                                                    apiSecret: currentTg.apiSecret || '',
-                                                    token: currentTg.token || '',
-                                                    stage: currentTg.stage === true
-                                                });
-                                            }}
-                                            className="p-3 bg-white/5 hover:bg-orange-500/20 rounded-xl text-slate-400 hover:text-orange-500 transition-all font-bold"
-                                            title="Trendyol GO Ayarları"
-                                        >
-                                            <span className="font-black text-xs">TY</span>
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                setWarehouseModal({ tenantId: tenant.id, tenantName: tenant.company_name || tenant.license_key });
-                                                fetchWarehouses(tenant.id);
-                                            }}
-                                            className="p-3 bg-white/5 hover:bg-indigo-500/20 rounded-xl text-slate-400 hover:text-indigo-500 transition-all"
-                                            title="Mağazaları Yönet"
-                                        >
-                                            <Home className="w-5 h-5" />
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                setGroupModal({ tenantId: tenant.id, tenantName: tenant.company_name || tenant.license_key });
-                                                // Mevcut grupları yükle
-                                                supabase
-                                                    .from('tenant_groups')
-                                                    .select('target_tenant_id')
-                                                    .eq('tenant_id', tenant.id)
-                                                    .then(({ data }) => {
-                                                        if (data) {
-                                                            setSelectedGroupTenants(data.map(g => g.target_tenant_id));
-                                                        }
+                                                    setTrendyolSettings({
+                                                        sellerId: currentTg.sellerId || '',
+                                                        storeId: currentTg.storeId || '',
+                                                        apiKey: currentTg.apiKey || '',
+                                                        apiSecret: currentTg.apiSecret || '',
+                                                        token: currentTg.token || '',
+                                                        stage: currentTg.stage === true
                                                     });
-                                            }}
-                                            className="p-3 bg-white/5 hover:bg-blue-500/20 rounded-xl text-slate-400 hover:text-blue-500 transition-all"
-                                            title="Database Gruplandır"
-                                        >
-                                            <User className="w-5 h-5" />
-                                        </button>
-                                         <button 
-                                            onClick={() => {
-                                                if(confirm(`${tenant.company_name || tenant.license_key} oturumuna geçmek istiyor musunuz?`)) {
-                                                    // RLS bypass ile lisans doğrulama için ADM257SA67 anahtarını koru, tenant ID'yi değiştir.
-                                                    localStorage.setItem('currentTenantId', tenant.id);
-                                                    localStorage.setItem('licenseKey', 'ADM257SA67');
-                                                    window.location.reload();
-                                                }
-                                            }}
-                                            className="px-4 py-3 bg-primary/10 hover:bg-primary/20 rounded-xl text-primary font-black text-xs uppercase transition-all flex items-center gap-2"
-                                            title="Yönetim Paneline Git"
-                                        >
-                                            <Globe className="w-4 h-4" />
-                                            Giriş Yap
-                                        </button>
-                                         <button
-                                            onClick={() => {
-                                                setEmployeeModal({ tenantId: tenant.id, tenantName: tenant.company_name || tenant.license_key });
-                                                fetchEmployees(tenant.id);
-                                            }}
-                                            className="p-3 bg-white/5 hover:bg-emerald-500/20 rounded-xl text-slate-400 hover:text-emerald-500 transition-all font-bold"
-                                            title="Personel ve Yetki Yönetimi"
-                                        >
-                                            <Users className="w-5 h-5" />
-                                        </button>
-                                        <button onClick={() => setEditingTenant(tenant)} className="p-3 bg-white/5 hover:bg-primary/20 rounded-xl text-slate-400 hover:text-primary transition-all">
-                                            <Edit className="w-5 h-5" />
-                                        </button>
-                                        <button onClick={() => handleDelete(tenant.id, tenant.company_name || tenant.license_key)} className="p-3 bg-white/5 hover:bg-rose-500/20 rounded-xl text-slate-400 hover:text-rose-500 transition-all">
-                                            <Trash2 className="w-5 h-5" />
-                                        </button>
+                                                }}
+                                                className="p-3 bg-white/5 hover:bg-orange-500/20 rounded-xl text-slate-400 hover:text-orange-500 transition-all font-bold"
+                                                title="Trendyol GO Ayarları"
+                                            >
+                                                <span className="font-black text-xs">TY</span>
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setWarehouseModal({ tenantId: tenant.id, tenantName: tenant.company_name || tenant.license_key });
+                                                    fetchWarehouses(tenant.id);
+                                                }}
+                                                className="p-3 bg-white/5 hover:bg-indigo-500/20 rounded-xl text-slate-400 hover:text-indigo-500 transition-all"
+                                                title="Mağazaları Yönet"
+                                            >
+                                                <Home className="w-5 h-5" />
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setGroupModal({ tenantId: tenant.id, tenantName: tenant.company_name || tenant.license_key });
+                                                    // Mevcut grupları yükle
+                                                    supabase
+                                                        .from('tenant_groups')
+                                                        .select('target_tenant_id')
+                                                        .eq('tenant_id', tenant.id)
+                                                        .then(({ data }) => {
+                                                            if (data) {
+                                                                setSelectedGroupTenants(data.map(g => g.target_tenant_id));
+                                                            }
+                                                        });
+                                                }}
+                                                className="p-3 bg-white/5 hover:bg-blue-500/20 rounded-xl text-slate-400 hover:text-blue-500 transition-all"
+                                                title="Database Gruplandır"
+                                            >
+                                                <User className="w-5 h-5" />
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    if (confirm(`${tenant.company_name || tenant.license_key} oturumuna geçmek istiyor musunuz?`)) {
+                                                        // RLS bypass ile lisans doğrulama için ADM257SA67 anahtarını koru, tenant ID'yi değiştir.
+                                                        localStorage.setItem('currentTenantId', tenant.id);
+                                                        localStorage.setItem('licenseKey', 'ADM257SA67');
+                                                        window.location.reload();
+                                                    }
+                                                }}
+                                                className="px-4 py-3 bg-primary/10 hover:bg-primary/20 rounded-xl text-primary font-black text-xs uppercase transition-all flex items-center gap-2"
+                                                title="Yönetim Paneline Git"
+                                            >
+                                                <Globe className="w-4 h-4" />
+                                                Giriş Yap
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setEmployeeModal({ tenantId: tenant.id, tenantName: tenant.company_name || tenant.license_key });
+                                                    fetchEmployees(tenant.id);
+                                                }}
+                                                className="p-3 bg-white/5 hover:bg-emerald-500/20 rounded-xl text-slate-400 hover:text-emerald-500 transition-all font-bold"
+                                                title="Personel ve Yetki Yönetimi"
+                                            >
+                                                <Users className="w-5 h-5" />
+                                            </button>
+                                            <button onClick={() => setEditingTenant(tenant)} className="p-3 bg-white/5 hover:bg-primary/20 rounded-xl text-slate-400 hover:text-primary transition-all">
+                                                <Edit className="w-5 h-5" />
+                                            </button>
+                                            <button onClick={() => handleDelete(tenant.id, tenant.company_name || tenant.license_key)} className="p-3 bg-white/5 hover:bg-rose-500/20 rounded-xl text-slate-400 hover:text-rose-500 transition-all">
+                                                <Trash2 className="w-5 h-5" />
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
                     </div>
                 </>
             ) : activeTab === 'crm' ? (
@@ -1138,21 +1141,21 @@ export default function SuperAdmin() {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Fiziksel Mağaza Limiti</label>
-                                        <input 
-                                            type="number" 
-                                            value={editingTenant.max_stores || 1} 
-                                            onChange={(e) => setEditingTenant({ ...editingTenant, max_stores: parseInt(e.target.value) || 1 })} 
-                                            className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl text-white focus:border-primary/50 outline-none" 
+                                        <input
+                                            type="number"
+                                            value={editingTenant.max_stores || 1}
+                                            onChange={(e) => setEditingTenant({ ...editingTenant, max_stores: parseInt(e.target.value) || 1 })}
+                                            className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl text-white focus:border-primary/50 outline-none"
                                             min="1"
                                         />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Online Mağaza Limiti</label>
-                                        <input 
-                                            type="number" 
-                                            value={editingTenant.max_online_stores || 0} 
-                                            onChange={(e) => setEditingTenant({ ...editingTenant, max_online_stores: parseInt(e.target.value) || 0 })} 
-                                            className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl text-white focus:border-indigo-500/50 outline-none" 
+                                        <input
+                                            type="number"
+                                            value={editingTenant.max_online_stores || 0}
+                                            onChange={(e) => setEditingTenant({ ...editingTenant, max_online_stores: parseInt(e.target.value) || 0 })}
+                                            className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl text-white focus:border-indigo-500/50 outline-none"
                                             min="0"
                                         />
                                     </div>
@@ -1193,7 +1196,7 @@ export default function SuperAdmin() {
 
                             <div className="space-y-8">
                                 <h4 className="text-xl font-black text-white uppercase tracking-[0.2em] ml-1 pt-8 border-t border-white/5">Yazılım Modülleri ve Özellikler</h4>
-                                
+
                                 {[
                                     { label: 'SATIŞ & POS', features: ['pos', 'sales_history', 'adisyon', 'invoice'] },
                                     { label: 'ÜRÜN & STOK', features: ['products', 'label_designer', 'invoice_management'] },
@@ -1352,7 +1355,7 @@ export default function SuperAdmin() {
                                     <FileText className="w-6 h-6 text-emerald-500" />
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-black text-white">E-Fatura Ayarları</h3>
+                                    <h3 className="text-xl font-black text-white">Fatura İşlemleri Ayarları</h3>
                                     <p className="text-xs text-slate-500 mt-1">{invoiceModal.tenantName}</p>
                                 </div>
                             </div>
@@ -1360,8 +1363,8 @@ export default function SuperAdmin() {
                         <div className="p-8 space-y-6">
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Fatura Sağlayıcı</label>
-                                <select 
-                                    value={invoiceProvider} 
+                                <select
+                                    value={invoiceProvider}
                                     onChange={(e) => setInvoiceProvider(e.target.value as any)}
                                     className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl text-white focus:border-emerald-500/50 outline-none appearance-none font-bold"
                                 >
@@ -1912,14 +1915,14 @@ export default function SuperAdmin() {
                             </div>
                             <div className="flex items-center gap-4">
                                 <button
-                                    onClick={() => setEditingStaff({ 
-                                        first_name: '', last_name: '', position: '', pin_code: '', 
-                                        status: 'active', monthly_salary: 0, 
+                                    onClick={() => setEditingStaff({
+                                        first_name: '', last_name: '', position: '', pin_code: '',
+                                        status: 'active', monthly_salary: 0,
                                         permissions: {
                                             can_access_pos: true, can_access_adisyon: true, can_access_reports: false,
                                             can_access_settings: false, can_access_inventory: true, can_access_expenses: false,
                                             can_access_crm: false, can_manage_employees: false, can_apply_discount: false, can_delete_sales: false
-                                        } 
+                                        }
                                     })}
                                     className="flex items-center gap-2 px-6 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold transition-all"
                                 >
@@ -1985,7 +1988,7 @@ export default function SuperAdmin() {
                                 <X className="w-5 h-5 text-slate-400" />
                             </button>
                         </div>
-                        
+
                         <div className="p-8 space-y-8">
                             <div className="grid grid-cols-2 gap-6">
                                 <div className="space-y-2">
@@ -2020,8 +2023,8 @@ export default function SuperAdmin() {
                                         { id: 'can_delete_sales', label: 'İptal/Silme' },
                                         { id: 'can_manage_invoices', label: 'Fatura/İrsaliye' }
                                     ].map(perm => (
-                                        <button 
-                                            key={perm.id} 
+                                        <button
+                                            key={perm.id}
                                             onClick={() => setEditingStaff({
                                                 ...editingStaff,
                                                 permissions: { ...editingStaff.permissions, [perm.id]: !editingStaff.permissions?.[perm.id] }
@@ -2039,8 +2042,8 @@ export default function SuperAdmin() {
 
                         <div className="p-8 border-t border-white/10 flex gap-4">
                             <button onClick={() => setEditingStaff(null)} className="flex-1 py-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl font-bold transition-all">İptal</button>
-                            <button 
-                                onClick={() => handleSaveStaff(editingStaff)} 
+                            <button
+                                onClick={() => handleSaveStaff(editingStaff)}
                                 disabled={saving}
                                 className="flex-1 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-black shadow-xl shadow-emerald-500/30 transition-all flex items-center justify-center gap-2"
                             >

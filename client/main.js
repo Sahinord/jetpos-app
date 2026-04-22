@@ -151,7 +151,16 @@ function createWindow() {
 
     mainWindow.once('ready-to-show', () => {
         mainWindow.show();
-        // mainWindow.webContents.openDevTools();
+        if (isDev) {
+            mainWindow.webContents.openDevTools();
+        }
+    });
+
+    // DevTools açıklarını kapat
+    mainWindow.webContents.on('devtools-opened', () => {
+        if (!isDev) {
+            mainWindow.webContents.closeDevTools();
+        }
     });
 
     ipcMain.on('window-minimize', () => mainWindow.minimize());

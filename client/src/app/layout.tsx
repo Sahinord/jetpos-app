@@ -4,6 +4,7 @@ import "./globals.css";
 import { TenantProvider } from "@/lib/tenant-context";
 import ContextMenu from "@/components/Common/ContextMenu";
 import UpdateNotification from "@/components/Common/UpdateNotification";
+import SecurityShield from "@/components/Common/SecurityShield";
 
 const jakarta = Plus_Jakarta_Sans({
     subsets: ["latin"],
@@ -26,6 +27,7 @@ export default function RootLayout({
         <html lang="tr">
             <body className={`${jakarta.variable} font-sans antialiased bg-background text-foreground relative min-h-screen overflow-x-hidden`}>
                 <TenantProvider>
+                    <SecurityShield />
                     <ContextMenu />
                     <UpdateNotification />
                     {children}

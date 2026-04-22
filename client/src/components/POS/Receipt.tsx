@@ -114,9 +114,9 @@ const ReceiptPreview = ({ data }: { data: ReceiptData | null }) => {
                         <div style={{ fontSize: '12px', fontWeight: 900, color: '#000', textTransform: 'uppercase' }}>{item.name}</div>
                         {item.barcode && <div style={{ fontSize: '9px', color: '#666', marginBottom: '2px' }}>{item.barcode}</div>}
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontWeight: 800, color: '#222' }}>
-                            <span style={{ flex: 1 }}>{item.quantity} {item.unit || 'AD'} X ₺{item.sale_price.toFixed(2)}</span>
+                            <span style={{ flex: 1 }}>{item.quantity} {item.unit || 'AD'} X ₺{(item.sale_price || item.price || 0).toFixed(2)}</span>
                             <span style={{ width: '30px', textAlign: 'center' }}>%{item.vat_rate || 0}</span>
-                            <span style={{ width: '70px', textAlign: 'right', fontWeight: 900, color: '#000' }}>₺{(item.sale_price * item.quantity).toFixed(2)}</span>
+                            <span style={{ width: '70px', textAlign: 'right', fontWeight: 900, color: '#000' }}>₺{((item.sale_price || item.price || 0) * item.quantity).toFixed(2)}</span>
                         </div>
                     </div>
                 ))}
@@ -179,9 +179,9 @@ function generatePrintHTML(data: ReceiptData | null): string {
             <div style="font-size:13px;font-weight:900;color:#000;text-transform:uppercase;">${item.name}</div>
             ${item.barcode ? `<div style="font-size:10px;color:#333;margin-bottom:2px;">${item.barcode}</div>` : ''}
             <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:900;color:#000;">
-                <span style="flex:1">${item.quantity} ${item.unit || 'AD'} X ₺${item.sale_price.toFixed(2)}</span>
+                <span style="flex:1">${item.quantity} ${item.unit || 'AD'} X ₺${(item.sale_price || item.price || 0).toFixed(2)}</span>
                 <span style="width:30px;text-align:center;">%${item.vat_rate || 0}</span>
-                <span style="width:70px;text-align:right;">₺${(item.sale_price * item.quantity).toFixed(2)}</span>
+                <span style="width:70px;text-align:right;">₺${((item.sale_price || item.price || 0) * item.quantity).toFixed(2)}</span>
             </div>
         </div>
     `).join('');
@@ -289,8 +289,8 @@ function generatePrintHTML(data: ReceiptData | null): string {
                     <div>${turkishToAscii(item.name.toUpperCase())}</div>
                     <table class="table">
                         <tr>
-                            <td align="left">${item.quantity} AD X ₺${item.price.toFixed(2)}</td>
-                            <td align="right">₺${(item.price * item.quantity).toFixed(2)}</td>
+                            <td align="left">${item.quantity} AD X ₺${(item.sale_price || item.price || 0).toFixed(2)}</td>
+                            <td align="right">₺${((item.sale_price || item.price || 0) * item.quantity).toFixed(2)}</td>
                         </tr>
                     </table>
                 </div>

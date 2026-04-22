@@ -408,7 +408,7 @@ export default function InvoicePanel() {
                     onClick={() => setView('efatura')}
                     className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${view === 'efatura' ? 'bg-emerald-600 text-white shadow-lg' : 'text-secondary hover:text-foreground'}`}
                 >
-                    <Globe className="w-3.5 h-3.5" /> E-FATURA
+                    <Globe className="w-3.5 h-3.5" /> FATURA İŞLEMLERİ
                 </button>
                 <button
                     onClick={() => setView('irsaliye')}
