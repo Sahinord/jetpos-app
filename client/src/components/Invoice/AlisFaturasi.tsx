@@ -91,10 +91,10 @@ export default function AlisFaturasi() {
             setInvoice(prev => ({
                 ...prev,
                 cari_id: foundCari.id,
-                cari_name: foundCari.cari_unvan,
+                cari_name: foundCari.unvani,
                 cari_vkn: foundCari.vergi_no || '',
                 cari_tax_office: foundCari.vergi_dairesi || '',
-                cari_address: foundCari.adres || ''
+                cari_address: '' // adres alanı cari_hesaplar tablosunda yok
             }));
         }
 
@@ -154,9 +154,14 @@ export default function AlisFaturasi() {
 
     const enrichedItems = useMemo(() => {
         return invoice.items.map(item => {
-            const discountAmount = (item.quantity * item.unit_price * item.discount_rate) / 100;
-            const line_total = (item.quantity * item.unit_price) - discountAmount;
-            const vat_amount = (line_total * item.vat_rate) / 100;
+            const qty = Number(item.quantity) || 0;
+            const price = Number(item.unit_price) || 0;
+            const discount = Number(item.discount_rate) || 0;
+            const vat = Number(item.vat_rate) || 0;
+
+            const discountAmount = (qty * price * discount) / 100;
+            const line_total = (qty * price) - discountAmount;
+            const vat_amount = (line_total * vat) / 100;
             const line_total_with_vat = line_total + vat_amount;
 
             return {
@@ -189,7 +194,7 @@ export default function AlisFaturasi() {
             query.eq('tenant_id', currentTenant.id);
         }
 
-        const { data } = await query.order('cari_unvan');
+        const { data } = await query.order('unvani');
         if (data) setCariList(data);
     };
 
@@ -206,10 +211,10 @@ export default function AlisFaturasi() {
         setInvoice(prev => ({
             ...prev,
             cari_id: cari.id,
-            cari_name: cari.cari_unvan,
+            cari_name: cari.unvani,
             cari_vkn: cari.vergi_no || '',
             cari_tax_office: cari.vergi_dairesi || '',
-            cari_address: cari.adres || ''
+            cari_address: '' // adres alanı cari_hesaplar tablosunda yok
         }));
         setShowCariSearch(false);
         setCariSearchTerm('');
@@ -313,11 +318,11 @@ export default function AlisFaturasi() {
                 product_id: item.product_id,
                 item_name: item.item_name,
                 item_code: item.item_code,
-                quantity: item.quantity,
+                quantity: Number(item.quantity) || 0,
                 unit: item.unit,
-                unit_price: item.unit_price,
-                discount_rate: item.discount_rate,
-                vat_rate: item.vat_rate
+                unit_price: Number(item.unit_price) || 0,
+                discount_rate: Number(item.discount_rate) || 0,
+                vat_rate: Number(item.vat_rate) || 0
             }));
 
             const { error: itemsError } = await supabase
@@ -331,7 +336,7 @@ export default function AlisFaturasi() {
                 if (item.product_id) {
                     // 1. Alış fiyatını ve (varsa) önerilen satış fiyatını güncelle
                     const updateData: any = {
-                        purchase_price: item.unit_price
+                        purchase_price: Number(item.unit_price) || 0
                     };
 
                     if (item.suggested_sale_price) {
@@ -346,7 +351,7 @@ export default function AlisFaturasi() {
                     // 2. Stoğu atomik olarak artır (RPC kullanarak)
                     await supabase.rpc('increment_stock', {
                         p_product_id: item.product_id,
-                        p_qty: item.quantity
+                        p_qty: Number(item.quantity) || 0
                     });
                 }
             }
@@ -399,7 +404,7 @@ export default function AlisFaturasi() {
         new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val || 0);
 
     const filteredCariList = cariList.filter(c =>
-        c.cari_unvan.toLowerCase().includes(cariSearchTerm.toLowerCase()) ||
+        c.unvani.toLowerCase().includes(cariSearchTerm.toLowerCase()) ||
         (c.vergi_no || '').includes(cariSearchTerm)
     );
 
@@ -516,7 +521,7 @@ export default function AlisFaturasi() {
                                                         onClick={() => selectCari(cari)}
                                                         className="w-full px-4 py-3 text-left hover:bg-primary/10 transition-colors border-b border-border/50 last:border-0"
                                                     >
-                                                        <div className="font-bold text-sm text-foreground">{cari.cari_unvan}</div>
+                                                        <div className="font-bold text-sm text-foreground">{cari.unvani}</div>
                                                         <div className="text-xs text-secondary">{cari.vergi_no} - {cari.vergi_dairesi}</div>
                                                     </button>
                                                 ))}
@@ -628,10 +633,15 @@ export default function AlisFaturasi() {
                                             {/* Miktar */}
                                             <td className="p-2">
                                                 <input
-                                                    type="number"
-                                                    step="0.001"
+                                                    type="text"
+                                                    inputMode="decimal"
                                                     value={item.quantity}
-                                                    onChange={(e) => updateItem(index, 'quantity', parseFloat(e.target.value) || 0)}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value.replace(',', '.').replace(/[^0-9.]/g, '');
+                                                        const parts = val.split('.');
+                                                        const cleaned = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : val;
+                                                        updateItem(index, 'quantity', cleaned);
+                                                    }}
                                                     className="w-full bg-primary/10 border border-primary/20 rounded-lg px-2 py-1.5 text-primary font-bold text-center outline-none focus:border-primary"
                                                 />
                                             </td>
@@ -655,10 +665,15 @@ export default function AlisFaturasi() {
                                             {/* Birim Fiyat */}
                                             <td className="p-2">
                                                 <input
-                                                    type="number"
-                                                    step="0.01"
+                                                    type="text"
+                                                    inputMode="decimal"
                                                     value={item.unit_price}
-                                                    onChange={(e) => updateItem(index, 'unit_price', parseFloat(e.target.value) || 0)}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value.replace(',', '.').replace(/[^0-9.]/g, '');
+                                                        const parts = val.split('.');
+                                                        const cleaned = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : val;
+                                                        updateItem(index, 'unit_price', cleaned);
+                                                    }}
                                                     className="w-full bg-background border border-border rounded-lg px-2 py-1.5 text-foreground font-mono text-center outline-none focus:border-primary"
                                                 />
                                             </td>
@@ -666,10 +681,15 @@ export default function AlisFaturasi() {
                                             {/* İskonto */}
                                             <td className="p-2">
                                                 <input
-                                                    type="number"
-                                                    step="0.01"
+                                                    type="text"
+                                                    inputMode="decimal"
                                                     value={item.discount_rate}
-                                                    onChange={(e) => updateItem(index, 'discount_rate', parseFloat(e.target.value) || 0)}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value.replace(',', '.').replace(/[^0-9.]/g, '');
+                                                        const parts = val.split('.');
+                                                        const cleaned = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : val;
+                                                        updateItem(index, 'discount_rate', cleaned);
+                                                    }}
                                                     className="w-full bg-background border border-border rounded-lg px-2 py-1.5 text-foreground text-center outline-none focus:border-primary"
                                                 />
                                             </td>

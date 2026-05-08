@@ -682,14 +682,16 @@ export default function POS({
                                                     <div className="flex items-center justify-center gap-3">
                                                         <button onClick={() => updateQuantity(item.id, -1)} className="p-1 hover:text-rose-500 transition-colors"><Minus size={14} /></button>
                                                         <input
-                                                            type="number"
-                                                            step={item.unit === 'kg' ? '0.001' : '1'}
-                                                            value={item.unit === 'kg' ? item.quantity.toFixed(3) : item.quantity}
+                                                            type="text"
+                                                            inputMode="decimal"
+                                                            value={item.quantity}
                                                             onChange={(e) => {
-                                                                const newQty = parseFloat(e.target.value) || 0;
-                                                                if (newQty > 0) {
-                                                                    setCart(cart.map(i => i.id === item.id ? { ...i, quantity: newQty } : i));
-                                                                }
+                                                                const val = e.target.value.replace(/[^0-9.]/g, '');
+                                                                // Allow only one dot
+                                                                const parts = val.split('.');
+                                                                const cleaned = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : val;
+                                                                
+                                                                setCart(cart.map(i => i.id === item.id ? { ...i, quantity: cleaned } : i));
                                                             }}
                                                             className="font-black text-primary text-sm w-16 text-center bg-transparent border border-primary/20 rounded px-1 py-0.5 focus:outline-none focus:border-primary"
                                                         />
@@ -1194,9 +1196,15 @@ export default function POS({
                             <div className="relative">
                                 <input
                                     type="text" autoFocus
+                                    inputMode="decimal"
                                     className="w-full bg-white/5 border-2 border-primary/30 rounded-2xl py-6 px-4 text-4xl font-black text-center text-primary outline-none focus:border-primary transition-all"
                                     value={weightInput}
-                                    onChange={(e) => setWeightInput(e.target.value)}
+                                    onChange={(e) => {
+                                        const val = e.target.value.replace(',', '.').replace(/[^0-9.]/g, '');
+                                        const parts = val.split('.');
+                                        const cleaned = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : val;
+                                        setWeightInput(cleaned);
+                                    }}
                                     onKeyDown={(e) => e.key === 'Enter' && handleWeightSubmit()}
                                 />
                                 <span className="absolute right-6 top-1/2 -translate-y-1/2 text-xl font-black text-secondary opacity-30">GR</span>
@@ -1406,9 +1414,15 @@ export default function POS({
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-black text-secondary tracking-widest uppercase">Satış Fiyatı</label>
                                             <input
-                                                type="number"
+                                                type="text"
+                                                inputMode="decimal"
                                                 value={quickEditingProduct.sale_price}
-                                                onChange={(e) => setQuickEditingProduct({ ...quickEditingProduct, sale_price: parseFloat(e.target.value) })}
+                                                onChange={(e) => {
+                                                    const val = e.target.value.replace(',', '.').replace(/[^0-9.]/g, '');
+                                                    const parts = val.split('.');
+                                                    const cleaned = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : val;
+                                                    setQuickEditingProduct({ ...quickEditingProduct, sale_price: cleaned });
+                                                }}
                                                 className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm font-bold focus:border-primary/50 outline-none transition-all"
                                             />
                                         </div>
@@ -1436,9 +1450,15 @@ export default function POS({
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-black text-secondary tracking-widest uppercase">Stok Miktarı</label>
                                             <input
-                                                type="number"
+                                                type="text"
+                                                inputMode="decimal"
                                                 value={quickEditingProduct.stock_quantity ?? 0}
-                                                onChange={(e) => setQuickEditingProduct({ ...quickEditingProduct, stock_quantity: parseFloat(e.target.value) })}
+                                                onChange={(e) => {
+                                                    const val = e.target.value.replace(',', '.').replace(/[^0-9.]/g, '');
+                                                    const parts = val.split('.');
+                                                    const cleaned = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : val;
+                                                    setQuickEditingProduct({ ...quickEditingProduct, stock_quantity: cleaned });
+                                                }}
                                                 className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm font-bold focus:border-primary/50 outline-none transition-all"
                                             />
                                         </div>
@@ -1463,10 +1483,10 @@ export default function POS({
                                                     .from('products')
                                                     .update({
                                                         name: quickEditingProduct.name,
-                                                        sale_price: quickEditingProduct.sale_price,
+                                                        sale_price: Number(quickEditingProduct.sale_price) || 0,
                                                         barcode: quickEditingProduct.barcode,
                                                         unit: quickEditingProduct.unit,
-                                                        stock_quantity: quickEditingProduct.stock_quantity
+                                                        stock_quantity: Number(quickEditingProduct.stock_quantity) || 0
                                                     })
                                                     .eq('id', quickEditingProduct.id)
                                                     .eq('tenant_id', currentTenant.id);

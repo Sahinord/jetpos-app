@@ -67,8 +67,7 @@ export default function PerakendeSatisFaturasi() {
             .from('cari_hesaplar')
             .select('*')
             .eq('tenant_id', currentTenant?.id)
-            .eq('hesap_tipi', 'musteri')
-            .order('unvan');
+            .order('unvani');
         setCustomers(data || []);
     };
 
@@ -104,15 +103,16 @@ export default function PerakendeSatisFaturasi() {
         setProductSearch('');
     };
 
-    const updateQuantity = (itemId: string, newQuantity: number) => {
+    const updateQuantity = (itemId: string, newQuantity: any) => {
         setItems(items.map(item => {
             if (item.id === itemId) {
-                const vatAmount = (item.unit_price * newQuantity * item.vat_rate) / 100;
+                const qty = Number(newQuantity) || 0;
+                const vatAmount = (item.unit_price * qty * item.vat_rate) / 100;
                 return {
                     ...item,
                     quantity: newQuantity,
                     vat_amount: vatAmount,
-                    total_amount: (item.unit_price * newQuantity) + vatAmount
+                    total_amount: (item.unit_price * qty) + vatAmount
                 };
             }
             return item;
@@ -124,8 +124,8 @@ export default function PerakendeSatisFaturasi() {
     };
 
     const calculateTotals = () => {
-        const subtotal = items.reduce((sum, item) => sum + (item.unit_price * item.quantity), 0);
-        const totalVat = items.reduce((sum, item) => sum + item.vat_amount, 0);
+        const subtotal = items.reduce((sum, item) => sum + (item.unit_price * (Number(item.quantity) || 0)), 0);
+        const totalVat = items.reduce((sum, item) => sum + (Number(item.vat_amount) || 0), 0);
         const total = subtotal + totalVat;
         return { subtotal, totalVat, total };
     };
@@ -150,7 +150,7 @@ export default function PerakendeSatisFaturasi() {
                 invoice_no: invoiceNo,
                 invoice_date: invoiceDate,
                 cari_id: selectedCustomer.id,
-                cari_name: selectedCustomer.unvan,
+                cari_name: selectedCustomer.unvani,
                 subtotal: totals.subtotal,
                 vat_total: totals.totalVat,
                 total_amount: totals.total,
@@ -171,7 +171,7 @@ export default function PerakendeSatisFaturasi() {
             invoice_id: invoice.id,
             product_id: item.product_id,
             product_name: item.product_name,
-            quantity: item.quantity,
+            quantity: Number(item.quantity) || 0,
             unit_price: item.unit_price,
             vat_rate: item.vat_rate,
             vat_amount: item.vat_amount,
@@ -193,7 +193,7 @@ export default function PerakendeSatisFaturasi() {
             if (item.product_id) {
                 await supabase.rpc('decrement_stock', {
                     product_id: item.product_id,
-                    qty: item.quantity
+                    qty: Number(item.quantity) || 0
                 });
             }
         }
@@ -257,7 +257,7 @@ export default function PerakendeSatisFaturasi() {
                                     className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-left hover:border-emerald-500 transition-colors"
                                 >
                                     {selectedCustomer ? (
-                                        <span className="text-white font-medium">{selectedCustomer.unvan}</span>
+                                        <span className="text-white font-medium">{selectedCustomer.unvani}</span>
                                     ) : (
                                         <span className="text-secondary text-sm">Müşteri Seç...</span>
                                     )}
@@ -410,12 +410,16 @@ export default function PerakendeSatisFaturasi() {
                                                 </td>
                                                 <td className="py-4 px-2">
                                                     <input
-                                                        type="number"
+                                                        type="text"
+                                                        inputMode="decimal"
                                                         value={item.quantity}
-                                                        onChange={(e) => updateQuantity(item.id, parseFloat(e.target.value) || 0)}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value.replace(',', '.').replace(/[^0-9.]/g, '');
+                                                            const parts = val.split('.');
+                                                            const cleaned = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : val;
+                                                            updateQuantity(item.id, cleaned);
+                                                        }}
                                                         className="w-full bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-2 py-1.5 text-center text-emerald-400 font-bold focus:border-emerald-500 outline-none"
-                                                        min="0"
-                                                        step="0.01"
                                                     />
                                                 </td>
                                                 <td className="py-4 px-2 text-right text-white font-mono text-xs">{item.unit_price.toFixed(2)} ₺</td>
@@ -465,7 +469,7 @@ export default function PerakendeSatisFaturasi() {
                             </div>
                             <div className="overflow-y-auto flex-1 space-y-2 pr-2 custom-scrollbar">
                                 {customers
-                                    .filter(c => c.unvan.toLowerCase().includes(customerSearch.toLowerCase()))
+                                    .filter(c => (c.unvani || '').toLowerCase().includes(customerSearch.toLowerCase()))
                                     .map(customer => (
                                         <button
                                             key={customer.id}
@@ -478,7 +482,7 @@ export default function PerakendeSatisFaturasi() {
                                         >
                                             <div className="flex justify-between items-center">
                                                 <div>
-                                                    <p className="font-bold text-white group-hover:text-emerald-400 transition-colors uppercase tracking-tight">{customer.unvan}</p>
+                                                    <p className="font-bold text-white group-hover:text-emerald-400 transition-colors uppercase tracking-tight">{customer.unvani}</p>
                                                     <p className="text-[10px] text-secondary font-mono mt-1 uppercase tracking-widest">{customer.vergi_no || customer.tc_no || 'Kimlik Bilgisi Yok'}</p>
                                                 </div>
                                                 <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">

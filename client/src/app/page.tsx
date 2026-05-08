@@ -643,8 +643,15 @@ export default function Home() {
         if (!name) name = item["ADI"] || item["CISIM_ADI"] || (barcode !== "" ? `Ürün ${barcode}` : "İsimsiz Ürün");
  
         const purchase_price = parseNum(findValue(item, ["Alis_Fiyati", "Alış_Fiyatı", "Maliyet", "Cost", "Alış"]));
-        const sale_price = parseNum(findValue(item, ["Fiyati", "Fiyatı", "Satış Fiyatı", "Fiyat", "Price", "Satış", "Sales", "Etiket"]));
-        const stock_quantity = parseNum(findValue(item, ["Bakiye", "Stok", "Stok Adedi", "Stok Miktarı", "Miktar", "Adet", "Mevcut", "Quantity", "Qty"]));
+        let external_price = parseNum(findValue(item, ["Trendyol_Satış_Fiyatı", "Trendyol Satış Fiyatı", "Trendyol_Fiyatı", "Trendyol Satış", "Trendyol Fiyat", "Pazar Yeri Fiyatı", "Online Fiyat", "External Price"]));
+        let sale_price = parseNum(findValue(item, ["Piyasa_Satış_Fiyatı", "Piyasa Satış Fiyatı", "Fiyati", "Satış Fiyatı", "Fiyat", "Price", "Etiket"]));
+        
+        // Eğer dükkan fiyatı 0 ve Trendyol fiyatı varsa, dükkan fiyatına da onu yaz (User preference)
+        if (sale_price <= 0 && external_price > 0) {
+          sale_price = external_price;
+        }
+
+        const stock_quantity = parseNum(findValue(item, ["Stok", "Stok Adedi", "Stok Miktarı", "Miktar", "Adet", "Mevcut", "Quantity", "Qty", "Bakiye"]));
         const vat_rate = Math.round(parseNum(findValue(item, ["KDV", "Kdv Oranı", "VAT", "Tax"]) || 0));
 
         return {
@@ -652,6 +659,7 @@ export default function Home() {
           name: String(name).trim(),
           purchase_price,
           sale_price,
+          external_price: external_price || 0,
           stock_quantity,
           unit: findValue(item, ["Birim", "Unit"]) || "Adet",
           vat_rate,
@@ -845,7 +853,13 @@ export default function Home() {
             const mapping = mappings.find(m => m.product_id === item.id);
             if (mapping) {
               if (isLive) {
-                trendyolClient.updateStock(mapping.external_sku, newQty, item.sale_price)
+                // Fiyatı Trendyol'dan Çekerek Güncelle (Fiyat Farklılığı Koruması)
+                trendyolClient.getProductByBarcode(mapping.external_sku)
+                  .then((extProduct: any) => {
+                    // Eğer ürün bulunduysa, Trendyol'daki kendi fiyatını gönder
+                    const syncPrice = extProduct ? extProduct.sellingPrice : item.sale_price;
+                    return trendyolClient.updateStock(mapping.external_sku, newQty, syncPrice);
+                  })
                   .catch((err: any) => {
                     console.error("Trendyol sync failed:", err);
                     // Hata durumunda mapping tablosuna işle

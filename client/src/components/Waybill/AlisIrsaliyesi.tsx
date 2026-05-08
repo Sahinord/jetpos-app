@@ -81,7 +81,7 @@ export default function AlisIrsaliyesi() {
             .from('cari_hesaplar')
             .select('*')
             .eq('cari_tipi', 'Tedarikçi')
-            .order('cari_unvan');
+            .order('unvani');
         if (data) setCariList(data);
     };
 
@@ -116,7 +116,7 @@ export default function AlisIrsaliyesi() {
         setWaybill(prev => ({
             ...prev,
             cari_id: cari.id,
-            cari_name: cari.cari_unvan,
+            cari_name: cari.unvani,
             cari_vkn: cari.vergi_no || '',
             cari_address: cari.adres || ''
         }));
@@ -294,7 +294,7 @@ export default function AlisIrsaliyesi() {
         new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val || 0);
 
     const filteredCariList = cariList.filter(c =>
-        c.cari_unvan.toLowerCase().includes(cariSearchTerm.toLowerCase()) ||
+        c.unvani.toLowerCase().includes(cariSearchTerm.toLowerCase()) ||
         (c.vergi_no || '').includes(cariSearchTerm)
     );
 
@@ -353,7 +353,7 @@ export default function AlisIrsaliyesi() {
                                                 onClick={() => selectCari(cari)}
                                                 className="w-full px-4 py-3 text-left hover:bg-blue-500/10 transition-colors border-b border-border/50 last:border-0"
                                             >
-                                                <div className="font-bold text-sm text-foreground">{cari.cari_unvan}</div>
+                                                <div className="font-bold text-sm text-foreground">{cari.unvani}</div>
                                                 <div className="text-xs text-secondary">{cari.vergi_no}</div>
                                             </button>
                                         ))}

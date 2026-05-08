@@ -151,12 +151,10 @@ function createWindow() {
 
     mainWindow.once('ready-to-show', () => {
         mainWindow.show();
-        if (isDev) {
-            mainWindow.webContents.openDevTools();
-        }
+        // DevTools otomatik açılmıyor (manuel: F12)
     });
 
-    // DevTools açıklarını kapat
+    // Production'da DevTools tamamen engelle
     mainWindow.webContents.on('devtools-opened', () => {
         if (!isDev) {
             mainWindow.webContents.closeDevTools();

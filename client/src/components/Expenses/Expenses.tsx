@@ -210,12 +210,17 @@ export default function Expenses() {
                                         <label className="text-[10px] font-bold text-secondary uppercase tracking-[2px]">Tutar (₺)</label>
                                         <input
                                             required
-                                            type="number"
-                                            step="0.01"
+                                            type="text"
+                                            inputMode="decimal"
                                             placeholder="0.00"
                                             className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-rose-500/50 transition-all font-semibold text-rose-500"
                                             value={formData.amount}
-                                            onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                                            onChange={(e) => {
+                                                const val = e.target.value.replace(',', '.').replace(/[^0-9.]/g, '');
+                                                const parts = val.split('.');
+                                                const cleaned = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : val;
+                                                setFormData({ ...formData, amount: cleaned });
+                                            }}
                                         />
                                     </div>
                                     <div className="space-y-2">

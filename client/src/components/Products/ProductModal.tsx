@@ -9,22 +9,23 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
     const [formData, setFormData] = useState({
         name: "",
         barcode: "",
-        purchase_price: 0,
-        sale_price: 0,
+        purchase_price: "" as any,
+        sale_price: "" as any,
         vat_rate: 20,
-        stock_quantity: 0,
+        stock_quantity: "" as any,
         category_id: "",
         unit: "Adet", // Adet, kg
         status: "active", // active, passive, pending
         is_campaign: false,
         image_url: "",
+        external_price: "" as any,
     });
  
     // Pricing suggestions settings
     const [pricingPrefs, setPricingPrefs] = useState({
-        margin: 30,
-        commission: 0,
-        withholding: 0
+        margin: "30" as any,
+        commission: "0" as any,
+        withholding: "0" as any
     });
  
     const [showAdvancedPricing, setShowAdvancedPricing] = useState(false);
@@ -32,7 +33,14 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
     useEffect(() => {
         const saved = localStorage.getItem('pricingPrefs');
         if (saved) {
-            try { setPricingPrefs(JSON.parse(saved)); } catch (e) { }
+            try { 
+                const parsed = JSON.parse(saved);
+                setPricingPrefs({
+                    margin: String(parsed.margin || 30),
+                    commission: String(parsed.commission || 0),
+                    withholding: String(parsed.withholding || 0)
+                });
+            } catch (e) { }
         }
     }, []);
  
@@ -43,6 +51,10 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
     useEffect(() => {
         if (product) setFormData({
             ...product,
+            purchase_price: String(product.purchase_price || 0),
+            sale_price: String(product.sale_price || 0),
+            stock_quantity: String(product.stock_quantity || 0),
+            external_price: String(product.external_price || 0),
             unit: product.unit || "Adet",
             status: product.status || (product.is_active === false ? 'passive' : 'active'),
             image_url: product.image_url || "",
@@ -51,15 +63,16 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
         else setFormData({
             name: "",
             barcode: "",
-            purchase_price: 0,
-            sale_price: 0,
+            purchase_price: "",
+            sale_price: "",
             vat_rate: 20,
-            stock_quantity: 0,
+            stock_quantity: "",
             category_id: "",
             unit: "Adet",
             status: "active",
             is_campaign: false,
             image_url: "",
+            external_price: "",
         });
     }, [product, isOpen]);
 
@@ -69,13 +82,31 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
 
     const handleSuggestPrice = () => {
         const suggested = suggestSalePrice(
-            formData.purchase_price,
-            pricingPrefs.margin,
+            Number(formData.purchase_price) || 0,
+            Number(pricingPrefs.margin) || 0,
             formData.vat_rate,
-            pricingPrefs.commission,
-            pricingPrefs.withholding
+            Number(pricingPrefs.commission) || 0,
+            Number(pricingPrefs.withholding) || 0
         );
-        setFormData({ ...formData, sale_price: suggested });
+        setFormData({ ...formData, sale_price: String(suggested) });
+    };
+
+    const handleNumericInput = (field: string, value: string, isPrefs: boolean = false) => {
+        // Sayıları ve sadece bir tane nokta/virgül karakterini kabul et
+        let cleaned = value.replace(/[^0-9.,]/g, '');
+        cleaned = cleaned.replace(',', '.'); // Virgülü noktaya çevir
+        
+        // Birden fazla nokta olmasını engelle
+        const parts = cleaned.split('.');
+        if (parts.length > 2) {
+            cleaned = parts[0] + '.' + parts.slice(1).join('');
+        }
+
+        if (isPrefs) {
+            setPricingPrefs(prev => ({ ...prev, [field]: cleaned }));
+        } else {
+            setFormData(prev => ({ ...prev, [field]: cleaned }));
+        }
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -206,12 +237,10 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                         type="text"
                                         inputMode="decimal"
                                         className="w-full bg-background border border-border rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary/50 outline-none text-foreground"
-                                        value={formData.purchase_price === 0 ? "" : formData.purchase_price}
+                                        value={formData.purchase_price}
                                         onFocus={(e) => e.target.select()}
-                                        onChange={(e) => {
-                                            const val = e.target.value.replace(/[^0-9.]/g, '').replace(/^0+(?=\d)/, '');
-                                            setFormData({ ...formData, purchase_price: val === "" ? 0 : parseFloat(val) });
-                                        }}
+                                        onChange={(e) => handleNumericInput('purchase_price', e.target.value)}
+                                        placeholder="0.00"
                                     />
                                 </div>
                                 <div>
@@ -244,13 +273,28 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                     type="text"
                                     inputMode="decimal"
                                     className="w-full bg-background border border-border rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary/50 outline-none"
-                                    value={formData.sale_price === 0 ? "" : formData.sale_price}
+                                    value={formData.sale_price}
                                     onFocus={(e) => e.target.select()}
-                                    onChange={(e) => {
-                                        const val = e.target.value.replace(/[^0-9.]/g, '').replace(/^0+(?=\d)/, '');
-                                        setFormData({ ...formData, sale_price: val === "" ? 0 : parseFloat(val) });
-                                    }}
+                                    onChange={(e) => handleNumericInput('sale_price', e.target.value)}
+                                    placeholder="0.00"
                                 />
+                                
+                                <div className="mt-4">
+                                    <label className="block text-[11px] font-black text-orange-500 mb-1.5 uppercase tracking-wider">Trendyol Satış Fiyatı (₺)</label>
+                                    <div className="relative">
+                                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-orange-500 font-bold text-xs">TRY</div>
+                                        <input
+                                            type="text"
+                                            inputMode="decimal"
+                                            className="w-full bg-orange-500/5 border border-orange-500/20 rounded-xl pl-12 pr-4 py-2.5 outline-none focus:border-orange-500 text-white font-black"
+                                            value={formData.external_price}
+                                            onFocus={(e) => e.target.select()}
+                                            onChange={(e) => handleNumericInput('external_price', e.target.value)}
+                                            placeholder="Trendyol'a özel fiyat girin"
+                                        />
+                                    </div>
+                                    <p className="text-[9px] text-secondary/60 mt-1">* Bu fiyat dükkan fiyatından bağımsız sadece Trendyol'a gönderilir.</p>
+                                </div>
  
                                 <button 
                                     onClick={() => setShowAdvancedPricing(!showAdvancedPricing)}
@@ -275,12 +319,9 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                                         type="text" 
                                                         inputMode="decimal"
                                                         className="w-full bg-background border border-border rounded-lg px-2 py-1.5 text-xs outline-none"
-                                                        value={pricingPrefs.margin === 0 ? "" : pricingPrefs.margin}
+                                                        value={pricingPrefs.margin}
                                                         onFocus={(e) => e.target.select()}
-                                                        onChange={(e) => {
-                                                            const val = e.target.value.replace(/[^0-9.]/g, '').replace(/^0+(?=\d)/, '');
-                                                            setPricingPrefs({...pricingPrefs, margin: val === "" ? 0 : parseFloat(val)});
-                                                        }}
+                                                        onChange={(e) => handleNumericInput('margin', e.target.value, true)}
                                                     />
                                                 </div>
                                                 <div>
@@ -289,12 +330,9 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                                         type="text" 
                                                         inputMode="decimal"
                                                         className="w-full bg-background border border-border rounded-lg px-2 py-1.5 text-xs outline-none"
-                                                        value={pricingPrefs.commission === 0 ? "" : pricingPrefs.commission}
+                                                        value={pricingPrefs.commission}
                                                         onFocus={(e) => e.target.select()}
-                                                        onChange={(e) => {
-                                                            const val = e.target.value.replace(/[^0-9.]/g, '').replace(/^0+(?=\d)/, '');
-                                                            setPricingPrefs({...pricingPrefs, commission: val === "" ? 0 : parseFloat(val)});
-                                                        }}
+                                                        onChange={(e) => handleNumericInput('commission', e.target.value, true)}
                                                     />
                                                 </div>
                                                 <div>
@@ -303,12 +341,9 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                                         type="text" 
                                                         inputMode="decimal"
                                                         className="w-full bg-background border border-border rounded-lg px-2 py-1.5 text-xs outline-none"
-                                                        value={pricingPrefs.withholding === 0 ? "" : pricingPrefs.withholding}
+                                                        value={pricingPrefs.withholding}
                                                         onFocus={(e) => e.target.select()}
-                                                        onChange={(e) => {
-                                                            const val = e.target.value.replace(/[^0-9.]/g, '').replace(/^0+(?=\d)/, '');
-                                                            setPricingPrefs({...pricingPrefs, withholding: val === "" ? 0 : parseFloat(val)});
-                                                        }}
+                                                        onChange={(e) => handleNumericInput('withholding', e.target.value, true)}
                                                     />
                                                 </div>
                                             </div>
@@ -358,12 +393,9 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                     type="text"
                                     inputMode="decimal"
                                     className="w-full bg-background border border-border rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary/50 outline-none text-lg font-bold text-foreground"
-                                    value={formData.stock_quantity === 0 ? "" : formData.stock_quantity}
+                                    value={formData.stock_quantity}
                                     onFocus={(e) => e.target.select()}
-                                    onChange={(e) => {
-                                        const val = e.target.value.replace(/[^0-9.]/g, '').replace(/^0+(?=\d)/, '');
-                                        setFormData({ ...formData, stock_quantity: val === "" ? 0 : parseFloat(val) });
-                                    }}
+                                    onChange={(e) => handleNumericInput('stock_quantity', e.target.value)}
                                     placeholder="0"
                                 />
                             </div>
@@ -416,7 +448,16 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                             İptal
                         </button>
                         <button
-                            onClick={() => onSave(formData)}
+                            onClick={() => {
+                                const finalData = {
+                                    ...formData,
+                                    purchase_price: Number(formData.purchase_price) || 0,
+                                    sale_price: Number(formData.sale_price) || 0,
+                                    external_price: Number(formData.external_price) || 0,
+                                    stock_quantity: Number(formData.stock_quantity) || 0
+                                };
+                                onSave(finalData);
+                            }}
                             disabled={isSaving}
                             className="px-8 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl font-medium transition-all shadow-lg shadow-primary/20 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >

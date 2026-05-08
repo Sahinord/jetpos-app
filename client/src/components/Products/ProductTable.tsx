@@ -716,7 +716,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                         <tbody className="divide-y divide-border/50">
                             {paginatedProducts.map((product: any) => {
                                 const wsData = product.warehouse_stock?.find((ws: any) => ws.warehouse_id === activeWarehouse?.id);
-                                const currentSalePrice = (!isPriceSyncEnabled && wsData?.sale_price) ? wsData.sale_price : product.sale_price;
+                                const currentSalePrice = ((!isPriceSyncEnabled && wsData?.sale_price) ? wsData.sale_price : product.sale_price) || product.external_price || 0;
                                 const currentPurchasePrice = (!isPriceSyncEnabled && wsData?.purchase_price) ? wsData.purchase_price : product.purchase_price;
                                 const currentStock = (isStockSyncEnabled || !activeWarehouse) ? (product.stock_quantity || 0) : (wsData?.quantity || 0);
 

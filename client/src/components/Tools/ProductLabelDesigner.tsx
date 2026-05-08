@@ -1043,7 +1043,7 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                                 <div className="flex-1 min-w-0 mr-2">
                                     <span className="text-[10px] text-primary uppercase font-black truncate block">
                                         {selectedElem ? {
-                                            brand: 'Marka', name: 'Ürün Adı', price: 'Fiyat', barcode: 'Barkod', logo: 'Logo'
+                                            brand: 'Marka', name: 'Ürün Adı', price: 'Fiyat', barcode: 'Barkod', logo: 'Logo', frame: 'Çerçeve'
                                         }[selectedElem] : 'Eleman seç'}
                                     </span>
                                 </div>

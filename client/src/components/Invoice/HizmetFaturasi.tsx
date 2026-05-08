@@ -119,7 +119,7 @@ export default function HizmetFaturasi({ type }: Props) {
             .from('cari_hesaplar')
             .select('*')
             .eq('cari_tipi', config.cari_type)
-            .order('cari_unvan');
+            .order('unvani');
         if (data) setCariList(data);
     };
 
@@ -274,7 +274,7 @@ export default function HizmetFaturasi({ type }: Props) {
         new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val || 0);
 
     const filteredCariList = cariList.filter(c =>
-        c.cari_unvan.toLowerCase().includes(cariSearchTerm.toLowerCase()) ||
+        c.unvani.toLowerCase().includes(cariSearchTerm.toLowerCase()) ||
         (c.vergi_no || '').includes(cariSearchTerm)
     );
 
@@ -328,12 +328,12 @@ export default function HizmetFaturasi({ type }: Props) {
                                                 <button
                                                     key={cari.id}
                                                     onClick={() => {
-                                                        setFatura(prev => ({ ...prev, cari_id: cari.id, cari_name: cari.cari_unvan }));
+                                                        setFatura(prev => ({ ...prev, cari_id: cari.id, cari_name: cari.unvani }));
                                                         setShowCariSearch(false);
                                                     }}
                                                     className="w-full px-4 py-3 text-left hover:bg-primary/10 transition-colors border-b border-border/50 last:border-0"
                                                 >
-                                                    <div className="font-bold text-sm">{cari.cari_unvan}</div>
+                                                    <div className="font-bold text-sm">{cari.unvani}</div>
                                                     <div className="text-[10px] text-secondary font-mono">{cari.vergi_no}</div>
                                                 </button>
                                             ))}

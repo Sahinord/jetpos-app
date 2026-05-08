@@ -1,5 +1,5 @@
 import React from 'react';
-import { Monitor, BarChart2, Smartphone, Tag, Shield, Zap, ChevronRight, Layout, Database, Clock, Globe, Smartphone as MobileIcon, CreditCard } from 'lucide-react';
+import { Monitor, BarChart2, Smartphone, Tag, Shield, Zap, Layout, Database, Clock, Globe, CreditCard } from 'lucide-react';
 
 export interface ProductDetailData {
   id: string;

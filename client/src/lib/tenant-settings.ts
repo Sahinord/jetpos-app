@@ -60,17 +60,45 @@ export async function getTenantSettings(tenantId: string): Promise<TenantSetting
     if (!tenantId) return {};
 
     try {
-        const { data, error } = await supabaseAdmin
+        // 1. Get Global Settings from tenants table
+        const { data: tenantData, error: tenantError } = await supabaseAdmin
             .from('tenants')
             .select('settings')
             .eq('id', tenantId)
             .single();
 
-        if (error || !data || !data.settings) {
-            return {};
+        let settings: TenantSettings = (tenantData?.settings as TenantSettings) || {};
+
+        // 2. Get Platform-specific Settings from integration_settings
+        const { data: integrationData, error: integrationError } = await supabaseAdmin
+            .from('integration_settings')
+            .select('platform, type, settings, api_config')
+            .eq('tenant_id', tenantId);
+
+        if (!integrationError && integrationData) {
+            integrationData.forEach(item => {
+                const config = item.api_config || item.settings;
+                if (!config) return;
+
+                // Trendyol Go Mapping
+                if (item.type === 'trendyol_go' || item.platform === 'trendyol') {
+                    settings.trendyolGo = {
+                        ...settings.trendyolGo,
+                        ...config
+                    };
+                }
+                
+                // Other platform mappings can be added here
+                if (item.platform === 'parasut') {
+                    settings.parasut = {
+                        ...settings.parasut,
+                        ...config
+                    };
+                }
+            });
         }
 
-        return data.settings as TenantSettings;
+        return settings;
     } catch (err) {
         console.error('getTenantSettings error:', err);
         return {};

@@ -574,10 +574,19 @@ export default function TrendyolGOWidget() {
                             <button
                                 onClick={handleSyncStock}
                                 disabled={syncing || !isConfigured}
-                                className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-slate-900 hover:bg-slate-800 border border-white/5 hover:border-orange-500/30 rounded-2xl text-white/80 hover:text-white font-bold transition-all disabled:opacity-50 active:scale-[0.99]"
+                                className="w-full flex items-center justify-center gap-2 px-5 py-3.5 bg-slate-900 hover:bg-slate-800 border border-white/5 hover:border-orange-500/30 rounded-2xl text-white font-black transition-all disabled:opacity-50 active:scale-[0.99] shadow-inner"
                             >
-                                <Package className={`w-4 h-4 ${syncing ? 'animate-bounce' : ''}`} />
-                                <span>STOKLARI TRENDYOL'A GÜNCELLE</span>
+                                {syncing ? (
+                                    <>
+                                        <RefreshCw className="w-5 h-5 animate-spin text-orange-500" />
+                                        <span className="tracking-widest animate-pulse">GÜNCELLENİYOR...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Package className="w-5 h-5 text-orange-500" />
+                                        <span>STOKLARI TRENDYOL'A GÜNCELLE</span>
+                                    </>
+                                )}
                             </button>
                         </div>
                     </div>
