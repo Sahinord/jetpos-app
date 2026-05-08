@@ -15,6 +15,10 @@ import { supabase } from "@/lib/supabase";
 interface Product {
     id: string; name: string; barcode: string;
     sale_price: number; purchase_price: number; vat_rate: number;
+    warehouse_stock?: {
+        warehouse_id: string;
+        sale_price?: number;
+    }[];
 }
 const showToast = (msg: string, type: string = 'info') => {
     // JetKasa'da genelde window.dispatchEvent veya prop olarak gelir ama burada basit bir log/alert veya varsa UI sistemini kullanabiliriz
@@ -142,9 +146,22 @@ const TEMPLATES: LabelConfig[] = [
 ];
 
 /* ── Price renderer helpers ── */
-function PriceDisplay({ cfg, product, scale }: { cfg: LabelConfig; product: Product; scale: number }) {
-    const price = Number(product.sale_price) || 0;
-    const [int, dec] = price.toFixed(2).split('.');
+function PriceDisplay({ cfg, product, scale, customPrice, activeWarehouseId }: { cfg: LabelConfig; product: Product; scale: number; customPrice?: string; activeWarehouseId?: string }) {
+    // 1. Öncelik: Kullanıcının elle girdiği (customPrice)
+    // 2. Öncelik: Aktif mağazadaki (warehouse_stock) fiyat
+    // 3. Öncelik: Ürünün ana (sale_price) fiyatı
+    let finalPrice = Number(product.sale_price) || 0;
+
+    if (customPrice) {
+        finalPrice = Number(customPrice.replace(',', '.'));
+    } else if (activeWarehouseId && product.warehouse_stock) {
+        const ws = product.warehouse_stock.find(s => s.warehouse_id === activeWarehouseId);
+        if (ws && ws.sale_price !== undefined && ws.sale_price !== null) {
+            finalPrice = Number(ws.sale_price);
+        }
+    }
+
+    const [int, dec] = finalPrice.toFixed(2).split('.');
     const formattedInt = Number(int).toLocaleString('tr-TR');
     const isRaf = cfg.id === 'raf';
 
@@ -186,7 +203,7 @@ function priceHtmlMm(cfg: LabelConfig, product: Product, pos: Pos): string {
 
 /* ── Main Component ── */
 export default function ProductLabelDesigner({ products, showToast, printerName }: { products: Product[]; showToast: any; printerName?: string }) {
-    const { currentTenant } = useTenant();
+    const { currentTenant, activeWarehouse } = useTenant();
 
     /* ─ selection ─ */
     const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
@@ -973,7 +990,12 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                                             </div>
                                             <p className="text-[10px] text-secondary font-mono">{product.barcode}</p>
                                         </div>
-                                        <p className="font-black text-primary text-sm flex-shrink-0">₺{product.sale_price?.toFixed(2)}</p>
+                                        <p className="font-black text-primary text-sm flex-shrink-0">
+                                            ₺{(() => {
+                                                const wsPrice = activeWarehouse ? product.warehouse_stock?.find(ws => ws.warehouse_id === activeWarehouse.id)?.sale_price : null;
+                                                return (wsPrice ?? product.sale_price)?.toFixed(2);
+                                            })()}
+                                        </p>
                                     </div>
                                     {isSelected && (
                                         <div className="flex items-center gap-2 px-3 pb-2 border-t border-border/50 pt-2">
@@ -1321,15 +1343,61 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                                             {cfg.showPrice && (() => {
                                                 const id: ElemId = 'price';
                                                 const isSel = selectedElem === id;
+                                                const isEdit = editingElem === id;
                                                 const isRaf = templateId === 'raf';
                                                 const fS = fontScales[id] ?? 1;
                                                 const wPx = getEW(id, isRaf ? 75 : 120);
+                                                const customVal = customTexts[id];
+                                                
                                                 return (
-                                                    <div style={{ position: 'absolute', left: getPos(id).xMm * PS, top: getPos(id).yMm * PS, width: wPx, cursor: 'grab', outline: isSel ? '2px solid #6366f1' : 'none', outlineOffset: 4, zIndex: isSel ? 50 : 10, transform: `scale(${fS})`, transformOrigin: 'top left', overflow: 'hidden' }}
-                                                        onMouseDown={e => { startDrag(e, id); setSelectedElem(id); }}
+                                                    <div style={{ position: 'absolute', left: getPos(id).xMm * PS, top: getPos(id).yMm * PS, width: wPx, cursor: isEdit ? 'text' : 'grab', outline: isSel ? '2px solid #6366f1' : 'none', outlineOffset: 4, zIndex: isSel || isEdit ? 50 : 10, transform: `scale(${fS})`, transformOrigin: 'top left', overflow: 'hidden' }}
+                                                        onMouseDown={e => { if (isEdit) return; startDrag(e, id); setSelectedElem(id); }}
+                                                        onDoubleClick={() => setEditingElem(id)}
                                                     >
-                                                        <PriceDisplay cfg={cfg} product={previewProduct} scale={PS} />
-                                                        {isSel && <>{mkH(id, 'mr', wPx, fS)}</>}
+                                                        {isEdit ? (
+                                                            <input
+                                                                autoFocus
+                                                                type="text"
+                                                                defaultValue={customVal || (() => {
+                                                                    const wsPrice = activeWarehouse ? previewProduct.warehouse_stock?.find(ws => ws.warehouse_id === activeWarehouse.id)?.sale_price : null;
+                                                                    return (wsPrice ?? previewProduct.sale_price).toString();
+                                                                })()}
+                                                                className="w-full bg-white text-black font-black outline-none border-none p-1"
+                                                                onBlur={e => { 
+                                                                    const val = e.target.value.trim();
+                                                                    setCustomTexts(p => {
+                                                                        const next = { ...p };
+                                                                        if (!val) delete next[id];
+                                                                        else next[id] = val;
+                                                                        return next;
+                                                                    });
+                                                                    setEditingElem(null); 
+                                                                }}
+                                                                onKeyDown={e => { 
+                                                                    if (e.key === 'Enter') { 
+                                                                        const val = e.currentTarget.value.trim();
+                                                                        setCustomTexts(p => {
+                                                                            const next = { ...p };
+                                                                            if (!val) delete next[id];
+                                                                            else next[id] = val;
+                                                                            return next;
+                                                                        });
+                                                                        setEditingElem(null); 
+                                                                    } 
+                                                                    if (e.key === 'Escape') setEditingElem(null); 
+                                                                }}
+                                                                onClick={e => e.stopPropagation()}
+                                                            />
+                                                        ) : (
+                                                            <PriceDisplay 
+                                                                cfg={cfg} 
+                                                                product={previewProduct} 
+                                                                scale={PS} 
+                                                                customPrice={customVal} 
+                                                                activeWarehouseId={activeWarehouse?.id}
+                                                            />
+                                                        )}
+                                                        {isSel && !isEdit && <>{mkH(id, 'mr', wPx, fS)}</>}
                                                     </div>
                                                 );
                                             })()}
