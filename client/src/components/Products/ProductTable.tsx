@@ -472,6 +472,16 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
         }
     };
 
+    const handleSendToLabel = () => {
+        try {
+            const q = JSON.parse(localStorage.getItem('jetpos_label_queue') || '[]');
+            const newQ = [...new Set([...q, ...selectedProducts])];
+            localStorage.setItem('jetpos_label_queue', JSON.stringify(newQ));
+            if (showToast) showToast(`${selectedProducts.length} ürün etikete gönderildi!`, "success");
+            setSelectedProducts([]);
+        } catch(e) {}
+    };
+
     return (
         <div className="space-y-8">
             {/* Action Bar - Reorganized */}
@@ -678,6 +688,13 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                         >
                                             <Hash className="w-4 h-4" />
                                             <span>STOK GÜNCELLE</span>
+                                        </button>
+                                        <button
+                                            onClick={handleSendToLabel}
+                                            className="flex items-center space-x-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-4 py-2.5 rounded-xl text-xs font-bold text-amber-500 transition-all hover:scale-105"
+                                        >
+                                            <Barcode className="w-4 h-4" />
+                                            <span>ETİKET ÇIKAR</span>
                                         </button>
                                     </div>
                                 </motion.div>

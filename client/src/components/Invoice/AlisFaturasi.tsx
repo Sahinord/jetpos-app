@@ -25,6 +25,7 @@ interface InvoiceItem {
     vat_amount?: number;
     line_total_with_vat?: number;
     suggested_sale_price?: number;
+    old_purchase_price?: number;
 }
 
 interface Invoice {
@@ -49,6 +50,7 @@ export default function AlisFaturasi() {
     const [cariList, setCariList] = useState<any[]>([]);
     const [productList, setProductList] = useState<any[]>([]);
     const [invoice, setInvoice] = useState<Invoice>({
+        invoice_number: '',
         invoice_date: new Date().toISOString().split('T')[0],
         due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         cari_id: '',
@@ -227,7 +229,8 @@ export default function AlisFaturasi() {
             product_id: product.id,
             item_name: product.name,
             item_code: product.barcode || '',
-            unit_price: product.purchase_price || 0
+            unit_price: 0,
+            old_purchase_price: product.purchase_price || 0
         };
         setInvoice(prev => ({ ...prev, items: newItems }));
         setSelectedItemIndex(null);
@@ -279,18 +282,22 @@ export default function AlisFaturasi() {
 
         setLoading(true);
         try {
-            // Fatura numarası al
-            const { data: nextNumber } = await supabase.rpc('get_next_invoice_number', {
-                p_tenant_id: currentTenant?.id,
-                p_invoice_type: 'purchase'
-            });
+            // Fatura numarası al (kullanıcı girmediyse)
+            let finalInvoiceNumber = invoice.invoice_number?.trim();
+            if (!finalInvoiceNumber) {
+                const { data: nextNumber } = await supabase.rpc('get_next_invoice_number', {
+                    p_tenant_id: currentTenant?.id,
+                    p_invoice_type: 'purchase'
+                });
+                finalInvoiceNumber = nextNumber || `ALIS-${Date.now()}`;
+            }
 
             // Fatura kaydet
             const { data: invoiceData, error: invoiceError } = await supabase
                 .from('invoices')
                 .insert({
                     tenant_id: currentTenant?.id,
-                    invoice_number: nextNumber,
+                    invoice_number: finalInvoiceNumber,
                     invoice_type: 'purchase',
                     invoice_date: invoice.invoice_date,
                     due_date: invoice.due_date,
@@ -311,8 +318,48 @@ export default function AlisFaturasi() {
 
             if (invoiceError) throw invoiceError;
 
+            // 1. Yeni ürünleri oluştur veya isimden eşleştir
+            const finalItems = [...invoice.items];
+            for (let i = 0; i < finalItems.length; i++) {
+                const item = finalItems[i];
+                if (!item.product_id && item.item_name.trim()) {
+                    // İsimle tam eşleşen var mı kontrol et
+                    const { data: existingProd } = await supabase
+                        .from('products')
+                        .select('id')
+                        .ilike('name', item.item_name.trim())
+                        .eq('tenant_id', currentTenant?.id)
+                        .maybeSingle();
+
+                    if (existingProd) {
+                        item.product_id = existingProd.id;
+                    } else {
+                        // Yeni ürün oluştur
+                        const { data: newProd, error: newProdErr } = await supabase
+                            .from('products')
+                            .insert({
+                                tenant_id: currentTenant?.id,
+                                name: item.item_name.trim(),
+                                barcode: item.item_code || null,
+                                unit: item.unit,
+                                vat_rate: item.vat_rate,
+                                purchase_price: Number(item.unit_price) || 0,
+                                sale_price: item.suggested_sale_price || 0,
+                                stock_quantity: 0, // Aşağıda increment_stock ile artacak
+                                status: 'active'
+                            })
+                            .select()
+                            .single();
+                        
+                        if (!newProdErr && newProd) {
+                            item.product_id = newProd.id;
+                        }
+                    }
+                }
+            }
+
             // Kalemleri kaydet
-            const itemsToInsert = invoice.items.map(item => ({
+            const itemsToInsert = finalItems.map(item => ({
                 tenant_id: currentTenant?.id,
                 invoice_id: invoiceData.id,
                 product_id: item.product_id,
@@ -332,7 +379,7 @@ export default function AlisFaturasi() {
             if (itemsError) throw itemsError;
 
             // Stok ve Fiyat Güncelleme
-            for (const item of invoice.items) {
+            for (const item of finalItems) {
                 if (item.product_id) {
                     // 1. Alış fiyatını ve (varsa) önerilen satış fiyatını güncelle
                     const updateData: any = {
@@ -374,6 +421,7 @@ export default function AlisFaturasi() {
 
             // Formu sıfırla
             setInvoice({
+                invoice_number: '',
                 invoice_date: new Date().toISOString().split('T')[0],
                 due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
                 cari_id: '',
@@ -548,6 +596,18 @@ export default function AlisFaturasi() {
                                 )}
                             </div>
 
+                            {/* Fatura Numarası */}
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-secondary uppercase">Fatura Numarası</label>
+                                <input
+                                    type="text"
+                                    value={invoice.invoice_number || ''}
+                                    onChange={(e) => setInvoice(prev => ({ ...prev, invoice_number: e.target.value }))}
+                                    placeholder="Opsiyonel"
+                                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+                                />
+                            </div>
+
                             {/* Fatura Tarihi */}
                             <div className="space-y-2">
                                 <label className="text-xs font-bold text-secondary uppercase">Fatura Tarihi *</label>
@@ -588,7 +648,7 @@ export default function AlisFaturasi() {
                             </button>
                         </div>
 
-                        <div className="overflow-x-auto">
+                        <div className="overflow-x-auto pb-48">
                             <table className="w-full text-xs">
                                 <thead className="text-secondary/60 font-semibold uppercase tracking-wider text-[9px] border-b border-white/5">
                                     <tr>
@@ -609,23 +669,37 @@ export default function AlisFaturasi() {
                                                 <input
                                                     type="text"
                                                     value={item.item_name}
-                                                    onChange={(e) => updateItem(index, 'item_name', e.target.value)}
-                                                    onFocus={() => setSelectedItemIndex(index)}
+                                                    onChange={(e) => {
+                                                        updateItem(index, 'item_name', e.target.value);
+                                                        setProductSearchTerm(e.target.value);
+                                                    }}
+                                                    onFocus={() => {
+                                                        setSelectedItemIndex(index);
+                                                        setProductSearchTerm(item.item_name);
+                                                    }}
+                                                    onBlur={() => setTimeout(() => setSelectedItemIndex(null), 250)}
                                                     placeholder="Ürün/Hizmet adı..."
                                                     className="w-full bg-transparent border-none text-foreground font-medium outline-none"
                                                 />
-                                                {selectedItemIndex === index && productSearchTerm && (
+                                                {selectedItemIndex === index && (
                                                     <div className="absolute z-40 top-full left-0 mt-1 w-80 bg-card border border-border rounded-xl shadow-2xl max-h-60 overflow-y-auto">
-                                                        {filteredProductList.slice(0, 10).map(product => (
-                                                            <button
-                                                                key={product.id}
-                                                                onClick={() => selectProduct(product, index)}
-                                                                className="w-full px-3 py-2 text-left hover:bg-primary/10 transition-colors border-b border-border/50 last:border-0"
-                                                            >
-                                                                <div className="font-bold text-sm text-foreground">{product.name}</div>
-                                                                <div className="text-xs text-secondary">{product.barcode} • {formatCurrency(product.purchase_price)}</div>
-                                                            </button>
-                                                        ))}
+                                                        {filteredProductList.length === 0 ? (
+                                                            <div className="p-4 text-center text-sm text-secondary">
+                                                                Eşleşen ürün bulunamadı. <br/>
+                                                                <span className="text-emerald-500 font-bold block mt-1">✨ Yeni ürün olarak kaydedilecek</span>
+                                                            </div>
+                                                        ) : (
+                                                            filteredProductList.slice(0, 10).map(product => (
+                                                                <button
+                                                                    key={product.id}
+                                                                    onClick={() => selectProduct(product, index)}
+                                                                    className="w-full px-3 py-2 text-left hover:bg-primary/10 transition-colors border-b border-border/50 last:border-0"
+                                                                >
+                                                                    <div className="font-bold text-sm text-foreground">{product.name}</div>
+                                                                    <div className="text-xs text-secondary">{product.barcode || 'Barkodsuz'} • {formatCurrency(product.purchase_price)}</div>
+                                                                </button>
+                                                            ))
+                                                        )}
                                                     </div>
                                                 )}
                                             </td>
@@ -667,14 +741,15 @@ export default function AlisFaturasi() {
                                                 <input
                                                     type="text"
                                                     inputMode="decimal"
-                                                    value={item.unit_price}
+                                                    value={item.unit_price === 0 ? '' : item.unit_price}
+                                                    placeholder={item.old_purchase_price ? `Eski: ${formatCurrency(item.old_purchase_price)}` : '0,00'}
                                                     onChange={(e) => {
                                                         const val = e.target.value.replace(',', '.').replace(/[^0-9.]/g, '');
                                                         const parts = val.split('.');
                                                         const cleaned = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : val;
                                                         updateItem(index, 'unit_price', cleaned);
                                                     }}
-                                                    className="w-full bg-background border border-border rounded-lg px-2 py-1.5 text-foreground font-mono text-center outline-none focus:border-primary"
+                                                    className="w-full bg-background border border-border rounded-lg px-2 py-1.5 text-foreground font-mono text-center outline-none focus:border-primary placeholder:text-secondary/50 placeholder:text-[10px]"
                                                 />
                                             </td>
 
@@ -701,6 +776,7 @@ export default function AlisFaturasi() {
                                                     onChange={(e) => updateItem(index, 'vat_rate', parseFloat(e.target.value))}
                                                     className="w-full bg-background border border-border rounded-lg px-1 py-1.5 text-foreground text-center text-xs"
                                                 >
+                                                    <option value="0">%0</option>
                                                     <option value="1">%1</option>
                                                     <option value="10">%10</option>
                                                     <option value="20">%20</option>
