@@ -185,49 +185,76 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                 { id: "products", label: "Ürün Listesi", icon: Boxes, feature: "products", description: "Stoktaki ürünlerin listelenmesi, yeni ürün ekleme ve düzenleme işlemleri." },
                 { id: "warehouse", label: "Depo Yönetimi", icon: Building2, feature: "products", description: "Farklı depo ve mağazaların stok ve fiyat yönetimi." },
                 { id: "alerts", label: "Stok Uyarıları", icon: AlertTriangle, feature: "products", description: "Kritik stok seviyesine düşen ürünler için otomatik uyarılar." },
+                { id: "label_designer", label: "Ürün Etiketleri", icon: Tags, feature: "label_designer", description: "Barkodlu fiyat etiketleri tasarla ve yazdır." },
                 { id: "trash", label: "Geri Dönüşüm Kutusu", icon: Trash2, feature: "products", description: "Silinen ürünleri görüntüleyin ve gerekirse geri yükleyin." },
             ]
         },
         {
-            id: "cari_hesap",
-            label: "Cari Hesap Takibi",
-            icon: Users,
-            feature: "cari_hesap",
+            id: "jet_muhasebe",
+            label: "JetMuhasebe",
+            icon: Landmark,
             subCategories: [
                 {
-                    id: "cari_tanimlar",
-                    label: "Tanıtımlar",
-                    icon: UserPlus,
+                    id: "cari_hesap",
+                    label: "Cari Hesap Takibi",
+                    icon: Users,
                     items: [
                         { id: "cari_tanim", label: "Cari Tanıtımı", icon: UserPlus, feature: null, description: "Müşteri ve tedarikçilerinizin sisteme tanımlanması." },
-                        { id: "cari_grup", label: "Grup Tanıtımı", icon: FolderOpen, feature: null, description: "Carilerinizi gruplandırarak kategori bazlı takip yapmanızı sağlar." },
-                        { id: "cari_ozelkod", label: "Özel Kod Tanıtımı", icon: Tags, feature: null, description: "Cari kartlar için özel gruplandırma ve raporlama kodları." },
-                    ]
-                },
-                {
-                    id: "cari_fisler",
-                    label: "Cari Hesap Fişleri",
-                    icon: FileOutput,
-                    items: [
                         { id: "cari_borc", label: "Borç Dekontu", icon: FileOutput, feature: null, description: "Cari hesaplara borç kaydı girmek için dekont ekranı." },
                         { id: "cari_alacak", label: "Alacak Dekontu", icon: FileInput, feature: null, description: "Cari hesaplara alacak nakdi veya iade kaydı girer." },
                         { id: "cari_virman", label: "Virman Dekontu", icon: ArrowLeftRight, feature: null, description: "İki cari hesap arasında bakiye transferi işlemi." },
-                        { id: "cari_devir", label: "Devir Fişi", icon: FilePlus, feature: null, description: "Dönem başı bakiye devir kayıtları." },
+                        { id: "cari_liste", label: "Cari Kartı Listesi", icon: ClipboardList, feature: null, description: "Tüm cari hesapların detaylı listesi." },
+                        { id: "cari_hareket", label: "Hareket Raporu", icon: FileSearch, feature: null, description: "Cari hesap ekstreleri ve işlem geçmişi." },
                     ]
                 },
                 {
-                    id: "cari_raporlar",
-                    label: "Raporlar / Analizler",
-                    icon: PieChart,
+                    id: "cash_ops",
+                    label: "Kasa İşlemleri",
+                    icon: Wallet,
                     items: [
-                        { id: "cari_liste", label: "Cari Kartı Listesi", icon: ClipboardList, feature: null, description: "Tüm cari hesapların detaylı listesi." },
-                        { id: "cari_bakiye", label: "Bakiye Raporu", icon: Scale, feature: null, description: "Bankalardaki güncel bakiye ve borç/alacak durumları." },
-                        { id: "cari_hareket", label: "Hareket Raporu", icon: FileSearch, feature: null, description: "Cari hesap ekstreleri ve işlem geçmişi." },
-                        { id: "cari_mutabakat", label: "Mutabakat Raporu", icon: FileText, feature: null, description: "Cari bakiyelerin doğrulanma ve mutabakat süreci." },
-                        { id: "cari_gunluk", label: "Günlük Hareket", icon: CalendarDays, feature: null, description: "Günlük gerçekleşen tüm cari işlemler." },
-                        { id: "cari_analiz", label: "Cari Analizi", icon: PieChart, feature: null, description: "Cari bazlı karlılık ve işlem yoğunluğu analizi." },
+                        { id: "cash_define", label: "Kasa Tanıtımı", icon: Wallet, feature: null, description: "Kasa ve banka hesaplarının tanımlanması." },
+                        { id: "cash_in", label: "Kasa Tahsil Fişi", icon: FileInput, feature: null, description: "Tahsil edilen nakit paraların kasaya giriş kaydı." },
+                        { id: "cash_out", label: "Kasa Tediye Fişi", icon: FileOutput, feature: null, description: "Kasadan yapılan ödeme ve nakit çıkışlarının kaydı." },
+                        { id: "cash_transfer", label: "Kasa Virman Fişi", icon: ArrowLeftRight, feature: null, description: "Farklı kasalar arasında para aktarımı." },
+                        { id: "cash_history", label: "Kasa Hareket Raporu", icon: FileSearch, feature: null, description: "Kasa bazlı detaylı işlem ve hareket dökümü." },
                     ]
                 },
+                {
+                    id: "bank_ops",
+                    label: "Banka İşlemleri",
+                    icon: Landmark,
+                    items: [
+                        { id: "bank_define", label: "Banka Tanıtımı", icon: Landmark, feature: null, description: "Banka hesaplarının tanımlanması." },
+                        { id: "bank_deposit", label: "Bankaya Para Yatırma", icon: FileInput, feature: null, description: "Banka hesabına nakit yatırım işlemleri." },
+                        { id: "bank_withdraw", label: "Bankadan Para Çekme", icon: FileOutput, feature: null, description: "Banka hesabından nakit çekim işlemleri." },
+                        { id: "bank_transfer", label: "Banka Virman Fişi", icon: ArrowLeftRight, feature: null, description: "Hesaplar arası transferler." },
+                        { id: "bank_history", label: "Banka Hareket Raporu", icon: FileSearch, feature: null, description: "Banka hesaplarına ait detaylı ekstre." },
+                    ]
+                },
+                {
+                    id: "invoice_waybill_management",
+                    label: "Fatura ve İrsaliye",
+                    icon: FileText,
+                    items: [
+                        { id: "alis_irsaliyesi", label: "Alış İrsaliyesi", icon: FileInput, description: "Mal alımında gelen irsaliyelerin kaydı." },
+                        { id: "satis_irsaliyesi", label: "Satış İrsaliyesi", icon: FileOutput, description: "Müşterilere sevkiyat öncesi kesilen sevk irsaliyesi." },
+                        { id: "alis_faturasi", label: "Alış Faturası", icon: FilePlus, description: "Tedarikçilerden gelen mal ve stok faturaları." },
+                        { id: "satis_faturasi", label: "Satış Faturası", icon: FileText, description: "Toptan müşterilere kesilen kurumsal faturalar." },
+                        { id: "perakende_satis_faturasi", label: "Perakende Satış", icon: ShoppingBag, description: "Nihai tüketicilere kesilen perakende faturaları." },
+                        { id: "iade_faturasi", label: "İade Faturası", icon: History, description: "İade alınan veya iade edilen malların fatura takibi." },
+                        { id: "fatura_listesi", label: "Fatura Listesi", icon: FileText, description: "Kesilen ve alınan tüm faturaların detaylı dökümü." },
+                    ]
+                },
+                {
+                    id: "finance",
+                    label: "Finans & Giderler",
+                    icon: Receipt,
+                    items: [
+                        { id: "mali_takvim", label: "Mali Takvim", icon: CalendarDays, feature: null, description: "Ödemelerinizi, tahsilatlarınızı ve vergi takviminizi yönetin." },
+                        { id: "expenses", label: "Gider Yönetimi", icon: Receipt, feature: null, description: "İşletme giderlerinin kaydedilmesi ve takibi." },
+                        { id: "calculator", label: "Kâr Hesaplama", icon: Calculator, feature: "profit_calculator", description: "Ürün bazlı veya genel kâr oranlarını hesaplama aracı." },
+                    ]
+                }
             ]
         },
         {
@@ -242,136 +269,6 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
             ]
         },
         {
-            id: "cash_ops",
-            label: "Kasa İşlemleri",
-            icon: Wallet,
-            feature: "cash_management",
-            subCategories: [
-                {
-                    id: "cash_defs",
-                    label: "Tanıtımlar",
-                    icon: Store,
-                    items: [
-                        { id: "cash_define", label: "Kasa Tanıtımı", icon: Wallet, feature: null, description: "İşletmenizdeki farklı kasa ve banka hesaplarının tanımlanması." },
-                        { id: "cash_room", label: "Oda Tanıtımı", icon: LayoutDashboard, feature: null, description: "Hizmet verilen oda, masa veya birimlerin tanımlanması ve takibi." },
-                    ]
-                },
-                {
-                    id: "cash_transactions",
-                    label: "İşlemler",
-                    icon: ArrowLeftRight,
-                    items: [
-                        { id: "cash_in", label: "Kasa Tahsil Fişi", icon: FileInput, feature: null, description: "Tahsil edilen nakit paraların kasaya giriş kaydı." },
-                        { id: "cash_out", label: "Kasa Tediye Fişi", icon: FileOutput, feature: null, description: "Kasadan yapılan ödeme ve nakit çıkışlarının kaydı." },
-                        { id: "cash_transfer", label: "Kasa Virman Fişi", icon: ArrowLeftRight, feature: null, description: "Farklı kasalar arasında para aktarımı." },
-                        { id: "cash_opening", label: "Kasa Devir Fişi", icon: FilePlus, feature: null, description: "Kasa açılış bakiyelerinin girilmesi." },
-                    ]
-                },
-                {
-                    id: "cash_reports",
-                    label: "Raporlar / Analizler",
-                    icon: PieChart,
-                    items: [
-                        { id: "cash_balance", label: "Kasa Bakiye Raporu", icon: Scale, feature: null, description: "Kasaların güncel nakit durum raporu." },
-                        { id: "cash_history", label: "Kasa Hareket Raporu", icon: FileSearch, feature: null, description: "Kasa bazlı detaylı işlem ve hareket dökümü." },
-                    ]
-                },
-            ]
-        },
-        {
-            id: "bank_ops",
-            label: "Banka İşlemleri",
-            icon: Landmark,
-            feature: "bank_management",
-            subCategories: [
-                {
-                    id: "bank_defs",
-                    label: "Tanıtımlar",
-                    icon: Store,
-                    items: [
-                        { id: "bank_define", label: "Banka Tanıtımı", icon: Landmark, feature: null, description: "Banka hesaplarınızın, şube ve IBAN bilgilerinin sisteme tanımlanması." },
-                    ]
-                },
-                {
-                    id: "bank_transactions",
-                    label: "İşlemler",
-                    icon: ArrowLeftRight,
-                    items: [
-                        { id: "bank_withdraw", label: "Bankadan Para Çekme", icon: FileOutput, feature: null, description: "Banka hesabından nakit çekim işlemlerinin kaydı." },
-                        { id: "bank_deposit", label: "Bankaya Para Yatırma", icon: FileInput, feature: null, description: "Banka hesabına yapılan nakit yatırım işlemleri." },
-                        { id: "bank_transfer_in", label: "Gelen Havaleler", icon: ArrowDownLeft, feature: null, description: "Müşterilerden banka hesabına gelen havale/EFT ödemeleri." },
-                        { id: "bank_transfer_out", label: "Yapılan Havaleler", icon: ArrowUpRight, feature: null, description: "Tedarikçilere veya 3. şahıslara yapılan havale/EFT ödemeleri." },
-                        { id: "bank_transfer", label: "Banka Virman Fişi", icon: ArrowLeftRight, feature: null, description: "Kendi banka hesaplarınız arasındaki para transferleri." },
-                        { id: "bank_opening", label: "Banka Devir Fişi", icon: FilePlus, feature: null, description: "Banka hesap açılış bakiyelerinin sisteme girişi." },
-                    ]
-                },
-                {
-                    id: "bank_reports",
-                    label: "Raporlar / Analizler",
-                    icon: PieChart,
-                    items: [
-                        { id: "bank_list", label: "Banka Listesi", icon: ClipboardList, feature: null, description: "Tanımlı tüm banka hesaplarının detaylı dökümü." },
-                        { id: "bank_balance", label: "Hesap Bakiye Raporu", icon: Scale, feature: null, description: "Bankalardaki güncel bakiye ve borç/alacak durumları." },
-                        { id: "bank_history", label: "Banka Hareket Raporu", icon: FileSearch, feature: null, description: "Banka hesaplarına ait detaylı ekstre ve işlem geçmişi." },
-                    ]
-                }
-            ]
-        },
-        {
-            id: "invoice_waybill_management",
-            label: "Fatura ve İrsaliye Yönetimi",
-            icon: FileText,
-            feature: "invoice_management",
-            subCategories: [
-                {
-                    id: "irsaliye_sub",
-                    label: "İrsaliye İşlemleri",
-                    icon: Package,
-                    items: [
-                        { id: "alis_irsaliyesi", label: "Alış İrsaliyesi", icon: FileInput, description: "Mal alımında gelen irsaliyelerin kaydı." },
-                        { id: "satis_irsaliyesi", label: "Satış İrsaliyesi", icon: FileOutput, description: "Müşterilere sevkiyat öncesi kesilen sevk irsaliyesi." },
-                        { id: "satis_iade_irsaliyesi", label: "Satış İade İrsaliyesi", icon: ArrowDownLeft, description: "Müşteriden geri gelen mallar için kayıt." },
-                        { id: "alis_iade_irsaliyesi", label: "Alış İade İrsaliyesi", icon: ArrowUpRight, description: "Tedarikçiye geri gönderilen mallar için kayıt." },
-                        { id: "sevk_irsaliyesi", label: "Sipariş Sevk İrsaliyesi", icon: ArrowLeftRight, description: "Şubeler veya siparişler arası sevk irsaliyesi." },
-                    ]
-                },
-                {
-                    id: "fatura_sub",
-                    label: "Fatura İşlemleri",
-                    icon: FileText,
-                    items: [
-                        { id: "alis_faturasi", label: "Alış Faturası", icon: FilePlus, description: "Tedarikçilerden gelen mal ve stok faturaları." },
-                        { id: "satis_faturasi", label: "Satış Faturası", icon: FileText, description: "Toptan müşterilere kesilen kurumsal faturalar." },
-                        { id: "perakende_satis_faturasi", label: "Perakende Satış", icon: ShoppingBag, description: "Nihai tüketicilere kesilen perakende faturaları." },
-                        { id: "iade_faturasi", label: "İade Faturası", icon: History, description: "İade alınan veya iade edilen malların fatura takibi." },
-                        { id: "iade_fiyat_farki", label: "İade Fiyat Farkı", icon: Calculator, description: "Fiyat farkı kaynaklı dekont ve faturalar." },
-                        { id: "emsaliyet_fisleri", label: "Proforma Fatura", icon: ClipboardList, description: "Fatura öncesi hazırlanan emsaliyet belgeleri." },
-                    ]
-                },
-                {
-                    id: "hizmet_sub",
-                    label: "Hizmet İşlemleri",
-                    icon: Layers,
-                    items: [
-                        { id: "alinan_hizmet_faturasi", label: "Alınan Hizmet Fat.", icon: FileInput, description: "Dışarıdan alınan hizmetlerin (elektrik, kira vb.) kaydı." },
-                        { id: "yapilan_hizmet_faturasi", label: "Yapılan Hizmet Fat.", icon: FileOutput, description: "Müşteriye verilen hizmetlerin fatura kaydı." },
-                        { id: "yapilan_hizmet_iadesi", label: "Yapılan Hizmet İadesi", icon: ArrowDownLeft, description: "Hizmet iade giriş işlemleri." },
-                        { id: "alinan_hizmet_iadesi", label: "Alınan Hizmet İadesi", icon: ArrowUpRight, description: "Alınan hizmetlerin iade çıkış işlemleri." },
-                    ]
-                },
-                {
-                    id: "rapor_sub",
-                    label: "Raporlar / Analizler",
-                    icon: BarChart3,
-                    items: [
-                        { id: "fatura_listesi", label: "Fatura Listesi", icon: FileText, description: "Kesilen ve alınan tüm faturaların detaylı dökümü." },
-                        { id: "fatura_kdv_listesi", label: "KDV Listesi", icon: PieChart, description: "Faturalardaki KDV dökümleri ve toplamları." },
-                        { id: "kdv_analiz_raporu", label: "KDV Analiz Raporu", icon: Activity, description: "Özet ve detaylı KDV durum analizleri." },
-                    ]
-                },
-            ]
-        },
-        {
             id: "integrations",
             label: "Entegrasyonlar",
             icon: Blocks,
@@ -379,16 +276,6 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                 { id: "trendyol_integration", label: "Trendyol Yemek", icon: ShoppingBag, feature: null, description: "Trendyol siparişleri, gelir ve net kar analizi." },
                 { id: "yemeksepeti_integration", label: "Yemeksepeti", icon: Store, feature: null, description: "Yemeksepeti siparişleri, gelir ve net kar analizi." },
                 { id: "getir_integration", label: "Getir", icon: Package, feature: null, description: "Getir siparişleri, gelir ve net kar analizi." },
-            ]
-        },
-        {
-            id: "finance",
-            label: "Finans",
-            icon: Wallet,
-            items: [
-                { id: "mali_takvim", label: "Mali Takvim", icon: CalendarDays, feature: null, description: "Ödemelerinizi, tahsilatlarınızı ve vergi takviminizi yönetin." },
-                { id: "expenses", label: "Gider Yönetimi", icon: Receipt, feature: null, description: "İşletme giderlerinin kaydedilmesi ve takibi." },
-                { id: "calculator", label: "Kâr Hesaplama", icon: Calculator, feature: "profit_calculator", description: "Ürün bazlı veya genel kâr oranlarını hesaplama aracı." },
             ]
         },
         {
@@ -403,7 +290,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
         },
         {
             id: "analytics",
-            label: "Raporlar & Analiz",
+            label: "JetRapor",
             icon: BarChart3,
             items: [
                 { id: "reports", label: "Satış Raporları", icon: FileBarChart, feature: "reports", description: "Geleneksel ve gelişmiş satış performans raporları." },
@@ -417,13 +304,12 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
             label: "Araçlar",
             icon: Layers,
             items: [
-                { id: "label_designer", label: "Ürün Etiketleri", icon: Tags, feature: "label_designer", description: "Barkodlu fiyat etiketleri tasarla ve yazdır." },
                 { id: "universal_converter", label: "Akıllı Dönüştürücü", icon: ImageIcon, feature: null, description: "Görsel, PDF ve Word dosyalarınız için hepsi bir arada dönüşüm aracı." },
                 { id: "qr_generator", label: "QR Kod Oluşturucu", icon: QrCodeIcon, feature: null, description: "WiFi, URL veya metinler için şık QR kodlar tasarlayın." },
                 { id: "currency_converter", label: "Döviz Çevirici", icon: Coins, feature: null, description: "Canlı kurlarla anlık döviz çeviri işlemleri yapın." },
                 { id: "receipt_designer", label: "Fiş Düzenleyicisi", icon: Receipt, feature: null, description: "Bilgi fişlerinizi özelleştirin: logo, mağaza adı, alt başlık, vergi bilgileri." },
             ]
-        },
+        }
     ];
 
     // Yetki bazlı filtreleme
@@ -440,14 +326,10 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                 if (cat.id === 'sales') return permissions.can_access_pos;
                 if (cat.id === 'adisyon') return permissions.can_access_adisyon;
                 if (cat.id === 'products') return permissions.can_access_inventory;
-                if (cat.id === 'finance') return permissions.can_access_expenses;
+                if (cat.id === 'jet_muhasebe') return permissions.can_access_expenses || permissions.can_manage_invoices || permissions.can_access_crm;
                 if (cat.id === 'crm') return permissions.can_access_crm;
                 if (cat.id === 'employees') return permissions.can_manage_employees;
                 if (cat.id === 'analytics') return permissions.can_access_reports;
-                if (cat.id === 'invoice_waybill_management') return permissions.can_manage_invoices;
-                if (cat.id === 'cash_ops') return permissions.can_access_expenses;
-                if (cat.id === 'bank_ops') return permissions.can_access_expenses;
-                if (cat.id === 'cari_hesap') return permissions.can_access_crm;
                 if (cat.id === 'web' || cat.id === 'marketing') return permissions.can_access_settings;
                 if (cat.id === 'tools') return permissions.can_access_settings;
                 return false; // Bilinmeyen kategoriler varsayılan KAPALI (Güvenli yaklaşım)
