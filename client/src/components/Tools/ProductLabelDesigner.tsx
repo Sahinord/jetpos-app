@@ -146,14 +146,17 @@ const TEMPLATES: LabelConfig[] = [
 ];
 
 /* ── Price renderer helpers ── */
-function PriceDisplay({ cfg, product, scale, customPrice, activeWarehouseId }: { cfg: LabelConfig; product: Product; scale: number; customPrice?: string; activeWarehouseId?: string }) {
+function PriceDisplay({ cfg, product, scale, customPrice, activeWarehouseId, effectivePrice }: { cfg: LabelConfig; product: Product; scale: number; customPrice?: string; activeWarehouseId?: string; effectivePrice?: number }) {
     // 1. Öncelik: Kullanıcının elle girdiği (customPrice)
-    // 2. Öncelik: Aktif mağazadaki (warehouse_stock) fiyat
-    // 3. Öncelik: Ürünün ana (sale_price) fiyatı
-    let finalPrice = Number(product.sale_price) || 0;
+    // 2. Öncelik: Dışarıdan gelen effectivePrice (mağaza bazlı / master)
+    // 3. Öncelik: Aktif mağazadaki (warehouse_stock) fiyat
+    // 4. Öncelik: Ürünün ana (sale_price) fiyatı
+    let finalPrice = (effectivePrice ?? Number(product.sale_price)) || 0;
 
     if (customPrice) {
         finalPrice = Number(customPrice.replace(',', '.'));
+    } else if (effectivePrice !== undefined) {
+        finalPrice = effectivePrice;
     } else if (activeWarehouseId && product.warehouse_stock) {
         const ws = product.warehouse_stock.find(s => s.warehouse_id === activeWarehouseId);
         if (ws && ws.sale_price !== undefined && ws.sale_price !== null) {
@@ -186,8 +189,8 @@ function PriceDisplay({ cfg, product, scale, customPrice, activeWarehouseId }: {
     );
 }
 
-function priceHtmlMm(cfg: LabelConfig, product: Product, pos: Pos): string {
-    const price = Number(product.sale_price) || 0;
+function priceHtmlMm(cfg: LabelConfig, product: Product, pos: Pos, effectivePrice?: number): string {
+    const price = (effectivePrice ?? Number(product.sale_price)) || 0;
     const [int, dec] = price.toFixed(2).split('.');
     const formattedInt = Number(int).toLocaleString('tr-TR');
     return `<div style="position:absolute;left:${pos.xMm}mm;top:${pos.yMm}mm;display:flex;align-items:flex-start;gap:0.5mm;">
@@ -202,8 +205,22 @@ function priceHtmlMm(cfg: LabelConfig, product: Product, pos: Pos): string {
 }
 
 /* ── Main Component ── */
-export default function ProductLabelDesigner({ products, showToast, printerName }: { products: Product[]; showToast: any; printerName?: string }) {
+export default function ProductLabelDesigner({ products, showToast, printerName, isPriceSyncEnabled = false }: { products: Product[]; showToast: any; printerName?: string; isPriceSyncEnabled?: boolean }) {
     const { currentTenant, activeWarehouse } = useTenant();
+
+    /* ── Effective Price Helper: Mağaza özel fiyat veya master fiyat ── */
+    const getEffectivePrice = useCallback((product: Product): number => {
+        // isPriceSyncEnabled AÇIK ise tüm mağazalarda master fiyat geçerli
+        if (isPriceSyncEnabled || !activeWarehouse) {
+            return Number(product.sale_price) || 0;
+        }
+        // KAPALI ise mağaza (warehouse) fiyatına bak
+        const ws = product.warehouse_stock?.find(s => s.warehouse_id === activeWarehouse.id);
+        if (ws?.sale_price !== undefined && ws?.sale_price !== null) {
+            return Number(ws.sale_price);
+        }
+        return Number(product.sale_price) || 0;
+    }, [isPriceSyncEnabled, activeWarehouse]);
 
     /* ─ selection ─ */
     const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
@@ -991,10 +1008,7 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                                             <p className="text-[10px] text-secondary font-mono">{product.barcode}</p>
                                         </div>
                                         <p className="font-black text-primary text-sm flex-shrink-0">
-                                            ₺{(() => {
-                                                const wsPrice = activeWarehouse ? product.warehouse_stock?.find(ws => ws.warehouse_id === activeWarehouse.id)?.sale_price : null;
-                                                return (wsPrice ?? product.sale_price)?.toFixed(2);
-                                            })()}
+                                            ₺{getEffectivePrice(product).toFixed(2)}
                                         </p>
                                     </div>
                                     {isSelected && (
@@ -1183,13 +1197,20 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                                                             </div>
                                                         </td>
                                                         <td style={{ width: '60%', padding: '5px', textAlign: 'right', verticalAlign: 'middle', color: '#000' }}>
-                                                            <div style={{ fontSize: '36px', fontWeight: '900', color: '#000', letterSpacing: '-1px', lineHeight: '0.8' }}>
-                                                                {Math.floor(Number(previewProduct.sale_price))}
-                                                                <span style={{ fontSize: '14px', verticalAlign: 'top', color: '#000', marginLeft: '1px' }}>
-                                                                    ,{(Number(previewProduct.sale_price) % 1).toFixed(2).substring(2)}₺
-                                                                </span>
-                                                            </div>
-                                                            <div style={{ fontSize: '7.5px', fontWeight: 'bold', color: '#000', marginTop: '4px' }}>KDV Dahildir</div>
+                                                            {(() => {
+                                                                const effectiveP = getEffectivePrice(previewProduct);
+                                                                return (
+                                                                    <>
+                                                                        <div style={{ fontSize: '36px', fontWeight: '900', color: '#000', letterSpacing: '-1px', lineHeight: '0.8' }}>
+                                                                            {Math.floor(effectiveP)}
+                                                                            <span style={{ fontSize: '14px', verticalAlign: 'top', color: '#000', marginLeft: '1px' }}>
+                                                                                ,{(effectiveP % 1).toFixed(2).substring(2)}₺
+                                                                            </span>
+                                                                        </div>
+                                                                        <div style={{ fontSize: '7.5px', fontWeight: 'bold', color: '#000', marginTop: '4px' }}>KDV Dahildir</div>
+                                                                    </>
+                                                                );
+                                                            })()}
                                                         </td>
                                                     </tr>
 
@@ -1358,10 +1379,7 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                                                             <input
                                                                 autoFocus
                                                                 type="text"
-                                                                defaultValue={customVal || (() => {
-                                                                    const wsPrice = activeWarehouse ? previewProduct.warehouse_stock?.find(ws => ws.warehouse_id === activeWarehouse.id)?.sale_price : null;
-                                                                    return (wsPrice ?? previewProduct.sale_price).toString();
-                                                                })()}
+                                                                defaultValue={customVal || getEffectivePrice(previewProduct).toString()}
                                                                 className="w-full bg-white text-black font-black outline-none border-none p-1"
                                                                 onBlur={e => { 
                                                                     const val = e.target.value.trim();
@@ -1395,6 +1413,7 @@ export default function ProductLabelDesigner({ products, showToast, printerName 
                                                                 scale={PS} 
                                                                 customPrice={customVal} 
                                                                 activeWarehouseId={activeWarehouse?.id}
+                                                                effectivePrice={getEffectivePrice(previewProduct)}
                                                             />
                                                         )}
                                                         {isSel && !isEdit && <>{mkH(id, 'mr', wPx, fS)}</>}

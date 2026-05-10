@@ -376,7 +376,28 @@ export default function Home() {
       }
 
       const productId = editingProduct ? (editingProduct as any).id : null;
-      let needsLabel = !editingProduct || Number(formData.sale_price) !== Number((editingProduct as any).sale_price);
+      let needsLabel = false;
+      if (!editingProduct) {
+        needsLabel = true; // new product always needs label
+      } else {
+        // Check master price change
+        if (Number(formData.sale_price) !== Number((editingProduct as any).sale_price)) {
+          needsLabel = true;
+        }
+        // Check warehouse-specific price change
+        if (!needsLabel && activeWarehouse && !isPriceSyncEnabled) {
+          const oldWs = (editingProduct as any).warehouse_stock?.find((ws: any) => ws.warehouse_id === activeWarehouse.id);
+          const oldWsPrice = oldWs?.sale_price;
+          if (oldWsPrice !== undefined && oldWsPrice !== null) {
+            if (Number(formData.sale_price) !== Number(oldWsPrice)) {
+              needsLabel = true;
+            }
+          } else {
+            // No previous warehouse price exists, new price is being set
+            needsLabel = true;
+          }
+        }
+      }
 
       const productPayload: any = {
         name: formData.name,
@@ -1330,7 +1351,7 @@ export default function Home() {
           {/* Product Label Designer - Ürün Etiket Tasarımı */}
           {activeTab === "label_designer" && (
             <div className="max-w-[1500px] mx-auto w-full">
-              <ProductLabelDesigner products={products} showToast={showToast} printerName={labelPrinterName || receiptPrinterName} />
+              <ProductLabelDesigner products={products} showToast={showToast} printerName={labelPrinterName || receiptPrinterName} isPriceSyncEnabled={isPriceSyncEnabled} />
             </div>
           )}
 
