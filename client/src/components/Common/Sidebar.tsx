@@ -356,7 +356,6 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                     'dashboard': permissions.can_access_reports,
                     'history': permissions.can_access_reports,
                     'invoice': permissions.can_manage_invoices,
-                    'expenses': permissions.can_access_expenses,
                 };
                 return map[itemId] ?? true;
             };
