@@ -12,6 +12,9 @@ import {
 import BottomNav from '@/components/BottomNav';
 import { toast } from 'sonner';
 import { BrowserMultiFormatReader } from '@zxing/browser';
+import { offlineDB } from '@/lib/offline-db';
+import { SyncService } from '@/lib/sync-service';
+import { useLiveQuery } from 'dexie-react-hooks';
 
 interface Product {
     id: string;
@@ -93,35 +96,37 @@ export default function POSPage() {
         const tenantId = localStorage.getItem('tenantId');
         if (!tenantId) return;
 
-        // REALTIME: Listen for product changes (Price, Stock, etc.)
-        const channel = supabase
-            .channel(`pos_products_${tenantId}`)
-            .on('postgres_changes', {
-                event: '*',
-                schema: 'public',
-                table: 'products',
-                filter: `tenant_id=eq.${tenantId}`
-            }, (payload: any) => {
-                if (payload.eventType === 'INSERT') {
-                    setProducts((prev: Product[]) => [...prev, payload.new as Product]);
-                } else if (payload.eventType === 'UPDATE') {
-                    setProducts((prev: Product[]) => prev.map((p: Product) => p.id === payload.new.id ? { ...p, ...payload.new } : p));
-                } else if (payload.eventType === 'DELETE') {
-                    setProducts((prev: Product[]) => prev.filter((p: Product) => p.id === payload.old.id));
-                }
-            })
-            .subscribe();
+        SyncService.initAutoSync();
+
+        // Check connection status
+        const handleStatus = () => setIsOnline(window.navigator.onLine);
+        window.addEventListener('online', handleStatus);
+        window.addEventListener('offline', handleStatus);
 
         return () => {
-            supabase.removeChannel(channel);
+            window.removeEventListener('online', handleStatus);
+            window.removeEventListener('offline', handleStatus);
         };
     }, []);
+
+    const [isOnline, setIsOnline] = useState(SyncService.isOnline());
+    const pendingSales = useLiveQuery(() => offlineDB.pending_sales.toArray());
+    const pendingCount = pendingSales?.length || 0;
 
     const fetchData = async () => {
         try {
             const tenantId = localStorage.getItem('tenantId');
             if (!tenantId) return;
             await setCurrentTenant(tenantId);
+
+            if (!SyncService.isOnline()) {
+                const local = await offlineDB.products.toArray();
+                if (local.length > 0) {
+                    setProducts(local);
+                    setLoading(false);
+                    return;
+                }
+            }
 
             // Fetch Categories and Customers first
             const [catRes, custRes] = await Promise.all([
@@ -170,6 +175,12 @@ export default function POSPage() {
                     if (page === 0) setLoading(false);
                 }
                 page++;
+            }
+
+            // Sync to Local
+            if (allProducts.length > 0) {
+                await offlineDB.products.clear();
+                await offlineDB.products.bulkAdd(allProducts.map(p => ({ ...p, tenant_id: tenantId })));
             }
 
             // Fetch License for AI Key
@@ -444,6 +455,35 @@ export default function POSPage() {
         if (cart.length === 0) return;
         setIsCheckingOut(true);
 
+        const tenantId = localStorage.getItem('tenantId');
+        const activeWhId = localStorage.getItem('activeWarehouseId');
+
+        if (!SyncService.isOnline()) {
+            await offlineDB.pending_sales.add({
+                uuid: crypto.randomUUID(),
+                tenant_id: tenantId || '',
+                warehouse_id: activeWhId || '',
+                items: cart.map(item => ({
+                    product_id: item.id,
+                    item_name: item.name,
+                    item_code: item.barcode,
+                    quantity: item.quantity,
+                    unit_price: item.sale_price,
+                    total_price: item.sale_price * item.quantity
+                })),
+                total_amount: totalAmount,
+                discount_amount: 0,
+                payment_type: method,
+                created_at: new Date().toISOString(),
+                sync_status: 'pending'
+            });
+            toast.warning("Çevrimdışı Satış Kaydedildi. İnternet gelince senkronize edilecek.");
+            setCart([]);
+            setShowCart(false);
+            setIsCheckingOut(false);
+            return;
+        }
+
         try {
             const tenantId = localStorage.getItem('tenantId');
             if (tenantId) {
@@ -516,7 +556,15 @@ export default function POSPage() {
                         </div>
                         <div>
                             <h1 className="text-xl font-black text-white leading-none">JetKasa</h1>
-                            <p className="text-[10px] text-secondary font-bold tracking-widest uppercase mt-1">Mobil POS Terminali</p>
+                            <div className="flex items-center gap-1.5 mt-1">
+                                <div className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
+                                <p className={`text-[10px] font-black tracking-widest uppercase ${isOnline ? 'text-secondary' : 'text-rose-500'}`}>
+                                    {isOnline ? 'ONLINE' : 'OFFLINE'}
+                                </p>
+                                {pendingCount > 0 && (
+                                    <p className="text-[10px] font-black text-amber-500 uppercase ml-2">({pendingCount} Bekliyor)</p>
+                                )}
+                            </div>
                         </div>
                     </div>
 

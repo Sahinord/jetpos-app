@@ -13,13 +13,14 @@ export default function IntegrationsDashboard({ integrationType }: { integration
 
     const getPlatformName = (type: string) => {
         if (type === 'trendyol_integration') return 'trendyol';
+        if (type === 'trendyol_go_integration') return 'trendyol_go';
         if (type === 'getir_integration') return 'getir';
         if (type === 'yemeksepeti_integration') return 'yemeksepeti';
         return 'other';
     };
 
     // Geçici olarak diğer entegrasyonlar için "Yakında" ekranı
-    if (integrationType !== "trendyol_integration") {
+    if (integrationType !== "trendyol_integration" && integrationType !== "trendyol_go_integration") {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6">
                 <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center text-secondary/40">
@@ -69,7 +70,17 @@ export default function IntegrationsDashboard({ integrationType }: { integration
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                 {activeTab === 'dashboard' ? (
                     <div className="grid grid-cols-1 gap-6">
-                        <TrendyolGOWidget />
+                        {integrationType === 'trendyol_go_integration' ? (
+                            <TrendyolGOWidget />
+                        ) : (
+                            <div className="bg-white/5 border border-white/5 rounded-[2.5rem] p-12 text-center">
+                                <ShoppingBag className="w-16 h-16 text-orange-500/50 mx-auto mb-4" />
+                                <h3 className="text-2xl font-black text-white mb-2">Trendyol Pazaryeri Paneli</h3>
+                                <p className="text-secondary max-w-md mx-auto">
+                                    Pazaryeri siparişleriniz ve ürün senkronizasyon ayarlarınız yakında burada olacak. Şu an Ürün Eşleştirme sekmesinden ürünlerinizi bağlayabilirsiniz.
+                                </p>
+                            </div>
+                        )}
                     </div>
                 ) : (
                     <ProductMapping platform={getPlatformName(integrationType)} />

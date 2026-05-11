@@ -58,6 +58,8 @@ import CFDManager from '@/components/Admin/CFDManager';
 import CRMPage from '@/components/CRM/CRMPage';
 import { createTrendyolGoClient } from "@/lib/trendyol-go-client";
 import EmployeePinLogin from "@/components/Auth/EmployeePinLogin";
+import { offlineDB } from "@/lib/offline-db";
+import { SyncService } from "@/lib/sync-service";
 
 export default function Home() {
   const { currentTenant, loading: tenantLoading, activeWarehouse, activeEmployee } = useTenant();
@@ -129,6 +131,11 @@ export default function Home() {
       setIsPOSAuthorized(false);
     }
   }, [activeTab]);
+
+  // Initialize Sync Service
+  useEffect(() => {
+    SyncService.initAutoSync();
+  }, []);
 
   useEffect(() => {
     if (!tenantLoading && currentTenant) {
@@ -261,6 +268,17 @@ export default function Home() {
 
       if (!currentTenant) return;
 
+      // Check online status
+      const isOnline = SyncService.isOnline();
+
+      if (!isOnline) {
+        console.log('📡 Offline mode: Loading data from local DB...');
+        const localProducts = await offlineDB.products.toArray();
+        setProducts(localProducts);
+        setLoading(false);
+        return;
+      }
+
       // 1. Fetch Categories and Sales with Explicit Tenant Filter
       const [cd, si] = await Promise.all([
         supabase.from('categories')
@@ -287,8 +305,6 @@ export default function Home() {
       let hasMore = true;
 
       while (hasMore) {
-        // Log removed for security
-
         const { data, error } = await supabase
           .from('products')
           .select('*, categories(name), warehouse_stock(*)')
@@ -311,7 +327,16 @@ export default function Home() {
         page++;
       }
       setProducts(allProducts);
-      // Log removed for security
+
+      // Sync to local DB
+      if (allProducts.length > 0) {
+        await offlineDB.products.clear();
+        await offlineDB.products.bulkAdd(allProducts.map(p => ({
+          ...p,
+          warehouse_id: activeWarehouse?.id || ''
+        })));
+      }
+
     } catch (error: any) {
       showToast(error.message, "error");
     } finally {
@@ -763,10 +788,36 @@ export default function Home() {
 
   const handleCheckout = async (cartItems: any[], paymentMethod: string, customerId?: string) => {
     if (!currentTenant) return;
-    try {
-      const totalAmount = cartItems.reduce((sum, item) => sum + (item.sale_price * item.quantity), 0);
-      const totalCost = cartItems.reduce((sum, item) => sum + (item.purchase_price * item.quantity), 0);
 
+    const totalAmount = cartItems.reduce((sum, item) => sum + (item.sale_price * item.quantity), 0);
+    const totalCost = cartItems.reduce((sum, item) => sum + (item.purchase_price * item.quantity), 0);
+    const saleId = Math.random().toString(36).substr(2, 9).toUpperCase();
+
+    // Check if online
+    if (!SyncService.isOnline()) {
+      showToast("İnternet yok! Satış yerel hafızaya kaydedildi.", "warning");
+      await offlineDB.pending_sales.add({
+        uuid: crypto.randomUUID(),
+        tenant_id: currentTenant.id,
+        warehouse_id: activeWarehouse?.id || '',
+        employee_id: activeEmployee?.id || '',
+        customer_id: customerId,
+        items: cartItems.map(item => ({
+            product_id: item.id,
+            quantity: item.quantity,
+            unit_price: item.sale_price,
+            total_price: item.sale_price * item.quantity
+        })),
+        total_amount: totalAmount,
+        discount_amount: 0,
+        payment_type: paymentMethod,
+        created_at: new Date().toISOString(),
+        sync_status: 'pending'
+      });
+      return;
+    }
+
+    try {
       const { data: sale, error: saleError } = await supabase
         .from('sales')
         .insert([{

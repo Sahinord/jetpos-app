@@ -16,6 +16,9 @@ import { useTenant } from "@/lib/tenant-context";
 import { supabase, auditLog } from "@/lib/supabase";
 import { readScaleWeight } from "@/lib/hardware";
 import CariSearchModal from "../Cari/CariSearchModal";
+import { SyncService } from "@/lib/sync-service";
+import { offlineDB } from "@/lib/offline-db";
+import { useLiveQuery } from "dexie-react-hooks";
 
 
 export default function POS({
@@ -121,6 +124,24 @@ export default function POS({
     const [displayLimit, setDisplayLimit] = useState(24);
     const sentinelRef = useRef<HTMLDivElement>(null);
     const gridContainerRef = useRef<HTMLDivElement>(null);
+
+    // Offline Status and Sync
+    const [isOnline, setIsOnline] = useState(SyncService.isOnline());
+    const pendingSales = useLiveQuery(() => offlineDB.pending_sales.toArray());
+    const pendingCount = pendingSales?.length || 0;
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        const handleStatus = () => setIsOnline(window.navigator.onLine);
+        window.addEventListener('online', handleStatus);
+        window.addEventListener('offline', handleStatus);
+
+        return () => {
+            window.removeEventListener('online', handleStatus);
+            window.removeEventListener('offline', handleStatus);
+        };
+    }, []);
 
     // Reset limit on search/category change
     useEffect(() => {
@@ -514,14 +535,24 @@ export default function POS({
                 <div className="flex items-center gap-2">
                     <div className={`flex items-center h-12 px-4 ${theme === 'light' ? 'bg-white' : 'bg-slate-900/50'} border border-white/5 rounded-xl shadow-inner`}>
                         <div className="relative mr-3 flex items-center justify-center">
-                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
-                            <div className="absolute inset-0 w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping opacity-30" />
+                            <div className={`w-2.5 h-2.5 rounded-full ${isOnline ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.5)]'}`} />
+                            <div className={`absolute inset-0 w-2.5 h-2.5 rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-rose-500'} animate-ping opacity-30`} />
                         </div>
                         <div className="flex flex-col leading-none">
                             <span className="text-[8px] font-black text-slate-500 tracking-[1.5px] uppercase mb-0.5">SİSTEM</span>
-                            <span className="text-[11px] font-black text-emerald-500 uppercase">ONLINE</span>
+                            <span className={`text-[11px] font-black ${isOnline ? 'text-emerald-500' : 'text-rose-500'} uppercase`}>{isOnline ? 'ONLINE' : 'OFFLINE'}</span>
                         </div>
                     </div>
+
+                    {pendingCount > 0 && (
+                        <div className="flex items-center h-12 px-4 bg-amber-500/10 border border-amber-500/20 rounded-xl animate-pulse">
+                            <Clock size={16} className="text-amber-500 mr-3" />
+                            <div className="flex flex-col leading-none">
+                                <span className="text-[8px] font-black text-amber-600 tracking-[1.5px] uppercase mb-0.5">BEKLEYEN</span>
+                                <span className="text-[11px] font-black text-amber-500 uppercase">{pendingCount} SATIŞ</span>
+                            </div>
+                        </div>
+                    )}
 
                     <div className={`flex items-center h-12 px-4 ${theme === 'light' ? 'bg-white' : 'bg-slate-900/50'} border border-white/5 rounded-xl shadow-inner`}>
                         <Monitor size={16} className="text-primary mr-3" />

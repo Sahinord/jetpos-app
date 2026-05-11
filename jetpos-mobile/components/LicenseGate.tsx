@@ -42,6 +42,20 @@ export default function LicenseGate({ onSuccess }: LicenseGateProps) {
             localStorage.setItem('tenantId', data.id);
             localStorage.setItem('companyName', data.company_name);
 
+            // Fixed Warehouse Kontrolü (Mobil için sabitlenmiş mağaza var mı?)
+            const { data: fixedWh } = await supabase
+                .from('fixed_warehouses')
+                .select('warehouse_id, warehouses(name)')
+                .eq('tenant_id', data.id)
+                .eq('platform', 'mobile')
+                .single();
+
+            if (fixedWh) {
+                localStorage.setItem('activeWarehouseId', fixedWh.warehouse_id);
+                localStorage.setItem('activeWarehouseName', (fixedWh.warehouses as any)?.name || 'Sabit Mağaza');
+                toast.success(`${(fixedWh.warehouses as any)?.name} mağazası otomatik atandı.`);
+            }
+
             toast.success(`Hoş geldiniz, ${data.company_name}!`);
             onSuccess(data.id, data.company_name);
 

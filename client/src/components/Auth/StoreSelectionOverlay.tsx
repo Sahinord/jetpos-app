@@ -12,9 +12,20 @@ export default function StoreSelectionOverlay() {
 
     const handleQuickSetup = async () => {
         setIsInternalLoading(true);
-        const { error } = await supabase
-            .from('warehouses')
-            .insert([
+        
+        // Sabit mağazalar varsa onları kullan, yoksa varsayılanları oluştur
+        const fixedWarehouses = currentTenant?.fixed_warehouses || [];
+        const storesToCreate = fixedWarehouses.length > 0 
+            ? fixedWarehouses.map((fw: any, idx: number) => ({
+                name: fw.name,
+                type: fw.type || 'storage',
+                platform: fw.platform || null,
+                is_default: idx === 0,
+                tenant_id: currentTenant?.id,
+                is_active: true,
+                code: fw.code || `SBT-00${idx + 1}`
+            }))
+            : [
                 { 
                     name: 'Fiziksel Mağaza (Kasa)', 
                     type: 'storage', 
@@ -29,16 +40,20 @@ export default function StoreSelectionOverlay() {
                     is_default: false, 
                     tenant_id: currentTenant?.id,
                     is_active: true,
-                    code: 'TRN-001'
+                    code: 'TRN-001',
+                    platform: 'trendyol'
                 }
-            ]);
+            ];
+
+        const { error } = await supabase
+            .from('warehouses')
+            .insert(storesToCreate);
 
         if (error) {
             alert("Mağaza oluşturulurken hata: " + error.message);
         } else {
             // Refresh global warehouses list
             await refreshWarehouses();
-            // Don't auto-select, let user see both and choose
         }
         setIsInternalLoading(false);
     };

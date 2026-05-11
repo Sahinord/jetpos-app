@@ -17,42 +17,44 @@ interface Tenant {
     max_stores?: number;
     max_online_stores?: number;
     master_pin?: string;
+    fixed_warehouses?: any[];
     created_at: string;
 }
 
 const AVAILABLE_FEATURES = [
-    { id: "pos", label: "Hızlı Satış" },
-    { id: 'products', label: 'Jetstok' },
+    { id: "pos", label: "JetKasa (Hızlı Satış)" },
+    { id: 'products', label: 'JetStok' },
     { id: 'sales_history', label: 'Satış Geçmişi' },
     { id: 'profit_calculator', label: 'Kâr Hesaplama' },
     { id: 'price_simulator', label: 'Fiyat Simülasyonu' },
-    { id: 'reports', label: 'Akıllı Raporlar' },
-    { id: 'cari_hesap', label: 'Cari Hesap Takibi' },
+    { id: 'reports', label: 'JetRapor (Akıllı Raporlar)' },
+    { id: 'cari_hesap', label: 'JetPuan & Cari Hesap' },
     { id: 'bank_management', label: 'Banka İşlemleri' },
     { id: 'cash_management', label: 'Kasa İşlemleri' },
-    { id: 'employee_module', label: 'Çalışan Yönetimi & Vardiya' },
+    { id: 'employee_module', label: 'JetKadro (Çalışan & Vardiya)' },
     { id: 'employee_login', label: 'Çalışan Giriş Sistemi (PIN)' },
     { id: 'employee_permissions', label: 'Gelişmiş Yetkilendirme Sistemi' },
     { id: 'master_pin_enabled', label: 'Master PIN (Patron Master Kodu)' },
     { id: 'label_designer', label: 'Ürün Etiket Tasarımı' },
-    { id: 'trendyol_go', label: 'Trendyol GO' },
+    { id: 'trendyol_marketplace', label: 'Trendyol Pazaryeri' },
+    { id: 'trendyol_go', label: 'Trendyol GO / Yemek' },
     { id: 'invoice', label: 'Fatura İşlemleri Entegrasyonu' },
     { id: 'invoice_management', label: 'Fatura ve İrsaliye Yönetimi' },
     { id: 'ai_features', label: 'JetPos AI (Öngörüler & Asistan)' },
-    { id: 'adisyon', label: 'Adisyon (Masa Yönetimi)' },
-    { id: 'qrmenu', label: 'QR Menü Yönetimi' },
-    { id: 'showcase', label: 'Vitrin Web Sitesi' },
-    { id: 'cfd', label: 'Müşteri Ekranı (CFD)' },
-    { id: 'smart_converter', label: 'Akıllı Dönüştürücü (Görsel/PDF/Word)' },
-    { id: 'qr_generator', label: 'Gelişmiş QR Kod Oluşturucu' },
-    { id: 'currency_converter', label: 'Canlı Döviz Çevirici' },
+    { id: 'adisyon', label: 'JetMasa (Adisyon)' },
+    { id: 'qrmenu', label: 'JetWeb (QR Menü)' },
+    { id: 'showcase', label: 'JetWeb (Vitrin Web Sitesi)' },
+    { id: 'cfd', label: 'JetGörünüm (Müşteri Ekranı)' },
+    { id: 'smart_converter', label: 'JetAraç (Akıllı Dönüştürücü)' },
+    { id: 'qr_generator', label: 'JetAraç (QR Kod Oluşturucu)' },
+    { id: 'currency_converter', label: 'JetAraç (Canlı Döviz)' },
 ];
 
 const MOBILE_FEATURES = [
-    { id: 'mobile_adisyon', label: 'Mobil Adisyon (Garson Ekranı)' },
-    { id: 'mobile_pos', label: 'Mobil POS (Satış Yapma)' },
-    { id: 'mobile_inventory', label: 'Mobil Depo & Sayım' },
-    { id: 'mobile_reports', label: 'Mobil Raporlar & Ciro' },
+    { id: 'mobile_adisyon', label: 'Mobil JetMasa (Garson Ekranı)' },
+    { id: 'mobile_pos', label: 'Mobil JetKasa (Satış Yapma)' },
+    { id: 'mobile_inventory', label: 'Mobil JetStok (Depo & Sayım)' },
+    { id: 'mobile_reports', label: 'Mobil JetRapor (Raporlar)' },
 ];
 
 export default function SuperAdmin() {
@@ -94,9 +96,12 @@ export default function SuperAdmin() {
     const [qnbSettings, setQnbSettings] = useState({ vkn: '', username: '', password: '', erpCode: 'JET31270', isTest: true, branchCode: '', counterCode: '' });
     const [parasutSettings, setParasutSettings] = useState({ email: '', password: '', companyId: '', clientId: '', clientSecret: '', baseUrl: '', authUrl: '', isTest: false });
 
-    // Trendyol GO states
-    const [trendyolModal, setTrendyolModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
-    const [trendyolSettings, setTrendyolSettings] = useState({ sellerId: '', storeId: '', apiKey: '', apiSecret: '', token: '', stage: false });
+    // Trendyol states
+    const [trendyolGoModal, setTrendyolGoModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
+    const [trendyolGoSettings, setTrendyolGoSettings] = useState({ sellerId: '', storeId: '', apiKey: '', apiSecret: '', token: '', stage: false });
+    
+    const [trendyolMarketplaceModal, setTrendyolMarketplaceModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
+    const [trendyolMarketplaceSettings, setTrendyolMarketplaceSettings] = useState({ supplierId: '', apiKey: '', apiSecret: '' });
 
     // Warehouse management states
     const [warehouseModal, setWarehouseModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
@@ -234,7 +239,8 @@ export default function SuperAdmin() {
                     max_stores: editingTenant.max_stores || 1,
                     max_online_stores: editingTenant.max_online_stores || 0,
                     status: editingTenant.status,
-                    master_pin: editingTenant.master_pin
+                    master_pin: editingTenant.master_pin,
+                    fixed_warehouses: editingTenant.fixed_warehouses || []
                 })
                 .eq('id', editingTenant.id);
 
@@ -304,7 +310,8 @@ export default function SuperAdmin() {
                     openrouter_api_key: editingTenant.openrouter_api_key,
                     max_stores: editingTenant.max_stores || 1,
                     max_online_stores: editingTenant.max_online_stores || 0,
-                    status: editingTenant.status
+                    status: editingTenant.status,
+                    fixed_warehouses: editingTenant.fixed_warehouses || []
                 }]);
 
             if (error) throw error;
@@ -492,35 +499,69 @@ export default function SuperAdmin() {
         }
     };
 
-    const handleSaveTrendyolSettings = async () => {
-        if (!trendyolModal) return;
+    const handleSaveTrendyolGoSettings = async () => {
+        if (!trendyolGoModal) return;
 
         setSaving(true);
         try {
-            const tenantObj = tenants.find(t => t.id === trendyolModal.tenantId);
+            const tenantObj = tenants.find(t => t.id === trendyolGoModal.tenantId);
             const currentSettings = tenantObj?.settings || {};
 
             const updatedSettings = {
                 ...currentSettings,
                 trendyolGo: {
-                    sellerId: trendyolSettings.sellerId,
-                    storeId: trendyolSettings.storeId,
-                    apiKey: trendyolSettings.apiKey,
-                    apiSecret: trendyolSettings.apiSecret,
-                    token: trendyolSettings.token,
-                    stage: trendyolSettings.stage
+                    sellerId: trendyolGoSettings.sellerId,
+                    storeId: trendyolGoSettings.storeId,
+                    apiKey: trendyolGoSettings.apiKey,
+                    apiSecret: trendyolGoSettings.apiSecret,
+                    token: trendyolGoSettings.token,
+                    stage: trendyolGoSettings.stage
                 }
             };
 
             const { error } = await supabase
                 .from('tenants')
                 .update({ settings: updatedSettings })
-                .eq('id', trendyolModal.tenantId);
+                .eq('id', trendyolGoModal.tenantId);
 
             if (error) throw error;
 
-            alert(`✅ ${trendyolModal.tenantName} için Trendyol GO Ayarları güncellendi!`);
-            setTrendyolModal(null);
+            alert(`✅ ${trendyolGoModal.tenantName} için Trendyol GO Ayarları güncellendi!`);
+            setTrendyolGoModal(null);
+            await fetchTenants();
+        } catch (err: any) {
+            alert('❌ Hata: ' + err.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleSaveTrendyolMarketplaceSettings = async () => {
+        if (!trendyolMarketplaceModal) return;
+
+        setSaving(true);
+        try {
+            const tenantObj = tenants.find(t => t.id === trendyolMarketplaceModal.tenantId);
+            const currentSettings = tenantObj?.settings || {};
+
+            const updatedSettings = {
+                ...currentSettings,
+                trendyol: {
+                    supplierId: trendyolMarketplaceSettings.supplierId,
+                    apiKey: trendyolMarketplaceSettings.apiKey,
+                    apiSecret: trendyolMarketplaceSettings.apiSecret
+                }
+            };
+
+            const { error } = await supabase
+                .from('tenants')
+                .update({ settings: updatedSettings })
+                .eq('id', trendyolMarketplaceModal.tenantId);
+
+            if (error) throw error;
+
+            alert(`✅ ${trendyolMarketplaceModal.tenantName} için Trendyol Pazaryeri Ayarları güncellendi!`);
+            setTrendyolMarketplaceModal(null);
             await fetchTenants();
         } catch (err: any) {
             alert('❌ Hata: ' + err.message);
@@ -841,11 +882,11 @@ export default function SuperAdmin() {
                                             <button
                                                 onClick={() => {
                                                     const currentTg = tenant.settings?.trendyolGo || {};
-                                                    setTrendyolModal({
+                                                    setTrendyolGoModal({
                                                         tenantId: tenant.id,
                                                         tenantName: tenant.company_name || tenant.license_key
                                                     });
-                                                    setTrendyolSettings({
+                                                    setTrendyolGoSettings({
                                                         sellerId: currentTg.sellerId || '',
                                                         storeId: currentTg.storeId || '',
                                                         apiKey: currentTg.apiKey || '',
@@ -855,9 +896,27 @@ export default function SuperAdmin() {
                                                     });
                                                 }}
                                                 className="p-3 bg-white/5 hover:bg-orange-500/20 rounded-xl text-slate-400 hover:text-orange-500 transition-all font-bold"
-                                                title="Trendyol GO Ayarları"
+                                                title="Trendyol GO / Yemek Ayarları"
                                             >
-                                                <span className="font-black text-xs">TY</span>
+                                                <span className="font-black text-[9px]">GO</span>
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    const currentTm = tenant.settings?.trendyol || {};
+                                                    setTrendyolMarketplaceModal({
+                                                        tenantId: tenant.id,
+                                                        tenantName: tenant.company_name || tenant.license_key
+                                                    });
+                                                    setTrendyolMarketplaceSettings({
+                                                        supplierId: currentTm.supplierId || '',
+                                                        apiKey: currentTm.apiKey || '',
+                                                        apiSecret: currentTm.apiSecret || ''
+                                                    });
+                                                }}
+                                                className="p-3 bg-white/5 hover:bg-orange-600/20 rounded-xl text-slate-400 hover:text-orange-600 transition-all font-bold"
+                                                title="Trendyol Pazaryeri (Normal) Ayarları"
+                                            >
+                                                <span className="font-black text-[9px]">TY</span>
                                             </button>
                                             <button
                                                 onClick={() => {
@@ -1190,6 +1249,94 @@ export default function SuperAdmin() {
                                         <div className="flex flex-col justify-center">
                                             <p className="text-[9px] text-slate-500 italic max-w-[200px]">Bu PIN girildiğinde sistemdeki tüm yetki kısıtlamaları otomatik devre dışı kalır.</p>
                                         </div>
+                                    </div>
+                                </div>
+                                <div className="space-y-4 md:col-span-2 p-6 bg-indigo-500/5 border border-indigo-500/20 rounded-[2rem]">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-indigo-400 ml-1 flex items-center gap-2">
+                                            <Store className="w-4 h-4" />
+                                            Sabit Mağazalar (Lisans Bazlı Otomatik Kurulum)
+                                        </label>
+                                        <button 
+                                            onClick={() => {
+                                                const current = editingTenant.fixed_warehouses || [];
+                                                setEditingTenant({
+                                                    ...editingTenant,
+                                                    fixed_warehouses: [...current, { name: 'Yeni Sabit Mağaza', type: 'storage', code: 'SBT-' + (current.length + 1), platform: null }]
+                                                });
+                                            }}
+                                            className="px-3 py-1 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-400 rounded-lg text-[10px] font-black uppercase transition-all"
+                                        >
+                                            + Mağaza Şablonu Ekle
+                                        </button>
+                                    </div>
+                                    
+                                    <div className="space-y-3 mt-4">
+                                        {(editingTenant.fixed_warehouses || []).map((fw: any, idx: number) => (
+                                            <div key={idx} className="flex flex-col md:flex-row gap-3 p-4 bg-slate-950/50 border border-white/5 rounded-2xl group relative">
+                                                <div className="flex-1 space-y-1">
+                                                    <label className="text-[9px] font-black text-slate-600 uppercase ml-1">Mağaza Adı</label>
+                                                    <input 
+                                                        type="text" 
+                                                        value={fw.name} 
+                                                        onChange={(e) => {
+                                                            const newFw = [...(editingTenant.fixed_warehouses || [])];
+                                                            newFw[idx].name = e.target.value;
+                                                            setEditingTenant({ ...editingTenant, fixed_warehouses: newFw });
+                                                        }}
+                                                        className="w-full px-3 py-2 bg-slate-900 border border-white/5 rounded-xl text-white text-xs outline-none focus:border-indigo-500/50"
+                                                    />
+                                                </div>
+                                                <div className="w-full md:w-32 space-y-1">
+                                                    <label className="text-[9px] font-black text-slate-600 uppercase ml-1">Tür</label>
+                                                    <select 
+                                                        value={fw.type} 
+                                                        onChange={(e) => {
+                                                            const newFw = [...(editingTenant.fixed_warehouses || [])];
+                                                            newFw[idx].type = e.target.value;
+                                                            setEditingTenant({ ...editingTenant, fixed_warehouses: newFw });
+                                                        }}
+                                                        className="w-full px-3 py-2 bg-slate-900 border border-white/5 rounded-xl text-white text-xs outline-none appearance-none"
+                                                    >
+                                                        <option value="storage">Fiziksel</option>
+                                                        <option value="virtual">Online (Sanal)</option>
+                                                    </select>
+                                                </div>
+                                                <div className="w-full md:w-40 space-y-1">
+                                                    <label className="text-[9px] font-black text-slate-600 uppercase ml-1">Platform Entegrasyonu</label>
+                                                    <select 
+                                                        value={fw.platform || ''} 
+                                                        onChange={(e) => {
+                                                            const newFw = [...(editingTenant.fixed_warehouses || [])];
+                                                            newFw[idx].platform = e.target.value || null;
+                                                            setEditingTenant({ ...editingTenant, fixed_warehouses: newFw });
+                                                        }}
+                                                        className="w-full px-3 py-2 bg-slate-900 border border-white/5 rounded-xl text-white text-xs outline-none appearance-none"
+                                                    >
+                                                        <option value="">Yok</option>
+                                                        <option value="trendyol">Trendyol Pazaryeri</option>
+                                                        <option value="trendyol_go">Trendyol GO / Yemek</option>
+                                                        <option value="getir">Getir</option>
+                                                        <option value="yemeksepeti">Yemeksepeti</option>
+                                                        <option value="mobile">Mobil Uygulama (JetPos Mobile)</option>
+                                                    </select>
+                                                </div>
+                                                <div className="flex items-end pb-1">
+                                                    <button 
+                                                        onClick={() => {
+                                                            const newFw = (editingTenant.fixed_warehouses || []).filter((_: any, i: number) => i !== idx);
+                                                            setEditingTenant({ ...editingTenant, fixed_warehouses: newFw });
+                                                        }}
+                                                        className="p-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 rounded-xl transition-all"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {(editingTenant.fixed_warehouses || []).length === 0 && (
+                                            <p className="text-center py-4 text-[10px] text-slate-600 font-bold uppercase tracking-widest italic border border-dashed border-white/5 rounded-2xl">Henüz sabit mağaza tanımlanmadı.</p>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -1542,17 +1689,17 @@ export default function SuperAdmin() {
             )}
 
             {/* Trendyol GO Modal */}
-            {trendyolModal && (
+            {trendyolGoModal && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
                     <div className="bg-slate-900 border border-white/10 rounded-[2.5rem] max-w-md w-full shadow-2xl max-h-[90vh] overflow-y-auto">
                         <div className="p-8 border-b border-white/10 sticky top-0 bg-slate-900 z-10">
                             <div className="flex items-center gap-4 mb-2">
                                 <div className="w-12 h-12 bg-orange-500/20 rounded-2xl flex items-center justify-center">
-                                    <span className="font-black text-xl text-orange-500">TY</span>
+                                    <span className="font-black text-xl text-orange-500">GO</span>
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-black text-white">Trendyol GO Ayarları</h3>
-                                    <p className="text-xs text-slate-500 mt-1">{trendyolModal.tenantName}</p>
+                                    <h3 className="text-xl font-black text-white">Trendyol GO / Yemek Ayarları</h3>
+                                    <p className="text-xs text-slate-500 mt-1">{trendyolGoModal.tenantName}</p>
                                 </div>
                             </div>
                         </div>
@@ -1562,8 +1709,8 @@ export default function SuperAdmin() {
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Satıcı / Seller ID</label>
                                     <input
                                         type="text"
-                                        value={trendyolSettings.sellerId}
-                                        onChange={(e) => setTrendyolSettings({ ...trendyolSettings, sellerId: e.target.value })}
+                                        value={trendyolGoSettings.sellerId}
+                                        onChange={(e) => setTrendyolGoSettings({ ...trendyolGoSettings, sellerId: e.target.value })}
                                         className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-orange-500/50"
                                     />
                                 </div>
@@ -1571,8 +1718,8 @@ export default function SuperAdmin() {
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Mağaza / Store ID</label>
                                     <input
                                         type="text"
-                                        value={trendyolSettings.storeId}
-                                        onChange={(e) => setTrendyolSettings({ ...trendyolSettings, storeId: e.target.value })}
+                                        value={trendyolGoSettings.storeId}
+                                        onChange={(e) => setTrendyolGoSettings({ ...trendyolGoSettings, storeId: e.target.value })}
                                         className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-orange-500/50"
                                     />
                                 </div>
@@ -1581,8 +1728,8 @@ export default function SuperAdmin() {
                                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">API Key</label>
                                 <input
                                     type="text"
-                                    value={trendyolSettings.apiKey}
-                                    onChange={(e) => setTrendyolSettings({ ...trendyolSettings, apiKey: e.target.value })}
+                                    value={trendyolGoSettings.apiKey}
+                                    onChange={(e) => setTrendyolGoSettings({ ...trendyolGoSettings, apiKey: e.target.value })}
                                     className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-orange-500/50"
                                 />
                             </div>
@@ -1590,8 +1737,8 @@ export default function SuperAdmin() {
                                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">API Secret</label>
                                 <input
                                     type="password"
-                                    value={trendyolSettings.apiSecret}
-                                    onChange={(e) => setTrendyolSettings({ ...trendyolSettings, apiSecret: e.target.value })}
+                                    value={trendyolGoSettings.apiSecret}
+                                    onChange={(e) => setTrendyolGoSettings({ ...trendyolGoSettings, apiSecret: e.target.value })}
                                     className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-orange-500/50"
                                 />
                             </div>
@@ -1599,8 +1746,8 @@ export default function SuperAdmin() {
                                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Self Integration Token (Opsiyonel)</label>
                                 <input
                                     type="password"
-                                    value={trendyolSettings.token}
-                                    onChange={(e) => setTrendyolSettings({ ...trendyolSettings, token: e.target.value })}
+                                    value={trendyolGoSettings.token}
+                                    onChange={(e) => setTrendyolGoSettings({ ...trendyolGoSettings, token: e.target.value })}
                                     className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-orange-500/50"
                                 />
                             </div>
@@ -1610,23 +1757,86 @@ export default function SuperAdmin() {
                                     <span className="text-[10px] text-slate-500">Gerçek sipariş/kurye kullanılmaz</span>
                                 </div>
                                 <button
-                                    onClick={() => setTrendyolSettings({ ...trendyolSettings, stage: !trendyolSettings.stage })}
-                                    className={`w-12 h-6 rounded-full transition-all relative ${trendyolSettings.stage ? 'bg-orange-500' : 'bg-slate-700'}`}
+                                    onClick={() => setTrendyolGoSettings({ ...trendyolGoSettings, stage: !trendyolGoSettings.stage })}
+                                    className={`w-12 h-6 rounded-full transition-all relative ${trendyolGoSettings.stage ? 'bg-orange-500' : 'bg-slate-700'}`}
                                 >
-                                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${trendyolSettings.stage ? 'right-1' : 'left-1'}`} />
+                                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${trendyolGoSettings.stage ? 'right-1' : 'left-1'}`} />
                                 </button>
                             </div>
                             <div className="flex gap-3 pt-4">
                                 <button
-                                    onClick={() => setTrendyolModal(null)}
+                                    onClick={() => setTrendyolGoModal(null)}
                                     className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold transition-all"
                                 >
                                     İptal
                                 </button>
                                 <button
-                                    onClick={handleSaveTrendyolSettings}
+                                    onClick={handleSaveTrendyolGoSettings}
                                     disabled={saving}
                                     className="flex-1 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-black shadow-lg shadow-orange-500/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {saving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><Save className="w-4 h-4" /> Kaydet</>}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Trendyol Marketplace Modal */}
+            {trendyolMarketplaceModal && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+                    <div className="bg-slate-900 border border-white/10 rounded-[2.5rem] max-w-md w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+                        <div className="p-8 border-b border-white/10 sticky top-0 bg-slate-900 z-10">
+                            <div className="flex items-center gap-4 mb-2">
+                                <div className="w-12 h-12 bg-orange-600/20 rounded-2xl flex items-center justify-center">
+                                    <span className="font-black text-xl text-orange-600">TY</span>
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black text-white">Trendyol Pazaryeri Ayarları</h3>
+                                    <p className="text-xs text-slate-500 mt-1">{trendyolMarketplaceModal.tenantName}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-8 space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Tedarikçi / Supplier ID</label>
+                                <input
+                                    type="text"
+                                    value={trendyolMarketplaceSettings.supplierId}
+                                    onChange={(e) => setTrendyolMarketplaceSettings({ ...trendyolMarketplaceSettings, supplierId: e.target.value })}
+                                    className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-orange-600/50"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">API Key</label>
+                                <input
+                                    type="text"
+                                    value={trendyolMarketplaceSettings.apiKey}
+                                    onChange={(e) => setTrendyolMarketplaceSettings({ ...trendyolMarketplaceSettings, apiKey: e.target.value })}
+                                    className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-orange-600/50"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">API Secret</label>
+                                <input
+                                    type="password"
+                                    value={trendyolMarketplaceSettings.apiSecret}
+                                    onChange={(e) => setTrendyolMarketplaceSettings({ ...trendyolMarketplaceSettings, apiSecret: e.target.value })}
+                                    className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-orange-600/50"
+                                />
+                            </div>
+                            <div className="flex gap-3 pt-4">
+                                <button
+                                    onClick={() => setTrendyolMarketplaceModal(null)}
+                                    className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold transition-all"
+                                >
+                                    İptal
+                                </button>
+                                <button
+                                    onClick={handleSaveTrendyolMarketplaceSettings}
+                                    disabled={saving}
+                                    className="flex-1 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-black shadow-lg shadow-orange-600/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                                 >
                                     {saving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><Save className="w-4 h-4" /> Kaydet</>}
                                 </button>

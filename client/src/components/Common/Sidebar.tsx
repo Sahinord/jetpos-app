@@ -133,7 +133,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
     const menuCategories: MenuCategory[] = [
         {
             id: "main",
-            label: "Ana Menü v1.3.4",
+            label: "JetPanel :)",
             icon: LayoutDashboard,
             defaultOpen: true,
             items: [
@@ -153,7 +153,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
         },
         {
             id: "adisyon",
-            label: "Adisyon Sistemi",
+            label: "JetMasa",
             icon: Utensils,
             feature: "adisyon",
             items: [
@@ -162,7 +162,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
         },
         {
             id: "web",
-            label: "Web Sitesi & Dijital",
+            label: "JetWeb & Dijital",
             icon: Globe,
             items: [
                 { id: "qrmenu", label: "QR Menü Yönetimi", icon: ExternalLink, feature: "qrmenu", description: "Dijital menünüzü tasarlayın ve yayınlayın." },
@@ -171,7 +171,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
         },
         {
             id: "marketing",
-            label: "Müşteri Deneyimi",
+            label: "JetGörünüm",
             icon: Monitor,
             items: [
                 { id: "cfd", label: "Müşteri Ekranı (CFD)", icon: Monitor, feature: "cfd", description: "Müşteri tarafında duran işlem takip ekranını yönetin ve özelleştirin." },
@@ -179,7 +179,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
         },
         {
             id: "products",
-            label: "Jetstok",
+            label: "JetStok",
             icon: Package,
             items: [
                 { id: "products", label: "Ürün Listesi", icon: Boxes, feature: "products", description: "Stoktaki ürünlerin listelenmesi, yeni ürün ekleme ve düzenleme işlemleri." },
@@ -259,33 +259,25 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
         },
         {
             id: "crm",
-            label: "CRM & Sadakat",
+            label: "JetPuan & Sadakat",
             icon: Heart,
             items: [
-                { id: "crm_overview", label: "CRM Özeti", icon: Brain, description: "Yapay zeka destekli müşteri analizi ve sadakat programı özeti." },
+                { id: "crm_overview", label: "Müşteri Analizi", icon: Brain, description: "Yapay zeka destekli müşteri analizi ve sadakat programı özeti." },
                 { id: "crm_segments", label: "Segmentler", icon: Users, description: "Müşteri grupları (VIP, Risk, Yeni)." },
-                { id: "crm_campaigns", label: "Kampanyalar", icon: Target, description: "Aktif ve planlanmış reklam/indirim kampanyaları." },
                 { id: "crm_loyalty", label: "Puan Sistemi", icon: Gift, description: "Sadakat puanı ayarları ve müşteri puan takibi." },
+                { id: "employee_manager", label: "JetKadro (Personel)", icon: Users, feature: "employee_module", description: "Personel bilgileri ve tanımlamalarını yönet." },
+                { id: "shift_manager", label: "Vardiya Takibi", icon: Clock, feature: "employee_module", description: "Çalışan giriş/çıkış ve vardiya performans takibi." },
             ]
         },
         {
             id: "integrations",
-            label: "Entegrasyonlar",
+            label: "JetEntegre",
             icon: Blocks,
             items: [
-                { id: "trendyol_integration", label: "Trendyol Yemek", icon: ShoppingBag, feature: null, description: "Trendyol siparişleri, gelir ve net kar analizi." },
-                { id: "yemeksepeti_integration", label: "Yemeksepeti", icon: Store, feature: null, description: "Yemeksepeti siparişleri, gelir ve net kar analizi." },
-                { id: "getir_integration", label: "Getir", icon: Package, feature: null, description: "Getir siparişleri, gelir ve net kar analizi." },
-            ]
-        },
-        {
-            id: "employees",
-            label: "Çalışan Yönetimi",
-            icon: Users,
-            feature: "employee_module",
-            items: [
-                { id: "employee_manager", label: "Çalışan Listesi", icon: Users, feature: null, description: "Personel bilgileri ve tanımlamalarını yönet." },
-                { id: "shift_manager", label: "Vardiya Takibi", icon: Clock, feature: null, description: "Çalışan giriş/çıkış ve vardiya performans takibi." },
+                { id: "trendyol_integration", label: "Trendyol Pazaryeri", icon: ShoppingBag, feature: "trendyol_marketplace", description: "Trendyol Pazaryeri siparişleri ve stok senkronizasyonu." },
+                { id: "trendyol_go_integration", label: "Trendyol GO / Yemek", icon: ShoppingCart, feature: "trendyol_go", description: "Trendyol GO ve Yemek siparişleri, gelir ve net kar analizi." },
+                { id: "yemeksepeti_integration", label: "Yemeksepeti", icon: Store, feature: "yemeksepeti", description: "Yemeksepeti siparişleri, gelir ve net kar analizi." },
+                { id: "getir_integration", label: "Getir", icon: Package, feature: "getir", description: "Getir siparişleri, gelir ve net kar analizi." },
             ]
         },
         {
@@ -301,7 +293,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
         },
         {
             id: "tools",
-            label: "Araçlar",
+            label: "JetAraçlar",
             icon: Layers,
             items: [
                 { id: "universal_converter", label: "Akıllı Dönüştürücü", icon: ImageIcon, feature: null, description: "Görsel, PDF ve Word dosyalarınız için hepsi bir arada dönüşüm aracı." },
