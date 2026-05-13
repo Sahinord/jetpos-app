@@ -242,48 +242,6 @@ export class TrendyolClient {
             return false;
         }
     }
-
-    /**
-     * Trendyol'da barkod ile arama yapıp en düşük piyasa fiyatını bulur (Buybox)
-     * API anahtarı gerektirmez, halka açık discovery endpoint'ini kullanır.
-     * JetScout (Smart Pricing) özelliğinin kalbidir.
-     */
-    static async getPublicMarketPrice(barcode: string): Promise<{ price: number, url: string } | null> {
-        if (!barcode || barcode === '-' || barcode === '0' || barcode.length < 5) return null;
-
-        // Trendyol Discovery Search API (Public)
-        const url = `https://public-sdc.trendyol.com/discovery-web-search-service/v2/api/infinite-scroll/sr?q=${barcode}&culture=tr-TR&userGenderId=1&pId=0&scoringPriority=0&isAllSelected=true`;
-
-        try {
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-                }
-            });
-
-            if (!response.ok) return null;
-
-            const data = await response.json();
-            const products = data.result?.products;
-
-            if (products && products.length > 0) {
-                // Barkod araması genellikle tam eşleşme getirir, ilk ürünü alalım
-                const bestMatch = products[0];
-                const price = bestMatch.price?.sellingPrice || bestMatch.price?.discountedPrice;
-                const productUrl = `https://www.trendyol.com${bestMatch.url}`;
-                
-                if (price) {
-                    return { price, url: productUrl };
-                }
-            }
-            return null;
-        } catch (error) {
-            console.error('JetScout Error:', error);
-            return null;
-        }
-    }
 }
 
 // Helper function: Environment variables veya Tenant ayarlarından client oluştur
