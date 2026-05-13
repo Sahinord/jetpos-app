@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 
 interface Tenant {
     id: string;
+    license_id: number;
     license_key: string;
     company_name: string;
     logo_url: string | null;
@@ -777,7 +778,8 @@ export default function SuperAdmin() {
                             .filter(t =>
                                 !searchTerm ||
                                 (t.company_name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                                (t.license_key?.toLowerCase().includes(searchTerm.toLowerCase()))
+                                (t.license_key?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                                (t.license_id?.toString().includes(searchTerm))
                             )
                             .map((tenant) => (
                                 <div key={tenant.id} className="glass-card p-6 border-l-4 border-l-primary hover:border-l-blue-400 transition-all group">
@@ -790,6 +792,7 @@ export default function SuperAdmin() {
                                                 <div>
                                                     <h3 className="text-xl font-black text-white">{tenant.company_name || '(Kayıt Bekleniyor...)'}</h3>
                                                     <div className="flex items-center gap-3">
+                                                        <span className="bg-white/10 px-2 py-0.5 rounded-lg text-[10px] font-black text-white border border-white/10">ID: {tenant.license_id}</span>
                                                         <span className="text-sm text-primary font-mono font-bold tracking-widest">{tenant.license_key}</span>
                                                         <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase ${tenant.status === 'active' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border border-rose-500/20'}`}>
                                                             {tenant.status}

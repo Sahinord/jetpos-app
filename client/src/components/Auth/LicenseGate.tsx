@@ -49,8 +49,13 @@ export default function LicenseGate({ onSuccess }: { onSuccess: () => void }) {
     const checkLicenseAndAskPassword = async (license: string) => {
         setLoading(true);
         try {
+            let searchKey = license.trim();
+            if (searchKey.toLowerCase().startsWith('m')) {
+                searchKey = searchKey.substring(1);
+            }
+
             const { data, error: fetchError } = await supabase
-                .rpc('find_tenant_by_license', { p_license_key: license });
+                .rpc('find_tenant_by_license', { p_license_key: searchKey });
 
             if (fetchError || !data) {
                 localStorage.removeItem('savedLicense');
@@ -76,8 +81,13 @@ export default function LicenseGate({ onSuccess }: { onSuccess: () => void }) {
     const handleAutoLogin = async (license: string) => {
         setLoading(true);
         try {
+            let searchKey = license.trim();
+            if (searchKey.toLowerCase().startsWith('m')) {
+                searchKey = searchKey.substring(1);
+            }
+
             const { data, error: fetchError } = await supabase
-                .rpc('find_tenant_by_license', { p_license_key: license });
+                .rpc('find_tenant_by_license', { p_license_key: searchKey });
 
             if (!fetchError && data) {
                 localStorage.setItem('licenseKey', license);
@@ -105,8 +115,13 @@ export default function LicenseGate({ onSuccess }: { onSuccess: () => void }) {
         setError('');
 
         try {
+            let searchKey = licenseKey.trim();
+            if (searchKey.toLowerCase().startsWith('m')) {
+                searchKey = searchKey.substring(1);
+            }
+
             const { data, error: fetchError } = await supabase
-                .rpc('find_tenant_by_license', { p_license_key: licenseKey });
+                .rpc('find_tenant_by_license', { p_license_key: searchKey });
 
             if (fetchError || !data) {
                 console.error('License check error:', fetchError);

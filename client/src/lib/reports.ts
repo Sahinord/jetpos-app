@@ -12,7 +12,7 @@ export const generateZReportPDF = (stats: any, topProducts: any[]) => {
     // Header
     doc.setFontSize(22);
     doc.setTextColor(15, 23, 42);
-    doc.text("KARDEŞLER KASAP - Z RAPORU", 105, 20, { align: "center" });
+    doc.text("JETPOS - MALİ Z RAPORU", 105, 20, { align: "center" });
 
     doc.setFontSize(10);
     doc.setTextColor(100);
@@ -21,10 +21,11 @@ export const generateZReportPDF = (stats: any, topProducts: any[]) => {
     // Summary Stats
     doc.setFontSize(14);
     doc.setTextColor(0);
-    doc.text("Günün Özeti", 14, 45);
+    doc.text("Finansal Özet", 14, 45);
 
     const summaryData = [
-        ["Toplam Ciro", `₺${stats.totalSales.toLocaleString('tr-TR')}`],
+        ["Toplam Ciro (KDV Dahil)", `₺${stats.totalSales.toLocaleString('tr-TR')}`],
+        ["Toplam KDV", `₺${(stats.totalVat || 0).toLocaleString('tr-TR')}`],
         ["Net Kar", `₺${stats.totalProfit.toLocaleString('tr-TR')}`],
         ["İşlem Sayısı", stats.itemCount.toString()],
         ["Ortalama Sepet", `₺${stats.avgBasket.toFixed(2)}`]
@@ -38,8 +39,25 @@ export const generateZReportPDF = (stats: any, topProducts: any[]) => {
         headStyles: { fillColor: [59, 130, 246] }
     });
 
+    // VAT Breakdown
+    if (stats.vatBreakdown && Object.keys(stats.vatBreakdown).length > 0) {
+        doc.text("KDV Detayları", 14, (doc as any).lastAutoTable.finalY + 15);
+        const vatData = Object.entries(stats.vatBreakdown).map(([rate, amount]: any) => [
+            `%${rate} KDV`,
+            `₺${amount.toLocaleString('tr-TR')}`
+        ]);
+
+        autoTable(doc, {
+            startY: (doc as any).lastAutoTable.finalY + 20,
+            head: [['KDV Oranı', 'Tahsil Edilen Tutar']],
+            body: vatData,
+            theme: 'grid',
+            headStyles: { fillColor: [245, 158, 11] }
+        });
+    }
+
     // Top Products
-    doc.text("Günün En Çok Satan Ürünleri", 14, (doc as any).lastAutoTable.finalY + 15);
+    doc.text("En Çok Satan Ürünler", 14, (doc as any).lastAutoTable.finalY + 15);
 
     const productData = topProducts.map((p, i) => [
         i + 1,
@@ -61,9 +79,9 @@ export const generateZReportPDF = (stats: any, topProducts: any[]) => {
     const finalY = (doc as any).lastAutoTable.finalY + 20;
     doc.setFontSize(10);
     doc.setTextColor(150);
-    doc.text("Kardeşler Kasap Muhasebe Sistemi tarafından otomatik oluşturulmuştur.", 105, finalY, { align: "center" });
+    doc.text("JetPOS Muhasebe Sistemi tarafından otomatik oluşturulmuştur.", 105, finalY, { align: "center" });
 
-    doc.save(`Z_Raporu_${dateStr.replace(/\./g, '_')}.pdf`);
+    doc.save(`Mali_Z_Raporu_${dateStr.replace(/\./g, '_')}.pdf`);
 };
 
 export const exportZReportExcel = (stats: any, topProducts: any[]) => {
@@ -71,18 +89,27 @@ export const exportZReportExcel = (stats: any, topProducts: any[]) => {
 
     // Summary Data
     const summary = [
-        ["Kardeşler Kasap Z-Raporu"],
+        ["JetPOS Mali Z-Raporu"],
         ["Tarih", dateStr],
         [],
-        ["GÜNÜN ÖZETİ"],
+        ["FİNANSAL ÖZET"],
         ["Toplam Ciro", stats.totalSales],
+        ["Toplam KDV", stats.totalVat || 0],
         ["Net Kar", stats.totalProfit],
         ["İşlem Sayısı", stats.itemCount],
         ["Ortalama Sepet", stats.avgBasket],
         [],
-        ["GÜNÜN YILDIZLARI (TOP 5)"],
-        ["#", "Ürün Adı", "Barkod", "Satış Adedi", "Toplam Ciro"]
+        ["KDV DETAYLARI"],
+        ["KDV Oranı", "Tutar"]
     ];
+
+    if (stats.vatBreakdown) {
+        Object.entries(stats.vatBreakdown).forEach(([rate, amount]: any) => {
+            summary.push([`%${rate}`, amount]);
+        });
+    }
+
+    summary.push([], ["EN ÇOK SATANLAR"], ["#", "Ürün Adı", "Barkod", "Satış Adedi", "Toplam Ciro"]);
 
     // Add products
     topProducts.forEach((p, i) => {
@@ -95,5 +122,5 @@ export const exportZReportExcel = (stats: any, topProducts: any[]) => {
 
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
     const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
-    saveAs(blob, `Z_Raporu_${dateStr.replace(/\./g, '_')}.xlsx`);
+    saveAs(blob, `Mali_Z_Raporu_${dateStr.replace(/\./g, '_')}.xlsx`);
 };

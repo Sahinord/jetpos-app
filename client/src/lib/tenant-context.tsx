@@ -36,6 +36,7 @@ interface TenantContextType {
     setActiveEmployee: (emp: any) => void;
     logoutEmployee: () => void;
     verifyEmployeePin: (pin: string) => Promise<{ success: boolean; employee?: any; message?: string }>;
+    isAccountant: boolean;
     activeWarehouse: Warehouse | null;
     setActiveWarehouse: (warehouse: Warehouse | null) => void;
     warehouses: Warehouse[];
@@ -49,6 +50,8 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     const [availableTenants, setAvailableTenants] = useState<Tenant[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeEmployee, setActiveEmployee] = useState<any | null>(null);
+
+    const [isAccountant, setIsAccountant] = useState(false);
 
     const logoutEmployee = () => {
         setActiveEmployee(null);
@@ -89,7 +92,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
         try {
             // LocalStorage'dan lisans kontrolü
-            const savedLicenseKey = localStorage.getItem('licenseKey');
+            let savedLicenseKey = localStorage.getItem('licenseKey');
             const savedTenantId = localStorage.getItem('currentTenantId');
 
             console.log("📍 [TenantContext] LocalStorage state:", { savedLicenseKey, savedTenantId });
@@ -99,6 +102,16 @@ export function TenantProvider({ children }: { children: ReactNode }) {
                 setLoading(false);
                 clearTimeout(failsafeTimeout);
                 return;
+            }
+
+            // Accountant Check
+            if (savedLicenseKey.toLowerCase().startsWith('m')) {
+                setIsAccountant(true);
+                // Strip the 'M' prefix for the RPC call if necessary, 
+                // but let's see if the RPC handles it or if we should just keep it.
+                // The user said "başına m ekleyerek sisteme girip", 
+                // so the actual license in DB doesn't have 'm'.
+                savedLicenseKey = savedLicenseKey.substring(1);
             }
 
             const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -235,6 +248,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
                 setActiveEmployee,
                 logoutEmployee,
                 verifyEmployeePin,
+                isAccountant,
                 activeWarehouse,
                 setActiveWarehouse: handleSetActiveWarehouse,
                 warehouses,

@@ -11,8 +11,15 @@ export interface ProductPriceData {
 /**
  * Calculates profit in TL and Percentage
  */
-export const calculateProfit = (purchasePrice: number, salePrice: number) => {
-  const profitAmount = salePrice - purchasePrice;
+export const calculateProfit = (
+  purchasePrice: number, 
+  salePrice: number, 
+  commissionRate: number = 0, 
+  shippingCost: number = 0
+) => {
+  const commissionAmount = (salePrice * commissionRate) / 100;
+  const netRevenue = salePrice - commissionAmount - shippingCost;
+  const profitAmount = netRevenue - purchasePrice;
   const profitPercentage = purchasePrice > 0 ? (profitAmount / purchasePrice) * 100 : 0;
 
   return {
@@ -28,21 +35,20 @@ export const suggestSalePrice = (
   purchasePrice: number,
   targetProfitMargin: number = 30,
   vatRate: number = 20,
-  commissionRate: number = 0,
-  withholdingRate: number = 0
+  posCommissionRate: number = 0,
+  withholdingRate: number = 0,
+  platformCommissionRate: number = 0,
+  shippingCost: number = 0
 ) => {
-  // 1. Base price with profit
-  const baseWithProfit = purchasePrice * (1 + targetProfitMargin / 100);
+  // 1. Base price with profit and fixed costs (shipping)
+  const baseWithProfitAndShipping = (purchasePrice * (1 + targetProfitMargin / 100)) + shippingCost;
 
   // 2. Price with VAT
-  const withVat = baseWithProfit * (1 + vatRate / 100);
+  const withVat = baseWithProfitAndShipping * (1 + vatRate / 100);
 
-  // 3. Gross up for deductions (POS Commission and Withholding/Stopaj)
-  // Logic: FinalPrice * (1 - (Comm + Stopaj)/100) = WithVat
-  // FinalPrice = WithVat / (1 - (Comm + Stopaj)/100)
-  const totalDeductionRate = (commissionRate + withholdingRate) / 100;
+  // 3. Gross up for deductions (POS Commission + Withholding + Platform Commission)
+  const totalDeductionRate = (posCommissionRate + withholdingRate + platformCommissionRate) / 100;
 
-  // Protect against division by zero if totalDeductionRate >= 1 (unlikely but safe)
   const finalPrice = totalDeductionRate < 1
     ? withVat / (1 - totalDeductionRate)
     : withVat;

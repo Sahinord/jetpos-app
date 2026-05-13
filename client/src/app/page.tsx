@@ -56,6 +56,7 @@ import QRMenuManager from '@/components/Admin/QRMenuManager';
 import ShowcaseManager from '@/components/Admin/ShowcaseManager';
 import CFDManager from '@/components/Admin/CFDManager';
 import CRMPage from '@/components/CRM/CRMPage';
+import AuditLogs from "@/components/Admin/AuditLogs";
 import { createTrendyolGoClient } from "@/lib/trendyol-go-client";
 import EmployeePinLogin from "@/components/Auth/EmployeePinLogin";
 import { offlineDB } from "@/lib/offline-db";

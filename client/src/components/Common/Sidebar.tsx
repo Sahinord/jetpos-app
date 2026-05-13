@@ -100,10 +100,10 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToast, isMobileOpen }: SidebarProps) {
-    const { currentTenant, warehouses, activeWarehouse, setActiveWarehouse, activeEmployee, logoutEmployee } = useTenant();
+    const { currentTenant, warehouses, activeWarehouse, setActiveWarehouse, activeEmployee, logoutEmployee, isAccountant } = useTenant();
     const [openCategories, setOpenCategories] = useState<string[]>(["main", "sales", "products"]);
-    const [, setFavoritesVersion] = useState(0); // Force re-render on favorites change
-    const [isBottomPanelOpen, setIsBottomPanelOpen] = useState(true); // Alt panel açık/kapalı
+    const [, setFavoritesVersion] = useState(0); 
+    const [isBottomPanelOpen, setIsBottomPanelOpen] = useState(true); 
     const [searchQuery, setSearchQuery] = useState("");
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
@@ -292,6 +292,15 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
             ]
         },
         {
+            id: "admin",
+            label: "JetYönetim",
+            icon: Settings,
+            items: [
+                { id: "audit_logs", label: "Sistem Kayıtları", icon: History, feature: null, description: "Fiyat değişimleri, silme işlemleri ve kritik dükkan hareketleri." },
+                { id: "settings", label: "Genel Ayarlar", icon: Settings, feature: null, description: "Sistem ayarları ve dükkan yapılandırması." },
+            ]
+        },
+        {
             id: "tools",
             label: "JetAraçlar",
             icon: Layers,
@@ -306,6 +315,22 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
 
     // Yetki bazlı filtreleme
     const filteredMenuCategories = menuCategories.map(category => {
+        // --- ACCOUNTANT MODE FILTERING ---
+        if (isAccountant) {
+            // Sadece Muhasebeci'nin görmesi gerekenler
+            const allowedForAccountant = ["sales", "jet_muhasebe", "analytics"];
+            if (!allowedForAccountant.includes(category.id)) return null;
+
+            // Satış içinden sadece "History" ve "Invoice" kalsın, "POS" gitmeli
+            if (category.id === "sales") {
+                return {
+                    ...category,
+                    items: category.items?.filter(item => ["history", "invoice"].includes(item.id))
+                };
+            }
+            return category;
+        }
+
         // Eğer geliştirilmiş yetkilendirme kapalıysa veya çalışan Patron ise filtreleme yapma
         const permissionsEnabled = currentTenant?.features?.employee_permissions;
         const permissions = activeEmployee?.permissions;

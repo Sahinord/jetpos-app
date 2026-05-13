@@ -25,7 +25,9 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
     const [pricingPrefs, setPricingPrefs] = useState({
         margin: "30" as any,
         commission: "0" as any,
-        withholding: "0" as any
+        withholding: "0" as any,
+        platform_commission: "0" as any,
+        shipping_cost: "0" as any
     });
  
     const [showAdvancedPricing, setShowAdvancedPricing] = useState(false);
@@ -38,7 +40,9 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                 setPricingPrefs({
                     margin: String(parsed.margin || 30),
                     commission: String(parsed.commission || 0),
-                    withholding: String(parsed.withholding || 0)
+                    withholding: String(parsed.withholding || 0),
+                    platform_commission: String(parsed.platform_commission || 0),
+                    shipping_cost: String(parsed.shipping_cost || 0)
                 });
             } catch (e) { }
         }
@@ -78,7 +82,12 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const stats = calculateProfit(formData.purchase_price, formData.sale_price);
+    const stats = calculateProfit(
+        Number(formData.purchase_price) || 0, 
+        Number(formData.sale_price) || 0,
+        Number(pricingPrefs.platform_commission) || 0,
+        Number(pricingPrefs.shipping_cost) || 0
+    );
 
     const handleSuggestPrice = () => {
         const suggested = suggestSalePrice(
@@ -86,7 +95,9 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
             Number(pricingPrefs.margin) || 0,
             formData.vat_rate,
             Number(pricingPrefs.commission) || 0,
-            Number(pricingPrefs.withholding) || 0
+            Number(pricingPrefs.withholding) || 0,
+            Number(pricingPrefs.platform_commission) || 0,
+            Number(pricingPrefs.shipping_cost) || 0
         );
         setFormData({ ...formData, sale_price: String(suggested) });
     };
@@ -336,6 +347,28 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                                     />
                                                 </div>
                                                 <div>
+                                                    <label className="block text-[10px] font-bold text-secondary mb-1">PLATFORM (%)</label>
+                                                    <input 
+                                                        type="text" 
+                                                        inputMode="decimal"
+                                                        className="w-full bg-orange-500/10 border border-orange-500/20 rounded-lg px-2 py-1.5 text-xs outline-none text-orange-500"
+                                                        value={pricingPrefs.platform_commission}
+                                                        onFocus={(e) => e.target.select()}
+                                                        onChange={(e) => handleNumericInput('platform_commission', e.target.value, true)}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[10px] font-bold text-secondary mb-1">KARGO (TL)</label>
+                                                    <input 
+                                                        type="text" 
+                                                        inputMode="decimal"
+                                                        className="w-full bg-blue-500/10 border border-blue-500/20 rounded-lg px-2 py-1.5 text-xs outline-none text-blue-500"
+                                                        value={pricingPrefs.shipping_cost}
+                                                        onFocus={(e) => e.target.select()}
+                                                        onChange={(e) => handleNumericInput('shipping_cost', e.target.value, true)}
+                                                    />
+                                                </div>
+                                                <div>
                                                     <label className="block text-[10px] font-bold text-secondary mb-1">STOPAJ (%)</label>
                                                     <input 
                                                         type="text" 
@@ -348,7 +381,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                                 </div>
                                             </div>
                                             <p className="text-[9px] text-secondary/60 leading-tight">
-                                                * Öneri al dediğinizde bu oranlar maliyetin üzerine eklenerek satış fiyatı brütleştirilir.
+                                                * Öneri al dediğinizde bu oranlar maliyetin üzerine eklenerek satış fiyatı brütleştirilir. Kargo ve komisyon kardan düşülerek net kar hesaplanır.
                                             </p>
                                         </motion.div>
                                     )}
