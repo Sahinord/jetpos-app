@@ -19,6 +19,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
         is_campaign: false,
         image_url: "",
         external_price: "" as any,
+        sync_trendyol: false,
     });
  
     // Pricing suggestions settings
@@ -63,6 +64,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
             status: product.status || (product.is_active === false ? 'passive' : 'active'),
             image_url: product.image_url || "",
             category_id: product.category_id || "",
+            sync_trendyol: product.sync_trendyol || false,
         });
         else setFormData({
             name: "",
@@ -77,6 +79,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
             is_campaign: false,
             image_url: "",
             external_price: "",
+            sync_trendyol: false,
         });
     }, [product, isOpen]);
 
@@ -291,15 +294,28 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                 />
                                 
                                 <div className="mt-4">
-                                    <label className="block text-[11px] font-black text-orange-500 mb-1.5 uppercase tracking-wider">Trendyol Satış Fiyatı (₺)</label>
+                                    <div className="flex items-center justify-between mb-1.5">
+                                        <label className="block text-[11px] font-black text-orange-500 uppercase tracking-wider">Trendyol Satış Fiyatı (₺)</label>
+                                        <label className="relative inline-flex items-center cursor-pointer group">
+                                            <input 
+                                                type="checkbox" 
+                                                className="sr-only peer" 
+                                                checked={formData.sync_trendyol}
+                                                onChange={(e) => setFormData({...formData, sync_trendyol: e.target.checked})}
+                                            />
+                                            <div className="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500 border border-white/5 group-hover:border-orange-500/50"></div>
+                                            <span className="ml-2 text-[10px] font-black text-orange-500 uppercase tracking-tighter">Trendyol'da Satışa Aç</span>
+                                        </label>
+                                    </div>
                                     <div className="relative">
                                         <div className="absolute left-3 top-1/2 -translate-y-1/2 text-orange-500 font-bold text-xs">TRY</div>
                                         <input
                                             type="text"
                                             inputMode="decimal"
-                                            className="w-full bg-orange-500/5 border border-orange-500/20 rounded-xl pl-12 pr-4 py-2.5 outline-none focus:border-orange-500 text-white font-black"
+                                            className={`w-full bg-orange-500/5 border rounded-xl pl-12 pr-4 py-2.5 outline-none transition-all ${formData.sync_trendyol ? 'border-orange-500/50 text-white font-black' : 'border-white/5 text-white/30 opacity-50 grayscale cursor-not-allowed'}`}
                                             value={formData.external_price}
                                             onFocus={(e) => e.target.select()}
+                                            disabled={!formData.sync_trendyol}
                                             onChange={(e) => handleNumericInput('external_price', e.target.value)}
                                             placeholder="Trendyol'a özel fiyat girin"
                                         />

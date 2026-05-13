@@ -80,8 +80,9 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                 filter === "all" ? true :
                     filter === "active" ? isActive :
                         filter === "passive" ? isPassive :
-                            filter === "pending" ? isPending :
-                                filter === "campaign" ? p.is_campaign === true : true;
+                        filter === "pending" ? isPending :
+                            filter === "campaign" ? p.is_campaign === true :
+                                filter === "trendyol" ? p.sync_trendyol === true : true;
 
             return matchesSearch && matchesFilter;
         });
@@ -99,7 +100,8 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
             }).length,
             passive: products.filter((p: any) => (p.status === 'passive' || p.is_active === false) && p.status !== 'deleted' && p.deleted_at === null).length,
             pending: products.filter((p: any) => p.status === 'pending' && p.status !== 'deleted' && p.deleted_at === null).length,
-            campaign: products.filter((p: any) => p.is_campaign && p.status !== 'deleted' && p.deleted_at === null).length
+            campaign: products.filter((p: any) => p.is_campaign && p.status !== 'deleted' && p.deleted_at === null).length,
+            trendyol: products.filter((p: any) => p.sync_trendyol && p.status !== 'deleted' && p.deleted_at === null).length
         }
     }, [products]);
 
@@ -542,7 +544,8 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                             { id: 'active', label: 'Aktif' },
                                             { id: 'passive', label: 'Pasif' },
                                             { id: 'pending', label: 'Beklemede' },
-                                            { id: 'campaign', label: 'Kampanya' }
+                                            { id: 'campaign', label: 'Kampanya' },
+                                            { id: 'trendyol', label: 'Trendyol' }
                                         ].map((btn) => (
                                             <button
                                                 key={btn.id}
@@ -761,6 +764,9 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                                 <div className="flex flex-col">
                                                     <span className="font-bold text-foreground text-[15px] tracking-tight flex items-center gap-2">
                                                         {product.name}
+                                                        {product.sync_trendyol && (
+                                                            <span className="w-5 h-5 rounded-md bg-orange-500 text-white flex items-center justify-center text-[10px] font-black shadow-sm" title="Trendyol'da Satışta">T</span>
+                                                        )}
                                                         {product.is_campaign && (
                                                             <span className="px-2 py-0.5 rounded-md text-[9px] bg-amber-500 text-black font-black shadow-sm">KAMPANYA</span>
                                                         )}
@@ -859,13 +865,39 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                                         >
                                                             <Edit2 className="w-4 h-4" />
                                                         </button>
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); onDelete(product.id); }}
-                                                            className="p-2 hover:bg-rose-500/10 text-secondary hover:text-rose-500 rounded-lg transition-colors"
-                                                            title="Sil"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
+                                                        {filter === 'trendyol' ? (
+                                                            <button
+                                                                onClick={async (e) => { 
+                                                                    e.stopPropagation(); 
+                                                                    if (confirm(`"${product.name}" ürününü Trendyol satışından kaldırmak istediğinize emin misiniz? (Fiziksel mağazadan SİLİNMEZ)`)) {
+                                                                        const { error } = await supabase
+                                                                            .from('products')
+                                                                            .update({ sync_trendyol: false })
+                                                                            .eq('id', product.id)
+                                                                            .eq('tenant_id', currentTenant?.id);
+                                                                        
+                                                                        if (error) {
+                                                                            showToast("Hata oluştu: " + error.message, "error");
+                                                                        } else {
+                                                                            showToast("Ürün Trendyol'dan kaldırıldı", "success");
+                                                                            if (onRefresh) onRefresh();
+                                                                        }
+                                                                    }
+                                                                }}
+                                                                className="p-2 hover:bg-orange-500/10 text-secondary hover:text-orange-500 rounded-lg transition-colors"
+                                                                title="Trendyol'dan Kaldır (Dükkanda Kalır)"
+                                                            >
+                                                                <X className="w-4 h-4" />
+                                                            </button>
+                                                        ) : (
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); onDelete(product.id); }}
+                                                                className="p-2 hover:bg-rose-500/10 text-secondary hover:text-rose-500 rounded-lg transition-colors"
+                                                                title="Sil"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
+                                                        )}
                                                     </>
                                                 )}
                                             </div>

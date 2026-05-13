@@ -280,6 +280,7 @@ export default function SuperAdmin() {
 
         setEditingTenant({
             id: 'new',
+            license_id: 0,
             license_key: newLicenseKey,
             company_name: '', // Boş bırak - müşteri dolduracak
             logo_url: null,
