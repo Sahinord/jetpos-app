@@ -28,6 +28,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { exportToExcel, importFromExcel } from "@/lib/excel";
 import { supabase, setCurrentTenant } from "@/lib/supabase";
 import { useTenant } from "@/lib/tenant-context";
+import ProductDetailView from "./ProductDetailView";
+import BulkImportPage from "./BulkImportPage";
 
 
 export default function ProductTable({ products, onEdit, onDelete, onAdd, onManageCategories, onBulkImport, onClearAll, onToggleAllCampaign, campaignRate, hideFilters = false, limit, onRefresh, showToast, onViewChangeLogs, isPriceSyncEnabled = false, isStockSyncEnabled = false, lowStockThreshold = 10, isTrashMode = false, onRestore }: any) {
@@ -47,6 +49,8 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
     const [isBulkStockModalOpen, setIsBulkStockModalOpen] = useState(false);
     const [bulkStockValue, setBulkStockValue] = useState("0");
     const [isRandomStock, setIsRandomStock] = useState(false);
+    const [viewingProduct, setViewingProduct] = useState<any>(null);
+    const [showBulkImport, setShowBulkImport] = useState(false);
 
 
     const { currentTenant, activeWarehouse } = useTenant();
@@ -484,6 +488,30 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
         } catch(e) {}
     };
 
+    if (showBulkImport) {
+        return (
+            <BulkImportPage
+                onBack={() => setShowBulkImport(false)}
+                onImport={(data) => {
+                    onBulkImport(data);
+                }}
+            />
+        );
+    }
+
+    if (viewingProduct) {
+        return (
+            <ProductDetailView 
+                product={viewingProduct} 
+                onBack={() => setViewingProduct(null)} 
+                onEdit={(p) => {
+                    setViewingProduct(null);
+                    onEdit(p);
+                }}
+            />
+        );
+    }
+
     return (
         <div className="space-y-8">
             {/* Action Bar - Reorganized */}
@@ -609,10 +637,13 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                         <FileSpreadsheet className="w-4 h-4" />
                                     </button>
 
-                                    <label className="p-2.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 border border-blue-500/20 rounded-xl transition-all cursor-pointer">
+                                    <button
+                                        onClick={() => setShowBulkImport(true)}
+                                        className="p-2.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 border border-blue-500/20 rounded-xl transition-all cursor-pointer"
+                                        title="Toplu Ürün İçe Aktar"
+                                    >
                                         <Upload className="w-4 h-4" />
-                                        <input type="file" accept=".xlsx, .xls" className="hidden" onChange={handleFileImport} />
-                                    </label>
+                                    </button>
 
                                     <div className="w-[1px] h-6 bg-border mx-1" />
 
@@ -757,7 +788,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                             />
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div className="flex items-center space-x-3">
+                                            <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setViewingProduct(product)}>
                                                 <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center text-primary group-hover:bg-primary/20 transition-colors">
                                                     <Package className="w-5 h-5" />
                                                 </div>
@@ -858,6 +889,13 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                                     </>
                                                 ) : (
                                                     <>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); setViewingProduct(product); }}
+                                                            className="p-2 hover:bg-primary/10 text-secondary hover:text-primary rounded-lg transition-colors"
+                                                            title="Detayları Gör"
+                                                        >
+                                                            <Eye className="w-4 h-4" />
+                                                        </button>
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); onEdit(product); }}
                                                             className="p-2 hover:bg-primary/10 text-secondary hover:text-primary rounded-lg transition-colors"

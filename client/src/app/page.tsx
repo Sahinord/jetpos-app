@@ -39,6 +39,9 @@ import AISalesInsights from '@/components/AI/AISalesInsights';
 import AIAssistantChat from '@/components/AI/AIAssistantChat';
 import InvoicePanel from '@/components/Invoice/InvoicePanel';
 import HomePage from '@/components/Home/HomePage';
+import ProfitPilot from "@/components/AI/ProfitPilot";
+import SmartBasket from "@/components/AI/SmartBasket";
+import StockBuster from "@/components/AI/StockBuster";
 import CariPage from '@/components/Cari/CariPage';
 import KasaPage from '@/components/Kasa/KasaPage';
 import BankaPage from '@/components/Banka/BankaPage';
@@ -1340,6 +1343,21 @@ export default function Home() {
           {activeTab === "ai_assistant" && (
             <div className="max-w-[1500px] mx-auto w-full">
               <AIAssistantChat />
+            </div>
+          )}
+          {activeTab === "profit_pilot" && (
+            <div className="max-w-[1500px] mx-auto w-full">
+              <ProfitPilot />
+            </div>
+          )}
+          {activeTab === "basket_offers" && (
+            <div className="max-w-[1500px] mx-auto w-full">
+              <SmartBasket />
+            </div>
+          )}
+          {activeTab === "dead_stock" && (
+            <div className="max-w-[1500px] mx-auto w-full">
+              <StockBuster />
             </div>
           )}
           {activeTab === "invoice" && (

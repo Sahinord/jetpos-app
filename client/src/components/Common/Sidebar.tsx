@@ -321,9 +321,11 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
             icon: BarChart3,
             items: [
                 { id: "reports", label: "Satış Raporları", icon: FileBarChart, feature: "reports", description: "Geleneksel ve gelişmiş satış performans raporları." },
+                { id: "profit_pilot", label: "Kâr Pilotu (AI)", icon: Target, feature: "ai_features", description: "İşletmenizi kâra sokacak yapay zeka destekli stratejiler." },
+                { id: "basket_offers", label: "Akıllı Sepet", icon: ShoppingCart, feature: "ai_features", description: "Sepet değerini arttıran dinamik teklif ve kampanya yönetimi." },
+                { id: "dead_stock", label: "Stok Eritme", icon: Trash2, feature: "ai_features", description: "Rafta yatan parayı (bayat stok) nakde çevirme operasyonu." },
                 { id: "simulation", label: "Fiyat Simülasyonu", icon: TrendingUp, feature: "price_simulator", description: "Fiyat değişikliklerinin kärlılık üzerindeki etkilerini simüle etme aracı." },
                 { id: "ai_insights", label: "AI Öngörüleri", icon: Brain, feature: "ai_features", description: "Yapay zeka analizleri ile işletmenize özel büyüme önerileri." },
-                { id: "ai_assistant", label: "AI Asistan", icon: MessageSquare, feature: "ai_features", description: "JetPos AI ile işletmeniz hakkında sohbet edin." },
             ]
         },
         {
