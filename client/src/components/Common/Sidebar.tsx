@@ -100,7 +100,8 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToast, isMobileOpen }: SidebarProps) {
-    const { currentTenant, warehouses, activeWarehouse, setActiveWarehouse, activeEmployee, logoutEmployee, isAccountant } = useTenant();
+    const { currentTenant, warehouses, activeWarehouse, setActiveWarehouse, activeEmployee, logoutEmployee, isAccountant, refreshWarehouses } = useTenant();
+    const [isSyncingStores, setIsSyncingStores] = useState(false);
     const [openCategories, setOpenCategories] = useState<string[]>(["main", "sales", "products"]);
     const [, setFavoritesVersion] = useState(0); 
     const [isBottomPanelOpen, setIsBottomPanelOpen] = useState(true); 
@@ -128,6 +129,40 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
         window.addEventListener('favorites-changed', handleFavoritesChange);
         return () => window.removeEventListener('favorites-changed', handleFavoritesChange);
     }, []);
+
+    const missingStores = (currentTenant?.fixed_warehouses || []).filter((fw: any) => 
+        !warehouses.some(w => w.name === fw.name || (fw.platform && (w as any).platform === fw.platform))
+    );
+
+    const handleSyncStores = async () => {
+        if (missingStores.length === 0) return;
+        setIsSyncingStores(true);
+        try {
+            const storesToCreate = missingStores.map((fw: any) => ({
+                name: fw.name,
+                type: fw.type || 'storage',
+                platform: fw.platform || null,
+                tenant_id: currentTenant?.id,
+                is_active: true,
+                code: fw.code || `SBT-${Math.floor(Math.random() * 1000)}`,
+                is_default: false
+            }));
+
+            // Real insert logic
+            const { error: insertError } = await supabase
+                .from('warehouses')
+                .insert(storesToCreate);
+
+            if (insertError) throw insertError;
+            
+            if (refreshWarehouses) await refreshWarehouses();
+            if (showToast) showToast(`${missingStores.length} yeni mağaza tanımlandı.`, "success");
+        } catch (err: any) {
+            if (showToast) showToast("Hata: " + err.message, "error");
+        } finally {
+            setIsSyncingStores(false);
+        }
+    };
 
     // Kategorili menü yapısı
     const menuCategories: MenuCategory[] = [
@@ -911,23 +946,38 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                                         </button>
 
                                         {/* Simple Dropdown on Hover/Click - Let's use a simple absolute menu */}
-                                        <div className="absolute bottom-full left-0 w-full mb-2 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl opacity-0 invisible group-hover/store:opacity-100 group-hover/store:visible transition-all z-[100] p-2 space-y-1">
+                                        <div className="absolute bottom-full left-0 w-64 mb-2 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl opacity-0 invisible group-hover/store:opacity-100 group-hover/store:visible transition-all z-[100] p-2 space-y-1">
                                             <p className="text-[10px] font-black text-secondary/50 uppercase tracking-widest p-2 border-b border-white/5 mb-1">Mağaza Değiştir</p>
-                                            {warehouses.map(w => (
+                                            <div className="max-h-48 overflow-y-auto custom-scrollbar space-y-1">
+                                                {warehouses.map(w => (
+                                                    <button
+                                                        key={w.id}
+                                                        onClick={() => {
+                                                            setActiveWarehouse(w);
+                                                            if (showToast) {
+                                                                showToast(`${w.name} mağazasına geçildi.`, "success");
+                                                            }
+                                                        }}
+                                                        className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all text-left ${activeWarehouse?.id === w.id ? 'bg-indigo-500/20 text-white' : 'hover:bg-white/5 text-secondary hover:text-white'}`}
+                                                    >
+                                                        {w.type === 'virtual' ? <ShoppingBag className="w-3.5 h-3.5" /> : <Store className="w-3.5 h-3.5" />}
+                                                        <span className="text-xs font-bold truncate">{w.name}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            
+                                            {missingStores.length > 0 && (
                                                 <button
-                                                    key={w.id}
-                                                    onClick={() => {
-                                                        setActiveWarehouse(w);
-                                                        if (showToast) {
-                                                            showToast(`${w.name} mağazasına geçildi.`, "success");
-                                                        }
-                                                    }}
-                                                    className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all text-left ${activeWarehouse?.id === w.id ? 'bg-indigo-500/20 text-white' : 'hover:bg-white/5 text-secondary hover:text-white'}`}
+                                                    onClick={handleSyncStores}
+                                                    disabled={isSyncingStores}
+                                                    className="w-full mt-2 flex items-center justify-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all group/sync"
                                                 >
-                                                    {w.type === 'virtual' ? <ShoppingBag className="w-3.5 h-3.5" /> : <Store className="w-3.5 h-3.5" />}
-                                                    <span className="text-xs font-bold truncate">{w.name}</span>
+                                                    <Sparkles className={`w-3.5 h-3.5 ${isSyncingStores ? 'animate-spin' : 'group-hover/sync:animate-pulse'}`} />
+                                                    <span className="text-[10px] font-black uppercase tracking-widest">
+                                                        {isSyncingStores ? 'Kuruluyor...' : `${missingStores.length} Eksik Mağazayı Kur`}
+                                                    </span>
                                                 </button>
-                                            ))}
+                                            )}
                                         </div>
                                     </div>
                                 </div>

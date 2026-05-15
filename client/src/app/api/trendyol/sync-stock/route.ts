@@ -65,8 +65,9 @@ export async function POST(req: NextRequest) {
         while (hasMore) {
             const { data: products, error: productsError } = await supabaseAdmin
                 .from('products')
-                .select('barcode, stock_quantity, name, sale_price, external_price')
+                .select('barcode, stock_quantity, name, sale_price, external_price, sync_trendyol')
                 .eq('tenant_id', tenantId)
+                .eq('sync_trendyol', true)
                 .not('barcode', 'is', null)
                 .neq('barcode', '')
                 .range(from, from + pageSize - 1);

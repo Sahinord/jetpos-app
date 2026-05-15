@@ -22,12 +22,13 @@ export class SyncService {
             if (error) throw error;
 
             if (data) {
-                await offlineDB.products.clear();
-                await offlineDB.products.bulkAdd(data.map(p => ({
+                // Use bulkPut instead of clear + bulkAdd to prevent primary key conflicts
+                // and provide a more robust "Upsert" mechanism.
+                await offlineDB.products.bulkPut(data.map(p => ({
                     ...p,
                     tenant_id: tenantId
                 })));
-                console.log('📦 Mobile: Products synced to local DB');
+                console.log('📦 Mobile: Products synced to local DB (Upsert)');
             }
         } catch (err) {
             console.error('Mobile Product Sync Error:', err);

@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, Package, ScanLine, Wallet, ClipboardCheck, Menu, X, Utensils, LogOut, ArrowLeftRight, Users, CreditCard, Calculator } from 'lucide-react';
+import { LayoutDashboard, Package, ScanLine, Wallet, ClipboardCheck, Menu, X, Utensils, LogOut, ArrowLeftRight, Users, CreditCard, Calculator, Zap, Globe } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
@@ -51,7 +51,7 @@ export default function BottomNav() {
     };
 
     const navItems = [
-        { name: 'Panel', icon: LayoutDashboard, path: '/dashboard' },
+        { name: 'Panel', icon: Zap, path: '/dashboard' },
         { name: 'Satış', icon: Wallet, path: '/pos' },
         { name: 'Barkod', icon: ScanLine, path: '/scanner' },
         { name: 'Ürünler', icon: Package, path: '/products' },
@@ -62,6 +62,7 @@ export default function BottomNav() {
         { name: 'JetKasa (POS)', icon: Wallet, path: '/pos', show: true },
         { name: 'Barkod Okuyucu', icon: ScanLine, path: '/scanner', show: true },
         { name: 'Ürün Yönetimi', icon: Package, path: '/products', show: true },
+        { name: 'Entegrasyonlar', icon: Globe, path: '/entegre', show: true },
         { name: 'Cari Hesaplar', icon: Users, path: '/cari', show: true },
         { name: 'Banka Hesapları', icon: CreditCard, path: '/banka', show: true },
         { name: 'Kasa İşlemleri', icon: Calculator, path: '/kasa', show: true },
@@ -86,7 +87,7 @@ export default function BottomNav() {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={() => setIsSidebarOpen(false)}
-                            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[110]"
+                            className="fixed inset-0 bg-black/80 backdrop-blur-md z-[110]"
                         />
 
                         {/* Sidebar (Right Drawer) */}
@@ -95,22 +96,22 @@ export default function BottomNav() {
                             animate={{ x: 0 }}
                             exit={{ x: '100%' }}
                             transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
-                            className="fixed top-0 right-0 h-full w-72 bg-[#020617] border-l border-white/10 shadow-2xl z-[120] flex flex-col"
+                            className="fixed top-0 right-0 h-full w-72 bg-[#050B1A] border-l border-[#2D6BFF]/20 shadow-2xl z-[120] flex flex-col"
                         >
-                            <div className="p-6 border-b border-white/10 flex items-center justify-between">
-                                <div>
-                                    <h2 className="text-xl font-black text-white">{companyName}</h2>
-                                    <p className="text-xs text-blue-400 font-bold uppercase tracking-widest mt-1">Mobil Modül</p>
+                            <div className="p-6 border-b border-[#2D6BFF]/10 flex items-center justify-between bg-[#0B1328]/50">
+                                <div className="min-w-0 flex-1">
+                                    <h2 className="text-xl font-black text-white truncate">{companyName}</h2>
+                                    <p className="text-[10px] text-[#6FD3FF] font-black uppercase tracking-[3px] mt-1 shadow-[0_0_10px_rgba(111,211,255,0.2)]">Mobil Modül</p>
                                 </div>
                                 <button
                                     onClick={() => setIsSidebarOpen(false)}
-                                    className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors"
+                                    className="p-2 bg-white/5 hover:bg-[#2563FF]/10 rounded-xl transition-colors border border-white/5 ml-4"
                                 >
                                     <X className="w-5 h-5 text-slate-400" />
                                 </button>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto py-4 px-3 space-y-2">
+                            <div className="flex-1 overflow-y-auto py-4 px-3 space-y-2 no-scrollbar">
                                 {sidebarItems.filter(i => i.show).map((item) => {
                                     const Icon = item.icon;
                                     const isActive = pathname === item.path;
@@ -122,25 +123,25 @@ export default function BottomNav() {
                                                 setIsSidebarOpen(false);
                                                 router.push(item.path);
                                             }}
-                                            className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all ${isActive ? 'bg-blue-600/20 text-blue-400 border border-blue-500/20' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+                                            className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all ${isActive ? 'bg-[#2563FF]/10 text-[#6FD3FF] border border-[#2D6BFF]/30 shadow-[0_0_20px_rgba(37,99,255,0.1)]' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
                                         >
-                                            <Icon className={`w-5 h-5 ${isActive ? 'text-blue-400' : 'text-slate-500'}`} />
-                                            <span className="font-bold">{item.name}</span>
+                                            <Icon className={`w-5 h-5 ${isActive ? 'text-[#6FD3FF]' : 'text-slate-600'}`} />
+                                            <span className="font-bold tracking-tight">{item.name}</span>
                                         </button>
                                     );
                                 })}
                             </div>
 
-                            <div className="p-4 border-t border-white/10">
+                            <div className="p-4 border-t border-[#2D6BFF]/10 bg-[#0B1328]/30">
                                 <button
                                     onClick={() => {
                                         localStorage.clear();
                                         window.location.href = '/';
                                     }}
-                                    className="w-full flex items-center gap-3 p-4 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 rounded-2xl transition-all font-bold justify-center"
+                                    className="w-full flex items-center gap-3 p-4 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 rounded-2xl transition-all font-black justify-center border border-rose-500/10"
                                 >
                                     <LogOut className="w-5 h-5" />
-                                    Çıkış Yap
+                                    OTURUMU KAPAT
                                 </button>
                             </div>
                         </motion.div>
@@ -149,8 +150,8 @@ export default function BottomNav() {
             </AnimatePresence>
 
             {/* Bottom Navigation */}
-            <div className="fixed bottom-0 left-0 right-0 z-[100] bg-[#020617]/95 backdrop-blur-xl border-t border-white/10 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
-                <div className="flex items-center justify-around h-20 w-full max-w-md mx-auto px-2">
+            <div className="fixed bottom-0 left-0 right-0 z-[100] bg-[#050B1A]/95 backdrop-blur-2xl border-t border-[#2D6BFF]/20 pb-[env(safe-area-inset-bottom,0.5rem)] shadow-[0_-10px_40px_rgba(0,0,0,0.6)]">
+                <div className="flex items-center justify-around h-20 w-full max-w-md mx-auto px-1">
                     {navItems.map((item) => {
                         const Icon = item.icon;
                         const isActive = pathname === item.path;
@@ -161,16 +162,16 @@ export default function BottomNav() {
                                 onClick={() => router.push(item.path)}
                                 className="relative flex flex-col items-center justify-center w-full h-full group"
                             >
-                                <div className={`relative p-3 rounded-2xl transition-all duration-500 ${isActive ? 'bg-blue-600/20 -translate-y-2' : ''}`}>
+                                <div className={`relative p-2.5 sm:p-3 rounded-2xl transition-all duration-500 ${isActive ? 'bg-[#2563FF]/20 -translate-y-2.5 shadow-[0_0_20px_rgba(37,99,255,0.2)]' : ''}`}>
                                     <Icon
-                                        strokeWidth={isActive ? 2.5 : 2}
-                                        className={`w-6 h-6 transition-colors duration-300 ${isActive ? 'text-blue-400' : 'text-slate-500'}`}
+                                        strokeWidth={isActive ? 3 : 2}
+                                        className={`w-5 h-5 sm:w-6 sm:h-6 transition-colors duration-300 ${isActive ? 'text-[#6FD3FF]' : 'text-slate-600'}`}
                                     />
                                     {(item.name === 'Satış' || item.name === 'Barkod') && !isActive && (
-                                        <div className="absolute top-2 right-2 w-2 h-2 bg-blue-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
+                                        <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-[#1E90FF] rounded-full animate-pulse shadow-[0_0_8px_rgba(30,144,255,0.6)]" />
                                     )}
                                 </div>
-                                <span className={`text-[10px] font-black uppercase tracking-widest mt-1 transition-all duration-300 ${isActive ? 'text-blue-400 opacity-100' : 'text-slate-500 opacity-0'}`}>
+                                <span className={`text-[8px] sm:text-[9px] font-black uppercase tracking-[2px] mt-1.5 transition-all duration-300 ${isActive ? 'text-[#6FD3FF] opacity-100 translate-y-0' : 'text-slate-600 opacity-0 translate-y-2'}`}>
                                     {item.name}
                                 </span>
                             </button>
@@ -182,13 +183,13 @@ export default function BottomNav() {
                         onClick={() => setIsSidebarOpen(true)}
                         className="relative flex flex-col items-center justify-center w-full h-full group"
                     >
-                        <div className={`relative p-3 rounded-2xl transition-all duration-500 ${isSidebarOpen ? 'bg-blue-600/20 -translate-y-2' : ''}`}>
+                        <div className={`relative p-2.5 sm:p-3 rounded-2xl transition-all duration-500 ${isSidebarOpen ? 'bg-[#2563FF]/20 -translate-y-2.5' : ''}`}>
                             <Menu
-                                strokeWidth={isSidebarOpen ? 2.5 : 2}
-                                className={`w-6 h-6 transition-colors duration-300 ${isSidebarOpen ? 'text-blue-400' : 'text-slate-500'}`}
+                                strokeWidth={isSidebarOpen ? 3 : 2}
+                                className={`w-5 h-5 sm:w-6 sm:h-6 transition-colors duration-300 ${isSidebarOpen ? 'text-[#6FD3FF]' : 'text-slate-600'}`}
                             />
                         </div>
-                        <span className={`text-[10px] font-black uppercase tracking-widest mt-1 transition-all duration-300 ${isSidebarOpen ? 'text-blue-400 opacity-100' : 'text-slate-500 opacity-0'}`}>
+                        <span className={`text-[8px] sm:text-[9px] font-black uppercase tracking-[2px] mt-1.5 transition-all duration-300 ${isSidebarOpen ? 'text-[#6FD3FF] opacity-100 translate-y-0' : 'text-slate-600 opacity-0 translate-y-2'}`}>
                             Menü
                         </span>
                     </button>

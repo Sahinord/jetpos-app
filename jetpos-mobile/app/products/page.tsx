@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { Search, Package } from 'lucide-react';
+import { Search, Package, MoreVertical, Edit3, ArrowUpRight, Store } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import ProductEditModal from '@/components/ProductEditModal';
 
@@ -32,7 +32,6 @@ export default function ProductsPage() {
         const tenantId = localStorage.getItem('tenantId');
         if (!tenantId) return;
 
-        // REALTIME: Listen for product updates (Stock, Price, etc.)
         const channel = supabase
             .channel(`products_page_${tenantId}`)
             .on('postgres_changes', {
@@ -66,7 +65,6 @@ export default function ProductsPage() {
         return filteredProducts.slice(0, visibleCount);
     }, [filteredProducts, visibleCount]);
 
-    // Infinite Scroll Logic
     useEffect(() => {
         const observer = new IntersectionObserver(
             (entries) => {
@@ -87,12 +85,8 @@ export default function ProductsPage() {
     const fetchProducts = async () => {
         try {
             const tenantId = localStorage.getItem('tenantId');
-            if (!tenantId) {
-                console.error('❌ tenantId bulunamadı localStorage\'da!');
-                return;
-            }
+            if (!tenantId) return;
 
-            // RLS context set et
             await supabase.rpc('set_current_tenant', { tenant_id: tenantId });
 
             let allProducts: Product[] = [];
@@ -110,7 +104,6 @@ export default function ProductsPage() {
                     .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
                 if (error) {
-                    console.warn('❌ Ürün çekme batch hatası:', error);
                     hasMore = false;
                     break;
                 }
@@ -118,15 +111,11 @@ export default function ProductsPage() {
                 if (data && data.length > 0) {
                     allProducts = [...allProducts, ...data];
                     setProducts([...allProducts]);
-
-                    if (data.length < PAGE_SIZE) {
-                        hasMore = false;
-                    }
+                    if (data.length < PAGE_SIZE) hasMore = false;
                 } else {
                     hasMore = false;
                 }
                 page++;
-
                 if (page === 1) setLoading(false);
             }
         } catch (error) {
@@ -137,38 +126,61 @@ export default function ProductsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 pb-24">
-            {/* Header */}
-            <div className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-xl border-b border-white/10 p-4">
-                <h1 className="text-2xl font-black text-white mb-4">Ürünler</h1>
+        <div className="min-h-screen bg-background pb-32 overflow-x-hidden container-safe">
+            {/* Background Glows */}
+            <div className="fixed inset-0 pointer-events-none overflow-hidden">
+                <div className="absolute top-[-5%] left-[-10%] w-[70%] h-[40%] bg-[#2563FF]/5 rounded-full blur-[100px]" />
+                <div className="absolute bottom-[20%] right-[-10%] w-[60%] h-[40%] bg-[#6FD3FF]/5 rounded-full blur-[100px]" />
+            </div>
 
-                {/* Search */}
-                <div className="relative">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            {/* Header */}
+            <header className="sticky top-0 z-50 glass border-b border-[#2D6BFF]/10 p-4 sm:p-6 pt-[env(safe-area-inset-top,1rem)] flex flex-col gap-5">
+                <div className="flex items-center justify-between gap-4">
+                    <div className="min-w-0">
+                        <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-none uppercase truncate">ÜRÜNLER</h1>
+                        <p className="text-[9px] sm:text-[10px] font-black text-[#5B8CFF] tracking-[3px] uppercase mt-1.5 opacity-80 truncate">Envanter Yönetimi</p>
+                    </div>
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 shrink-0 rounded-xl sm:rounded-2xl glass-dark border border-[#2D6BFF]/20 flex items-center justify-center shadow-[0_0_20px_rgba(37,99,255,0.1)] text-[#6FD3FF]">
+                        <Package size={20} />
+                    </div>
+                </div>
+
+                {/* Search Bar */}
+                <div className="relative group">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center text-[#5B8CFF] pointer-events-none group-focus-within:text-[#6FD3FF] transition-colors">
+                        <Search size={16} />
+                    </div>
                     <input
                         type="text"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="Ürün ara..."
-                        className="w-full pl-12 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Ürün adı veya barkod..."
+                        className="w-full h-12 sm:h-14 glass-dark border border-[#2D6BFF]/20 rounded-[1rem] sm:rounded-[1.25rem] pl-11 pr-4 text-xs sm:text-sm font-black text-white placeholder-slate-600 outline-none focus:border-[#2563FF]/50 focus:ring-4 focus:ring-[#2563FF]/5 transition-all shadow-inner"
                     />
                 </div>
-            </div>
+            </header>
 
-            {/* Products List */}
-            <div className="p-4 space-y-4">
+            {/* Products List Content */}
+            <div className="p-4 sm:p-6 relative z-10">
                 {loading && products.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-20">
-                        <div className="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-4" />
-                        <p className="text-secondary font-bold animate-pulse uppercase tracking-widest text-xs">Ürünler Hazırlanıyor...</p>
+                    <div className="flex flex-col items-center justify-center py-24 gap-4">
+                        <div className="relative">
+                            <div className="w-12 h-12 border-3 border-[#2563FF]/10 border-t-[#2563FF] rounded-full animate-spin" />
+                        </div>
+                        <p className="text-[9px] font-black text-[#5B8CFF] animate-pulse uppercase tracking-[5px]">YÜKLENİYOR</p>
                     </div>
                 ) : displayedProducts.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-20 opacity-40">
-                        <Package className="w-20 h-20 text-secondary mb-4" />
-                        <p className="text-secondary font-black uppercase tracking-widest text-xs">Sonuç Bulunamadı</p>
+                    <div className="flex flex-col items-center justify-center py-24 opacity-30 gap-4">
+                        <Package size={48} className="text-slate-600" />
+                        <p className="text-[9px] font-black uppercase tracking-[4px]">Sonuç Yok</p>
                     </div>
                 ) : (
-                    <>
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between px-2 mb-2">
+                            <span className="text-[9px] font-black text-[#5B8CFF] uppercase tracking-[3px] truncate">{filteredProducts.length} ÜRÜN</span>
+                            <div className="h-px flex-1 mx-4 bg-gradient-to-r from-[#2D6BFF]/20 to-transparent" />
+                        </div>
+                        
                         <div className="grid grid-cols-1 gap-4">
                             {displayedProducts.map((product) => (
                                 <ProductItemCard
@@ -179,19 +191,13 @@ export default function ProductsPage() {
                             ))}
                         </div>
 
-                        {/* Scroll Trigger */}
+                        {/* Infinite Scroll Trigger */}
                         {visibleCount < filteredProducts.length && (
                             <div ref={observerTarget} className="h-20 flex items-center justify-center">
-                                <div className="w-6 h-6 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
+                                <div className="w-6 h-6 border-2 border-[#2563FF]/10 border-t-[#2563FF] rounded-full animate-spin" />
                             </div>
                         )}
-
-                        <div className="text-center py-6 opacity-30">
-                            <p className="text-[10px] font-black uppercase tracking-[3px]">
-                                {filteredProducts.length} Ürün Listelendi
-                            </p>
-                        </div>
-                    </>
+                    </div>
                 )}
             </div>
 
@@ -200,71 +206,65 @@ export default function ProductsPage() {
     );
 }
 
-// Product Item Card Component
 function ProductItemCard({ product, onUpdate }: { product: Product; onUpdate: () => void }) {
     const [showEditModal, setShowEditModal] = useState(false);
 
     return (
         <>
-            <div className="bg-white/5 backdrop-blur-xl rounded-[2rem] p-5 border border-white/5 shadow-2xl relative overflow-hidden group active:scale-[0.98] transition-all">
-                {/* Background Decor */}
-                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-blue-500/10 transition-colors" />
-
-                <div className="flex items-start justify-between relative z-10">
+            <div 
+                onClick={() => setShowEditModal(true)}
+                className="glass-dark border border-[#2D6BFF]/10 rounded-[1.75rem] sm:rounded-[2.5rem] p-4 sm:p-6 relative overflow-hidden group active:scale-[0.97] transition-all shadow-xl hover:border-[#2D6BFF]/30"
+            >
+                {/* Accent Highlight */}
+                <div className="absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-[#2563FF]/5 rounded-full blur-3xl -mr-12 -mt-12 group-active:bg-[#2563FF]/10 transition-colors" />
+                
+                <div className="flex items-start justify-between gap-3 relative z-10">
                     <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-1.5">
-                            <h3 className="text-white font-black text-lg leading-tight truncate">{product.name}</h3>
-                            <div className="flex gap-1">
-                                {product.status === 'inactive' && (
-                                    <span className="px-2 py-0.5 bg-rose-500/10 text-rose-400 text-[9px] font-black rounded-lg border border-rose-500/20 tracking-tighter uppercase">
-                                        Pasif
-                                    </span>
-                                )}
-                                {(product.stock_quantity || 0) < 5 && (
-                                    <span className="px-2 py-0.5 bg-rose-500 text-white text-[9px] font-black rounded-lg shadow-lg shadow-rose-500/20 animate-pulse tracking-tighter uppercase">
-                                        Kritik Stok
-                                    </span>
-                                )}
-                            </div>
+                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                            <h3 className="text-base sm:text-lg font-black text-white leading-tight tracking-tight truncate group-active:text-[#6FD3FF] transition-colors">
+                                {product.name}
+                            </h3>
+                            {product.status === 'inactive' && (
+                                <div className="px-1.5 py-0.5 bg-rose-500/10 border border-rose-500/20 rounded-lg shrink-0">
+                                    <span className="text-[7px] font-black text-rose-400 uppercase tracking-tighter leading-none">PASİF</span>
+                                </div>
+                            )}
                         </div>
+                        
                         <div className="flex items-center gap-2">
-                            <span className="bg-white/5 px-2 py-0.5 rounded text-[10px] font-mono text-secondary border border-white/5">
-                                {product.barcode}
-                            </span>
+                            <div className="flex items-center gap-1 px-2 py-0.5 bg-[#2563FF]/5 border border-[#2D6BFF]/10 rounded-lg">
+                                <span className="text-[8px] font-black text-[#5B8CFF] uppercase tracking-widest leading-none truncate">
+                                    {product.barcode || '---'}
+                                </span>
+                            </div>
                         </div>
                     </div>
 
-                    <div className={`shrink-0 ml-4 px-3 py-1.5 rounded-2xl flex flex-col items-end justify-center border ${(product.stock_quantity || 0) < 10
-                        ? 'bg-rose-500/10 border-rose-500/20 text-rose-400'
-                        : (product.stock_quantity || 0) < 50
-                            ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
-                            : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                        }`}>
-                        <span className="text-base font-black leading-none">{product.stock_quantity}</span>
-                        <span className="text-[9px] font-bold uppercase opacity-60 tracking-wider">Adet</span>
+                    <div className={`shrink-0 flex flex-col items-center justify-center w-11 h-11 sm:w-14 sm:h-14 rounded-xl sm:rounded-[1.25rem] border shadow-lg ${
+                        (product.stock_quantity || 0) <= 5
+                            ? 'bg-rose-500/10 border-rose-500/20 text-rose-400 animate-pulse'
+                            : 'bg-[#2563FF]/10 border-[#2D6BFF]/20 text-[#6FD3FF]'
+                    }`}>
+                        <span className="text-base sm:text-lg font-black leading-none tracking-tighter">{product.stock_quantity}</span>
+                        <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-tighter mt-0.5 opacity-60">STOK</span>
                     </div>
                 </div>
 
-                <div className="flex items-center justify-between mt-5 pt-5 border-t border-white/5 relative z-10">
-                    <div className="flex gap-6">
-                        <div className="flex flex-col">
-                            <span className="text-[10px] font-black text-secondary tracking-widest uppercase mb-1">Maliyet</span>
-                            <span className="text-sm font-bold text-white/50">₺{product.purchase_price?.toFixed(2)}</span>
+                <div className="flex items-center justify-between mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-[#2D6BFF]/10 relative z-10">
+                    <div className="flex gap-4 sm:gap-8 min-w-0">
+                        <div className="flex flex-col gap-0.5 min-w-0">
+                            <span className="text-[8px] sm:text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">MALİYET</span>
+                            <span className="text-[12px] sm:text-sm font-bold text-slate-400 leading-none tracking-tight truncate">₺{product.purchase_price?.toFixed(2)}</span>
                         </div>
-                        <div className="flex flex-col">
-                            <span className="text-[10px] font-black text-blue-400/60 tracking-widest uppercase mb-1">Satış Fiyatı</span>
-                            <div className="flex items-baseline gap-1">
-                                <span className="text-2xl font-black text-white leading-none">₺{product.sale_price?.toFixed(2)}</span>
-                            </div>
+                        <div className="flex flex-col gap-0.5 min-w-0">
+                            <span className="text-[8px] sm:text-[9px] font-black text-[#5B8CFF] uppercase tracking-widest leading-none">SATIŞ</span>
+                            <span className="text-[16px] sm:text-xl font-black text-white leading-none tracking-tighter truncate">₺{product.sale_price?.toFixed(2)}</span>
                         </div>
                     </div>
 
-                    <button
-                        onClick={() => setShowEditModal(true)}
-                        className="w-12 h-12 bg-white/5 hover:bg-blue-600 text-white rounded-2xl flex items-center justify-center border border-white/10 hover:border-blue-500 transition-all active:scale-90 shadow-xl"
-                    >
-                        <Search className="w-5 h-5 opacity-60" />
-                    </button>
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 shrink-0 glass border border-[#2D6BFF]/10 rounded-xl sm:rounded-2xl flex items-center justify-center text-[#6FD3FF] shadow-inner">
+                        <ArrowUpRight size={16} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                    </div>
                 </div>
             </div>
 
