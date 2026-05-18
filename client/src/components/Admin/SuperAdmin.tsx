@@ -247,6 +247,16 @@ export default function SuperAdmin() {
 
             if (error) throw error;
 
+            // Automatically insert notification for license update
+            await supabase
+                .from('notifications')
+                .insert([{
+                    title: "Lisans & Modül Güncellemesi",
+                    message: "Lisans profiliniz ve aktif modülleriniz sistem yöneticisi tarafından başarıyla güncellendi. Sayfayı yenileyerek yeni modüllerinizi kullanmaya başlayabilirsiniz.",
+                    type: "success",
+                    tenant_id: editingTenant.id
+                }]);
+
             alert('✅ Lisans başarıyla güncellendi!');
             setEditingTenant(null);
             await fetchTenants();
@@ -347,6 +357,16 @@ export default function SuperAdmin() {
 
             if (error) throw error;
 
+            // Automatically insert notification for password reset
+            await supabase
+                .from('notifications')
+                .insert([{
+                    title: "Güvenlik & Şifre Güncellemesi",
+                    message: "Sistem yöneticisi tarafından patron giriş/master şifreniz başarıyla sıfırlandı ve güncellendi.",
+                    type: "warning",
+                    tenant_id: passwordModal.tenantId
+                }]);
+
             alert(`✅ ${passwordModal.tenantName} için şifre başarıyla sıfırlandı ve hash'lendi!`);
             setPasswordModal(null);
             setNewPassword('');
@@ -394,6 +414,16 @@ export default function SuperAdmin() {
                 if (error) throw error;
             }
 
+            // Automatically insert notification
+            await supabase
+                .from('notifications')
+                .insert([{
+                    title: "Veritabanı Entegrasyon Güncellemesi",
+                    message: "İşletmenizin diğer şubelerle veri paylaşım ve gruplandırma ayarları sistem yöneticisi tarafından güncellendi.",
+                    type: "info",
+                    tenant_id: groupModal.tenantId
+                }]);
+
             alert(`✅ ${groupModal.tenantName} için veritabanı gruplandırması güncellendi!`);
             setGroupModal(null);
             setSelectedGroupTenants([]);
@@ -436,6 +466,16 @@ export default function SuperAdmin() {
                 .eq('id', aiModal.tenantId);
 
             if (updateError) throw updateError;
+
+            // Automatically insert notification
+            await supabase
+                .from('notifications')
+                .insert([{
+                    title: "JetPos AI Entegrasyon Güncellemesi",
+                    message: "Yapay zeka (JetPos AI) entegrasyon anahtarınız sistem yöneticisi tarafından güncellendi.",
+                    type: "success",
+                    tenant_id: aiModal.tenantId
+                }]);
 
             alert(`✅ ${aiModal.tenantName} için AI Anahtarı hem entegrasyonlara hem de lisansa kaydedildi!`);
             setAiModal(null);
@@ -491,6 +531,16 @@ export default function SuperAdmin() {
 
             if (error) throw error;
 
+            // Automatically insert notification
+            await supabase
+                .from('notifications')
+                .insert([{
+                    title: "E-Fatura Entegrasyon Güncellemesi",
+                    message: "E-Fatura ve E-Arşiv servis sağlayıcı entegrasyon ayarlarınız sistem yöneticisi tarafından güncellendi.",
+                    type: "info",
+                    tenant_id: invoiceModal.tenantId
+                }]);
+
             alert(`✅ ${invoiceModal.tenantName} için Fatura İşlemleri Ayarları güncellendi!`);
             setInvoiceModal(null);
             await fetchTenants();
@@ -528,6 +578,16 @@ export default function SuperAdmin() {
 
             if (error) throw error;
 
+            // Automatically insert notification
+            await supabase
+                .from('notifications')
+                .insert([{
+                    title: "Trendyol GO Entegrasyon Güncellemesi",
+                    message: "Trendyol GO & Yemek sipariş entegrasyon ayarlarınız sistem yöneticisi tarafından güncellendi.",
+                    type: "info",
+                    tenant_id: trendyolGoModal.tenantId
+                }]);
+
             alert(`✅ ${trendyolGoModal.tenantName} için Trendyol GO Ayarları güncellendi!`);
             setTrendyolGoModal(null);
             await fetchTenants();
@@ -561,6 +621,16 @@ export default function SuperAdmin() {
                 .eq('id', trendyolMarketplaceModal.tenantId);
 
             if (error) throw error;
+
+            // Automatically insert notification
+            await supabase
+                .from('notifications')
+                .insert([{
+                    title: "Trendyol Entegrasyon Güncellemesi",
+                    message: "Trendyol Pazaryeri entegrasyon ayarlarınız sistem yöneticisi tarafından başarıyla güncellendi.",
+                    type: "info",
+                    tenant_id: trendyolMarketplaceModal.tenantId
+                }]);
 
             alert(`✅ ${trendyolMarketplaceModal.tenantName} için Trendyol Pazaryeri Ayarları güncellendi!`);
             setTrendyolMarketplaceModal(null);

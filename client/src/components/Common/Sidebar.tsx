@@ -71,6 +71,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTenant } from "@/lib/tenant-context";
+import { supabase } from "@/lib/supabase";
 import { toggleFavorite, isFavorite } from "@/components/Home/HomePage";
 
 interface MenuItem {
