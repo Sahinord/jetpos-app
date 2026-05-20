@@ -24,6 +24,7 @@ interface Warehouse {
     type: string;
     is_default: boolean;
     address?: string;
+    platform?: string | null;
 }
 
 interface TenantContextType {
@@ -150,12 +151,30 @@ export function TenantProvider({ children }: { children: ReactNode }) {
             }
 
             console.log("✅ [TenantContext] License validated for:", data.company_name);
-            setCurrentTenant(data);
-            setAvailableTenants([data]);
-
+            
             console.log("🔐 [TenantContext] Setting RLS context...");
             await setRLSTenant(data.id);
-            console.log("🚀 [TenantContext] Initialization complete.");
+
+            // RPC tüm alanları döndürmüyor (fixed_warehouses, openrouter_api_key gibi)
+            // Tam tenant verisini çek (RLS set edildikten SONRA yapılmalı!)
+            const { data: fullTenant } = await supabase
+                .from('tenants')
+                .select('fixed_warehouses, openrouter_api_key, master_pin, expires_at')
+                .eq('id', data.id)
+                .single();
+
+            const enrichedTenant = {
+                ...data,
+                fixed_warehouses: fullTenant?.fixed_warehouses || [],
+                openrouter_api_key: fullTenant?.openrouter_api_key || data.openrouter_api_key,
+                master_pin: fullTenant?.master_pin || data.master_pin,
+                expires_at: fullTenant?.expires_at || data.expires_at,
+            };
+
+            setCurrentTenant(enrichedTenant);
+            setAvailableTenants([enrichedTenant]);
+
+            console.log("🚀 [TenantContext] Initialization complete. fixed_warehouses:", enrichedTenant.fixed_warehouses?.length || 0);
 
         } catch (error: any) {
             console.error('🔥 [TenantContext] Critical Error:', error.message || error);

@@ -228,24 +228,33 @@ export default function SuperAdmin() {
 
         setSaving(true);
         try {
-            const { error } = await supabase
-                .from('tenants')
-                .update({
-                    company_name: editingTenant.company_name,
-                    license_key: editingTenant.license_key,
-                    contact_email: editingTenant.contact_email,
-                    logo_url: editingTenant.logo_url,
-                    features: editingTenant.features,
-                    openrouter_api_key: editingTenant.openrouter_api_key,
-                    max_stores: editingTenant.max_stores || 1,
-                    max_online_stores: editingTenant.max_online_stores || 0,
-                    status: editingTenant.status,
-                    master_pin: editingTenant.master_pin,
-                    fixed_warehouses: editingTenant.fixed_warehouses || []
-                })
-                .eq('id', editingTenant.id);
+            const updateData = {
+                company_name: editingTenant.company_name,
+                license_key: editingTenant.license_key,
+                contact_email: editingTenant.contact_email,
+                logo_url: editingTenant.logo_url,
+                features: editingTenant.features,
+                openrouter_api_key: editingTenant.openrouter_api_key,
+                max_stores: editingTenant.max_stores || 1,
+                max_online_stores: editingTenant.max_online_stores || 0,
+                status: editingTenant.status,
+                master_pin: editingTenant.master_pin,
+                fixed_warehouses: editingTenant.fixed_warehouses || []
+            };
 
-            if (error) throw error;
+            // API route üzerinden service role ile kaydet (RLS bypass)
+            const res = await fetch('/api/admin/save-tenant', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    tenantId: editingTenant.id,
+                    updateData,
+                    adminPassword: 'ADM257SA67'
+                })
+            });
+
+            const result = await res.json();
+            if (!res.ok || result.error) throw new Error(result.error || 'Kaydetme hatası');
 
             // Automatically insert notification for license update
             await supabase
@@ -1382,7 +1391,20 @@ export default function SuperAdmin() {
                                                         value={fw.platform || ''} 
                                                         onChange={(e) => {
                                                             const newFw = [...(editingTenant.fixed_warehouses || [])];
-                                                            newFw[idx].platform = e.target.value || null;
+                                                            const selectedPlatform = e.target.value || null;
+                                                            newFw[idx].platform = selectedPlatform;
+                                                            
+                                                            // Seçilen platforma göre ismi otomatik belirle (eğer isim varsayılansa)
+                                                            if (selectedPlatform && (newFw[idx].name === 'Yeni Sabit Mağaza' || newFw[idx].name.trim() === '')) {
+                                                                if (selectedPlatform === 'trendyol_go') newFw[idx].name = 'Trendyol GO Mağazası';
+                                                                else if (selectedPlatform === 'trendyol') newFw[idx].name = 'Trendyol Pazaryeri';
+                                                                else if (selectedPlatform === 'getir') newFw[idx].name = 'Getir Mağazası';
+                                                                else if (selectedPlatform === 'yemeksepeti') newFw[idx].name = 'Yemeksepeti Mağazası';
+                                                                else if (selectedPlatform === 'mobile') newFw[idx].name = 'Mobil Uygulama Siparişleri';
+                                                                
+                                                                newFw[idx].type = 'virtual'; // Otomatik online (sanal) mağaza yap
+                                                            }
+                                                            
                                                             setEditingTenant({ ...editingTenant, fixed_warehouses: newFw });
                                                         }}
                                                         className="w-full px-3 py-2 bg-slate-900 border border-white/5 rounded-xl text-white text-xs outline-none appearance-none"

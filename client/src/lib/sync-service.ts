@@ -30,7 +30,7 @@ export class SyncService {
             if (data) {
                 // Mevcutları temizle veya güncelle
                 await offlineDB.products.clear();
-                await offlineDB.products.bulkAdd(data);
+                await offlineDB.products.bulkPut(data);
                 console.log(`✅ ${data.length} ürün yerel hafızaya kaydedildi.`);
             }
         } catch (err) {

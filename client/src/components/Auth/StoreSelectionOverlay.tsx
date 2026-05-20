@@ -58,6 +58,36 @@ export default function StoreSelectionOverlay() {
         setIsInternalLoading(false);
     };
 
+    // Eksik sabit mağazaları otomatik senkronize et
+    const missingStores = (currentTenant?.fixed_warehouses || []).filter((fw: any) => 
+        !warehouses.some(w => w.name === fw.name || (fw.platform && (w as any).platform === fw.platform))
+    );
+
+    useEffect(() => {
+        if (missingStores.length > 0 && !isInternalLoading) {
+            setIsInternalLoading(true);
+            const storesToCreate = missingStores.map((fw: any, idx: number) => ({
+                name: fw.name,
+                type: fw.type || 'storage',
+                platform: fw.platform || null,
+                is_default: warehouses.length === 0 && idx === 0,
+                tenant_id: currentTenant?.id,
+                is_active: true,
+                code: fw.code || `SBT-00${warehouses.length + idx + 1}`
+            }));
+
+            supabase.from('warehouses').insert(storesToCreate).then(({ error }) => {
+                if (error) {
+                    console.error("Mağaza otomatik oluşturulurken hata:", error);
+                    alert("Otomatik mağaza oluşturulamadı: " + error.message);
+                } else {
+                    refreshWarehouses();
+                }
+                setIsInternalLoading(false);
+            });
+        }
+    }, [currentTenant?.fixed_warehouses, warehouses.length, isInternalLoading]);
+
     if (activeWarehouse || isInternalLoading) return null;
 
     return (

@@ -165,6 +165,13 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
         }
     };
 
+    // Eksik sabit mağazaları otomatik senkronize et
+    useEffect(() => {
+        if (missingStores.length > 0 && !isSyncingStores) {
+            handleSyncStores();
+        }
+    }, [currentTenant?.fixed_warehouses, warehouses.length]);
+
     // Kategorili menü yapısı
     const menuCategories: MenuCategory[] = [
         {
@@ -369,6 +376,40 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
             return category;
         }
 
+        // --- TRENDYOL GO / PLATFORM MAĞ.AZA İZOLASYONU ---
+        if (activeWarehouse?.platform === 'trendyol_go' || activeWarehouse?.platform === 'trendyol') {
+            const platformLabel = activeWarehouse.platform === 'trendyol_go' ? 'Trendyol GO' : 'Trendyol Pazaryeri';
+            const integrationId = activeWarehouse.platform === 'trendyol_go' ? 'trendyol_go_integration' : 'trendyol_integration';
+
+            // Sadece izin verilen kategoriler
+            if (category.id === 'main') {
+                return {
+                    ...category,
+                    label: `🟠 ${platformLabel}`,
+                    items: [
+                        { id: integrationId, label: 'Genel Bakış', icon: Store, feature: null, description: `${platformLabel} ana paneli` },
+                    ]
+                };
+            }
+            if (category.id === 'admin') {
+                return {
+                    ...category,
+                    items: [
+                        { id: 'settings', label: 'Genel Ayarlar', icon: Settings, feature: null, description: 'Sistem ayarları ve dükkan yapılandırması.' },
+                    ]
+                };
+            }
+            if (category.id === 'products') {
+                return {
+                    ...category,
+                    items: [
+                        { id: 'products', label: 'Ürün Listesi', icon: Boxes, feature: 'products', description: `${platformLabel} ürünleri ve stok yönetimi.` },
+                    ]
+                };
+            }
+            // Diğer tüm kategorileri gizle
+            return null;
+        }
         // Eğer geliştirilmiş yetkilendirme kapalıysa veya çalışan Patron ise filtreleme yapma
         const permissionsEnabled = currentTenant?.features?.employee_permissions;
         const permissions = activeEmployee?.permissions;

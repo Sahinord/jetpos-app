@@ -5,11 +5,12 @@ import TrendyolGOWidget from "./TrendyolGOWidget";
 import ProductMapping from "./ProductMapping";
 import {
     ShoppingBag, Store, Package, ShoppingCart,
-    LayoutDashboard, Link as LinkIcon
+    LayoutDashboard, Link as LinkIcon,
+    TrendingUp, Settings, BarChart3, ClipboardList
 } from "lucide-react";
 
 export default function IntegrationsDashboard({ integrationType }: { integrationType: string }) {
-    const [activeTab, setActiveTab] = useState<'dashboard' | 'mapping'>('dashboard');
+    const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'finance' | 'settings' | 'mapping'>('overview');
 
     const getPlatformName = (type: string) => {
         if (type === 'trendyol_integration') return 'trendyol';
@@ -19,7 +20,7 @@ export default function IntegrationsDashboard({ integrationType }: { integration
         return 'other';
     };
 
-    // Geçici olarak diğer entegrasyonlar için "Yakında" ekranı
+    // Diğer entegrasyonlar için "Yakında" ekranı
     if (integrationType !== "trendyol_integration" && integrationType !== "trendyol_go_integration") {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6">
@@ -39,51 +40,60 @@ export default function IntegrationsDashboard({ integrationType }: { integration
         );
     }
 
-    // Trendyol ekranı
+    // Tab tanımları
+    const tabs = [
+        { id: 'overview' as const, label: 'Genel Bakış', icon: LayoutDashboard },
+        { id: 'orders' as const, label: 'Siparişler', icon: ClipboardList },
+        { id: 'finance' as const, label: 'Finans & Analiz', icon: BarChart3 },
+        { id: 'settings' as const, label: 'Ayarlar', icon: Settings },
+        { id: 'mapping' as const, label: 'Ürün Eşleştirme', icon: LinkIcon },
+    ];
+
     return (
         <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-2">
                 <div>
-                    <h1 className="text-3xl font-black tracking-tight text-white mb-1">Pazar Yeri Yönetimi</h1>
-                    <p className="text-sm font-medium text-secondary">
-                        Siparişlerinizi, stoklarınızı ve eşleştirmelerinizi tek merkezden takip edin.
-                    </p>
-                </div>
-
-                {/* Sub-navigation Tabs */}
-                <div className="flex gap-1 bg-white/5 p-1 rounded-2xl border border-white/5 w-fit">
-                    <button
-                        onClick={() => setActiveTab('dashboard')}
-                        className={`px-5 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${activeTab === 'dashboard' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-secondary hover:text-foreground hover:bg-white/5'}`}
-                    >
-                        <LayoutDashboard className="w-4 h-4" /> GENEL BAKIŞ
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('mapping')}
-                        className={`px-5 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${activeTab === 'mapping' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-secondary hover:text-foreground hover:bg-white/5'}`}
-                    >
-                        <LinkIcon className="w-4 h-4" /> ÜRÜN EŞLEŞTİRME
-                    </button>
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center border border-orange-500/20">
+                            <Package className="w-6 h-6 text-orange-500" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-black tracking-tight text-white">Trendyol GO</h1>
+                            <p className="text-xs font-medium text-secondary/60">
+                                Siparişler • Ciro Analizi • Stok Senkronizasyonu
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                {activeTab === 'dashboard' ? (
-                    <div className="grid grid-cols-1 gap-6">
-                        {integrationType === 'trendyol_go_integration' ? (
-                            <TrendyolGOWidget />
-                        ) : (
-                            <div className="bg-white/5 border border-white/5 rounded-[2.5rem] p-12 text-center">
-                                <ShoppingBag className="w-16 h-16 text-orange-500/50 mx-auto mb-4" />
-                                <h3 className="text-2xl font-black text-white mb-2">Trendyol Pazaryeri Paneli</h3>
-                                <p className="text-secondary max-w-md mx-auto">
-                                    Pazaryeri siparişleriniz ve ürün senkronizasyon ayarlarınız yakında burada olacak. Şu an Ürün Eşleştirme sekmesinden ürünlerinizi bağlayabilirsiniz.
-                                </p>
-                            </div>
-                        )}
+            {/* Tab Navigasyon */}
+            <div className="flex gap-1 bg-white/[0.02] p-1.5 rounded-2xl border border-white/5 overflow-x-auto custom-scrollbar">
+                {tabs.map(tab => (
+                    <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all whitespace-nowrap ${
+                            activeTab === tab.id
+                                ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20'
+                                : 'text-secondary hover:text-foreground hover:bg-white/5'
+                        }`}
+                    >
+                        <tab.icon className="w-4 h-4" />
+                        {tab.label}
+                    </button>
+                ))}
+            </div>
+
+            {/* Tab İçeriği */}
+            <div className="min-h-[50vh]">
+                {activeTab === 'mapping' ? (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <ProductMapping platform={getPlatformName(integrationType)} />
                     </div>
                 ) : (
-                    <ProductMapping platform={getPlatformName(integrationType)} />
+                    <TrendyolGOWidget activeSubTab={activeTab} />
                 )}
             </div>
         </div>

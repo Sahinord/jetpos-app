@@ -136,6 +136,15 @@ export default function Home() {
     }
   }, [activeTab]);
 
+  // Platform mağazası seçildiğinde otomatik entegrasyon paneline yönlendir
+  useEffect(() => {
+    if (activeWarehouse?.platform === 'trendyol_go') {
+      setActiveTab('trendyol_go_integration');
+    } else if (activeWarehouse?.platform === 'trendyol') {
+      setActiveTab('trendyol_integration');
+    }
+  }, [activeWarehouse]);
+
   // Initialize Sync Service
   useEffect(() => {
     SyncService.initAutoSync();
@@ -335,7 +344,7 @@ export default function Home() {
       // Sync to local DB
       if (allProducts.length > 0) {
         await offlineDB.products.clear();
-        await offlineDB.products.bulkAdd(allProducts.map(p => ({
+        await offlineDB.products.bulkPut(allProducts.map(p => ({
           ...p,
           warehouse_id: activeWarehouse?.id || ''
         })));
@@ -440,14 +449,17 @@ export default function Home() {
         tenant_id: currentTenant.id
       };
 
+      const effectivePriceSync = activeWarehouse?.platform ? false : isPriceSyncEnabled;
+      const effectiveStockSync = activeWarehouse?.platform ? false : isStockSyncEnabled;
+
       // Only update master prices if sync is enabled OR no warehouse is selected
-      if (isPriceSyncEnabled || !activeWarehouse) {
+      if (effectivePriceSync || !activeWarehouse) {
         productPayload.sale_price = formData.sale_price;
         productPayload.purchase_price = formData.purchase_price;
       }
 
       // Handle master stock quantity
-      if (isStockSyncEnabled || !activeWarehouse) {
+      if (effectiveStockSync || !activeWarehouse) {
         productPayload.stock_quantity = formData.stock_quantity;
       }
 
@@ -481,12 +493,12 @@ export default function Home() {
         };
 
         // Save local stock if sync is disabled
-        if (!isStockSyncEnabled) {
+        if (!effectiveStockSync) {
           wsPayload.quantity = formData.stock_quantity;
         }
 
         // Save local prices if sync is disabled
-        if (!isPriceSyncEnabled) {
+        if (!effectivePriceSync) {
           wsPayload.sale_price = formData.sale_price;
           wsPayload.purchase_price = formData.purchase_price;
         }
@@ -1122,8 +1134,8 @@ export default function Home() {
                   campaignRate={campaignRate}
                   onRefresh={fetchData}
                   showToast={showToast}
-                  isPriceSyncEnabled={isPriceSyncEnabled}
-                  isStockSyncEnabled={isStockSyncEnabled}
+                  isPriceSyncEnabled={activeWarehouse?.platform ? false : isPriceSyncEnabled}
+                  isStockSyncEnabled={activeWarehouse?.platform ? false : isStockSyncEnabled}
                   lowStockThreshold={lowStockThreshold}
                 />
               </section>
