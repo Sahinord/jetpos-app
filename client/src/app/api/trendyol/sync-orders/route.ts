@@ -58,7 +58,12 @@ export async function GET(req: NextRequest) {
                     allOrders = [...allOrders, ...globalOrders];
                 }
             } catch (statusErr: any) {
-                console.warn(`⚠️ [${status}] sync failed:`, statusErr.message);
+                // HTML hata sayfalarını loglamaktan kaçın
+                const msg = statusErr.message || '';
+                const cleanMsg = msg.startsWith('<!') || msg.startsWith('<html') 
+                    ? `Trendyol sunucusu yanıt vermiyor (${status})` 
+                    : msg.substring(0, 150);
+                console.warn(`⚠️ [${status}] sync failed: ${cleanMsg}`);
             }
         }
 

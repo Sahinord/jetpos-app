@@ -99,23 +99,77 @@ export class TrendyolGoClient {
         return headers;
     }
 
-    private async request(url: string, method: string = 'GET', data?: any) {
+    private async request(url: string, method: string = 'GET', data?: any, retries: number = 2): Promise<any> {
         // Server-side: Doğrudan İstek
         if (typeof window === 'undefined') {
-            const response = await fetch(url, {
-                method,
-                headers: this.getHeaders() as any,
-                body: data ? JSON.stringify(data) : undefined
-            });
+            let lastError: Error | null = null;
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                let errorData;
-                try { errorData = JSON.parse(errorText); } catch { errorData = { message: errorText }; }
-                console.error(`❌ Trendyol API Error (${response.status}) [${url}]:`, errorData);
-                throw new Error(errorData.message || `İşlem başarısız (${response.status})`);
+            for (let attempt = 0; attempt <= retries; attempt++) {
+                try {
+                    const response = await fetch(url, {
+                        method,
+                        headers: this.getHeaders() as any,
+                        body: data ? JSON.stringify(data) : undefined,
+                        signal: AbortSignal.timeout(15000), // 15s timeout
+                    });
+
+                    if (!response.ok) {
+                        const errorText = await response.text();
+
+                        // HTML yanıtları temizle (Cloudflare 502 gibi)
+                        const isHtml = errorText.trim().startsWith('<!') || errorText.trim().startsWith('<html');
+                        const statusCode = response.status;
+
+                        if (isHtml) {
+                            const cleanMsg = `Trendyol sunucusu yanıt vermiyor (HTTP ${statusCode})`;
+                            
+                            // 5xx hatalarında retry yap
+                            if (statusCode >= 500 && attempt < retries) {
+                                const delay = Math.min(2000 * Math.pow(2, attempt), 8000);
+                                console.warn(`⏳ Trendyol ${statusCode} hatası, ${delay/1000}s sonra tekrar denenecek... (${attempt + 1}/${retries + 1})`);
+                                await new Promise(r => setTimeout(r, delay));
+                                continue;
+                            }
+                            
+                            console.error(`❌ Trendyol API ${statusCode} [${method} ${url.split('?')[0]}]: Sunucu çökmüş/bakımda`);
+                            throw new Error(cleanMsg);
+                        }
+
+                        let errorData;
+                        try { errorData = JSON.parse(errorText); } catch { errorData = { message: errorText.substring(0, 200) }; }
+
+                        // 5xx hatalarında retry
+                        if (statusCode >= 500 && attempt < retries) {
+                            const delay = Math.min(2000 * Math.pow(2, attempt), 8000);
+                            console.warn(`⏳ Trendyol ${statusCode} hatası, ${delay/1000}s sonra tekrar denenecek... (${attempt + 1}/${retries + 1})`);
+                            await new Promise(r => setTimeout(r, delay));
+                            continue;
+                        }
+
+                        console.error(`❌ Trendyol API ${statusCode} [${method} ${url.split('?')[0]}]:`, errorData.message?.substring(0, 150) || 'Bilinmeyen hata');
+                        throw new Error(errorData.message?.substring(0, 200) || `İşlem başarısız (${statusCode})`);
+                    }
+
+                    return await response.json();
+                } catch (err: any) {
+                    lastError = err;
+                    
+                    // Timeout veya network hatalarında retry
+                    if ((err.name === 'TimeoutError' || err.name === 'AbortError' || err.code === 'ECONNRESET') && attempt < retries) {
+                        const delay = Math.min(2000 * Math.pow(2, attempt), 8000);
+                        console.warn(`⏳ Trendyol bağlantı zaman aşımı, ${delay/1000}s sonra tekrar denenecek... (${attempt + 1}/${retries + 1})`);
+                        await new Promise(r => setTimeout(r, delay));
+                        continue;
+                    }
+                    
+                    // Zaten throw edilmiş Error ise (yukarıdaki bloktan gelen) doğrudan fırlat
+                    if (err.message?.includes('Trendyol')) throw err;
+                    
+                    throw new Error(`Trendyol bağlantı hatası: ${err.message?.substring(0, 100) || 'Bağlantı kurulamadı'}`);
+                }
             }
-            return await response.json();
+
+            throw lastError || new Error('Trendyol API isteği başarısız');
         }
 
         // Client-side: Proxy üzerinden istek (CORS bypass)
