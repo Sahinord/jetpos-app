@@ -11,7 +11,7 @@ const partnerTypes = [
         title: "Bayi Kanalı",
         desc: "Kendi bölgenizde JetPOS ürünlerini pazarlayın, kurun ve her satıştan yüksek komisyon kazanın.",
         icon: Handshake,
-        color: "#3b82f6",
+        color: "#7886C7",
         features: ["Yüksek Komisyon Oranları", "Bölgesel Destek Hakkı", "Özel Eğitim Paneli"]
     },
     {
@@ -42,7 +42,7 @@ export default function PartnerPage() {
     };
 
     return (
-        <div style={{ minHeight: "100vh", background: "#060914", color: "white" }}>
+        <div style={{ minHeight: "100vh", background: "#111827", color: "white" }}>
             <Navbar />
 
             {/* Hero */}
@@ -50,7 +50,7 @@ export default function PartnerPage() {
                 <div style={{
                     position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)",
                     width: "1200px", height: "600px",
-                    background: "radial-gradient(circle at center, rgba(37,99,235,0.06) 0%, transparent 65%)",
+                    background: "radial-gradient(circle at center, rgba(120,134,199,0.06) 0%, transparent 65%)",
                     pointerEvents: "none"
                 }} />
                 
@@ -122,7 +122,7 @@ export default function PartnerPage() {
             </section>
 
             {/* Application Form */}
-            <section style={{ padding: "8rem 0", background: "rgba(37, 99, 235, 0.03)", position: "relative" }}>
+            <section style={{ padding: "8rem 0", background: "rgba(120, 134, 199, 0.03)", position: "relative" }}>
                 <div className="site-container" style={{ maxWidth: "1000px" }}>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: "5rem", alignItems: "start" }} className="form-grid">
                         <motion.div
@@ -184,7 +184,7 @@ export default function PartnerPage() {
                                     </div>
                                     <div>
                                         <select 
-                                            style={{ width: "100%", background: "#1e293b", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.875rem", padding: "1rem", color: "white" }}
+                                            style={{ width: "100%", background: "#111827", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.875rem", padding: "1rem", color: "white" }}
                                         >
                                             <option>Bayi Kanalı</option>
                                             <option>Teknik Entegratör</option>

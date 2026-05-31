@@ -5,7 +5,7 @@ import { Phone, User, ArrowRight, Scan, CheckCircle, TrendingUp, ShoppingCart, C
 import Image from "next/image";
 
 const stats = [
-    { icon: TrendingUp, label: "Ürün Çeşidi", value: "4.853", color: "#3b82f6", bg: "rgba(59,130,246,0.12)" },
+    { icon: TrendingUp, label: "Ürün Çeşidi", value: "4.853", color: "#7886C7", bg: "rgba(120, 134, 199, 0.12)" },
     { icon: ShoppingCart, label: "Stok Adedi", value: "135", color: "#8b5cf6", bg: "rgba(139,92,246,0.12)" },
     { icon: Clock, label: "İşlem Hızı", value: "0.8sn", color: "#10b981", bg: "rgba(16,185,129,0.12)" },
 ];
@@ -34,7 +34,7 @@ export default function Hero() {
             <div style={{
                 position: "absolute", top: "15%", left: "5%",
                 width: "500px", height: "500px",
-                background: "radial-gradient(circle, rgba(37,99,235,0.15) 0%, transparent 65%)",
+                background: "radial-gradient(circle, rgba(120, 134, 199, 0.15) 0%, transparent 65%)",
                 borderRadius: "50%", pointerEvents: "none",
                 animation: "floatOrb 8s ease-in-out infinite",
             }} />
@@ -66,20 +66,20 @@ export default function Hero() {
                     {/* Top pill badge */}
                     <div style={{
                         display: "inline-flex", alignItems: "center", gap: "0.625rem",
-                        background: "rgba(37,99,235,0.1)",
-                        border: "1px solid rgba(59,130,246,0.2)",
+                        background: "rgba(120, 134, 199, 0.1)",
+                        border: "1px solid rgba(120, 134, 199, 0.2)",
                         borderRadius: "9999px",
                         padding: "0.4rem 1rem 0.4rem 0.5rem",
                         width: "fit-content",
                         animation: "fadeUp 0.6s 0.1s cubic-bezier(0.22,1,0.36,1) both",
                     }}>
                         <span style={{
-                            background: "linear-gradient(135deg, #2563eb, #3b82f6)",
+                            background: "linear-gradient(135deg, #7886C7, #5A659F)",
                             borderRadius: "9999px", padding: "0.2rem 0.6rem",
                             fontSize: "0.7rem", fontWeight: 700, color: "white",
                             letterSpacing: "0.05em", textTransform: "uppercase",
                         }}>YENİ</span>
-                        <span style={{ fontSize: "0.82rem", color: "#93c5fd", fontWeight: 500 }}>
+                        <span style={{ fontSize: "0.82rem", color: "#B0BAE6", fontWeight: 500 }}>
                             Ramazan Ayı Kampanyası — %30 İndirim
                         </span>
                     </div>
@@ -101,7 +101,7 @@ export default function Hero() {
                                 display: "inline-block",
                             }}>
                                 <span style={{
-                                    background: "linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #60a5fa 100%)",
+                                    background: "linear-gradient(135deg, #7886C7 0%, #B0BAE6 50%, #7886C7 100%)",
                                     backgroundSize: "200% auto",
                                     WebkitBackgroundClip: "text",
                                     WebkitTextFillColor: "transparent",
@@ -128,20 +128,20 @@ export default function Hero() {
                         <button style={{
                             display: "inline-flex", alignItems: "center", gap: "0.5rem",
                             padding: "0.8rem 1.75rem",
-                            background: "linear-gradient(135deg, #1d4ed8, #3b82f6)",
+                            background: "linear-gradient(135deg, #5A659F, #7886C7)",
                             color: "white", fontWeight: 700, fontSize: "0.95rem",
                             border: "none", borderRadius: "0.875rem", cursor: "pointer",
-                            boxShadow: "0 0 0 1px rgba(59,130,246,0.3), 0 8px 24px rgba(37,99,235,0.4)",
+                            boxShadow: "0 0 0 1px rgba(120, 134, 199, 0.3), 0 8px 24px rgba(120, 134, 199, 0.4)",
                             fontFamily: "inherit", transition: "all 0.25s",
                             letterSpacing: "-0.01em",
                         }}
                             onMouseEnter={e => {
                                 e.currentTarget.style.transform = "translateY(-2px)";
-                                e.currentTarget.style.boxShadow = "0 0 0 1px rgba(59,130,246,0.4), 0 12px 32px rgba(37,99,235,0.55)";
+                                e.currentTarget.style.boxShadow = "0 0 0 1px rgba(120, 134, 199, 0.4), 0 12px 32px rgba(120, 134, 199, 0.55)";
                             }}
                             onMouseLeave={e => {
                                 e.currentTarget.style.transform = "translateY(0)";
-                                e.currentTarget.style.boxShadow = "0 0 0 1px rgba(59,130,246,0.3), 0 8px 24px rgba(37,99,235,0.4)";
+                                e.currentTarget.style.boxShadow = "0 0 0 1px rgba(120, 134, 199, 0.3), 0 8px 24px rgba(120, 134, 199, 0.4)";
                             }}
                         >
                             Hemen Teklif Al
@@ -175,7 +175,7 @@ export default function Hero() {
                         animation: "fadeUp 0.6s 0.55s cubic-bezier(0.22,1,0.36,1) both",
                     }}>
                         <div style={{ display: "flex" }}>
-                            {["#f59e0b", "#3b82f6", "#10b981", "#8b5cf6", "#ef4444"].map((c, i) => (
+                            {["#f59e0b", "#7886C7", "#10b981", "#8b5cf6", "#ef4444"].map((c, i) => (
                                 <div key={i} style={{
                                     width: "2rem", height: "2rem", borderRadius: "50%",
                                     background: `linear-gradient(135deg, ${c}dd, ${c}88)`,
@@ -220,20 +220,20 @@ export default function Hero() {
                         {/* subtle top accent line */}
                         <div style={{
                             position: "absolute", top: 0, left: "10%", right: "10%", height: "1px",
-                            background: "linear-gradient(90deg, transparent, rgba(59,130,246,0.5), transparent)",
+                            background: "linear-gradient(90deg, transparent, rgba(120, 134, 199, 0.5), transparent)",
                         }} />
 
                         {submitted ? (
                             <div style={{ textAlign: "center", padding: "1.5rem 0" }}>
                                 <div style={{
                                     width: "3rem", height: "3rem",
-                                    background: "rgba(59,130,246,0.1)",
-                                    border: "1px solid rgba(59,130,246,0.3)",
+                                    background: "rgba(120, 134, 199, 0.1)",
+                                    border: "1px solid rgba(120, 134, 199, 0.3)",
                                     borderRadius: "50%",
                                     display: "flex", alignItems: "center", justifyContent: "center",
                                     margin: "0 auto 0.875rem",
                                 }}>
-                                    <CheckCircle style={{ width: "1.5rem", height: "1.5rem", color: "#3b82f6" }} />
+                                    <CheckCircle style={{ width: "1.5rem", height: "1.5rem", color: "#7886C7" }} />
                                 </div>
                                 <p style={{ color: "white", fontWeight: 700, fontSize: "1.05rem", margin: "0 0 0.25rem" }}>Talebiniz Alındı!</p>
                                 <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.875rem", margin: 0 }}>En kısa sürede sizi arayacağız.</p>
@@ -250,12 +250,12 @@ export default function Hero() {
                                     ].map(({ id, icon: Icon, placeholder, value, onChange, type }) => (
                                         <div key={id} style={{
                                             display: "flex", alignItems: "center", gap: "0.625rem",
-                                            background: focused === id ? "rgba(59,130,246,0.06)" : "rgba(255,255,255,0.04)",
-                                            border: `1px solid ${focused === id ? "rgba(59,130,246,0.35)" : "rgba(255,255,255,0.08)"}`,
+                                            background: focused === id ? "rgba(120, 134, 199, 0.06)" : "rgba(255,255,255,0.04)",
+                                            border: `1px solid ${focused === id ? "rgba(120, 134, 199, 0.35)" : "rgba(255,255,255,0.08)"}`,
                                             borderRadius: "0.75rem", padding: "0.625rem 0.875rem",
                                             transition: "all 0.2s",
                                         }}>
-                                            <Icon style={{ width: "0.9rem", height: "0.9rem", color: focused === id ? "#60a5fa" : "rgba(255,255,255,0.25)", flexShrink: 0, transition: "color 0.2s" }} />
+                                            <Icon style={{ width: "0.9rem", height: "0.9rem", color: focused === id ? "#7886C7" : "rgba(255,255,255,0.25)", flexShrink: 0, transition: "color 0.2s" }} />
                                             <input
                                                 type={type}
                                                 placeholder={placeholder}
@@ -277,21 +277,21 @@ export default function Hero() {
                                     width: "100%",
                                     display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
                                     padding: "0.75rem",
-                                    background: "linear-gradient(135deg, #1d4ed8, #3b82f6)",
+                                    background: "linear-gradient(135deg, #5A659F, #7886C7)",
                                     color: "white", fontWeight: 700, fontSize: "0.9rem",
                                     border: "none", borderRadius: "0.75rem", cursor: "pointer",
                                     fontFamily: "inherit",
-                                    boxShadow: "0 4px 16px rgba(37,99,235,0.35)",
+                                    boxShadow: "0 4px 16px rgba(120, 134, 199, 0.35)",
                                     transition: "all 0.2s",
                                     letterSpacing: "-0.01em",
                                 }}
                                     onMouseEnter={e => {
                                         e.currentTarget.style.transform = "translateY(-1px)";
-                                        e.currentTarget.style.boxShadow = "0 8px 24px rgba(37,99,235,0.5)";
+                                        e.currentTarget.style.boxShadow = "0 8px 24px rgba(120, 134, 199, 0.5)";
                                     }}
                                     onMouseLeave={e => {
                                         e.currentTarget.style.transform = "translateY(0)";
-                                        e.currentTarget.style.boxShadow = "0 4px 16px rgba(37,99,235,0.35)";
+                                        e.currentTarget.style.boxShadow = "0 4px 16px rgba(120, 134, 199, 0.35)";
                                     }}
                                 >
                                     <Phone style={{ width: "0.9rem", height: "0.9rem" }} />
@@ -397,7 +397,7 @@ export default function Hero() {
                         borderRadius: "2rem",
                         padding: "2.25rem",
                         backdropFilter: "blur(24px)",
-                        boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(59,130,246,0.06) inset",
+                        boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(120, 134, 199, 0.06) inset",
                         width: "100%",
                         maxWidth: "480px",
                         position: "relative",
@@ -406,7 +406,7 @@ export default function Hero() {
                         {/* Inner glow top */}
                         <div style={{
                             position: "absolute", top: 0, left: "20%", right: "20%", height: "1px",
-                            background: "linear-gradient(90deg, transparent, rgba(59,130,246,0.6), transparent)",
+                            background: "linear-gradient(90deg, transparent, rgba(120, 134, 199, 0.6), transparent)",
                         }} />
 
                         {/* Header */}
@@ -414,12 +414,12 @@ export default function Hero() {
                             <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
                                 <div style={{
                                     width: "2.25rem", height: "2.25rem",
-                                    background: "linear-gradient(135deg, rgba(37,99,235,0.2), rgba(59,130,246,0.1))",
-                                    border: "1px solid rgba(59,130,246,0.25)",
+                                    background: "linear-gradient(135deg, rgba(120, 134, 199, 0.2), rgba(120, 134, 199, 0.1))",
+                                    border: "1px solid rgba(120, 134, 199, 0.25)",
                                     borderRadius: "0.625rem",
                                     display: "flex", alignItems: "center", justifyContent: "center",
                                 }}>
-                                    <Scan style={{ width: "1.1rem", height: "1.1rem", color: "#60a5fa" }} />
+                                    <Scan style={{ width: "1.1rem", height: "1.1rem", color: "#7886C7" }} />
                                 </div>
                                 <div>
                                     <p style={{ margin: 0, fontSize: "0.75rem", color: "rgba(255,255,255,0.4)", fontWeight: 500 }}>JetPOS</p>
@@ -448,7 +448,7 @@ export default function Hero() {
                         <div style={{
                             borderRadius: "1.25rem",
                             overflow: "hidden",
-                            background: "radial-gradient(ellipse at center, rgba(37,99,235,0.12) 0%, rgba(0,0,0,0.4) 70%)",
+                            background: "radial-gradient(ellipse at center, rgba(120, 134, 199, 0.12) 0%, rgba(0,0,0,0.4) 70%)",
                             display: "flex", alignItems: "center", justifyContent: "center",
                             minHeight: "240px",
                             position: "relative",
@@ -457,8 +457,8 @@ export default function Hero() {
                             {/* Scan line animation */}
                             <div style={{
                                 position: "absolute", left: "10%", right: "10%", height: "2px",
-                                background: "linear-gradient(90deg, transparent, #3b82f6, transparent)",
-                                boxShadow: "0 0 12px #3b82f6",
+                                background: "linear-gradient(90deg, transparent, #7886C7, transparent)",
+                                boxShadow: "0 0 12px #7886C7",
                                 animation: "scanLine 2.5s ease-in-out infinite",
                                 zIndex: 2,
                             }} />
@@ -471,7 +471,7 @@ export default function Hero() {
                                     objectFit: "contain",
                                     maxHeight: "300px",
                                     width: "auto",
-                                    filter: "drop-shadow(0 12px 32px rgba(37,99,235,0.35))",
+                                    filter: "drop-shadow(0 12px 32px rgba(120, 134, 199, 0.35))",
                                     position: "relative", zIndex: 1,
                                 }}
                             />
@@ -497,17 +497,17 @@ export default function Hero() {
                             </button>
                             <button style={{
                                 padding: "0.625rem 1.25rem",
-                                background: "linear-gradient(135deg, #1d4ed8, #2563eb)",
+                                background: "linear-gradient(135deg, #5A659F, #7886C7)",
                                 border: "none",
                                 borderRadius: "0.75rem",
                                 color: "white", fontSize: "0.8rem", fontWeight: 700,
                                 cursor: "pointer", fontFamily: "inherit",
                                 display: "flex", alignItems: "center", justifyContent: "center", gap: "0.375rem",
-                                boxShadow: "0 4px 12px rgba(37,99,235,0.4)",
+                                boxShadow: "0 4px 12px rgba(120, 134, 199, 0.4)",
                                 transition: "all 0.2s",
                             }}
-                                onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 6px 20px rgba(37,99,235,0.6)")}
-                                onMouseLeave={e => (e.currentTarget.style.boxShadow = "0 4px 12px rgba(37,99,235,0.4)")}
+                                onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 6px 20px rgba(120, 134, 199, 0.6)")}
+                                onMouseLeave={e => (e.currentTarget.style.boxShadow = "0 4px 12px rgba(120, 134, 199, 0.4)")}
                             >
                                 <Scan style={{ width: "0.8rem", height: "0.8rem" }} />
                                 Barkod Okut

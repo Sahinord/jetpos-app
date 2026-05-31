@@ -77,18 +77,18 @@ export default function LeadPopup() {
                 animation: closing ? "popOut 0.35s cubic-bezier(0.4,0,1,1) forwards" : "popIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both",
             }}>
                 <div style={{
-                    background: "linear-gradient(145deg, rgba(4,12,30,0.98), rgba(10,22,50,0.98))",
+                    background: "linear-gradient(145deg, rgba(17,24,39,0.98), rgba(31,41,55,0.98))",
                     backdropFilter: "blur(24px)",
-                    border: "1px solid rgba(59,130,246,0.25)",
+                    border: "1px solid rgba(120, 134, 199, 0.25)",
                     borderRadius: "2rem",
                     overflow: "hidden",
-                    boxShadow: "0 40px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(59,130,246,0.08) inset, 0 0 80px rgba(37,99,235,0.15)",
+                    boxShadow: "0 40px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(120, 134, 199, 0.08) inset, 0 0 80px rgba(120, 134, 199, 0.15)",
                     position: "relative",
                 }}>
                     {/* Animated top gradient line */}
                     <div style={{
                         height: "3px",
-                        background: "linear-gradient(90deg, #2563eb, #7c3aed, #06b6d4, #2563eb)",
+                        background: "linear-gradient(90deg, #7886C7, #8b5cf6, #06b6d4, #7886C7)",
                         backgroundSize: "300% 100%",
                         animation: "rainbowFlow 3s linear infinite",
                     }} />
@@ -103,7 +103,7 @@ export default function LeadPopup() {
                     <div style={{
                         position: "absolute", bottom: "-40px", left: "-40px",
                         width: "200px", height: "200px",
-                        background: "radial-gradient(circle, rgba(37,99,235,0.12) 0%, transparent 70%)",
+                        background: "radial-gradient(circle, rgba(120, 134, 199, 0.12) 0%, transparent 70%)",
                         pointerEvents: "none",
                     }} />
 
@@ -158,18 +158,18 @@ export default function LeadPopup() {
                                     Talebiniz Alındı! 🎉
                                 </h3>
                                 <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.95rem", lineHeight: 1.6, margin: "0 0 1.75rem" }}>
-                                    Ekibimiz <strong style={{ color: "#60a5fa" }}>en kısa sürede</strong> sizi arayacak.<br />
-                                    Ortalama yanıt süremiz <strong style={{ color: "#60a5fa" }}>2 saatten az!</strong>
+                                    Ekibimiz <strong style={{ color: "#7886C7" }}>en kısa sürede</strong> sizi arayacak.<br />
+                                    Ortalama yanıt süremiz <strong style={{ color: "#7886C7" }}>2 saatten az!</strong>
                                 </p>
                                 <button
                                     onClick={close}
                                     style={{
                                         padding: "0.75rem 2rem",
-                                        background: "linear-gradient(135deg, #1d4ed8, #3b82f6)",
+                                        background: "linear-gradient(135deg, #5A659F, #7886C7)",
                                         color: "white", fontWeight: 700, fontSize: "0.95rem",
                                         border: "none", borderRadius: "0.875rem", cursor: "pointer",
                                         fontFamily: "inherit",
-                                        boxShadow: "0 4px 16px rgba(37,99,235,0.4)",
+                                        boxShadow: "0 4px 16px rgba(120, 134, 199, 0.4)",
                                     }}
                                 >
                                     Tamam, Harika!
@@ -206,7 +206,7 @@ export default function LeadPopup() {
                                     }}>
                                         Ücretsiz Demo &{" "}
                                         <span style={{
-                                            background: "linear-gradient(135deg, #60a5fa, #a78bfa)",
+                                            background: "linear-gradient(135deg, #7886C7, #B0BAE6)",
                                             WebkitBackgroundClip: "text",
                                             WebkitTextFillColor: "transparent",
                                         }}>
@@ -248,15 +248,15 @@ export default function LeadPopup() {
                                     ].map(({ id, icon: Icon, placeholder, value, onChange, type }) => (
                                         <div key={id} style={{
                                             display: "flex", alignItems: "center", gap: "0.75rem",
-                                            background: focused === id ? "rgba(59,130,246,0.07)" : "rgba(255,255,255,0.04)",
-                                            border: `1px solid ${focused === id ? "rgba(59,130,246,0.4)" : "rgba(255,255,255,0.1)"}`,
+                                            background: focused === id ? "rgba(120, 134, 199, 0.07)" : "rgba(255,255,255,0.04)",
+                                            border: `1px solid ${focused === id ? "rgba(120, 134, 199, 0.4)" : "rgba(255,255,255,0.1)"}`,
                                             borderRadius: "0.875rem",
                                             padding: "0.75rem 1rem",
                                             transition: "all 0.25s",
                                         }}>
                                             <Icon style={{
                                                 width: "1rem", height: "1rem",
-                                                color: focused === id ? "#60a5fa" : "rgba(255,255,255,0.3)",
+                                                color: focused === id ? "#7886C7" : "rgba(255,255,255,0.3)",
                                                 flexShrink: 0, transition: "color 0.25s",
                                             }} />
                                             <input
@@ -281,22 +281,22 @@ export default function LeadPopup() {
                                         width: "100%",
                                         display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
                                         padding: "0.9rem",
-                                        background: "linear-gradient(135deg, #1d4ed8, #3b82f6)",
+                                        background: "linear-gradient(135deg, #5A659F, #7886C7)",
                                         color: "white", fontWeight: 800, fontSize: "0.95rem",
                                         border: "none", borderRadius: "0.875rem", cursor: "pointer",
                                         fontFamily: "inherit",
-                                        boxShadow: "0 6px 20px rgba(37,99,235,0.45)",
+                                        boxShadow: "0 6px 20px rgba(120, 134, 199, 0.45)",
                                         transition: "all 0.25s",
                                         letterSpacing: "-0.01em",
                                         marginTop: "0.25rem",
                                     }}
                                         onMouseEnter={e => {
                                             e.currentTarget.style.transform = "translateY(-2px)";
-                                            e.currentTarget.style.boxShadow = "0 10px 30px rgba(37,99,235,0.6)";
+                                            e.currentTarget.style.boxShadow = "0 10px 30px rgba(120, 134, 199, 0.6)";
                                         }}
                                         onMouseLeave={e => {
                                             e.currentTarget.style.transform = "translateY(0)";
-                                            e.currentTarget.style.boxShadow = "0 6px 20px rgba(37,99,235,0.45)";
+                                            e.currentTarget.style.boxShadow = "0 6px 20px rgba(120, 134, 199, 0.45)";
                                         }}
                                     >
                                         <Zap style={{ width: "1rem", height: "1rem", fill: "white" }} />

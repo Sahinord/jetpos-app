@@ -23,8 +23,8 @@ const plans = [
         yearlyPrice: 985,
         highlight: false,
         badge: "Taahhütsüz",
-        badgeColor: "#60a5fa",
-        color: "#60a5fa",
+        badgeColor: "#7886C7",
+        color: "#7886C7",
         cta: "14 Gün Ücretsiz Dene",
         users: "1 Kullanıcı",
         features: [
@@ -636,8 +636,8 @@ function FiyatlandirmaContent() {
                         {/* Header */}
                         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} style={{ textAlign: "center", marginBottom: "4rem" }}>
                             <div style={{ display: "inline-flex", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "100px", padding: "0.25rem", marginBottom: "2.5rem" }}>
-                                <button onClick={() => setViewMode("plans")} style={{ padding: "0.5rem 1.5rem", borderRadius: "100px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: "0.85rem", background: viewMode === "plans" ? "#2563eb" : "transparent", color: viewMode === "plans" ? "white" : "rgba(255,255,255,0.4)" }}>Standart</button>
-                                <button onClick={() => setViewMode("custom")} style={{ padding: "0.5rem 1.5rem", borderRadius: "100px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: "0.85rem", background: viewMode === "custom" ? "#2563eb" : "transparent", color: viewMode === "custom" ? "white" : "rgba(255,255,255,0.4)" }}>Özel Paket</button>
+                                <button onClick={() => setViewMode("plans")} style={{ padding: "0.5rem 1.5rem", borderRadius: "100px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: "0.85rem", background: viewMode === "plans" ? "#7886C7" : "transparent", color: viewMode === "plans" ? "white" : "rgba(255,255,255,0.4)" }}>Standart</button>
+                                <button onClick={() => setViewMode("custom")} style={{ padding: "0.5rem 1.5rem", borderRadius: "100px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: "0.85rem", background: viewMode === "custom" ? "#7886C7" : "transparent", color: viewMode === "custom" ? "white" : "rgba(255,255,255,0.4)" }}>Özel Paket</button>
                             </div>
 
                             <h1 style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", fontWeight: 900, color: "white", marginBottom: "1rem", letterSpacing: "-0.03em" }}>
@@ -670,9 +670,9 @@ function FiyatlandirmaContent() {
                                     {categories.map((cat, idx) => (
                                         <div key={cat} style={{ marginBottom: idx === categories.length - 1 ? 0 : "3rem" }}>
                                             <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1.5rem" }}>
-                                                <div style={{ height: "1px", flex: 1, background: "linear-gradient(to right, transparent, rgba(37,99,235,0.2))" }} />
-                                                <h3 style={{ fontSize: "0.9rem", fontWeight: 800, color: "rgba(37,99,235,0.8)", textTransform: "uppercase", letterSpacing: "0.2em" }}>{cat}</h3>
-                                                <div style={{ height: "1px", flex: 1, background: "linear-gradient(to left, transparent, rgba(37,99,235,0.2))" }} />
+                                                <div style={{ height: "1px", flex: 1, background: "linear-gradient(to right, transparent, rgba(120, 134, 199, 0.2))" }} />
+                                                <h3 style={{ fontSize: "0.9rem", fontWeight: 800, color: "rgba(120, 134, 199, 0.8)", textTransform: "uppercase", letterSpacing: "0.2em" }}>{cat}</h3>
+                                                <div style={{ height: "1px", flex: 1, background: "linear-gradient(to left, transparent, rgba(120, 134, 199, 0.2))" }} />
                                             </div>
                                             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "1rem" }}>
                                                 {FEATURES.filter(f => f.category === cat).map((f: any) => {
@@ -680,13 +680,13 @@ function FiyatlandirmaContent() {
                                                     const isExpanded = expandedDetails.includes(f.id);
                                                     return (
                                                         <motion.div key={f.id} layout style={{
-                                                            background: active ? "rgba(37,99,235,0.08)" : "rgba(255,255,255,0.015)",
-                                                            border: `1px solid ${active ? "rgba(37,99,235,0.3)" : "rgba(255,255,255,0.04)"}`,
+                                                            background: active ? "rgba(120, 134, 199, 0.08)" : "rgba(255,255,255,0.015)",
+                                                            border: `1px solid ${active ? "rgba(120, 134, 199, 0.3)" : "rgba(255,255,255,0.04)"}`,
                                                             borderRadius: "1.25rem", padding: "1.25rem", position: "relative", transition: "all 0.3s ease",
                                                             cursor: "pointer"
                                                         }} onClick={() => toggleFeature(f.id)}>
                                                             <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                                                                <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "0.75rem", background: active ? "#2563eb" : "rgba(255,255,255,0.03)", display: "flex", alignItems: "center", justifyContent: "center", color: active ? "white" : "rgba(255,255,255,0.25)", transition: "all 0.3s" }}>
+                                                                <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "0.75rem", background: active ? "#7886C7" : "rgba(255,255,255,0.03)", display: "flex", alignItems: "center", justifyContent: "center", color: active ? "white" : "rgba(255,255,255,0.25)", transition: "all 0.3s" }}>
                                                                     <f.icon style={{ width: "1.1rem", height: "1.1rem" }} />
                                                                 </div>
                                                                 <div style={{ flex: 1 }}>
@@ -695,7 +695,7 @@ function FiyatlandirmaContent() {
                                                                         onClick={(e) => toggleDetail(f.id, e)}
                                                                         style={{ 
                                                                             background: "none", border: "none", padding: 0, 
-                                                                            color: "#3b82f6", fontSize: "0.7rem", fontWeight: 700, 
+                                                                            color: "#7886C7", fontSize: "0.7rem", fontWeight: 700, 
                                                                             cursor: "pointer", display: "flex", alignItems: "center", 
                                                                             gap: "0.25rem", position: "relative", zIndex: 10
                                                                         }}
@@ -704,7 +704,7 @@ function FiyatlandirmaContent() {
                                                                     </button>
                                                                 </div>
                                                                 {active && (
-                                                                    <div style={{ background: "#2563eb", borderRadius: "50%", padding: "0.15rem", boxShadow: "0 0 10px rgba(37,99,235,0.3)" }}>
+                                                                    <div style={{ background: "#7886C7", borderRadius: "55%", padding: "0.15rem", boxShadow: "0 0 10px rgba(120,134,199,0.3)" }}>
                                                                         <Check style={{ width: "0.75rem", height: "0.75rem", color: "white" }} strokeWidth={3} />
                                                                     </div>
                                                                 )}
@@ -738,17 +738,17 @@ function FiyatlandirmaContent() {
                             {selectedFeatures.length > 0 && viewMode === "custom" && (
                                 <motion.div initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }} style={{
                                     position: "fixed", bottom: "3.5rem", left: "50%", transform: "translateX(-50%)",
-                                    background: "rgba(10, 15, 25, 0.8)", backdropFilter: "blur(24px) saturate(180%)", border: "1px solid rgba(37,99,235,0.3)",
+                                    background: "rgba(10, 15, 25, 0.8)", backdropFilter: "blur(24px) saturate(180%)", border: "1px solid rgba(120, 134, 199, 0.3)",
                                     padding: "1.25rem 3rem", borderRadius: "100px", display: "flex", alignItems: "center", gap: "3.5rem", zIndex: 1000, boxShadow: "0 30px 60px rgba(0,0,0,0.6)"
                                 }}>
                                     <div style={{ display: "flex", alignItems: "center", gap: "1.25rem" }}>
-                                        <div style={{ width: "3.25rem", height: "3.25rem", borderRadius: "50%", background: "linear-gradient(135deg, #2563eb, #3b82f6)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: "1.35rem", color: "white", boxShadow: "0 0 20px rgba(37,99,235,0.4)" }}>{selectedFeatures.length}</div>
+                                        <div style={{ width: "3.25rem", height: "3.25rem", borderRadius: "50%", background: "linear-gradient(135deg, #7886C7, #B0BAE6)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: "1.35rem", color: "white", boxShadow: "0 0 20px rgba(120, 134, 199, 0.4)" }}>{selectedFeatures.length}</div>
                                         <div style={{ display: "flex", flexDirection: "column" }}>
                                             <span style={{ fontWeight: 900, fontSize: "1.1rem", color: "white" }}>Harika Bir Paket!</span>
                                             <span style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.45)" }}>Sizin için en uygun teklifi hazırlayalım</span>
                                         </div>
                                     </div>
-                                    <button onClick={() => setShowForm(true)} style={{ background: "#2563eb", color: "white", border: "none", padding: "1rem 3.5rem", borderRadius: "100px", fontWeight: 900, fontSize: "1rem", cursor: "pointer", transition: "all 0.3s", boxShadow: "0 8px 25px rgba(37,99,235,0.5)" }}>Teklifi İncele →</button>
+                                    <button onClick={() => setShowForm(true)} style={{ background: "#7886C7", color: "white", border: "none", padding: "1rem 3.5rem", borderRadius: "100px", fontWeight: 900, fontSize: "1rem", cursor: "pointer", transition: "all 0.3s", boxShadow: "0 8px 25px rgba(120, 134, 199, 0.5)" }}>Teklifi İncele →</button>
                                 </motion.div>
                             )}
                         </AnimatePresence>
@@ -761,7 +761,7 @@ function FiyatlandirmaContent() {
                                         <button onClick={() => setShowForm(false)} style={{ position: "absolute", top: "2rem", right: "2rem", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "50%", width: "3.5rem", height: "3.5rem", color: "white", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><X style={{ width: "1.5rem" }} /></button>
                                         
                                         <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
-                                            <div style={{ width: "4rem", height: "4rem", background: "rgba(37,99,235,0.15)", borderRadius: "1.5rem", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1.5rem" }}><Zap style={{ color: "#2563eb", width: "2rem" }} /></div>
+                                            <div style={{ width: "4rem", height: "4rem", background: "rgba(120, 134, 199, 0.15)", borderRadius: "1.5rem", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1.5rem" }}><Zap style={{ color: "#7886C7", width: "2rem" }} /></div>
                                             <h2 style={{ fontSize: "2.5rem", fontWeight: 950, marginBottom: "0.75rem", color: "white", letterSpacing: "-0.04em" }}>Neredeyse Bitti!</h2>
                                             <p style={{ color: "rgba(255,255,255,0.45)", fontSize: "1.1rem" }}>{selectedFeatures.length} modül içeren size özel yapılandırma için bir adım kaldı.</p>
                                         </div>
@@ -785,7 +785,7 @@ function FiyatlandirmaContent() {
                                                 <label style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.3)", fontWeight: 800, paddingLeft: "1rem" }}>E-POSTA</label>
                                                 <input type="email" required value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} style={{ padding: "1.25rem", borderRadius: "1.25rem", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)", color: "white", fontSize: "1rem" }} />
                                             </div>
-                                            <button disabled={loading} style={{ marginTop: "1rem", background: "#2563eb", color: "white", border: "none", padding: "1.5rem", borderRadius: "1.5rem", fontWeight: 900, fontSize: "1.2rem", cursor: "pointer", transition: "all 0.3s", boxShadow: "0 10px 30px rgba(37,99,235,0.3)" }}>{loading ? "GÖNDERİLİYOR..." : "ÖZEL TEKLİFİMİ İLET"}</button>
+                                            <button disabled={loading} style={{ marginTop: "1rem", background: "#7886C7", color: "white", border: "none", padding: "1.5rem", borderRadius: "1.5rem", fontWeight: 900, fontSize: "1.2rem", cursor: "pointer", transition: "all 0.3s", boxShadow: "0 10px 30px rgba(120,134,199,0.3)" }}>{loading ? "GÖNDERİLİYOR..." : "ÖZEL TEKLİFİMİ İLET"}</button>
                                         </form>
                                     </motion.div>
                                 </div>

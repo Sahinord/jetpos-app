@@ -10,7 +10,7 @@ const testimonials = [
         role: "Bakkal İşletmecisi",
         city: "İstanbul, Kadıköy",
         initials: "AK",
-        color: "#3b82f6",
+        color: "#7886C7",
         rating: 5,
         text: "JetPOS'tan önce muhasebeciye her ay para ödüyorduk. Şimdi her şeyi kendimiz hallediyoruz. Stok takibi, fatura kesme, raporlar — hepsi tek ekranda. Keşke daha önce geçseydik!",
         since: "8 aydır kullanıyor",

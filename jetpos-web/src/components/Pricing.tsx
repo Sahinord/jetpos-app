@@ -13,7 +13,7 @@ const plans = [
         price: { monthly: 985, yearly: 790 },
         period: "Aylık · Taahhütsüz",
         description: "Küçük işletmeler için esnek giriş paketi. İstediğiniz zaman iptal edin.",
-        color: "#60a5fa",
+        color: "#7886C7",
         popular: false,
         features: [
             "1 Kullanıcı",
@@ -120,7 +120,7 @@ export default function Pricing() {
                                 fontSize: "0.875rem",
                                 fontFamily: "inherit",
                                 transition: "all 0.3s",
-                                background: !yearly ? "linear-gradient(135deg, #2563eb, #3b82f6)" : "transparent",
+                                background: !yearly ? "linear-gradient(135deg, #7886C7, #5A659F)" : "transparent",
                                 color: !yearly ? "white" : "rgba(255,255,255,0.5)",
                             }}
                         >
@@ -137,7 +137,7 @@ export default function Pricing() {
                                 fontSize: "0.875rem",
                                 fontFamily: "inherit",
                                 transition: "all 0.3s",
-                                background: yearly ? "linear-gradient(135deg, #2563eb, #3b82f6)" : "transparent",
+                                background: yearly ? "linear-gradient(135deg, #7886C7, #5A659F)" : "transparent",
                                 color: yearly ? "white" : "rgba(255,255,255,0.5)",
                                 display: "flex",
                                 alignItems: "center",
@@ -332,8 +332,8 @@ export default function Pricing() {
                         margin: "4rem auto 0",
                         padding: "2rem",
                         borderRadius: "1.5rem",
-                        background: "rgba(37,99,235,0.05)",
-                        border: "1px dashed rgba(37,99,235,0.3)",
+                        background: "rgba(120,134,199,0.05)",
+                        border: "1px dashed rgba(120,134,199,0.3)",
                         display: "flex",
                         flexDirection: "column",
                         alignItems: "center",
@@ -353,7 +353,7 @@ export default function Pricing() {
                         display: "inline-flex",
                         alignItems: "center",
                         gap: "0.75rem",
-                        background: "#2563eb",
+                        background: "#7886C7",
                         color: "white",
                         padding: "0.875rem 2rem",
                         borderRadius: "1rem",
@@ -363,7 +363,7 @@ export default function Pricing() {
                     }}
                     onMouseEnter={e => {
                         e.currentTarget.style.transform = "scale(1.05)";
-                        e.currentTarget.style.boxShadow = "0 10px 30px rgba(37,99,235,0.4)";
+                        e.currentTarget.style.boxShadow = "0 10px 30px rgba(120,134,199,0.4)";
                     }}
                     onMouseLeave={e => {
                         e.currentTarget.style.transform = "scale(1)";

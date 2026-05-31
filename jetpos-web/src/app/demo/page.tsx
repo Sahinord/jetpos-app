@@ -19,7 +19,7 @@ const SECTORS = [
 ];
 
 const PACKAGES = [
-    { id: "aylik", label: "Aylık Paket", price: "₺985/ay", color: "#60a5fa" },
+    { id: "aylik", label: "Aylık Paket", price: "₺985/ay", color: "#7886C7" },
     { id: "ileri", label: "İleri Düzey", price: "₺679/ay", color: "#22c55e" },
     { id: "kurumsal", label: "2+1 Yıl Paketi", price: "₺394/ay", color: "#f59e0b" },
     { id: "ozel", label: "Özel Paket", price: "Esnek", color: "#ec4899" },
@@ -83,12 +83,12 @@ export default function DemoPage() {
     };
 
     const handleFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        e.target.style.borderColor = "rgba(59,130,246,0.5)";
+        e.target.style.borderColor = "rgba(120, 134, 199, 0.5)";
         e.target.style.background = "rgba(255,255,255,0.06)";
     };
     const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        e.target.style.borderColor = "rgba(255,255,255,0.1)";
-        e.target.style.background = "rgba(255,255,255,0.04)";
+        e.target.style.borderColor = "rgba(255, 255, 255, 0.1)";
+        e.target.style.background = "rgba(255, 255, 255, 0.04)";
     };
 
     const isStep1Valid = form.name && form.email && form.phone && form.company;
@@ -115,7 +115,7 @@ export default function DemoPage() {
 
     if (submitted) {
         return (
-            <div style={{ minHeight: "100vh", background: "#060914" }}>
+            <div style={{ minHeight: "100vh", background: "#111827" }}>
                 <Navbar />
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "80vh", padding: "2rem", textAlign: "center" }}>
                     <motion.div
@@ -152,7 +152,7 @@ export default function DemoPage() {
                             </Link>
                             <Link href="/fiyatlandirma" style={{
                                 padding: "0.875rem 2rem", borderRadius: "0.875rem",
-                                background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
+                                background: "linear-gradient(135deg, #7886C7, #5A659F)",
                                 color: "white", textDecoration: "none", fontWeight: 700, fontSize: "0.95rem",
                                 display: "flex", alignItems: "center", gap: "0.5rem"
                             }}>
@@ -167,7 +167,7 @@ export default function DemoPage() {
     }
 
     return (
-        <div style={{ minHeight: "100vh", background: "#060914" }}>
+        <div style={{ minHeight: "100vh", background: "#111827" }}>
             <Navbar />
 
             {/* Hero */}
@@ -176,15 +176,15 @@ export default function DemoPage() {
                 <div style={{
                     position: "absolute", top: "0", left: "50%", transform: "translateX(-50%)",
                     width: "600px", height: "400px",
-                    background: "radial-gradient(ellipse at center, rgba(37,99,235,0.15) 0%, transparent 70%)",
+                    background: "radial-gradient(ellipse at center, rgba(120, 134, 199, 0.15) 0%, transparent 70%)",
                     pointerEvents: "none"
                 }} />
 
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
                     <span style={{
                         display: "inline-flex", alignItems: "center", gap: "0.5rem",
-                        background: "rgba(37,99,235,0.15)", border: "1px solid rgba(37,99,235,0.3)",
-                        color: "#93c5fd", padding: "0.4rem 1rem", borderRadius: "999px",
+                        background: "rgba(120, 134, 199, 0.15)", border: "1px solid rgba(120, 134, 199, 0.3)",
+                        color: "#B0BAE6", padding: "0.4rem 1rem", borderRadius: "999px",
                         fontSize: "0.8rem", fontWeight: 700, marginBottom: "1.5rem"
                     }}>
                         <Sparkles style={{ width: "0.85rem", height: "0.85rem" }} />
@@ -196,7 +196,7 @@ export default function DemoPage() {
                         lineHeight: 1.15, marginBottom: "1.25rem"
                     }}>
                         JetPOS&apos;u Ücretsiz{" "}
-                        <span style={{ background: "linear-gradient(135deg, #3b82f6, #2563eb)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                        <span style={{ background: "linear-gradient(135deg, #7886C7, #5A659F)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
                             Demo ile
                         </span>{" "}
                         Keşfedin
@@ -235,7 +235,7 @@ export default function DemoPage() {
                         {[1, 2, 3].map(s => (
                             <div key={s} style={{
                                 flex: 1, height: "4px", borderRadius: "99px", transition: "all 0.3s",
-                                background: s <= step ? "linear-gradient(90deg, #2563eb, #3b82f6)" : "rgba(255,255,255,0.1)"
+                                background: s <= step ? "linear-gradient(90deg, #7886C7, #B0BAE6)" : "rgba(255,255,255,0.1)"
                             }} />
                         ))}
                     </div>
@@ -317,12 +317,12 @@ export default function DemoPage() {
                                         style={{
                                             width: "100%", marginTop: "2rem",
                                             padding: "1rem", borderRadius: "0.875rem", border: "none",
-                                            background: isStep1Valid ? "linear-gradient(135deg, #2563eb, #1d4ed8)" : "rgba(255,255,255,0.05)",
+                                            background: isStep1Valid ? "linear-gradient(135deg, #7886C7, #5A659F)" : "rgba(255,255,255,0.05)",
                                             color: isStep1Valid ? "white" : "rgba(255,255,255,0.3)",
                                             fontWeight: 700, fontSize: "1rem", cursor: isStep1Valid ? "pointer" : "not-allowed",
                                             fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
                                             transition: "all 0.2s",
-                                            boxShadow: isStep1Valid ? "0 4px 20px rgba(37,99,235,0.4)" : "none"
+                                            boxShadow: isStep1Valid ? "0 4px 20px rgba(120, 134, 199, 0.4)" : "none"
                                         }}
                                     >
                                         Devam Et <ChevronRight style={{ width: "1.1rem", height: "1.1rem" }} />
@@ -361,8 +361,8 @@ export default function DemoPage() {
                                                     style={{ ...inputStyle, appearance: "none" as const }}
                                                     onFocus={handleFocus} onBlur={handleBlur}
                                                 >
-                                                    <option value="" style={{ background: "#1e293b" }}>Sektörünüzü seçin</option>
-                                                    {SECTORS.map(s => <option key={s} value={s} style={{ background: "#1e293b" }}>{s}</option>)}
+                                                    <option value="" style={{ background: "#111827" }}>Sektörünüzü seçin</option>
+                                                    {SECTORS.map(s => <option key={s} value={s} style={{ background: "#111827" }}>{s}</option>)}
                                                 </select>
                                             </div>
                                         </div>
@@ -375,9 +375,9 @@ export default function DemoPage() {
                                                     <button key={c} onClick={() => updateForm("employee_count", c)}
                                                         style={{
                                                             padding: "0.6rem 1.25rem", borderRadius: "0.75rem", border: "1px solid",
-                                                            borderColor: form.employee_count === c ? "rgba(37,99,235,0.6)" : "rgba(255,255,255,0.1)",
-                                                            background: form.employee_count === c ? "rgba(37,99,235,0.15)" : "rgba(255,255,255,0.03)",
-                                                            color: form.employee_count === c ? "#93c5fd" : "rgba(255,255,255,0.6)",
+                                                            borderColor: form.employee_count === c ? "rgba(120, 134, 199, 0.6)" : "rgba(255,255,255,0.1)",
+                                                            background: form.employee_count === c ? "rgba(120, 134, 199, 0.15)" : "rgba(255,255,255,0.03)",
+                                                            color: form.employee_count === c ? "#B0BAE6" : "rgba(255,255,255,0.6)",
                                                             fontWeight: 600, fontSize: "0.875rem", cursor: "pointer", fontFamily: "inherit",
                                                             transition: "all 0.15s"
                                                         }}
@@ -433,11 +433,11 @@ export default function DemoPage() {
                                         </button>
                                         <button disabled={!isStep2Valid} onClick={() => setStep(3)} style={{
                                             flex: 2, padding: "1rem", borderRadius: "0.875rem", border: "none",
-                                            background: isStep2Valid ? "linear-gradient(135deg, #2563eb, #1d4ed8)" : "rgba(255,255,255,0.05)",
+                                            background: isStep2Valid ? "linear-gradient(135deg, #7886C7, #5A659F)" : "rgba(255,255,255,0.05)",
                                             color: isStep2Valid ? "white" : "rgba(255,255,255,0.3)",
                                             fontWeight: 700, fontSize: "1rem", cursor: isStep2Valid ? "pointer" : "not-allowed",
                                             fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
-                                            transition: "all 0.2s", boxShadow: isStep2Valid ? "0 4px 20px rgba(37,99,235,0.4)" : "none"
+                                            transition: "all 0.2s", boxShadow: isStep2Valid ? "0 4px 20px rgba(120, 134, 199, 0.4)" : "none"
                                         }}>
                                             Devam Et <ChevronRight style={{ width: "1.1rem", height: "1.1rem" }} />
                                         </button>
@@ -468,7 +468,7 @@ export default function DemoPage() {
 
                                     {/* Summary */}
                                     <div style={{
-                                        background: "rgba(37,99,235,0.08)", border: "1px solid rgba(37,99,235,0.2)",
+                                        background: "rgba(120, 134, 199, 0.08)", border: "1px solid rgba(120, 134, 199, 0.2)",
                                         borderRadius: "1rem", padding: "1.25rem", marginBottom: "1.5rem"
                                     }}>
                                         <p style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.4)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.75rem" }}>Özet</p>

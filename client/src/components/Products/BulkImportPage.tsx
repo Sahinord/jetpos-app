@@ -65,8 +65,8 @@ export default function BulkImportPage({ onBack, onImport }: BulkImportPageProps
         const reader = new FileReader();
         reader.onload = (ev) => {
             try {
-                const data = new Uint8Array(ev.target?.result as ArrayBuffer);
-                const workbook = XLSX.read(data, { type: "array", cellDates: true });
+                const data = ev.target?.result as string;
+                const workbook = XLSX.read(data, { type: "binary", cellDates: true });
                 const sheet = workbook.Sheets[workbook.SheetNames[0]];
                 const json = XLSX.utils.sheet_to_json(sheet, { defval: "" });
                 if (json.length === 0) return;
@@ -82,7 +82,15 @@ export default function BulkImportPage({ onBack, onImport }: BulkImportPageProps
                     for (const [sysField, patterns] of Object.entries(AUTO_MATCH)) {
                         if (autoMap[col]) break;
                         for (const p of patterns) {
-                            if (norm.includes(p.replace(/[^a-zçğıöşü0-9]/g, ""))) {
+                            const cleanPattern = p.replace(/[^a-zçğıöşü0-9]/g, "");
+                            if (norm.includes(cleanPattern)) {
+                                // Safeguard: do not map code/id/barcode columns to numeric fields (e.g. Stok Kodu to stock_quantity)
+                                const isNumericField = ["stock_quantity", "purchase_price", "sale_price", "external_price", "vat_rate"].includes(sysField);
+                                const isIdentifierColumn = ["kod", "no", "id", "barkod", "barcode"].some(word => norm.includes(word));
+                                if (isNumericField && isIdentifierColumn) {
+                                    continue;
+                                }
+
                                 // Don't double-assign
                                 if (!Object.values(autoMap).includes(sysField)) {
                                     autoMap[col] = sysField;
@@ -99,7 +107,7 @@ export default function BulkImportPage({ onBack, onImport }: BulkImportPageProps
                 alert("Dosya okunamadı: " + err.message);
             }
         };
-        reader.readAsArrayBuffer(file);
+        reader.readAsBinaryString(file);
     };
 
     // ─── Template Downloads ───

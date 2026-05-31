@@ -13,7 +13,7 @@ const solutions = [
         description: "Modern restoran ve perakende işletmeleri için tasarlanmış tam entegre satış terminali. Dokunmatik ekranı ve şık tasarımıyla dükkanınıza değer katar.",
         features: ["15.6\" HD Dokunmatik Ekran", "Entegre Müşteri Ekranı", "Fansız Sessiz Çalışma", "Tüm Çevresel Birimlerle Uyumlu"],
         image: "/jetkasa.png",
-        color: "#3b82f6"
+        color: "#7886C7"
     },
     {
         id: "jetmatik",

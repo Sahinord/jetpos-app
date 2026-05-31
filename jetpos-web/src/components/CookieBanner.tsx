@@ -79,18 +79,18 @@ export default function CookieBanner() {
                 animation: "cookieSlideUp 0.5s cubic-bezier(0.22,1,0.36,1) both",
             }}>
                 <div style={{
-                    background: "rgba(4,12,30,0.97)",
+                    background: "rgba(17, 24, 39, 0.97)",
                     backdropFilter: "blur(24px)",
                     WebkitBackdropFilter: "blur(24px)",
-                    border: "1px solid rgba(59,130,246,0.2)",
+                    border: "1px solid rgba(120, 134, 199, 0.2)",
                     borderRadius: "1.5rem",
                     overflow: "hidden",
-                    boxShadow: "0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(59,130,246,0.06) inset",
+                    boxShadow: "0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(120, 134, 199, 0.06) inset",
                 }}>
                     {/* Top accent */}
                     <div style={{
                         height: "2px",
-                        background: "linear-gradient(90deg, #2563eb, #7c3aed, #2563eb)",
+                        background: "linear-gradient(90deg, #7886C7, #8b5cf6, #7886C7)",
                         backgroundSize: "200% 100%",
                         animation: "bannerGrad 3s linear infinite",
                     }} />
@@ -100,13 +100,13 @@ export default function CookieBanner() {
                         <div style={{ display: "flex", alignItems: "flex-start", gap: "0.875rem", marginBottom: "1rem" }}>
                             <div style={{
                                 width: "2.25rem", height: "2.25rem",
-                                background: "rgba(37,99,235,0.12)",
-                                border: "1px solid rgba(59,130,246,0.2)",
+                                background: "rgba(120, 134, 199, 0.12)",
+                                border: "1px solid rgba(120, 134, 199, 0.2)",
                                 borderRadius: "0.625rem",
                                 display: "flex", alignItems: "center", justifyContent: "center",
                                 flexShrink: 0,
                             }}>
-                                <Shield style={{ width: "1rem", height: "1rem", color: "#3b82f6" }} />
+                                <Shield style={{ width: "1rem", height: "1rem", color: "#7886C7" }} />
                             </div>
                             <div style={{ flex: 1 }}>
                                 <p style={{ margin: "0 0 0.25rem", fontWeight: 700, color: "white", fontSize: "0.95rem" }}>
@@ -114,7 +114,7 @@ export default function CookieBanner() {
                                 </p>
                                 <p style={{ margin: 0, fontSize: "0.8rem", color: "rgba(255,255,255,0.45)", lineHeight: 1.6 }}>
                                     Deneyiminizi iyileştirmek için çerezler kullanıyoruz. KVKK kapsamında tercihlerinizi belirleyebilirsiniz.{" "}
-                                    <Link href="/gizlilik-politikasi" style={{ color: "#60a5fa", textDecoration: "none" }}>
+                                    <Link href="/gizlilik-politikasi" style={{ color: "#7886C7", textDecoration: "none" }}>
                                         Gizlilik Politikası
                                     </Link>
                                 </p>
@@ -145,7 +145,7 @@ export default function CookieBanner() {
                                         id: "analytics",
                                         label: "Analitik Çerezler",
                                         desc: "Ziyaretçi davranışını analiz etmemize yardımcı olur.",
-                                        color: "#3b82f6",
+                                        color: "#7886C7",
                                         checked: analytics,
                                         disabled: false,
                                         onChange: () => setAnalytics(v => !v),
@@ -211,7 +211,7 @@ export default function CookieBanner() {
                                 style={{
                                     flex: 1,
                                     padding: "0.625rem 1rem",
-                                    background: "linear-gradient(135deg, #2563eb, #3b82f6)",
+                                    background: "linear-gradient(135deg, #7886C7, #5A659F)",
                                     color: "white",
                                     border: "none",
                                     borderRadius: "0.75rem",
@@ -222,10 +222,10 @@ export default function CookieBanner() {
                                     transition: "all 0.2s",
                                     fontFamily: "inherit",
                                     minWidth: "120px",
-                                    boxShadow: "0 4px 12px rgba(37,99,235,0.35)",
+                                    boxShadow: "0 4px 12px rgba(120, 134, 199, 0.35)",
                                 }}
-                                onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 6px 20px rgba(37,99,235,0.55)")}
-                                onMouseLeave={e => (e.currentTarget.style.boxShadow = "0 4px 12px rgba(37,99,235,0.35)")}
+                                onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 6px 20px rgba(120, 134, 199, 0.55)")}
+                                onMouseLeave={e => (e.currentTarget.style.boxShadow = "0 4px 12px rgba(120, 134, 199, 0.35)")}
                             >
                                 <Check style={{ width: "0.75rem", height: "0.75rem" }} />
                                 Tümünü Kabul Et

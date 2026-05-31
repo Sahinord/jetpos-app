@@ -49,7 +49,7 @@ export default function StickyBanner() {
             animation: "bannerSlideDown 0.5s cubic-bezier(0.22,1,0.36,1) both",
         }}>
             <div style={{
-                background: "linear-gradient(90deg, #1d4ed8 0%, #2563eb 35%, #7c3aed 65%, #1d4ed8 100%)",
+                background: "linear-gradient(90deg, #5A659F 0%, #7886C7 35%, #8b5cf6 65%, #5A659F 100%)",
                 backgroundSize: "200% 100%",
                 animation: "bannerGrad 4s linear infinite",
                 padding: "0.6rem 1.5rem",
@@ -87,7 +87,7 @@ export default function StickyBanner() {
                 {/* CTA */}
                 <a href={CAMPAIGN.href} style={{
                     display: "inline-flex", alignItems: "center", gap: "0.4rem",
-                    padding: "0.4rem 1rem", background: "white", color: "#1d4ed8",
+                    padding: "0.4rem 1rem", background: "white", color: "#5A659F",
                     borderRadius: "9999px", fontWeight: 800, fontSize: "0.8rem",
                     textDecoration: "none", flexShrink: 0, transition: "all 0.2s",
                     boxShadow: "0 2px 8px rgba(0,0,0,0.2)",

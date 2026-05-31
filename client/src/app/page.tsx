@@ -31,7 +31,7 @@ import StoreSelectionOverlay from "@/components/Auth/StoreSelectionOverlay";
 import { useTenant } from "@/lib/tenant-context";
 import { calculateStockMetrics, calculateStockPredictions } from "@/lib/calculations";
 import { supabase, auditLog } from "@/lib/supabase";
-import { LayoutDashboard, ShoppingCart, Package, AlertTriangle, ArrowLeft, Sparkles, Clock, ShieldAlert, Trash2, X } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Package, AlertTriangle, ArrowLeft, Sparkles, Clock, ShieldAlert, Trash2, X, Archive } from "lucide-react";
 import TenantProfile from "@/components/Tenant/TenantProfile";
 import SupportTicketModal from "@/components/Support/SupportTicketModal";
 
@@ -71,6 +71,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState("home");
   const [products, setProducts] = useState<any[]>([]);
   const [trashProducts, setTrashProducts] = useState<any[]>([]);
+  const [archiveProducts, setArchiveProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCatModalOpen, setIsCatModalOpen] = useState(false);
@@ -316,17 +317,36 @@ export default function Home() {
       let page = 0;
       const PAGE_SIZE = 1000;
       let hasMore = true;
+      let hasArchivedAt = true;
 
       while (hasMore) {
-        const { data, error } = await supabase
+        let query = supabase
           .from('products')
           .select('*, categories(name), warehouse_stock(*)')
           .eq('tenant_id', currentTenant.id)
-          .is('deleted_at', null)
+          .is('deleted_at', null);
+
+        if (hasArchivedAt) {
+          query = query.is('archived_at', null);
+        }
+
+        const { data, error } = await query
           .order('id', { ascending: true })
           .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
         if (error) {
+          if (
+            hasArchivedAt &&
+            (error.message?.includes('archived_at') ||
+              error.details?.includes('archived_at') ||
+              error.code === '42703' ||
+              error.message?.includes('does not exist'))
+          ) {
+            hasArchivedAt = false;
+            page = 0;
+            allProducts = [];
+            continue;
+          }
           console.error("Çekim Hatası:", error);
           throw error;
         }
@@ -355,6 +375,7 @@ export default function Home() {
     } finally {
       setLoading(false);
       fetchTrashProducts();
+      fetchArchiveProducts();
     }
   };
 
@@ -380,6 +401,163 @@ export default function Home() {
       setTrashProducts(data || []);
     } catch (error: any) {
       console.error("Fetch Trash Error:", error);
+    }
+  };
+
+  const fetchArchiveProducts = async () => {
+    if (!currentTenant) return;
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select(`
+          *,
+          categories:category_id (id, name),
+          warehouse_stock (*)
+        `)
+        .eq('tenant_id', currentTenant.id)
+        .not('archived_at', 'is', null)
+        .is('deleted_at', null)
+        .order('archived_at', { ascending: false });
+
+      if (error) {
+        if (
+          error.message?.includes('archived_at') ||
+          error.details?.includes('archived_at') ||
+          error.code === '42703' ||
+          error.message?.includes('does not exist')
+        ) {
+          setArchiveProducts([]);
+          return;
+        }
+        throw error;
+      }
+      setArchiveProducts(data || []);
+    } catch (error: any) {
+      console.error("Fetch Archive Error:", error);
+    }
+  };
+
+  const handleArchiveProduct = async (id: string) => {
+    if (!currentTenant) return;
+    if (!confirm("Ürünü arşivlemek istediğinize emin misiniz? (Arşivden geri çıkarabilirsiniz)")) return;
+
+    try {
+      setLoading(true);
+      const { error } = await supabase.from('products')
+        .update({
+          status: 'archived',
+          archived_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .eq('tenant_id', currentTenant.id);
+
+      if (error) throw error;
+
+      showToast("Ürün arşive taşındı", "info");
+      await fetchData();
+    } catch (error: any) {
+      showToast("Arşivleme hatası: " + error.message, "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBulkArchive = async (ids: string[]) => {
+    if (!currentTenant || ids.length === 0) return;
+    if (!confirm(`${ids.length} ürünü arşivlemek istediğinize emin misiniz?`)) return;
+
+    try {
+      setLoading(true);
+      const BATCH_SIZE = 50;
+      let successCount = 0;
+
+      for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+        const batchIds = ids.slice(i, i + BATCH_SIZE);
+        const { error } = await supabase.from('products')
+          .update({
+            status: 'archived',
+            archived_at: new Date().toISOString()
+          })
+          .in('id', batchIds)
+          .eq('tenant_id', currentTenant.id);
+
+        if (error) throw error;
+        successCount += batchIds.length;
+        await new Promise(r => setTimeout(r, 100));
+      }
+
+      showToast(`${successCount} ürün arşive taşındı`, "success");
+      await fetchData();
+    } catch (error: any) {
+      showToast("Toplu arşivleme hatası: " + error.message, "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUnarchiveProduct = async (id: string) => {
+    if (!currentTenant) return;
+    try {
+      setLoading(true);
+      const { error } = await supabase.from('products')
+        .update({
+          status: 'active',
+          archived_at: null
+        })
+        .eq('id', id)
+        .eq('tenant_id', currentTenant.id);
+
+      if (error) throw error;
+
+      showToast("Ürün arşivden çıkarıldı", "success");
+      await fetchData();
+    } catch (error: any) {
+      showToast("Arşivden çıkarma hatası: " + error.message, "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBulkArchiveByBarcode = async (barcodes: string[]) => {
+    if (!currentTenant || barcodes.length === 0) return;
+
+    try {
+      setLoading(true);
+      // Barkodlara eşleşen ürünleri bul
+      const matchingProducts = products.filter(p =>
+        barcodes.some(b => b.trim() === p.barcode?.trim())
+      );
+
+      if (matchingProducts.length === 0) {
+        showToast("Barkodlarla eşleşen ürün bulunamadı!", "error");
+        return;
+      }
+
+      const matchingIds = matchingProducts.map(p => p.id);
+      const BATCH_SIZE = 50;
+      let successCount = 0;
+
+      for (let i = 0; i < matchingIds.length; i += BATCH_SIZE) {
+        const batchIds = matchingIds.slice(i, i + BATCH_SIZE);
+        const { error } = await supabase.from('products')
+          .update({
+            status: 'archived',
+            archived_at: new Date().toISOString()
+          })
+          .in('id', batchIds)
+          .eq('tenant_id', currentTenant.id);
+
+        if (error) throw error;
+        successCount += batchIds.length;
+        await new Promise(r => setTimeout(r, 100));
+      }
+
+      showToast(`${successCount} ürün arşive taşındı (${barcodes.length} barkoddan ${matchingProducts.length} eşleşti)`, "success");
+      await fetchData();
+    } catch (error: any) {
+      showToast("Toplu arşivleme hatası: " + error.message, "error");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1247,6 +1425,10 @@ export default function Home() {
                 isStockSyncEnabled={isStockSyncEnabled}
                 lowStockThreshold={lowStockThreshold}
                 onViewChangeLogs={() => setActiveTab("product-logs")}
+                onArchive={handleArchiveProduct}
+                onBulkArchive={handleBulkArchive}
+                onBulkArchiveByBarcode={handleBulkArchiveByBarcode}
+                allProducts={products}
               />
             </div>
           )}
@@ -1343,6 +1525,47 @@ export default function Home() {
                 }}
                 onRefresh={fetchTrashProducts}
                 showToast={showToast}
+              />
+            </div>
+          )}
+          {activeTab === "archive" && (
+            <div className="max-w-[1500px] mx-auto w-full space-y-6">
+              <div className="flex items-center space-x-4 mb-2">
+                <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-500">
+                  <Archive className="w-6 h-6" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold">Arşiv</h2>
+                  <p className="text-sm text-secondary">Arşivlenen ürünler burada süresiz saklanır. İstediğiniz zaman geri çıkarabilirsiniz.</p>
+                </div>
+                <div className="ml-auto flex items-center gap-2">
+                  <span className="text-xs font-black text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-xl">
+                    {archiveProducts.length} ÜRÜN
+                  </span>
+                </div>
+              </div>
+
+              <ProductTable
+                products={archiveProducts}
+                isArchiveMode={true}
+                onUnarchive={handleUnarchiveProduct}
+                onArchive={handleArchiveProduct}
+                onBulkArchive={handleBulkArchive}
+                onBulkArchiveByBarcode={handleBulkArchiveByBarcode}
+                onEdit={(p: any) => {
+                  setEditingProduct(p);
+                  setIsModalOpen(true);
+                }}
+                onDelete={handleDelete}
+                onAdd={() => {}}
+                onManageCategories={() => setIsCatModalOpen(true)}
+                onBulkImport={handleBulkImport}
+                onToggleAllCampaign={handleToggleAllCampaign}
+                campaignRate={campaignRate}
+                onRefresh={fetchData}
+                showToast={showToast}
+                allProducts={products}
+                hideFilters={false}
               />
             </div>
           )}

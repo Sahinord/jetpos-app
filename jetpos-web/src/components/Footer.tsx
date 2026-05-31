@@ -23,7 +23,7 @@ export default function Footer() {
                                 background: "rgba(255,255,255,0.03)",
                                 display: "flex", alignItems: "center", justifyContent: "center",
                                 overflow: "hidden",
-                                boxShadow: "0 0 30px rgba(37,99,235,0.2)",
+                                boxShadow: "0 0 30px rgba(120, 134, 199, 0.2)",
                                 flexShrink: 0,
                             }}>
                                 <Image 
@@ -38,7 +38,7 @@ export default function Footer() {
                                 fontSize: "1.75rem", fontWeight: 900, color: "white",
                                 letterSpacing: "-0.04em"
                             }}>
-                                Jet<span style={{ color: "#60a5fa" }}>POS</span>
+                                Jet<span style={{ color: "#7886C7" }}>POS</span>
                             </span>
                         </Link>
                         <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.95rem", lineHeight: 1.7, maxWidth: "320px" }}>
@@ -121,7 +121,7 @@ export default function Footer() {
                             © {currentYear} JetPOS. Tüm hakları saklıdır.
                         </p>
                         <p style={{ color: "rgba(255,255,255,0.25)", fontSize: "0.8rem", fontWeight: 500 }}>
-                            JetPOS bir <span style={{ color: "#3b82f6", fontWeight: 700 }}>Jetsoft</span> ürünüdür.
+                            JetPOS bir <span style={{ color: "#7886C7", fontWeight: 700 }}>Jetsoft</span> ürünüdür.
                         </p>
                     </div>
                     <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap" }}>

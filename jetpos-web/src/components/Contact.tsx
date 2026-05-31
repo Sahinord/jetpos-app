@@ -46,7 +46,7 @@ export default function Contact() {
     };
 
     const handleFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        e.target.style.borderColor = "rgba(59,130,246,0.5)";
+        e.target.style.borderColor = "rgba(120, 134, 199, 0.5)";
         e.target.style.background = "rgba(255,255,255,0.06)";
     };
     const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -226,7 +226,7 @@ export default function Contact() {
                         style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
                     >
                         {[
-                            { icon: Mail, label: "E-posta", value: "info@jetpos.shop", href: "mailto:info@jetpos.shop", color: "#60a5fa" },
+                            { icon: Mail, label: "E-posta", value: "info@jetpos.shop", href: "mailto:info@jetpos.shop", color: "#7886C7" },
                             { icon: Phone, label: "Telefon", value: "0536 661 0169", href: "tel:05366610169", color: "#4ade80" },
                             { icon: MapPin, label: "Adres", value: "Su Yolu Cad Turgut Özal Mah No 31/A", href: "#", color: "#f87171" },
                         ].map((item, i) => (

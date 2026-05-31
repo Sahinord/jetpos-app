@@ -12,7 +12,7 @@ const values = [
         icon: Rocket, 
         title: "Sürekli İnovasyon", 
         desc: "Perakende teknolojilerinde her gün yeni bir standart belirliyor, yapay zekayı işletmenizin kalbine yerleştiriyoruz.",
-        color: "#3b82f6" 
+        color: "#7886C7" 
     },
     { 
         icon: Users, 
@@ -30,7 +30,7 @@ const values = [
 
 export default function AboutPage() {
     return (
-        <div style={{ minHeight: "100vh", background: "#060914", color: "white" }}>
+        <div style={{ minHeight: "100vh", background: "#111827", color: "white" }}>
             <Navbar />
 
             {/* Hero Section */}
@@ -38,7 +38,7 @@ export default function AboutPage() {
                 <div style={{
                     position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)",
                     width: "1000px", height: "600px",
-                    background: "radial-gradient(circle at center, rgba(37,99,235,0.08) 0%, transparent 70%)",
+                    background: "radial-gradient(circle at center, rgba(120,134,199,0.08) 0%, transparent 70%)",
                     pointerEvents: "none"
                 }} />
                 
@@ -88,7 +88,7 @@ export default function AboutPage() {
                             </p>
                             <div style={{ display: "flex", gap: "1.5rem" }}>
                                 <div style={{ textAlign: "center" }}>
-                                    <div style={{ fontSize: "2rem", fontWeight: 900, color: "#3b82f6" }}>2.4K+</div>
+                                    <div style={{ fontSize: "2rem", fontWeight: 900, color: "#7886C7" }}>2.4K+</div>
                                     <div style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.4)", textTransform: "uppercase" }}>İşletme</div>
                                 </div>
                                 <div style={{ borderLeft: "1px solid rgba(255,255,255,0.1)" }}></div>
@@ -118,11 +118,11 @@ export default function AboutPage() {
                             <div style={{ textAlign: "center", padding: "3rem" }}>
                                 <div style={{ 
                                     width: "5rem", height: "5rem", borderRadius: "50%", 
-                                    background: "rgba(59,130,246,0.1)", border: "1px solid rgba(59,130,246,0.3)",
+                                    background: "rgba(120,134,199,0.1)", border: "1px solid rgba(120,134,199,0.3)",
                                     display: "flex", alignItems: "center", justifyContent: "center",
                                     margin: "0 auto 1.5rem"
                                 }}>
-                                    <Heart style={{ color: "#3b82f6", width: "2.5rem", height: "2.5rem" }} />
+                                    <Heart style={{ color: "#7886C7", width: "2.5rem", height: "2.5rem" }} />
                                 </div>
                                 <h3 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: "1rem" }}>Jetsoft Güvencesi</h3>
                                 <p style={{ color: "rgba(255,255,255,0.5)" }}>

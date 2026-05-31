@@ -100,8 +100,8 @@ export default function AboutPageClient({ content }: { content: Record<string, a
                             <p key={i} style={{ color: "rgba(255,255,255,0.6)", lineHeight: 1.8, marginBottom: "1rem", fontSize: "1rem" }}>{p}</p>
                         ))}
                     </div>
-                    <div style={{ background: "rgba(37,99,235,0.06)", border: "1px solid rgba(37,99,235,0.15)", borderRadius: "1.5rem", padding: "2.5rem", position: "relative", overflow: "hidden" }}>
-                        <div style={{ position: "absolute", top: "-2rem", right: "-2rem", width: "8rem", height: "8rem", background: "radial-gradient(circle, rgba(37,99,235,0.15), transparent)", borderRadius: "50%" }} />
+                    <div style={{ background: "rgba(120, 134, 199, 0.06)", border: "1px solid rgba(120, 134, 199, 0.15)", borderRadius: "1.5rem", padding: "2.5rem", position: "relative", overflow: "hidden" }}>
+                        <div style={{ position: "absolute", top: "-2rem", right: "-2rem", width: "8rem", height: "8rem", background: "radial-gradient(circle, rgba(120, 134, 199, 0.15), transparent)", borderRadius: "50%" }} />
                         <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>🚀</div>
                         <h3 style={{ fontSize: "1.25rem", fontWeight: 800, color: "white", marginBottom: "0.75rem" }}>Misyonumuz</h3>
                         <p style={{ color: "rgba(255,255,255,0.6)", lineHeight: 1.7, fontSize: "0.95rem" }}>
@@ -138,7 +138,7 @@ export default function AboutPageClient({ content }: { content: Record<string, a
                             <div key={i} style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "1.25rem", padding: "1.75rem", textAlign: "center" }}>
                                 <div style={{
                                     width: "3.5rem", height: "3.5rem", borderRadius: "50%",
-                                    background: "linear-gradient(135deg, #2563eb, #7c3aed)",
+                                    background: "linear-gradient(135deg, #7886C7, #8b5cf6)",
                                     display: "flex", alignItems: "center", justifyContent: "center",
                                     fontWeight: 800, fontSize: "1rem", color: "white",
                                     margin: "0 auto 1rem"
@@ -154,7 +154,7 @@ export default function AboutPageClient({ content }: { content: Record<string, a
 
                 {/* CTA */}
                 <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
-                    style={{ background: "rgba(37,99,235,0.07)", border: "1px solid rgba(37,99,235,0.2)", borderRadius: "1.5rem", padding: "3rem 2rem", textAlign: "center" }}>
+                    style={{ background: "rgba(120, 134, 199, 0.07)", border: "1px solid rgba(120, 134, 199, 0.2)", borderRadius: "1.5rem", padding: "3rem 2rem", textAlign: "center" }}>
                     <h2 style={{ fontSize: "1.75rem", fontWeight: 800, color: "white", marginBottom: "0.75rem" }}>
                         JetPOS Ailesine Katılın
                     </h2>

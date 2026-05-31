@@ -18,7 +18,7 @@ import { supabase } from "@/lib/supabase";
 
 function hexToRgb(hex: string) {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : "59, 130, 246";
+    return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : "120, 134, 199";
 }
 
 
@@ -176,8 +176,8 @@ export default function PortalPage() {
 
     // --- RENDER HELPERS ---
     if (loading || !license) return (
-        <div style={{ height: "100vh", background: "#060914", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} style={{ width: "30px", height: "30px", border: "2px solid #3b82f6", borderTopColor: "transparent", borderRadius: "50%" }} />
+        <div style={{ height: "100vh", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} style={{ width: "30px", height: "30px", border: "2px solid #7886C7", borderTopColor: "transparent", borderRadius: "50%" }} />
         </div>
     );
 
@@ -207,7 +207,7 @@ export default function PortalPage() {
                 ) : (
                     <div style={{ 
                         width: "2.5rem", height: "2.5rem", borderRadius: "10px",
-                        background: "linear-gradient(135deg, #2563eb, #7c3aed)",
+                        background: "linear-gradient(135deg, #7886C7, #B0BAE6)",
                         display: "flex", alignItems: "center", justifyContent: "center"
                     }}>
                         <Sparkles style={{ width: "1.2rem", color: "white" }} />
@@ -215,7 +215,7 @@ export default function PortalPage() {
                 )}
                 <div style={{ overflow: "hidden" }}>
                     <h1 style={{ fontSize: "1rem", fontWeight: 900, margin: 0, letterSpacing: "-0.5px", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>{isEnterprise ? license.client_name : "JetPOS Portal"}</h1>
-                    <span style={{ fontSize: "0.6rem", color: "#3b82f6", fontWeight: 800, textTransform: "uppercase" }}>{license.plan_type} PANEL</span>
+                    <span style={{ fontSize: "0.6rem", color: "#7886C7", fontWeight: 800, textTransform: "uppercase" }}>{license.plan_type} PANEL</span>
                 </div>
             </div>
 
@@ -225,8 +225,8 @@ export default function PortalPage() {
                         style={{
                             width: "100%", display: "flex", alignItems: "center", gap: "0.8rem",
                             padding: "0.9rem 1.2rem", borderRadius: "12px", border: "none",
-                            background: activeTab === item.id ? "rgba(37,99,235,0.1)" : "transparent",
-                            color: activeTab === item.id ? "#3b82f6" : "rgba(255,255,255,0.4)",
+                            background: activeTab === item.id ? "rgba(120,134,199,0.1)" : "transparent",
+                            color: activeTab === item.id ? "#7886C7" : "rgba(255,255,255,0.4)",
                             fontSize: "0.875rem", fontWeight: activeTab === item.id ? 800 : 600, 
                             cursor: "pointer", transition: "all 0.2s", textAlign: "left", marginBottom: "4px"
                         }}
@@ -259,11 +259,11 @@ export default function PortalPage() {
     );
 
     return (
-        <div style={{ minHeight: "100vh", background: "#060914", color: "white", display: "flex", flexDirection: "column", fontFamily: "'Inter', sans-serif" }}>
+        <div style={{ minHeight: "100vh", background: "#111827", color: "white", display: "flex", flexDirection: "column", fontFamily: "'Inter', sans-serif" }}>
             
             {/* --- RESPONSIVE SIDEBAR --- */}
             <aside className="desktop-sidebar" style={{ 
-                width: "280px", background: "rgba(11,14,26,0.9)", borderRight: "1px solid rgba(255,255,255,0.06)",
+                width: "280px", background: "rgba(17,24,39,0.9)", borderRight: "1px solid rgba(255,255,255,0.06)",
                 position: "fixed", height: "100vh", zIndex: 100, backdropFilter: "blur(40px)"
             }}>
                 {sidebarContent}
@@ -271,12 +271,12 @@ export default function PortalPage() {
 
             {/* --- MOBILE HEADER --- */}
             <header className="mobile-header" style={{
-                position: "sticky", top: 0, zIndex: 90, background: "rgba(11,14,26,0.8)",
+                position: "sticky", top: 0, zIndex: 90, background: "rgba(17,24,39,0.8)",
                 backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.06)",
                 padding: "1rem 1.5rem", display: "none", justifyContent: "space-between", alignItems: "center"
             }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                    <div style={{ width: "2rem", height: "2rem", borderRadius: "8px", background: "linear-gradient(135deg, #2563eb, #7c3aed)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <div style={{ width: "2rem", height: "2rem", borderRadius: "8px", background: "linear-gradient(135deg, #7886C7, #B0BAE6)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                         <Sparkles style={{ width: "1rem", color: "white" }} />
                     </div>
                     <span style={{ fontWeight: 800 }}>JetPOS</span>
@@ -290,7 +290,7 @@ export default function PortalPage() {
                         style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(5px)" }}
                     >
                         <motion.div initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }} transition={{ type: "spring", damping: 25 }}
-                            style={{ width: "80%", maxWidth: "300px", background: "#0b0e1a", height: "100%", position: "relative" }}
+                            style={{ width: "80%", maxWidth: "300px", background: "#111827", height: "100%", position: "relative" }}
                         >
                             <button onClick={() => setIsMobileMenuOpen(false)} style={{ position: "absolute", right: "1rem", top: "1rem", background: "none", border: "none", color: "white" }}><X /></button>
                             {sidebarContent}
@@ -313,7 +313,7 @@ export default function PortalPage() {
                     <div style={{ display: "flex", gap: "0.75rem", width: "100%", maxWidth: "fit-content" }}>
                         <button style={{ width: "3rem", height: "3rem", borderRadius: "14px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "white", position: "relative" }}>
                             <Bell style={{ width: "1.1rem" }} />
-                            {notifCount > 0 && <span style={{ position: "absolute", top: "10px", right: "10px", width: "8px", height: "8px", background: "#f59e0b", borderRadius: "50%", border: "2px solid #060914" }} />}
+                            {notifCount > 0 && <span style={{ position: "absolute", top: "10px", right: "10px", width: "8px", height: "8px", background: "#f59e0b", borderRadius: "50%", border: "2px solid #111827" }} />}
                         </button>
                         <button onClick={() => setShowUpgradeModal(true)} style={{ flex: 1, padding: "0 1.5rem", height: "3rem", borderRadius: "14px", background: "var(--primary-color)", border: "none", color: "white", fontWeight: 800, fontSize: "0.85rem", cursor: "pointer", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: "0.6rem" }}>
                             <Sparkles style={{ width: "1rem" }} /> Paket Yükselt
@@ -335,11 +335,11 @@ export default function PortalPage() {
                                     <div style={{ marginTop: "0.5rem", fontSize: "0.85rem", color: "#22c55e", fontWeight: 700 }}>↑ %{salesSummary.growth} (Canlı)</div>
                                 </div>
                                 <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "24px", padding: "2rem" }}>
-                                    <div style={{ width: "3rem", height: "3rem", borderRadius: "14px", background: "rgba(59,130,246,0.1)", color: "#3b82f6", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1.5rem" }}><ShoppingBag style={{ width: "1.4rem" }} /></div>
+                                    <div style={{ width: "3rem", height: "3rem", borderRadius: "14px", background: "rgba(120,134,199,0.1)", color: "#7886C7", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1.5rem" }}><ShoppingBag style={{ width: "1.4rem" }} /></div>
                                     <div style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.3)", fontWeight: 800, textTransform: "uppercase", marginBottom: "0.5rem" }}>İşlem Sayısı</div>
                                     <div style={{ fontSize: "2.25rem", fontWeight: 900 }}>{salesSummary.count} <small style={{ fontSize: "1rem", color: "rgba(255,255,255,0.2)" }}>Fiş</small></div>
                                 </div>
-                                <div style={{ background: "linear-gradient(135deg, #1e3a8a, #4338ca)", borderRadius: "24px", padding: "2rem" }}>
+                                <div style={{ background: "linear-gradient(135deg, #7886C7, #5A659F)", borderRadius: "24px", padding: "2rem" }}>
                                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "1.5rem" }}>
                                         <div style={{ width: "3rem", height: "3rem", borderRadius: "14px", background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}><ShieldCheck style={{ width: "1.4rem" }} /></div>
                                         <div style={{ background: "rgba(255,255,255,0.2)", padding: "0.4rem 0.8rem", borderRadius: "99px", fontSize: "0.75rem", fontWeight: 900 }}>{daysRemaining} Gün</div>
@@ -360,7 +360,7 @@ export default function PortalPage() {
                                         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                                             {announcements.length > 0 ? announcements.map(a => (
                                                 <div key={a.id} style={{ display: "flex", gap: "1.25rem", padding: "1.5rem", background: "rgba(255,255,255,0.02)", borderRadius: "20px", border: "1px solid rgba(255,255,255,0.03)" }}>
-                                                    <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "12px", background: "rgba(59,130,246,0.1)", color: "var(--primary-color)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Info style={{ width: "1.1rem" }} /></div>
+                                                    <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "12px", background: "rgba(120,134,199,0.1)", color: "var(--primary-color)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Info style={{ width: "1.1rem" }} /></div>
                                                     <div>
                                                         <div style={{ fontWeight: 800, fontSize: "1rem", marginBottom: "0.25rem" }}>{a.title}</div>
                                                         <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.875rem", margin: 0, lineHeight: 1.5 }}>{a.message}</p>
@@ -464,12 +464,12 @@ export default function PortalPage() {
                                     </div>
                                 </div>
                                 <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
-                                    <div style={{ background: "linear-gradient(180deg, rgba(37,99,235,0.1), transparent)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "28px", padding: "2rem" }}>
+                                    <div style={{ background: "linear-gradient(180deg, rgba(120,134,199,0.1), transparent)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "28px", padding: "2rem" }}>
                                         <h3 style={{ fontWeight: 900, fontSize: "1.2rem", marginBottom: "1.5rem" }}>Ödeme Yöntemi</h3>
                                         <div style={{ background: "rgba(255,255,255,0.03)", padding: "1.5rem", borderRadius: "20px", border: "1px solid rgba(255,255,255,0.06)", marginBottom: "2rem" }}>
                                             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "1rem" }}>
                                                 <div style={{ fontSize: "0.75rem", fontWeight: 800, color: "rgba(255,255,255,0.4)" }}>KAYITLI KART</div>
-                                                <CreditCard style={{ width: "1.2rem", color: "#3b82f6" }} />
+                                                <CreditCard style={{ width: "1.2rem", color: "#7886C7" }} />
                                             </div>
                                             <div style={{ fontSize: "1.25rem", fontWeight: 800, fontFamily: "monospace", letterSpacing: "2px" }}>**** **** **** 4492</div>
                                         </div>
@@ -590,7 +590,7 @@ export default function PortalPage() {
                                             {["E-posta Bildirimleri", "Kritik Sistem Duyuruları", "Fatura Hatırlatıcıları"].map((n, i) => (
                                                 <label key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1rem", background: "rgba(255,255,255,0.01)", borderRadius: "14px", cursor: "pointer" }}>
                                                     <span style={{ fontSize: "0.9rem", fontWeight: 600 }}>{n}</span>
-                                                    <input type="checkbox" defaultChecked style={{ width: "1.2rem", height: "1.2rem", accentColor: license.branding_config?.primary_color || "#3b82f6" }} />
+                                                    <input type="checkbox" defaultChecked style={{ width: "1.2rem", height: "1.2rem", accentColor: license.branding_config?.primary_color || "#7886C7" }} />
                                                 </label>
                                             ))}
                                         </div>
@@ -607,14 +607,14 @@ export default function PortalPage() {
             <AnimatePresence>
                 {showTicketModal && (
                     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(10px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "1rem" }}>
-                        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} style={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "32px", padding: "2rem", width: "100%", maxWidth: "500px" }}>
+                        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} style={{ background: "#111827", border: "1px solid rgba(217, 224, 255, 0.15)", borderRadius: "32px", padding: "2rem", width: "100%", maxWidth: "500px" }}>
                             <h3 style={{ fontSize: "1.5rem", fontWeight: 900, marginBottom: "2rem" }}>Destek Talebi</h3>
                             <form onSubmit={handleCreateTicket} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
                                 <input required value={ticketSubject} onChange={e => setTicketSubject(e.target.value)} placeholder="Konu" style={{ padding: "1rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", color: "white" }} />
                                 <textarea required value={ticketMessage} onChange={e => setTicketMessage(e.target.value)} rows={4} placeholder="Mesajınız..." style={{ padding: "1rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", color: "white", resize: "none" }} />
                                 <div style={{ display: "flex", gap: "1rem" }}>
                                     <button type="button" onClick={() => setShowTicketModal(false)} style={{ flex: 1, padding: "1rem", borderRadius: "12px", background: "transparent", border: "1px solid rgba(255,255,255,0.1)", color: "white", fontWeight: 700 }}>İptal</button>
-                                    <button type="submit" disabled={savingTicket} style={{ flex: 2, padding: "1rem", borderRadius: "12px", background: "#2563eb", border: "none", color: "white", fontWeight: 800 }}>{savingTicket ? "Gönderiliyor..." : "Talebi Gönder"}</button>
+                                    <button type="submit" disabled={savingTicket} style={{ flex: 2, padding: "1rem", borderRadius: "12px", background: "#7886C7", border: "none", color: "white", fontWeight: 800 }}>{savingTicket ? "Gönderiliyor..." : "Talebi Gönder"}</button>
                                 </div>
                             </form>
                         </motion.div>
@@ -626,7 +626,7 @@ export default function PortalPage() {
             <AnimatePresence>
                 {showUpgradeModal && (
                     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(15px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1100, padding: "1rem" }}>
-                        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} style={{ background: "#060914", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "32px", padding: "2.5rem", width: "100%", maxWidth: "1000px", maxHeight: "90vh", overflowY: "auto" }}>
+                        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} style={{ background: "#111827", border: "1px solid rgba(217, 224, 255, 0.15)", borderRadius: "32px", padding: "2.5rem", width: "100%", maxWidth: "1000px", maxHeight: "90vh", overflowY: "auto" }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2.5rem" }}>
                                 <div>
                                     <h2 style={{ fontSize: "1.75rem", fontWeight: 900, marginBottom: "0.5rem" }}>Lisans Paketini Yükselt</h2>
@@ -675,12 +675,12 @@ export default function PortalPage() {
                 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
                 
                 :root {
-                    --primary-color: ${license.branding_config?.primary_color || "#3b82f6"};
-                    --primary-color-rgb: ${hexToRgb(license.branding_config?.primary_color || "#3b82f6")};
+                    --primary-color: ${license.branding_config?.primary_color || "#7886C7"};
+                    --primary-color-rgb: ${hexToRgb(license.branding_config?.primary_color || "#7886C7")};
                     --primary-bg: rgba(var(--primary-color-rgb), 0.1);
                 }
 
-                body { margin: 0; font-family: 'Inter', sans-serif; background: #060914; min-height: 100vh; color: white; }
+                body { margin: 0; font-family: 'Inter', sans-serif; background: #111827; min-height: 100vh; color: white; }
                 
                 button:active { transform: scale(0.98); }
                 a:hover, button:hover { opacity: 0.9; }

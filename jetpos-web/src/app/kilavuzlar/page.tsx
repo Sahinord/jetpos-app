@@ -50,8 +50,8 @@ const GUIDES = [
         title: "Cari Hesap ve Finans",
         desc: "Müşteri borç-alacak takibi ve günlük kasa raporları yönetimi.",
         icon: Users,
-        color: "text-blue-500",
-        bg: "bg-blue-500/10",
+        color: "text-primary",
+        bg: "bg-primary/10",
         duration: "6 dk oku"
     },
     {

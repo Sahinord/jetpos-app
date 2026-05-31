@@ -29,10 +29,10 @@ const stats = [
         suffix: "+",
         label: "Aktif İşletme",
         sublabel: "Türkiye genelinde",
-        color: "#3b82f6",
-        bg: "rgba(59,130,246,0.1)",
-        border: "rgba(59,130,246,0.2)",
-        glow: "rgba(59,130,246,0.3)",
+        color: "#7886C7",
+        bg: "rgba(120, 134, 199, 0.1)",
+        border: "rgba(120, 134, 199, 0.2)",
+        glow: "rgba(120, 134, 199, 0.3)",
     },
     {
         icon: ShoppingCart,
@@ -119,7 +119,7 @@ export default function Stats() {
             {/* Subtle separator top */}
             <div style={{
                 position: "absolute", top: 0, left: "15%", right: "15%", height: "1px",
-                background: "linear-gradient(90deg, transparent, rgba(59,130,246,0.3), transparent)",
+                background: "linear-gradient(90deg, transparent, rgba(120, 134, 199, 0.3), transparent)",
             }} />
             <div style={{
                 position: "absolute", bottom: 0, left: "15%", right: "15%", height: "1px",
@@ -131,7 +131,7 @@ export default function Stats() {
                 position: "absolute", top: "50%", left: "50%",
                 transform: "translate(-50%, -50%)",
                 width: "600px", height: "300px",
-                background: "radial-gradient(ellipse, rgba(37,99,235,0.06) 0%, transparent 70%)",
+                background: "radial-gradient(ellipse, rgba(120, 134, 199, 0.06) 0%, transparent 70%)",
                 pointerEvents: "none",
             }} />
 
@@ -140,18 +140,18 @@ export default function Stats() {
                 <div style={{ textAlign: "center", marginBottom: "3.5rem" }}>
                     <div style={{
                         display: "inline-flex", alignItems: "center", gap: "0.5rem",
-                        background: "rgba(59,130,246,0.08)",
-                        border: "1px solid rgba(59,130,246,0.18)",
+                        background: "rgba(120, 134, 199, 0.08)",
+                        border: "1px solid rgba(120, 134, 199, 0.18)",
                         borderRadius: "9999px",
                         padding: "0.35rem 1rem",
                         marginBottom: "1rem",
                     }}>
                         <div style={{
                             width: "0.4rem", height: "0.4rem", borderRadius: "50%",
-                            background: "#3b82f6", boxShadow: "0 0 6px #3b82f6",
+                            background: "#7886C7", boxShadow: "0 0 6px #7886C7",
                             animation: "statPulse 2s ease-in-out infinite",
                         }} />
-                        <span style={{ fontSize: "0.78rem", color: "#93c5fd", fontWeight: 600, letterSpacing: "0.04em" }}>
+                        <span style={{ fontSize: "0.78rem", color: "#B0BAE6", fontWeight: 600, letterSpacing: "0.04em" }}>
                             Gerçek Zamanlı Veriler
                         </span>
                     </div>
@@ -165,7 +165,7 @@ export default function Stats() {
                     }}>
                         Rakamlarla{" "}
                         <span style={{
-                            background: "linear-gradient(135deg, #60a5fa, #a78bfa)",
+                            background: "linear-gradient(135deg, #7886C7, #B0BAE6)",
                             WebkitBackgroundClip: "text",
                             WebkitTextFillColor: "transparent",
                         }}>JetPOS</span>

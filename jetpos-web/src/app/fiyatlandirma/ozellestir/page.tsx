@@ -135,7 +135,7 @@ export default function CustomPackagePage() {
     }, [selectedFeatures, counts, isYearly]);
 
     return (
-        <div style={{ background: "#02040a", color: "white", minHeight: "100vh", position: "relative" }}>
+        <div style={{ background: "#111827", color: "white", minHeight: "100vh", position: "relative" }}>
             <div className="site-bg" />
             <Navbar />
 
@@ -199,7 +199,7 @@ export default function CustomPackagePage() {
                                                 transition: "all 0.3s"
                                             }}
                                         >
-                                            <p.icon style={{ width: "1.15rem", height: "1.15rem", color: "#60a5fa" }} />
+                                            <p.icon style={{ width: "1.15rem", height: "1.15rem", color: "#7886C7" }} />
                                             {p.name}
                                         </motion.button>
                                     ))}
@@ -211,8 +211,8 @@ export default function CustomPackagePage() {
                                 {FEATURE_GROUPS.map((group) => (
                                     <div key={group.id}>
                                         <div style={{ display: "flex", alignItems: "center", gap: "0.875rem", marginBottom: "1.75rem" }}>
-                                            <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "0.75rem", background: "rgba(59,130,246,0.1)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(59,130,246,0.2)" }}>
-                                                <group.icon style={{ width: "1.25rem", height: "1.25rem", color: "#60a5fa" }} />
+                                            <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "0.75rem", background: "rgba(120,134,199,0.1)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(120,134,199,0.2)" }}>
+                                                <group.icon style={{ width: "1.25rem", height: "1.25rem", color: "#7886C7" }} />
                                             </div>
                                             <h2 style={{ fontSize: "1.5rem", fontWeight: 800, letterSpacing: "-0.02em" }}>{group.title}</h2>
                                         </div>
@@ -227,23 +227,23 @@ export default function CustomPackagePage() {
                                                         whileHover={{ scale: 1.02 }}
                                                         className="feature-card"
                                                         style={{
-                                                            background: isSelected ? "rgba(59,130,246,0.06)" : "rgba(255,255,255,0.02)",
-                                                            border: `1px solid ${isSelected ? "rgba(59,130,246,0.4)" : "rgba(255,255,255,0.06)"}`,
+                                                            background: isSelected ? "rgba(120, 134, 199, 0.06)" : "rgba(255,255,255,0.02)",
+                                                            border: `1px solid ${isSelected ? "rgba(120, 134, 199, 0.4)" : "rgba(255,255,255,0.06)"}`,
                                                             borderRadius: "1.5rem",
                                                             padding: "1.75rem",
                                                             cursor: "pointer",
                                                             transition: "all 0.3s ease",
                                                             position: "relative",
-                                                            boxShadow: isSelected ? "0 10px 40px -10px rgba(59,130,246,0.15)" : "none"
+                                                            boxShadow: isSelected ? "0 10px 40px -10px rgba(120, 134, 199, 0.15)" : "none"
                                                         }}
                                                     >
                                                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.875rem" }}>
                                                             <span style={{ fontWeight: 800, color: isSelected ? "white" : "rgba(255,255,255,0.85)", fontSize: "1.05rem" }}>{feature.name}</span>
                                                             <div style={{
                                                                 width: "1.5rem", height: "1.5rem", borderRadius: "50%",
-                                                                border: `2px solid ${isSelected ? "#3b82f6" : "rgba(255,255,255,0.15)"}`,
+                                                                border: `2px solid ${isSelected ? "#7886C7" : "rgba(255,255,255,0.15)"}`,
                                                                 display: "flex", alignItems: "center", justifyContent: "center",
-                                                                background: isSelected ? "#3b82f6" : "transparent",
+                                                                background: isSelected ? "#7886C7" : "transparent",
                                                                 transition: "all 0.3s"
                                                             }}>
                                                                 {isSelected && <Check style={{ width: "0.9rem", height: "0.9rem", color: "white" }} />}
@@ -253,7 +253,7 @@ export default function CustomPackagePage() {
                                                             {feature.description}
                                                         </p>
                                                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                                                            <span style={{ fontSize: "1.125rem", fontWeight: 800, color: isSelected ? "#60a5fa" : "rgba(255,255,255,0.4)" }}>
+                                                            <span style={{ fontSize: "1.125rem", fontWeight: 800, color: isSelected ? "#7886C7" : "rgba(255,255,255,0.4)" }}>
                                                                 +₺{feature.price} <span style={{ fontSize: "0.75rem", fontWeight: 400 }}>/ ay</span>
                                                             </span>
                                                         </div>
@@ -316,7 +316,7 @@ export default function CustomPackagePage() {
                                                         <Minus style={{ width: "1.1rem", height: "1.1rem" }} />
                                                     </button>
                                                     <div style={{ minWidth: "2.5rem", textAlign: "center" }}>
-                                                        <span style={{ fontSize: "1.25rem", fontWeight: 900, color: counts[addon.id] > 0 ? "#60a5fa" : "white" }}>
+                                                        <span style={{ fontSize: "1.25rem", fontWeight: 900, color: counts[addon.id] > 0 ? "#7886C7" : "white" }}>
                                                             {counts[addon.id]}
                                                         </span>
                                                     </div>
@@ -356,7 +356,7 @@ export default function CustomPackagePage() {
                                 }}
                             >
                                 <h2 style={{ fontSize: "1.5rem", fontWeight: 900, marginBottom: "2rem", display: "flex", alignItems: "center", gap: "1rem" }}>
-                                    <ShoppingCart style={{ width: "1.5rem", height: "1.5rem", color: "#60a5fa" }} />
+                                    <ShoppingCart style={{ width: "1.5rem", height: "1.5rem", color: "#7886C7" }} />
                                     Paket Özeti
                                 </h2>
 
@@ -381,13 +381,13 @@ export default function CustomPackagePage() {
                                         style={{
                                             flex: 1, padding: "0.875rem", borderRadius: "1rem", border: "none",
                                             fontWeight: 800, fontSize: "0.95rem", cursor: "pointer",
-                                            background: isYearly ? "rgba(59,130,246,0.15)" : "transparent",
-                                            color: isYearly ? "#60a5fa" : "rgba(255,255,255,0.35)",
+                                            background: isYearly ? "rgba(120, 134, 199, 0.15)" : "transparent",
+                                            color: isYearly ? "#7886C7" : "rgba(255,255,255,0.35)",
                                             transition: "all 0.3s",
                                             display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem"
                                         }}>
                                         Yıllık
-                                        <span style={{ fontSize: "0.7rem", background: "#3b82f6", color: "white", padding: "0.2rem 0.5rem", borderRadius: "8px", fontWeight: 900 }}>-%25</span>
+                                        <span style={{ fontSize: "0.7rem", background: "#7886C7", color: "white", padding: "0.2rem 0.5rem", borderRadius: "8px", fontWeight: 900 }}>-%25</span>
                                     </button>
                                 </div>
 
@@ -469,7 +469,7 @@ export default function CustomPackagePage() {
                                 background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)",
                                 display: "flex", gap: "1rem"
                             }}>
-                                <Info style={{ width: "1.5rem", height: "1.5rem", color: "#3b82f6", flexShrink: 0 }} />
+                                <Info style={{ width: "1.5rem", height: "1.5rem", color: "#7886C7", flexShrink: 0 }} />
                                 <p style={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.35)", lineHeight: 1.5 }}>
                                     Hangi özelliklerin size uygun olduğundan emin değil misiniz? Uzmanlarımızla <b>hemen görüşün.</b>
                                 </p>
@@ -505,12 +505,12 @@ export default function CustomPackagePage() {
                     padding: 1.25rem;
                     border-radius: 1.5rem;
                     border: none;
-                    background: linear-gradient(135deg, #2563eb, #3b82f6);
+                    background: linear-gradient(135deg, #7886C7, #5A659F);
                     color: white;
                     font-weight: 900;
                     font-size: 1.1rem;
                     cursor: pointer;
-                    box-shadow: 0 15px 40px -10px rgba(37,99,235,0.5);
+                    box-shadow: 0 15px 40px -10px rgba(120, 134, 199, 0.5);
                     display: flex;
                     alignItems: center;
                     justify-content: center;
@@ -520,13 +520,13 @@ export default function CustomPackagePage() {
 
                 .confirm-btn:hover {
                     transform: translateY(-4px);
-                    box-shadow: 0 20px 50px -10px rgba(37,99,235,0.6);
+                    box-shadow: 0 20px 50px -10px rgba(120, 134, 199, 0.6);
                     filter: brightness(1.1);
                 }
 
                 .preset-btn:hover {
-                    border-color: rgba(59,130,246,0.5) !important;
-                    background: rgba(59,130,246,0.1) !important;
+                    border-color: rgba(120, 134, 199, 0.5) !important;
+                    background: rgba(120, 134, 199, 0.1) !important;
                 }
 
                 .receipt-items::-webkit-scrollbar {

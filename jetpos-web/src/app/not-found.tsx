@@ -20,7 +20,7 @@ export default function NotFound() {
                     position: "absolute", top: "50%", left: "50%",
                     transform: "translate(-50%, -50%)",
                     width: "600px", height: "400px",
-                    background: "radial-gradient(ellipse, rgba(37,99,235,0.08) 0%, transparent 70%)",
+                    background: "radial-gradient(ellipse, rgba(120, 134, 199, 0.08) 0%, transparent 70%)",
                     pointerEvents: "none",
                 }} />
 
@@ -29,15 +29,15 @@ export default function NotFound() {
                     <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: "0.625rem", textDecoration: "none", marginBottom: "3rem" }}>
                         <div style={{
                             width: "2.5rem", height: "2.5rem",
-                            background: "linear-gradient(135deg, #2563eb, #3b82f6)",
+                            background: "linear-gradient(135deg, #7886C7, #5A659F)",
                             borderRadius: "50%",
                             display: "flex", alignItems: "center", justifyContent: "center",
-                            boxShadow: "0 0 20px rgba(37,99,235,0.4)",
+                            boxShadow: "0 0 20px rgba(120, 134, 199, 0.4)",
                         }}>
                             <Zap style={{ width: "1.25rem", height: "1.25rem", color: "white", fill: "white" }} />
                         </div>
                         <span style={{ fontSize: "1.5rem", fontWeight: 800, color: "white" }}>
-                            Jet<span style={{ color: "#60a5fa" }}>POS</span>
+                            Jet<span style={{ color: "#7886C7" }}>POS</span>
                         </span>
                     </Link>
 
@@ -72,9 +72,9 @@ export default function NotFound() {
                         <Link href="/" style={{
                             display: "inline-flex", alignItems: "center", gap: "0.5rem",
                             padding: "0.875rem 1.75rem", borderRadius: "9999px",
-                            background: "linear-gradient(135deg, #2563eb, #3b82f6)",
+                            background: "linear-gradient(135deg, #7886C7, #5A659F)",
                             color: "white", fontWeight: 700, fontSize: "0.95rem",
-                            textDecoration: "none", boxShadow: "0 4px 16px rgba(37,99,235,0.4)",
+                            textDecoration: "none", boxShadow: "0 4px 16px rgba(120, 134, 199, 0.4)",
                             transition: "all 0.2s",
                         }}>
                             <Home style={{ width: "1rem", height: "1rem" }} />

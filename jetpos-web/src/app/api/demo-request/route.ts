@@ -47,21 +47,21 @@ export async function POST(req: NextRequest) {
                     to: ["info@jetpos.shop"],
                     subject: `🚀 Yeni Demo Talebi: ${company} - ${name}`,
                     html: `
-                        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0f172a; color: white; border-radius: 12px; overflow: hidden;">
-                            <div style="background: linear-gradient(135deg, #2563eb, #1d4ed8); padding: 2rem; text-align: center;">
+                        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #111827; color: white; border: 1px solid rgba(217, 224, 255, 0.15); border-radius: 12px; overflow: hidden;">
+                            <div style="background: linear-gradient(135deg, #7886C7, #5E6BA7); padding: 2rem; text-align: center;">
                                 <h1 style="margin: 0; font-size: 1.5rem;">🎯 Yeni Demo Talebi</h1>
                                 <p style="margin: 0.5rem 0 0; opacity: 0.8;">JetPOS Web Sitesinden</p>
                             </div>
-                            <div style="padding: 2rem; background: #1e293b;">
+                            <div style="padding: 2rem; background: #111827;">
                                 <table style="width: 100%; border-collapse: collapse;">
-                                    <tr><td style="padding: 0.75rem 0; border-bottom: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); width: 40%;">Ad Soyad</td><td style="padding: 0.75rem 0; border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: bold;">${name}</td></tr>
-                                    <tr><td style="padding: 0.75rem 0; border-bottom: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.6);">E-posta</td><td style="padding: 0.75rem 0; border-bottom: 1px solid rgba(255,255,255,0.1);"><a href="mailto:${email}" style="color: #60a5fa;">${email}</a></td></tr>
-                                    <tr><td style="padding: 0.75rem 0; border-bottom: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.6);">Telefon</td><td style="padding: 0.75rem 0; border-bottom: 1px solid rgba(255,255,255,0.1);"><a href="tel:${phone}" style="color: #60a5fa;">${phone}</a></td></tr>
-                                    <tr><td style="padding: 0.75rem 0; border-bottom: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.6);">Firma</td><td style="padding: 0.75rem 0; border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: bold;">${company}</td></tr>
-                                    <tr><td style="padding: 0.75rem 0; border-bottom: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.6);">Sektör</td><td style="padding: 0.75rem 0; border-bottom: 1px solid rgba(255,255,255,0.1);">${sector || "-"}</td></tr>
-                                    <tr><td style="padding: 0.75rem 0; border-bottom: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.6);">Çalışan Sayısı</td><td style="padding: 0.75rem 0; border-bottom: 1px solid rgba(255,255,255,0.1);">${employee_count || "-"}</td></tr>
-                                    <tr><td style="padding: 0.75rem 0; border-bottom: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.6);">Mevcut Sistem</td><td style="padding: 0.75rem 0; border-bottom: 1px solid rgba(255,255,255,0.1);">${current_system || "-"}</td></tr>
-                                    <tr><td style="padding: 0.75rem 0; border-bottom: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.6);">İlgilendiği Paket</td><td style="padding: 0.75rem 0; border-bottom: 1px solid rgba(255,255,255,0.1); color: #4ade80; font-weight: bold;">${package_interest || "-"}</td></tr>
+                                    <tr><td style="padding: 0.75rem 0; border-bottom: 1px solid rgba(217, 224, 255, 0.15); color: rgba(255,255,255,0.6); width: 40%;">Ad Soyad</td><td style="padding: 0.75rem 0; border-bottom: 1px solid rgba(217, 224, 255, 0.15); font-weight: bold;">${name}</td></tr>
+                                    <tr><td style="padding: 0.75rem 0; border-bottom: 1px solid rgba(217, 224, 255, 0.15); color: rgba(255,255,255,0.6);">E-posta</td><td style="padding: 0.75rem 0; border-bottom: 1px solid rgba(217, 224, 255, 0.15);"><a href="mailto:${email}" style="color: #7886C7; text-decoration: none;">${email}</a></td></tr>
+                                    <tr><td style="padding: 0.75rem 0; border-bottom: 1px solid rgba(217, 224, 255, 0.15); color: rgba(255,255,255,0.6);">Telefon</td><td style="padding: 0.75rem 0; border-bottom: 1px solid rgba(217, 224, 255, 0.15);"><a href="tel:${phone}" style="color: #7886C7; text-decoration: none;">${phone}</a></td></tr>
+                                    <tr><td style="padding: 0.75rem 0; border-bottom: 1px solid rgba(217, 224, 255, 0.15); color: rgba(255,255,255,0.6);">Firma</td><td style="padding: 0.75rem 0; border-bottom: 1px solid rgba(217, 224, 255, 0.15); font-weight: bold;">${company}</td></tr>
+                                    <tr><td style="padding: 0.75rem 0; border-bottom: 1px solid rgba(217, 224, 255, 0.15); color: rgba(255,255,255,0.6);">Sektör</td><td style="padding: 0.75rem 0; border-bottom: 1px solid rgba(217, 224, 255, 0.15);">${sector || "-"}</td></tr>
+                                    <tr><td style="padding: 0.75rem 0; border-bottom: 1px solid rgba(217, 224, 255, 0.15); color: rgba(255,255,255,0.6);">Çalışan Sayısı</td><td style="padding: 0.75rem 0; border-bottom: 1px solid rgba(217, 224, 255, 0.15);">${employee_count || "-"}</td></tr>
+                                    <tr><td style="padding: 0.75rem 0; border-bottom: 1px solid rgba(217, 224, 255, 0.15); color: rgba(255,255,255,0.6);">Mevcut Sistem</td><td style="padding: 0.75rem 0; border-bottom: 1px solid rgba(217, 224, 255, 0.15);">${current_system || "-"}</td></tr>
+                                    <tr><td style="padding: 0.75rem 0; border-bottom: 1px solid rgba(217, 224, 255, 0.15); color: rgba(255,255,255,0.6);">İlgilendiği Paket</td><td style="padding: 0.75rem 0; border-bottom: 1px solid rgba(217, 224, 255, 0.15); color: #4ade80; font-weight: bold;">${package_interest || "-"}</td></tr>
                                     ${message ? `<tr><td colspan="2" style="padding: 1rem 0;"><div style="background: rgba(255,255,255,0.05); border-radius: 8px; padding: 1rem; color: rgba(255,255,255,0.8);">${message}</div></td></tr>` : ""}
                                 </table>
                                 <div style="margin-top: 1.5rem; text-align: center;">
@@ -85,16 +85,16 @@ export async function POST(req: NextRequest) {
                     to: [email],
                     subject: "Demo Talebiniz Alındı! 🎉",
                     html: `
-                        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                            <div style="background: linear-gradient(135deg, #2563eb, #1d4ed8); padding: 2rem; text-align: center; border-radius: 12px 12px 0 0;">
+                        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid rgba(217, 224, 255, 0.15); border-radius: 12px; overflow: hidden;">
+                            <div style="background: linear-gradient(135deg, #7886C7, #5E6BA7); padding: 2rem; text-align: center;">
                                 <h1 style="color: white; margin: 0;">JetPOS Demo Talebiniz Alındı!</h1>
                             </div>
-                            <div style="background: #1e293b; padding: 2rem; color: white; border-radius: 0 0 12px 12px;">
+                            <div style="background: #111827; padding: 2rem; color: white;">
                                 <p>Merhaba <strong>${name}</strong>,</p>
                                 <p>Demo talebinizi başarıyla aldık! Ekibimiz en kısa sürede sizinle iletişime geçecek.</p>
                                 <p style="color: rgba(255,255,255,0.6);">Ortalama yanıt süremiz: <strong style="color: #4ade80;">2 saat içinde</strong></p>
-                                <hr style="border-color: rgba(255,255,255,0.1); margin: 1.5rem 0;">
-                                <p style="color: rgba(255,255,255,0.5); font-size: 0.875rem;">Acil sorularınız için: <a href="tel:+905001234567" style="color: #60a5fa;">+90 500 123 45 67</a></p>
+                                <hr style="border-color: rgba(217, 224, 255, 0.15); margin: 1.5rem 0;">
+                                <p style="color: rgba(255,255,255,0.5); font-size: 0.875rem;">Acil sorularınız için: <a href="tel:+905001234567" style="color: #7886C7; text-decoration: none;">+90 500 123 45 67</a></p>
                             </div>
                         </div>
                     `,

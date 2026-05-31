@@ -42,15 +42,15 @@ export default function Navbar() {
                     maxWidth: "1100px",
                     borderRadius: "9999px",
                     background: scrolled
-                        ? "rgba(4, 12, 30, 0.95)"
-                        : "rgba(4, 12, 30, 0.45)",
+                        ? "rgba(17, 24, 39, 0.95)"
+                        : "rgba(17, 24, 39, 0.45)",
                     backdropFilter: "blur(20px)",
                     WebkitBackdropFilter: "blur(20px)",
                     border: scrolled
-                        ? "1px solid rgba(59, 130, 246, 0.28)"
+                        ? "1px solid rgba(120, 134, 199, 0.28)"
                         : "1px solid rgba(255,255,255,0.08)",
                     boxShadow: scrolled
-                        ? "0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(59,130,246,0.08) inset"
+                        ? "0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(120, 134, 199, 0.08) inset"
                         : "0 2px 16px rgba(0,0,0,0.2)",
                     transition: "all 0.4s cubic-bezier(0.4,0,0.2,1)",
                     pointerEvents: "auto",
@@ -69,11 +69,11 @@ export default function Navbar() {
                             <div style={{
                                 width: "2.5rem", height: "2.5rem",
                                 borderRadius: "50%",
-                                border: scrolled ? "1px solid rgba(59, 130, 246, 0.3)" : "1px solid rgba(255,255,255,0.15)",
+                                border: scrolled ? "1px solid rgba(120, 134, 199, 0.3)" : "1px solid rgba(255,255,255,0.15)",
                                 background: "rgba(255,255,255,0.03)",
                                 display: "flex", alignItems: "center", justifyContent: "center",
                                 overflow: "hidden",
-                                boxShadow: "0 0 15px rgba(37,99,235,0.25)",
+                                boxShadow: "0 0 15px rgba(120, 134, 199, 0.25)",
                                 flexShrink: 0,
                                 transition: "all 0.4s"
                             }}>
@@ -89,7 +89,7 @@ export default function Navbar() {
                                 fontSize: "1.3rem", fontWeight: 800, color: scrolled ? "white" : "white",
                                 letterSpacing: "-0.04em"
                             }}>
-                                Jet<span style={{ color: "#60a5fa" }}>POS</span>
+                                Jet<span style={{ color: "#7886C7" }}>POS</span>
                             </span>
                         </Link>
 
@@ -108,8 +108,8 @@ export default function Navbar() {
                                             textDecoration: "none",
                                             padding: "0.5rem 0.875rem",
                                             borderRadius: "9999px",
-                                            background: isActive ? "rgba(59,130,246,0.12)" : "transparent",
-                                            border: isActive ? "1px solid rgba(59,130,246,0.25)" : "1px solid transparent",
+                                            background: isActive ? "rgba(120, 134, 199, 0.12)" : "transparent",
+                                            border: isActive ? "1px solid rgba(120, 134, 199, 0.25)" : "1px solid transparent",
                                             transition: "all 0.2s ease",
                                         }}
                                         onMouseEnter={e => {
@@ -159,17 +159,17 @@ export default function Navbar() {
                                 padding: "0.5rem 1.125rem",
                                 borderRadius: "9999px",
                                 border: "none",
-                                background: "linear-gradient(135deg, #2563eb, #3b82f6)",
+                                background: "linear-gradient(135deg, #7886C7, #5A659F)",
                                 color: "white",
                                 fontWeight: 600, fontSize: "0.875rem",
                                 cursor: "pointer", fontFamily: "inherit",
                                 transition: "all 0.2s",
-                                boxShadow: "0 2px 12px rgba(37,99,235,0.4)",
+                                boxShadow: "0 2px 12px rgba(120, 134, 199, 0.4)",
                                 textDecoration: "none",
                                 display: "inline-flex", alignItems: "center"
                             }}
-                                onMouseEnter={(e: React.MouseEvent<HTMLAnchorElement>) => (e.currentTarget.style.boxShadow = "0 4px 20px rgba(37,99,235,0.6)")}
-                                onMouseLeave={(e: React.MouseEvent<HTMLAnchorElement>) => (e.currentTarget.style.boxShadow = "0 2px 12px rgba(37,99,235,0.4)")}
+                                onMouseEnter={(e: React.MouseEvent<HTMLAnchorElement>) => (e.currentTarget.style.boxShadow = "0 4px 20px rgba(120, 134, 199, 0.6)")}
+                                onMouseLeave={(e: React.MouseEvent<HTMLAnchorElement>) => (e.currentTarget.style.boxShadow = "0 2px 12px rgba(120, 134, 199, 0.4)")}
                             >
                                 Ücretsiz Demo →
                             </Link>
@@ -203,9 +203,9 @@ export default function Navbar() {
                     />
                     <div style={{
                         position: "absolute", top: "5rem", left: "1rem", right: "1rem",
-                        background: "rgba(4,12,30,0.97)",
+                        background: "rgba(17, 24, 39, 0.97)",
                         backdropFilter: "blur(20px)",
-                        border: "1px solid rgba(59,130,246,0.2)",
+                        border: "1px solid rgba(120, 134, 199, 0.2)",
                         borderRadius: "1.25rem",
                         padding: "1.25rem"
                     }}>
@@ -238,7 +238,7 @@ export default function Navbar() {
                                 style={{
                                     display: "block", textAlign: "center",
                                     padding: "0.875rem", borderRadius: "0.75rem",
-                                    background: "linear-gradient(135deg, #2563eb, #3b82f6)",
+                                    background: "linear-gradient(135deg, #7886C7, #5A659F)",
                                     color: "white", fontWeight: 700, textDecoration: "none"
                                 }}
                                 onClick={() => setMobileMenuOpen(false)}

@@ -57,7 +57,7 @@ function renderMarkdown(text: string) {
 }
 
 export default function BlogPostClient({ post }: { post: any }) {
-    const color = "#60a5fa";
+    const color = "#7886C7";
 
     return (
         <div style={{ paddingTop: "7rem", paddingBottom: "5rem" }}>
@@ -75,7 +75,7 @@ export default function BlogPostClient({ post }: { post: any }) {
                     {/* Meta */}
                     <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.25rem", flexWrap: "wrap" }}>
                         {post.category && (
-                            <span style={{ fontSize: "0.7rem", fontWeight: 700, background: "rgba(96,165,250,0.15)", color: "#60a5fa", padding: "0.2rem 0.625rem", borderRadius: "9999px" }}>
+                            <span style={{ fontSize: "0.7rem", fontWeight: 700, background: "rgba(120,134,199,0.15)", color: "#7886C7", padding: "0.2rem 0.625rem", borderRadius: "9999px" }}>
                                 {post.category}
                             </span>
                         )}
@@ -111,7 +111,7 @@ export default function BlogPostClient({ post }: { post: any }) {
 
                     {/* Excerpt */}
                     {post.excerpt && (
-                        <p style={{ fontSize: "1.125rem", color: "rgba(255,255,255,0.65)", lineHeight: 1.75, marginBottom: "2rem", fontStyle: "italic", background: "rgba(37,99,235,0.05)", border: "1px solid rgba(37,99,235,0.15)", borderRadius: "0.75rem", padding: "1rem 1.25rem" }}>
+                        <p style={{ fontSize: "1.125rem", color: "rgba(255,255,255,0.65)", lineHeight: 1.75, marginBottom: "2rem", fontStyle: "italic", background: "rgba(120,134,199,0.05)", border: "1px solid rgba(120,134,199,0.15)", borderRadius: "0.75rem", padding: "1rem 1.25rem" }}>
                             {post.excerpt}
                         </p>
                     )}
@@ -122,7 +122,7 @@ export default function BlogPostClient({ post }: { post: any }) {
                     </div>
 
                     {/* CTA */}
-                    <div style={{ marginTop: "3rem", padding: "2rem", background: "rgba(37,99,235,0.07)", border: "1px solid rgba(37,99,235,0.2)", borderRadius: "1.25rem", textAlign: "center" }}>
+                    <div style={{ marginTop: "3rem", padding: "2rem", background: "rgba(120,134,199,0.07)", border: "1px solid rgba(120,134,199,0.2)", borderRadius: "1.25rem", textAlign: "center" }}>
                         <p style={{ color: "rgba(255,255,255,0.7)", marginBottom: "1rem", fontWeight: 600 }}>
                             JetPOS&apos;u 14 gün ücretsiz deneyin
                         </p>

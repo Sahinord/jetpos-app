@@ -14,6 +14,7 @@ import {
     Lock,
     LogOut,
     Trash2,
+    Archive,
     Sparkles,
     FileText,
     ChevronDown,
@@ -229,6 +230,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                 { id: "warehouse", label: "Depo Yönetimi", icon: Building2, feature: "products", description: "Farklı depo ve mağazaların stok ve fiyat yönetimi." },
                 { id: "alerts", label: "Stok Uyarıları", icon: AlertTriangle, feature: "products", description: "Kritik stok seviyesine düşen ürünler için otomatik uyarılar." },
                 { id: "label_designer", label: "Ürün Etiketleri", icon: Tags, feature: "label_designer", description: "Barkodlu fiyat etiketleri tasarla ve yazdır." },
+                { id: "archive", label: "Arşiv", icon: Archive, feature: "products", description: "Arşivlenen ürünleri görüntüleyin, geri çıkarın veya toplu arşivleyin." },
                 { id: "trash", label: "Geri Dönüşüm Kutusu", icon: Trash2, feature: "products", description: "Silinen ürünleri görüntüleyin ve gerekirse geri yükleyin." },
             ]
         },

@@ -9,7 +9,7 @@ import FAQ from "@/components/FAQ";
 
 export default function FAQPage() {
     return (
-        <div style={{ minHeight: "100vh", background: "#060914", color: "white" }}>
+        <div style={{ minHeight: "100vh", background: "#111827", color: "white" }}>
             <Navbar />
 
             {/* Header / Hero */}
@@ -17,7 +17,7 @@ export default function FAQPage() {
                 <div style={{
                     position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)",
                     width: "1200px", height: "600px",
-                    background: "radial-gradient(circle at center, rgba(37,99,235,0.06) 0%, transparent 70%)",
+                    background: "radial-gradient(circle at center, rgba(120,134,199,0.06) 0%, transparent 70%)",
                     pointerEvents: "none"
                 }} />
                 
@@ -60,7 +60,7 @@ export default function FAQPage() {
             </section>
 
             {/* Support CTA */}
-            <section style={{ padding: "6rem 0", background: "rgba(37, 99, 235, 0.04)", borderTop: "1px solid rgba(37, 99, 235, 0.1)" }}>
+            <section style={{ padding: "6rem 0", background: "rgba(120, 134, 199, 0.04)", borderTop: "1px solid rgba(120, 134, 199, 0.1)" }}>
                 <div className="site-container">
                     <div style={{ 
                         background: "rgba(255,255,255,0.02)", 

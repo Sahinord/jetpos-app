@@ -9,7 +9,7 @@ import Contact from "@/components/Contact";
 
 export default function ContactPage() {
     return (
-        <div style={{ minHeight: "100vh", background: "#060914", color: "white" }}>
+        <div style={{ minHeight: "100vh", background: "#111827", color: "white" }}>
             <Navbar />
 
             {/* Header */}
@@ -17,7 +17,7 @@ export default function ContactPage() {
                 <div style={{
                     position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)",
                     width: "1200px", height: "600px",
-                    background: "radial-gradient(circle at center, rgba(37,99,235,0.06) 0%, transparent 70%)",
+                    background: "radial-gradient(circle at center, rgba(120,134,199,0.06) 0%, transparent 70%)",
                     pointerEvents: "none"
                 }} />
                 
@@ -49,7 +49,7 @@ export default function ContactPage() {
                 <div className="site-container">
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1.5rem" }} className="contact-grid">
                         {[
-                            { icon: Phone, label: "Telefon", value: "0536 661 0169", sub: "Hafta içi 09:00 - 18:00", color: "#3b82f6" },
+                            { icon: Phone, label: "Telefon", value: "0536 661 0169", sub: "Hafta içi 09:00 - 18:00", color: "#7886C7" },
                             { icon: Mail, label: "E-posta", value: "info@jetpos.shop", sub: "7/24 Teknik Destek", color: "#a78bfa" },
                             { icon: MapPin, label: "Adres", value: "Turgut Özal Mah. No:31/A", sub: "İstanbul, Türkiye", color: "#10b981" }
                         ].map((item, i) => (

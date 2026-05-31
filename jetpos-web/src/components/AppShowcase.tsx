@@ -11,7 +11,7 @@ export default function AppShowcase() {
             padding: "8rem 0",
             position: "relative",
             overflow: "hidden",
-            background: "radial-gradient(circle at 50% 50%, rgba(59,130,246,0.05) 0%, transparent 70%)"
+            background: "radial-gradient(circle at 50% 50%, rgba(120, 134, 199, 0.05) 0%, transparent 70%)"
         }}>
             <div className="site-container">
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4rem", alignItems: "center" }} className="showcase-grid">
@@ -113,7 +113,7 @@ export default function AppShowcase() {
                             transform: "translate(-50%, -50%)",
                             width: "120%",
                             height: "120%",
-                            background: "radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 70%)",
+                            background: "radial-gradient(circle, rgba(120, 134, 199, 0.1) 0%, transparent 70%)",
                             zIndex: 1,
                             pointerEvents: "none"
                         }} />
@@ -164,13 +164,13 @@ export default function AppShowcase() {
                                         width: "2.75rem",
                                         height: "2.75rem",
                                         borderRadius: "0.75rem",
-                                        background: "rgba(59,130,246,0.1)",
+                                        background: "rgba(120, 134, 199, 0.1)",
                                         display: "flex",
                                         alignItems: "center",
                                         justifyContent: "center",
                                         flexShrink: 0
                                     }}>
-                                        <item.icon style={{ width: "1.25rem", height: "1.25rem", color: "#3b82f6" }} />
+                                        <item.icon style={{ width: "1.25rem", height: "1.25rem", color: "#7886C7" }} />
                                     </div>
                                     <div>
                                         <h4 style={{ color: "white", fontWeight: 700, fontSize: "1.1rem", marginBottom: "0.25rem" }}>{item.title}</h4>

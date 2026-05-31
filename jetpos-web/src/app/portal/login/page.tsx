@@ -62,19 +62,19 @@ export default function PortalLoginPage() {
 
     return (
         <div style={{
-            minHeight: "100vh", background: "#060914",
+            minHeight: "100vh", background: "#111827",
             display: "flex", alignItems: "center", justifyContent: "center",
             padding: "1rem", position: "relative", overflow: "hidden"
         }}>
             {/* Background elements */}
             <div style={{
                 position: "absolute", top: "-10%", left: "-10%", width: "40%", height: "40%",
-                background: "radial-gradient(circle, rgba(37,99,235,0.1) 0%, transparent 70%)",
+                background: "radial-gradient(circle, rgba(120,134,199,0.1) 0%, transparent 70%)",
                 filter: "blur(60px)", pointerEvents: "none"
             }} />
             <div style={{
                 position: "absolute", bottom: "-10%", right: "-10%", width: "40%", height: "40%",
-                background: "radial-gradient(circle, rgba(124,58,237,0.1) 0%, transparent 70%)",
+                background: "radial-gradient(circle, rgba(176,186,230,0.1) 0%, transparent 70%)",
                 filter: "blur(60px)", pointerEvents: "none"
             }} />
 
@@ -86,10 +86,10 @@ export default function PortalLoginPage() {
                 <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
                     <div style={{
                         width: "4rem", height: "4rem", borderRadius: "1.25rem",
-                        background: "linear-gradient(135deg, #2563eb, #7c3aed)",
+                        background: "linear-gradient(135deg, #7886C7, #B0BAE6)",
                         display: "flex", alignItems: "center", justifyContent: "center",
                         margin: "0 auto 1.25rem",
-                        boxShadow: "0 0 40px rgba(37,99,235,0.3)"
+                        boxShadow: "0 0 40px rgba(120,134,199,0.3)"
                     }}>
                         <Sparkles style={{ width: "1.75rem", height: "1.75rem", color: "white" }} />
                     </div>
@@ -176,11 +176,11 @@ export default function PortalLoginPage() {
                             disabled={loading}
                             style={{
                                 padding: "1rem", borderRadius: "0.875rem", border: "none",
-                                background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
+                                background: "linear-gradient(135deg, #7886C7, #5A659F)",
                                 color: "white", fontWeight: 700, fontSize: "1rem",
                                 cursor: loading ? "not-allowed" : "pointer",
                                 opacity: loading ? 0.7 : 1,
-                                boxShadow: "0 8px 20px rgba(37,99,235,0.3)",
+                                boxShadow: "0 8px 20px rgba(120,134,199,0.3)",
                                 display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
                                 transition: "all 0.2s"
                             }}

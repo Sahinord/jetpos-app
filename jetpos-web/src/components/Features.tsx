@@ -51,9 +51,9 @@ const features = [
     },
 ];
 
-const COLOR = "#3b82f6";
-const GLOW = "rgba(59,130,246,0.2)";
-const BORDER = "rgba(59,130,246,0.25)";
+const COLOR = "#7886C7";
+const GLOW = "rgba(120, 134, 199, 0.2)";
+const BORDER = "rgba(120, 134, 199, 0.25)";
 
 export default function Features() {
     const [hovered, setHovered] = useState<number | null>(null);
@@ -151,7 +151,7 @@ export default function Features() {
             {/* Top separator */}
             <div style={{
                 position: "absolute", top: 0, left: "20%", right: "20%", height: "1px",
-                background: "linear-gradient(90deg, transparent, rgba(59,130,246,0.3), transparent)",
+                background: "linear-gradient(90deg, transparent, rgba(120, 134, 199, 0.3), transparent)",
             }} />
 
             <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
@@ -160,8 +160,8 @@ export default function Features() {
                 <div style={{ textAlign: "center", marginBottom: "4rem" }}>
                     <div style={{
                         display: "inline-flex", alignItems: "center", gap: "0.5rem",
-                        background: "rgba(59,130,246,0.08)",
-                        border: "1px solid rgba(59,130,246,0.18)",
+                        background: "rgba(120, 134, 199, 0.08)",
+                        border: "1px solid rgba(120, 134, 199, 0.18)",
                         borderRadius: "9999px",
                         padding: "0.35rem 1rem",
                         marginBottom: "1.5rem",
@@ -169,9 +169,9 @@ export default function Features() {
                     }}>
                         <div style={{
                             width: "0.4rem", height: "0.4rem", borderRadius: "50%",
-                            background: "#3b82f6", boxShadow: "0 0 6px #3b82f6",
+                            background: "#7886C7", boxShadow: "0 0 6px #7886C7",
                         }} />
-                        <span style={{ fontSize: "0.78rem", color: "#93c5fd", fontWeight: 600, letterSpacing: "0.04em" }}>
+                        <span style={{ fontSize: "0.78rem", color: "#B0BAE6", fontWeight: 600, letterSpacing: "0.04em" }}>
                             Yapabilecekleriniz
                         </span>
                     </div>

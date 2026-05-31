@@ -64,14 +64,14 @@ export default function FAQ() {
                         display: "inline-flex",
                         alignItems: "center",
                         gap: "0.5rem",
-                        background: "rgba(59,130,246,0.1)",
+                        background: "rgba(120, 134, 199, 0.1)",
                         padding: "0.5rem 1.25rem",
                         borderRadius: "99px",
-                        border: "1px solid rgba(59,130,246,0.2)",
+                        border: "1px solid rgba(120, 134, 199, 0.2)",
                         marginBottom: "1.5rem"
                     }}>
-                        <HelpCircle style={{ width: "1rem", height: "1rem", color: "#3b82f6" }} />
-                        <span style={{ fontSize: "0.875rem", color: "#93c5fd", fontWeight: 600 }}>Sık Sorulan Sorular</span>
+                        <HelpCircle style={{ width: "1rem", height: "1rem", color: "#7886C7" }} />
+                        <span style={{ fontSize: "0.875rem", color: "#B0BAE6", fontWeight: 600 }}>Sık Sorulan Sorular</span>
                     </div>
                     <h2 style={{
                         fontSize: "clamp(2rem, 5vw, 3rem)",
@@ -96,7 +96,7 @@ export default function FAQ() {
                             transition={{ delay: index * 0.05 }}
                             style={{
                                 background: "rgba(255,255,255,0.03)",
-                                border: `1px solid ${openIndex === index ? "rgba(59,130,246,0.3)" : "rgba(255,255,255,0.08)"}`,
+                                border: `1px solid ${openIndex === index ? "rgba(120, 134, 199, 0.3)" : "rgba(255,255,255,0.08)"}`,
                                 borderRadius: "1.25rem",
                                 overflow: "hidden",
                                 transition: "all 0.3s ease"
@@ -118,7 +118,7 @@ export default function FAQ() {
                                 }}
                             >
                                 <span style={{
-                                    color: openIndex === index ? "#60a5fa" : "white",
+                                    color: openIndex === index ? "#B0BAE6" : "white",
                                     fontWeight: 700,
                                     fontSize: "1rem",
                                     transition: "color 0.3s",
@@ -129,7 +129,7 @@ export default function FAQ() {
                                 <div style={{
                                     width: "2rem", height: "2rem", flexShrink: 0,
                                     borderRadius: "50%",
-                                    background: openIndex === index ? "#3b82f6" : "rgba(255,255,255,0.05)",
+                                    background: openIndex === index ? "#7886C7" : "rgba(255,255,255,0.05)",
                                     display: "flex", alignItems: "center", justifyContent: "center",
                                     transition: "all 0.3s"
                                 }}>
@@ -171,7 +171,7 @@ export default function FAQ() {
                 >
                     <p style={{ color: "rgba(255,255,255,0.4)" }}>
                         Başka bir sorunuz mu var?{" "}
-                        <a href="#contact" style={{ color: "#3b82f6", fontWeight: 600, textDecoration: "none" }}>
+                        <a href="#contact" style={{ color: "#7886C7", fontWeight: 600, textDecoration: "none" }}>
                             Bize ulaşın
                         </a>
                     </p>

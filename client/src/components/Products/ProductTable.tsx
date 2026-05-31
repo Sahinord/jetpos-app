@@ -22,7 +22,9 @@ import {
     RefreshCw,
     Hash,
     History as HistoryIcon,
-    RotateCcw
+    RotateCcw,
+    Archive,
+    ArchiveRestore
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { exportToExcel, importFromExcel } from "@/lib/excel";
@@ -32,7 +34,7 @@ import ProductDetailView from "./ProductDetailView";
 import BulkImportPage from "./BulkImportPage";
 
 
-export default function ProductTable({ products, onEdit, onDelete, onAdd, onManageCategories, onBulkImport, onClearAll, onToggleAllCampaign, campaignRate, hideFilters = false, limit, onRefresh, showToast, onViewChangeLogs, isPriceSyncEnabled = false, isStockSyncEnabled = false, lowStockThreshold = 10, isTrashMode = false, onRestore }: any) {
+export default function ProductTable({ products, onEdit, onDelete, onAdd, onManageCategories, onBulkImport, onClearAll, onToggleAllCampaign, campaignRate, hideFilters = false, limit, onRefresh, showToast, onViewChangeLogs, isPriceSyncEnabled = false, isStockSyncEnabled = false, lowStockThreshold = 10, isTrashMode = false, onRestore, isArchiveMode = false, onArchive, onUnarchive, onBulkArchive, onBulkArchiveByBarcode, allProducts }: any) {
     const [search, setSearch] = useState("");
     const [filter, setFilter] = useState("all"); // all, active, passive, campaign
     const [sortBy, setSortBy] = useState("name-asc"); // name-asc, name-desc, stock-asc, stock-desc, price-desc
@@ -51,6 +53,11 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
     const [isRandomStock, setIsRandomStock] = useState(false);
     const [viewingProduct, setViewingProduct] = useState<any>(null);
     const [showBulkImport, setShowBulkImport] = useState(false);
+
+    // Archive States
+    const [isBulkArchiveModalOpen, setIsBulkArchiveModalOpen] = useState(false);
+    const [archiveExcelData, setArchiveExcelData] = useState<string[]>([]);
+    const [archiveMatchedProducts, setArchiveMatchedProducts] = useState<any[]>([]);
 
 
     const { currentTenant, activeWarehouse } = useTenant();
@@ -75,9 +82,10 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
 
             const matchesSearch = nameMatch || barcodeMatch;
 
-            const isDeleted = p.status === 'deleted' || p.deleted_at !== null;
-            const isPassive = (p.status === 'passive' || p.is_active === false) && !isDeleted;
-            const isPending = p.status === 'pending' && !isDeleted;
+            const isDeleted = p.status === 'deleted' || (p.deleted_at !== undefined && p.deleted_at !== null);
+            const isArchived = p.status === 'archived' || (p.archived_at !== undefined && p.archived_at !== null);
+            const isPassive = (p.status === 'passive' || p.is_active === false) && !isDeleted && !isArchived;
+            const isPending = p.status === 'pending' && !isDeleted && !isArchived;
             const isActive = !isPassive && !isPending && !isDeleted;
 
             const matchesFilter =
@@ -97,15 +105,15 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
         return {
             all: products.length,
             active: products.filter((p: any) => {
-                const isDeleted = p.status === 'deleted' || p.deleted_at !== null;
+                const isDeleted = p.status === 'deleted' || (p.deleted_at !== undefined && p.deleted_at !== null);
                 const isPassive = (p.status === 'passive' || p.is_active === false) && !isDeleted;
                 const isPending = p.status === 'pending' && !isDeleted;
                 return !isPassive && !isPending && !isDeleted;
             }).length,
-            passive: products.filter((p: any) => (p.status === 'passive' || p.is_active === false) && p.status !== 'deleted' && p.deleted_at === null).length,
-            pending: products.filter((p: any) => p.status === 'pending' && p.status !== 'deleted' && p.deleted_at === null).length,
-            campaign: products.filter((p: any) => p.is_campaign && p.status !== 'deleted' && p.deleted_at === null).length,
-            trendyol: products.filter((p: any) => p.sync_trendyol && p.status !== 'deleted' && p.deleted_at === null).length
+            passive: products.filter((p: any) => (p.status === 'passive' || p.is_active === false) && p.status !== 'deleted' && (p.deleted_at === undefined || p.deleted_at === null)).length,
+            pending: products.filter((p: any) => p.status === 'pending' && p.status !== 'deleted' && (p.deleted_at === undefined || p.deleted_at === null)).length,
+            campaign: products.filter((p: any) => p.is_campaign && p.status !== 'deleted' && (p.deleted_at === undefined || p.deleted_at === null)).length,
+            trendyol: products.filter((p: any) => p.sync_trendyol && p.status !== 'deleted' && (p.deleted_at === undefined || p.deleted_at === null)).length
         }
     }, [products]);
 
@@ -488,6 +496,59 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
         } catch(e) {}
     };
 
+    // Archive Excel Functions
+    const handleExportArchiveTemplate = () => {
+        const templateData = [
+            { "Barkod": "8690000000001" },
+            { "Barkod": "8690000000002" },
+            { "Barkod": "8690000000003" },
+        ];
+        exportToExcel(templateData, "Arsiv_Barkod_Sablonu");
+        if (showToast) showToast("Örnek Excel şablonu indirildi!", "success");
+    };
+
+    const handleArchiveExcelImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        importFromExcel(file, (data) => {
+            const barcodes: string[] = [];
+            data.forEach((row: any) => {
+                const barcode = row["Barkod"] || row["barkod"] || row["BARKOD"] || row["Barcode"] || row["barcode"] || Object.values(row)[0];
+                if (barcode && String(barcode).trim() !== "") {
+                    barcodes.push(String(barcode).trim());
+                }
+            });
+
+            if (barcodes.length === 0) {
+                if (showToast) showToast("Excel'de barkod bulunamadı!", "error");
+                return;
+            }
+
+            setArchiveExcelData(barcodes);
+
+            // Find matching products from allProducts (active list) or current products
+            const sourceProducts = allProducts || products;
+            const matched = sourceProducts.filter((p: any) =>
+                barcodes.some(b => b === p.barcode?.trim())
+            );
+
+            setArchiveMatchedProducts(matched);
+            if (e.target) e.target.value = '';
+        });
+    };
+
+    const handleConfirmBulkArchiveByExcel = () => {
+        if (archiveMatchedProducts.length === 0) return;
+        const barcodes = archiveMatchedProducts.map((p: any) => p.barcode);
+        if (onBulkArchiveByBarcode) {
+            onBulkArchiveByBarcode(barcodes);
+        }
+        setIsBulkArchiveModalOpen(false);
+        setArchiveExcelData([]);
+        setArchiveMatchedProducts([]);
+    };
+
     if (showBulkImport) {
         return (
             <BulkImportPage
@@ -618,6 +679,15 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                         <span>DEĞİŞİKLİK KAYITLARI</span>
                                     </button>
                                 )}
+                                {!isTrashMode && !isArchiveMode && onBulkArchiveByBarcode && (
+                                    <button
+                                        onClick={() => setIsBulkArchiveModalOpen(true)}
+                                        className="flex items-center space-x-2 bg-indigo-500/5 hover:bg-indigo-500/10 border border-indigo-500/20 px-4 py-2.5 rounded-xl text-xs font-bold text-indigo-400 transition-all"
+                                    >
+                                        <Archive className="w-4 h-4" />
+                                        <span>TOPLU ARŞİV (EXCEL)</span>
+                                    </button>
+                                )}
                                 <div className="h-6 w-[1px] bg-border mx-2" />
 
                                 <div className="flex items-center gap-2">
@@ -680,7 +750,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
 
                         {/* Animated Selection Bar */}
                         <AnimatePresence>
-                            {selectedProducts.length > 0 && !isTrashMode && (
+                            {selectedProducts.length > 0 && !isTrashMode && !isArchiveMode && (
                                 <motion.div
                                     initial={{ height: 0, opacity: 0, y: -10 }}
                                     animate={{ height: "auto", opacity: 1, y: 0 }}
@@ -730,6 +800,49 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                             <Barcode className="w-4 h-4" />
                                             <span>ETİKET ÇIKAR</span>
                                         </button>
+                                        {onBulkArchive && (
+                                            <button
+                                                onClick={() => onBulkArchive(selectedProducts)}
+                                                className="flex items-center space-x-2 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 px-4 py-2.5 rounded-xl text-xs font-bold text-indigo-500 transition-all hover:scale-105"
+                                            >
+                                                <Archive className="w-4 h-4" />
+                                                <span>ARŞİVLE</span>
+                                            </button>
+                                        )}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        {/* Archive Mode Selection Bar */}
+                        <AnimatePresence>
+                            {selectedProducts.length > 0 && isArchiveMode && (
+                                <motion.div
+                                    initial={{ height: 0, opacity: 0, y: -10 }}
+                                    animate={{ height: "auto", opacity: 1, y: 0 }}
+                                    exit={{ height: 0, opacity: 0, y: -10 }}
+                                    className="overflow-hidden"
+                                >
+                                    <div className="flex flex-wrap items-center gap-3 p-4 bg-indigo-500/5 rounded-2xl border border-indigo-500/20">
+                                        <div className="flex items-center space-x-2 bg-indigo-500/20 border border-indigo-500/30 rounded-xl px-4 py-2.5">
+                                            <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                                            <span className="text-xs font-black text-indigo-400 uppercase tracking-widest">
+                                                {selectedProducts.length} ÜRÜN SEÇİLİ
+                                            </span>
+                                        </div>
+                                        <div className="h-6 w-[1px] bg-indigo-500/20 mx-2" />
+                                        <button
+                                            onClick={() => {
+                                                selectedProducts.forEach((id: string) => {
+                                                    if (onUnarchive) onUnarchive(id);
+                                                });
+                                                setSelectedProducts([]);
+                                            }}
+                                            className="flex items-center space-x-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-500 transition-all hover:scale-105"
+                                        >
+                                            <ArchiveRestore className="w-4 h-4" />
+                                            <span>ARŞİVDEN ÇIKAR</span>
+                                        </button>
                                     </div>
                                 </motion.div>
                             )}
@@ -757,7 +870,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                 <th className="px-6 py-5 text-[10px] font-black text-secondary tracking-[2px] uppercase">Kategori</th>
                                 <th className="px-6 py-5 text-[10px] font-black text-secondary tracking-[2px] uppercase text-center">Maliyet / Satış</th>
                                 <th className="px-6 py-5 text-[10px] font-black text-secondary tracking-[2px] uppercase text-center">Net Kar</th>
-                                <th className="px-6 py-5 text-[10px] font-black text-secondary tracking-[2px] uppercase text-center">{isTrashMode ? 'Silinme Tarihi' : 'Mevcut Stok'}</th>
+                                <th className="px-6 py-5 text-[10px] font-black text-secondary tracking-[2px] uppercase text-center">{isTrashMode ? 'Silinme Tarihi' : isArchiveMode ? 'Arşivlenme Tarihi' : 'Mevcut Stok'}</th>
                                 {previewCampaign && (
                                     <th className="px-6 py-5 text-[10px] font-black text-amber-500 tracking-[2px] uppercase text-center">Kmp. Fiyat</th>
                                 )}
@@ -840,6 +953,15 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                                         {product.deleted_at ? new Date(product.deleted_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : ''}
                                                     </span>
                                                 </div>
+                                            ) : isArchiveMode ? (
+                                                <div className="flex flex-col items-center">
+                                                    <span className="text-sm font-black text-indigo-500">
+                                                        {product.archived_at ? new Date(product.archived_at).toLocaleDateString('tr-TR') : '---'}
+                                                    </span>
+                                                    <span className="text-[10px] text-secondary/40 font-bold uppercase">
+                                                        {product.archived_at ? new Date(product.archived_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : ''}
+                                                    </span>
+                                                </div>
                                             ) : (
                                                 <div className="flex flex-col items-center">
                                                     <span className={`text-base font-black tracking-tight ${currentStock <= lowStockThreshold ? 'text-rose-500 animate-pulse' : 'text-foreground'}`}>
@@ -887,6 +1009,24 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                                             <span>Yok Et</span>
                                                         </button>
                                                     </>
+                                                ) : isArchiveMode ? (
+                                                    <>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); if (onUnarchive) onUnarchive(product.id); }}
+                                                            className="p-2 hover:bg-emerald-500/10 text-emerald-500 rounded-lg transition-colors flex items-center gap-1 text-[10px] font-black uppercase"
+                                                            title="Arşivden Çıkar"
+                                                        >
+                                                            <ArchiveRestore className="w-4 h-4" />
+                                                            <span>Geri Al</span>
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); setViewingProduct(product); }}
+                                                            className="p-2 hover:bg-primary/10 text-secondary hover:text-primary rounded-lg transition-colors"
+                                                            title="Detayları Gör"
+                                                        >
+                                                            <Eye className="w-4 h-4" />
+                                                        </button>
+                                                    </>
                                                 ) : (
                                                     <>
                                                         <button
@@ -903,6 +1043,15 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                                         >
                                                             <Edit2 className="w-4 h-4" />
                                                         </button>
+                                                        {onArchive && (
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); onArchive(product.id); }}
+                                                                className="p-2 hover:bg-indigo-500/10 text-secondary hover:text-indigo-500 rounded-lg transition-colors"
+                                                                title="Arşive Taşı"
+                                                            >
+                                                                <Archive className="w-4 h-4" />
+                                                            </button>
+                                                        )}
                                                         {filter === 'trendyol' ? (
                                                             <button
                                                                 onClick={async (e) => { 
@@ -960,12 +1109,12 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
 
                 {sortedAndFilteredProducts.length === 0 && (
                     <div className="py-20 flex flex-col items-center justify-center text-secondary">
-                        <div className={`w-20 h-20 rounded-3xl flex items-center justify-center mb-6 border border-border/50 ${isTrashMode ? 'bg-emerald-500/5' : 'bg-primary/5'}`}>
-                             {isTrashMode ? <RotateCcw className="w-10 h-10 text-emerald-500/30" /> : <Package className="w-10 h-10 opacity-20" />}
+                        <div className={`w-20 h-20 rounded-3xl flex items-center justify-center mb-6 border border-border/50 ${isTrashMode ? 'bg-emerald-500/5' : isArchiveMode ? 'bg-indigo-500/5' : 'bg-primary/5'}`}>
+                             {isTrashMode ? <RotateCcw className="w-10 h-10 text-emerald-500/30" /> : isArchiveMode ? <Archive className="w-10 h-10 text-indigo-500/30" /> : <Package className="w-10 h-10 opacity-20" />}
                         </div>
-                        <p className="text-lg font-black tracking-tight">{isTrashMode ? 'Çöp kutun tertemiz!' : 'Aranan kritere uygun ürün bulunamadı.'}</p>
-                        <p className="text-xs font-bold text-secondary/40 mt-1 uppercase tracking-widest">{isTrashMode ? 'Silinen ürünlerin burada 7 gün boyunca saklanır.' : 'Farklı bir arama yapmayı deneyin.'}</p>
-                        {!isTrashMode && (
+                        <p className="text-lg font-black tracking-tight">{isTrashMode ? 'Çöp kutun tertemiz!' : isArchiveMode ? 'Arşivde ürün yok!' : 'Aranan kritere uygun ürün bulunamadı.'}</p>
+                        <p className="text-xs font-bold text-secondary/40 mt-1 uppercase tracking-widest">{isTrashMode ? 'Silinen ürünlerin burada 7 gün boyunca saklanır.' : isArchiveMode ? 'Ürün listesinden arşive taşıdığınız ürünler burada görünecek.' : 'Farklı bir arama yapmayı deneyin.'}</p>
+                        {!isTrashMode && !isArchiveMode && (
                             <button onClick={() => { setSearch(""); setFilter("all"); }} className="mt-6 px-6 py-2.5 bg-primary/10 hover:bg-primary text-primary hover:text-white rounded-xl transition-all text-xs font-black tracking-widest uppercase">TÜMÜNÜ GÖSTER</button>
                         )}
                     </div>
@@ -1161,6 +1310,119 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                     className="py-4 px-6 rounded-2xl font-black text-xs tracking-widest bg-primary hover:bg-primary/90 text-white shadow-xl shadow-primary/30 transition-all active:scale-95"
                                 >
                                     UYGULA
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Bulk Archive Excel Modal */}
+            <AnimatePresence>
+                {isBulkArchiveModalOpen && (
+                    <div
+                        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+                        onClick={() => { setIsBulkArchiveModalOpen(false); setArchiveExcelData([]); setArchiveMatchedProducts([]); }}
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="glass-card max-w-lg w-full p-8 space-y-6 relative shadow-2xl border border-indigo-500/20"
+                        >
+                            <div className="text-center space-y-3">
+                                <div className="w-20 h-20 bg-indigo-500/10 rounded-3xl flex items-center justify-center text-indigo-400 mx-auto mb-2 border border-indigo-500/20">
+                                    <Archive className="w-10 h-10" />
+                                </div>
+                                <h3 className="text-2xl font-black text-white tracking-tight">TOPLU ARŞİV (EXCEL)</h3>
+                                <p className="text-secondary text-sm font-medium leading-relaxed">
+                                    Barkod listesiyle ürünleri toplu arşive alın.
+                                </p>
+                            </div>
+
+                            {/* Step 1: Download Template */}
+                            <div className="bg-indigo-500/5 border border-indigo-500/20 rounded-xl p-4 space-y-3">
+                                <h4 className="text-xs font-black text-indigo-400 uppercase tracking-widest">1. ÖRNEK EXCEL ŞABLONU</h4>
+                                <p className="text-xs text-secondary">Barkod sütunu olan bir Excel şablonu indirin, arşivlemek istediğiniz barkodları yazın.</p>
+                                <button
+                                    onClick={handleExportArchiveTemplate}
+                                    className="flex items-center space-x-2 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 px-4 py-2.5 rounded-xl text-xs font-bold text-indigo-400 transition-all w-full justify-center"
+                                >
+                                    <Download className="w-4 h-4" />
+                                    <span>ÖRNEK EXCEL İNDİR</span>
+                                </button>
+                            </div>
+
+                            {/* Step 2: Upload */}
+                            <div className="bg-indigo-500/5 border border-indigo-500/20 rounded-xl p-4 space-y-3">
+                                <h4 className="text-xs font-black text-indigo-400 uppercase tracking-widest">2. BARKOD LİSTESİ YÜKLE</h4>
+                                <p className="text-xs text-secondary">Barkodlarınızı içeren Excel dosyasını yükleyin.</p>
+                                <label className="flex items-center space-x-2 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 px-4 py-2.5 rounded-xl text-xs font-bold text-indigo-400 transition-all w-full justify-center cursor-pointer">
+                                    <Upload className="w-4 h-4" />
+                                    <span>EXCEL DOSYASI SEÇ</span>
+                                    <input
+                                        type="file"
+                                        accept=".xlsx,.xls,.csv"
+                                        onChange={handleArchiveExcelImport}
+                                        className="hidden"
+                                    />
+                                </label>
+                            </div>
+
+                            {/* Step 3: Preview matches */}
+                            {archiveExcelData.length > 0 && (
+                                <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
+                                    <h4 className="text-xs font-black text-foreground uppercase tracking-widest">3. EŞLEŞTİRME SONUCU</h4>
+                                    <div className="flex items-center gap-4 text-xs">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-2 h-2 rounded-full bg-indigo-500" />
+                                            <span className="text-secondary">Yüklenen barkod: <strong className="text-foreground">{archiveExcelData.length}</strong></span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                                            <span className="text-secondary">Eşleşen ürün: <strong className="text-emerald-400">{archiveMatchedProducts.length}</strong></span>
+                                        </div>
+                                        {archiveExcelData.length - archiveMatchedProducts.length > 0 && (
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-2 h-2 rounded-full bg-rose-500" />
+                                                <span className="text-secondary">Eşleşmeyen: <strong className="text-rose-400">{archiveExcelData.length - archiveMatchedProducts.length}</strong></span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {archiveMatchedProducts.length > 0 && (
+                                        <div className="max-h-40 overflow-y-auto custom-scrollbar space-y-1 mt-2">
+                                            {archiveMatchedProducts.map((p: any) => (
+                                                <div key={p.id} className="flex items-center justify-between bg-emerald-500/5 border border-emerald-500/10 rounded-lg px-3 py-2">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-xs font-bold text-foreground">{p.name}</span>
+                                                        <span className="text-[10px] text-secondary font-mono">{p.barcode}</span>
+                                                    </div>
+                                                    <span className="text-[10px] font-bold text-emerald-500">✓</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <button
+                                    onClick={() => { setIsBulkArchiveModalOpen(false); setArchiveExcelData([]); setArchiveMatchedProducts([]); }}
+                                    className="py-4 px-6 rounded-2xl font-black text-xs tracking-widest bg-primary/5 hover:bg-primary/10 text-secondary transition-all active:scale-95"
+                                >
+                                    VAZGEÇ
+                                </button>
+                                <button
+                                    onClick={handleConfirmBulkArchiveByExcel}
+                                    disabled={archiveMatchedProducts.length === 0}
+                                    className={`py-4 px-6 rounded-2xl font-black text-xs tracking-widest transition-all active:scale-95 ${archiveMatchedProducts.length > 0
+                                        ? 'bg-indigo-500 hover:bg-indigo-600 text-white shadow-xl shadow-indigo-500/30'
+                                        : 'bg-white/5 text-secondary/30 cursor-not-allowed'
+                                    }`}
+                                >
+                                    {archiveMatchedProducts.length > 0 ? `${archiveMatchedProducts.length} ÜRÜNÜ ARŞİVLE` : 'EXCEL YÜKLE'}
                                 </button>
                             </div>
                         </motion.div>

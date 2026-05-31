@@ -31,24 +31,24 @@ export default function ConnectionAnimation() {
         <section style={{ padding: "5rem 2rem", position: "relative", overflow: "hidden" }}>
             <div style={{
                 position: "absolute", top: 0, left: "20%", right: "20%", height: "1px",
-                background: "linear-gradient(90deg, transparent, rgba(59,130,246,0.3), transparent)",
+                background: "linear-gradient(90deg, transparent, rgba(120, 134, 199, 0.3), transparent)",
             }} />
 
             <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
                 <div style={{ textAlign: "center", marginBottom: "3rem" }}>
                     <div style={{
                         display: "inline-flex", alignItems: "center", gap: "0.5rem",
-                        background: "rgba(59,130,246,0.08)",
-                        border: "1px solid rgba(59,130,246,0.18)",
+                        background: "rgba(120, 134, 199, 0.08)",
+                        border: "1px solid rgba(120, 134, 199, 0.18)",
                         borderRadius: "9999px",
                         padding: "0.35rem 1rem",
                         marginBottom: "1.25rem",
                     }}>
                         <div style={{
                             width: "0.4rem", height: "0.4rem", borderRadius: "50%",
-                            background: "#3b82f6", boxShadow: "0 0 6px #3b82f6",
+                            background: "#7886C7", boxShadow: "0 0 6px #7886C7",
                         }} />
-                        <span style={{ fontSize: "0.78rem", color: "#93c5fd", fontWeight: 600, letterSpacing: "0.04em" }}>
+                        <span style={{ fontSize: "0.78rem", color: "#B0BAE6", fontWeight: 600, letterSpacing: "0.04em" }}>
                             Özellikler
                         </span>
                     </div>
@@ -78,9 +78,9 @@ export default function ConnectionAnimation() {
                             </filter>
 
                             <radialGradient id="ca-logo-glow" cx="50%" cy="50%" r="50%">
-                                <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.4" />
-                                <stop offset="70%" stopColor="#3b82f6" stopOpacity="0.1" />
-                                <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
+                                <stop offset="0%" stopColor="#7886C7" stopOpacity="0.4" />
+                                <stop offset="70%" stopColor="#7886C7" stopOpacity="0.1" />
+                                <stop offset="100%" stopColor="#7886C7" stopOpacity="0" />
                             </radialGradient>
 
                             <clipPath id="logo-circle-clip">
@@ -135,8 +135,8 @@ export default function ConnectionAnimation() {
                                 }
 
                                 @keyframes ca-logo-pulse-v2 {
-                                    0%, 42%   { transform: scale(1); filter: brightness(1) drop-shadow(0 0 0px #3b82f6); }
-                                    46%       { transform: scale(1.15); filter: brightness(1.7) drop-shadow(0 0 20px #3b82f6); }
+                                    0%, 42%   { transform: scale(1); filter: brightness(1) drop-shadow(0 0 0px #7886C7); }
+                                    46%       { transform: scale(1.15); filter: brightness(1.7) drop-shadow(0 0 20px #7886C7); }
                                     54%       { transform: scale(1); filter: brightness(1); }
                                     100%      { transform: scale(1); filter: brightness(1); }
                                 }
@@ -147,7 +147,7 @@ export default function ConnectionAnimation() {
 
                                 @keyframes ca-user-pulse-v2 {
                                     0%, 82%   { filter: brightness(1); transform: scale(1); }
-                                    88%       { filter: brightness(1.7) drop-shadow(0 0 15px #3b82f6); transform: scale(1.12); }
+                                    88%       { filter: brightness(1.7) drop-shadow(0 0 15px #7886C7); transform: scale(1.12); }
                                     95%, 100% { filter: brightness(1); transform: scale(1); }
                                 }
                                 .ca-user-group {
@@ -170,11 +170,11 @@ export default function ConnectionAnimation() {
                             const pathData = `M ${LEFT_X} ${y} L ${CX - LOGO_R} ${targetY}`;
                             return (
                                 <g key={i}>
-                                    <path d={pathData} stroke="rgba(59,130,246,0.12)" strokeWidth="1.2" fill="none" />
+                                    <path d={pathData} stroke="rgba(120, 134, 199, 0.12)" strokeWidth="1.2" fill="none" />
                                     <path
                                         d={pathData}
                                         pathLength="1"
-                                        stroke="#3b82f6"
+                                        stroke="#7886C7"
                                         strokeWidth="2.4"
                                         strokeLinecap="round"
                                         fill="none"
@@ -182,7 +182,7 @@ export default function ConnectionAnimation() {
                                         className="ca-line-ani"
                                         style={{ strokeDasharray: 1, strokeDashoffset: 1 }}
                                     />
-                                    <circle r="3.8" fill="#93c5fd" filter="url(#ca-glow-v2)" className="ca-dot-ani" style={{ offsetPath: `path('${pathData}')` }} />
+                                    <circle r="3.8" fill="#B0BAE6" filter="url(#ca-glow-v2)" className="ca-dot-ani" style={{ offsetPath: `path('${pathData}')` }} />
                                 </g>
                             );
                         })}
@@ -192,11 +192,11 @@ export default function ConnectionAnimation() {
                             const pathData = `M ${CX + LOGO_R} ${CY} L ${RIGHT_X - USER_R - 4} ${CY}`;
                             return (
                                 <g>
-                                    <path d={pathData} stroke="rgba(59,130,246,0.12)" strokeWidth="1" fill="none" />
+                                    <path d={pathData} stroke="rgba(120, 134, 199, 0.12)" strokeWidth="1" fill="none" />
                                     <path
                                         d={pathData}
                                         pathLength="1"
-                                        stroke="#3b82f6"
+                                        stroke="#7886C7"
                                         strokeWidth="2.8"
                                         strokeLinecap="round"
                                         fill="none"
@@ -204,7 +204,7 @@ export default function ConnectionAnimation() {
                                         className="ca-right-line-ani"
                                         style={{ strokeDasharray: 1, strokeDashoffset: 1 }}
                                     />
-                                    <circle r="4.5" fill="#93c5fd" filter="url(#ca-glow-v2)" className="ca-dot-right-ani" style={{ offsetPath: `path('${pathData}')` }} />
+                                    <circle r="4.5" fill="#B0BAE6" filter="url(#ca-glow-v2)" className="ca-dot-right-ani" style={{ offsetPath: `path('${pathData}')` }} />
                                 </g>
                             );
                         })()}
@@ -219,16 +219,16 @@ export default function ConnectionAnimation() {
                                 <g key={i}>
                                     <rect x={bx} y={by} width={BOX_W} height={BOX_H} rx={10}
                                         fill="rgba(7,11,25,0.98)" stroke="rgba(255,255,255,0.15)" strokeWidth="1.2" />
-                                    <rect x={bx + 6} y={by + 5} width={24} height={24} rx={7} fill="rgba(59,130,246,0.12)" />
+                                    <rect x={bx + 6} y={by + 5} width={24} height={24} rx={7} fill="rgba(120, 134, 199, 0.12)" />
                                     <foreignObject x={bx + 10} y={by + 9} width="16" height="16">
-                                        <div style={{ color: "#60a5fa", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                        <div style={{ color: "#7886C7", display: "flex", alignItems: "center", justifyContent: "center" }}>
                                             <LucideIcon size={14} strokeWidth={2.5} />
                                         </div>
                                     </foreignObject>
                                     <text x={bx + 38} y={by + 21} fill="rgba(255,255,255,0.85)" fontSize="11.5" fontWeight="600" fontFamily="Inter, system-ui, sans-serif">
                                         {item.label}
                                     </text>
-                                    <circle cx={LEFT_X} cy={y} r="3.5" fill="#3b82f6" />
+                                    <circle cx={LEFT_X} cy={y} r="3.5" fill="#7886C7" />
                                 </g>
                             );
                         })}
@@ -242,7 +242,7 @@ export default function ConnectionAnimation() {
                             <circle
                                 cx={CX} cy={CY} r={LOGO_R + 4}
                                 fill="none"
-                                stroke="#3b82f6"
+                                stroke="#7886C7"
                                 strokeWidth="1"
                                 strokeDasharray="10 20"
                                 opacity="0.3"
@@ -253,7 +253,7 @@ export default function ConnectionAnimation() {
                             <circle
                                 cx={CX} cy={CY} r={LOGO_R}
                                 fill="#040816"
-                                stroke="rgba(59,130,246,0.5)"
+                                stroke="rgba(120, 134, 199, 0.5)"
                                 strokeWidth="2"
                                 filter="url(#ca-glow-v2)"
                             />
@@ -267,7 +267,7 @@ export default function ConnectionAnimation() {
                                 height={(LOGO_R - 2) * 2}
                                 clipPath="url(#logo-circle-clip)"
                                 preserveAspectRatio="xMidYMid slice"
-                                style={{ filter: "drop-shadow(0 0 10px rgba(59, 130, 246, 0.4))" }}
+                                style={{ filter: "drop-shadow(0 0 10px rgba(120, 134, 199, 0.4))" }}
                             />
                         </g>
 
@@ -275,11 +275,11 @@ export default function ConnectionAnimation() {
                         <g className="ca-user-group">
                             <circle cx={RIGHT_X} cy={CY} r={USER_R} fill="#02040a" stroke="rgba(255,255,255,0.2)" strokeWidth="2" />
                             <foreignObject x={RIGHT_X - 12} y={CY - 12} width="24" height="24">
-                                <div style={{ color: "#60a5fa", display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>
+                                <div style={{ color: "#7886C7", display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>
                                     <User size={20} strokeWidth={2.5} />
                                 </div>
                             </foreignObject>
-                            <circle cx={RIGHT_X - USER_R - 4} cy={CY} r="3.5" fill="#3b82f6" />
+                            <circle cx={RIGHT_X - USER_R - 4} cy={CY} r="3.5" fill="#7886C7" />
                         </g>
                     </svg>
                 </div>

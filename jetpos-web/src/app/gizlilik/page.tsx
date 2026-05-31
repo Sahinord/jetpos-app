@@ -71,14 +71,14 @@ export default function GizlilikPage() {
             paddingLeft: "0.5rem", marginBottom: "0.35rem",
             listStyleType: "none", display: "flex", alignItems: "flex-start", gap: "0.6rem"
         }}>
-            <ChevronRight style={{ width: "1rem", height: "1rem", color: "#3b82f6", flexShrink: 0, marginTop: "0.3rem" }} />
+            <ChevronRight style={{ width: "1rem", height: "1rem", color: "#7886C7", flexShrink: 0, marginTop: "0.3rem" }} />
             <span>{children}</span>
         </li>
     );
 
     const InfoBox = ({ children }: { children: React.ReactNode }) => (
         <div style={{
-            background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.2)",
+            background: "rgba(120, 134, 199, 0.08)", border: "1px solid rgba(120, 134, 199, 0.2)",
             borderRadius: "0.875rem", padding: "1.25rem 1.5rem", marginBottom: "1.5rem"
         }}>
             <p style={{ color: "rgba(255,255,255,0.75)", fontSize: "0.9rem", lineHeight: 1.75, margin: 0 }}>
@@ -88,7 +88,7 @@ export default function GizlilikPage() {
     );
 
     return (
-        <div style={{ minHeight: "100vh", background: "#060914", color: "white" }}>
+        <div style={{ minHeight: "100vh", background: "#111827", color: "white" }}>
             <Navbar />
 
             {/* Hero */}
@@ -96,25 +96,25 @@ export default function GizlilikPage() {
                 <div style={{
                     position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)",
                     width: "500px", height: "300px",
-                    background: "radial-gradient(ellipse at center, rgba(37,99,235,0.12) 0%, transparent 70%)",
+                    background: "radial-gradient(ellipse at center, rgba(120, 134, 199, 0.12) 0%, transparent 70%)",
                     pointerEvents: "none"
                 }} />
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
                     <div style={{
                         width: "3.5rem", height: "3.5rem", borderRadius: "1rem",
-                        background: "rgba(37,99,235,0.15)", border: "1px solid rgba(37,99,235,0.3)",
+                        background: "rgba(120, 134, 199, 0.15)", border: "1px solid rgba(120, 134, 199, 0.3)",
                         display: "flex", alignItems: "center", justifyContent: "center",
                         margin: "0 auto 1.5rem",
-                        boxShadow: "0 0 30px rgba(37,99,235,0.2)"
+                        boxShadow: "0 0 30px rgba(120, 134, 199, 0.2)"
                     }}>
-                        <Shield style={{ width: "1.75rem", height: "1.75rem", color: "#60a5fa" }} />
+                        <Shield style={{ width: "1.75rem", height: "1.75rem", color: "#7886C7" }} />
                     </div>
                     <p style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.35)", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "0.75rem" }}>
                         Son güncelleme: 5 Mart 2025
                     </p>
                     <h1 style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", fontWeight: 900, color: "white", marginBottom: "1rem", lineHeight: 1.15 }}>
                         Gizlilik & KVKK{" "}
-                        <span style={{ background: "linear-gradient(135deg, #3b82f6, #2563eb)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                        <span style={{ background: "linear-gradient(135deg, #7886C7, #5A659F)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
                             Politikası
                         </span>
                     </h1>
@@ -152,12 +152,12 @@ export default function GizlilikPage() {
                                     style={{
                                         textAlign: "left", padding: "0.5rem 0.75rem",
                                         borderRadius: "0.625rem", border: "none",
-                                        background: activeSection === s.id ? "rgba(59,130,246,0.12)" : "transparent",
-                                        color: activeSection === s.id ? "#93c5fd" : "rgba(255,255,255,0.45)",
+                                        background: activeSection === s.id ? "rgba(120, 134, 199, 0.12)" : "transparent",
+                                        color: activeSection === s.id ? "#B0BAE6" : "rgba(255,255,255,0.45)",
                                         fontSize: "0.8rem", cursor: "pointer", fontFamily: "inherit",
                                         fontWeight: activeSection === s.id ? 700 : 400,
                                         transition: "all 0.15s",
-                                        borderLeft: `2px solid ${activeSection === s.id ? "#3b82f6" : "transparent"}`
+                                        borderLeft: `2px solid ${activeSection === s.id ? "#7886C7" : "transparent"}`
                                     }}
                                 >
                                     {s.title}
@@ -374,10 +374,10 @@ export default function GizlilikPage() {
                     style={{
                         position: "fixed", bottom: "2rem", right: "2rem",
                         width: "2.75rem", height: "2.75rem", borderRadius: "50%",
-                        background: "linear-gradient(135deg, #2563eb, #3b82f6)",
+                        background: "linear-gradient(135deg, #7886C7, #5A659F)",
                         border: "none", cursor: "pointer",
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        boxShadow: "0 4px 20px rgba(37,99,235,0.5)", zIndex: 50
+                        boxShadow: "0 4px 20px rgba(120, 134, 199, 0.5)", zIndex: 50
                     }}
                 >
                     <ArrowUp style={{ width: "1.125rem", height: "1.125rem", color: "white" }} />

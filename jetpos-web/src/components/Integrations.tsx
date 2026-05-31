@@ -58,13 +58,13 @@ export default function Integrations() {
                 {/* Sol fade */}
                 <div style={{
                     position: "absolute", left: 0, top: 0, bottom: 0, width: "120px", zIndex: 2,
-                    background: "linear-gradient(to right, #060914, transparent)",
+                    background: "linear-gradient(to right, #111827, transparent)",
                     pointerEvents: "none"
                 }} />
                 {/* Sağ fade */}
                 <div style={{
                     position: "absolute", right: 0, top: 0, bottom: 0, width: "120px", zIndex: 2,
-                    background: "linear-gradient(to left, #060914, transparent)",
+                    background: "linear-gradient(to left, #111827, transparent)",
                     pointerEvents: "none"
                 }} />
 
@@ -95,8 +95,8 @@ export default function Integrations() {
                                     boxShadow: "0 8px 32px -10px rgba(0,0,0,0.5)",
                                 }}
                                 onMouseEnter={e => {
-                                    (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(59,130,246,0.3)";
-                                    (e.currentTarget as HTMLDivElement).style.background = "rgba(59,130,246,0.08)";
+                                    (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(120, 134, 199, 0.3)";
+                                    (e.currentTarget as HTMLDivElement).style.background = "rgba(120, 134, 199, 0.08)";
                                     (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)";
                                 }}
                                 onMouseLeave={e => {

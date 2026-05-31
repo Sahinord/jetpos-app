@@ -68,12 +68,12 @@ export default function TermsPage() {
             paddingLeft: "0.5rem", marginBottom: "0.5rem",
             listStyleType: "none", display: "flex", alignItems: "flex-start", gap: "0.6rem"
         }}>
-            <ChevronRight style={{ width: "1rem", height: "1rem", color: "#3b82f6", flexShrink: 0, marginTop: "0.3rem" }} />
+            <ChevronRight style={{ width: "1rem", height: "1rem", color: "#7886C7", flexShrink: 0, marginTop: "0.3rem" }} />
             <span>{children}</span>
         </li>
     );
 
-    const InfoBox = ({ children, icon: Icon = CheckCircle, color = "#3b82f6" }: { children: React.ReactNode; icon?: any; color?: string }) => (
+    const InfoBox = ({ children, icon: Icon = CheckCircle, color = "#7886C7" }: { children: React.ReactNode; icon?: any; color?: string }) => (
         <div style={{
             background: `${color}10`, border: `1px solid ${color}30`,
             borderRadius: "1rem", padding: "1.5rem", marginBottom: "2rem",
@@ -87,7 +87,7 @@ export default function TermsPage() {
     );
 
     return (
-        <div style={{ minHeight: "100vh", background: "#060914", color: "white" }}>
+        <div style={{ minHeight: "100vh", background: "#111827", color: "white" }}>
             <Navbar />
 
             {/* Hero */}
@@ -95,18 +95,18 @@ export default function TermsPage() {
                 <div style={{
                     position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)",
                     width: "500px", height: "300px",
-                    background: "radial-gradient(ellipse at center, rgba(37,99,235,0.12) 0%, transparent 70%)",
+                    background: "radial-gradient(ellipse at center, rgba(120,134,199,0.12) 0%, transparent 70%)",
                     pointerEvents: "none"
                 }} />
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
                     <div style={{
                         width: "3.5rem", height: "3.5rem", borderRadius: "1.25rem",
-                        background: "rgba(37,99,235,0.15)", border: "1px solid rgba(37,99,235,0.3)",
+                        background: "rgba(120,134,199,0.15)", border: "1px solid rgba(120,134,199,0.3)",
                         display: "flex", alignItems: "center", justifyContent: "center",
                         margin: "0 auto 1.5rem",
-                        boxShadow: "0 0 30px rgba(37,99,235,0.2)"
+                        boxShadow: "0 0 30px rgba(120,134,199,0.2)"
                     }}>
-                        <FileText style={{ width: "1.75rem", height: "1.75rem", color: "#60a5fa" }} />
+                        <FileText style={{ width: "1.75rem", height: "1.75rem", color: "#B0BAE6" }} />
                     </div>
                     <p style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.35)", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: "1rem" }}>
                         Güncelleme: 01 Nisan 2026
@@ -148,7 +148,7 @@ export default function TermsPage() {
                                     style={{
                                         textAlign: "left", padding: "0.6rem 0.875rem",
                                         borderRadius: "0.75rem", border: "none",
-                                        background: activeSection === s.id ? "rgba(59,130,246,0.15)" : "transparent",
+                                        background: activeSection === s.id ? "rgba(120,134,199,0.15)" : "transparent",
                                         color: activeSection === s.id ? "white" : "rgba(255,255,255,0.4)",
                                         fontSize: "0.875rem", cursor: "pointer", fontFamily: "inherit",
                                         fontWeight: activeSection === s.id ? 700 : 500,
@@ -157,7 +157,7 @@ export default function TermsPage() {
                                     }}
                                 >
                                     {activeSection === s.id && (
-                                        <motion.div layoutId="active-bg" style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "3px", background: "#3b82f6", borderRadius: "2px" }} />
+                                        <motion.div layoutId="active-bg" style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "3px", background: "#7886C7", borderRadius: "2px" }} />
                                     )}
                                     {s.title}
                                 </button>
@@ -272,10 +272,10 @@ export default function TermsPage() {
                     style={{
                         position: "fixed", bottom: "2.5rem", right: "2.5rem",
                         width: "3rem", height: "3rem", borderRadius: "50%",
-                        background: "linear-gradient(135deg, #2563eb, #3b82f6)",
+                        background: "linear-gradient(135deg, #7886C7, #B0BAE6)",
                         border: "none", cursor: "pointer",
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        boxShadow: "0 10px 30px rgba(37,99,235,0.5)", zIndex: 50
+                        boxShadow: "0 10px 30px rgba(120,134,199,0.5)", zIndex: 50
                     }}
                 >
                     <ArrowUp style={{ width: "1.25rem", height: "1.25rem", color: "white" }} />

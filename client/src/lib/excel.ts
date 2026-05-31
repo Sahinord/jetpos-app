@@ -17,9 +17,9 @@ export const importFromExcel = (file: File, callback: (data: any[]) => void) => 
     const reader = new FileReader();
     reader.onload = (e) => {
         try {
-            const data = new Uint8Array(e.target?.result as ArrayBuffer);
+            const data = e.target?.result as string;
             const workbook = XLSX.read(data, { 
-                type: 'array',
+                type: 'binary',
                 cellDates: true,
                 cellNF: false,
                 cellText: false
@@ -37,5 +37,5 @@ export const importFromExcel = (file: File, callback: (data: any[]) => void) => 
         console.error("❌ FileReader Error:", err);
         alert("Dosya okunurken bir hata oluştu.");
     };
-    reader.readAsArrayBuffer(file);
+    reader.readAsBinaryString(file);
 };
