@@ -409,11 +409,11 @@ export default function AlisFaturasi() {
                 tenant_id: currentTenant?.id,
                 cari_id: invoice.cari_id,
                 hareket_tipi: 'borclandirma',
-                aciklama: `Alış Faturası: ${nextNumber}`,
+                aciklama: `Alış Faturası: ${finalInvoiceNumber}`,
                 alacak: totals.grand_total,
                 borc: 0,
                 tarih: invoice.invoice_date,
-                belge_no: nextNumber,
+                belge_no: finalInvoiceNumber,
                 belge_tipi: 'Alış Faturası'
             });
 

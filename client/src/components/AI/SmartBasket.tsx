@@ -41,6 +41,7 @@ export default function SmartBasket() {
     }, [currentTenant]);
 
     const fetchRealBasketAnalysis = async () => {
+        if (!currentTenant) return;
         setLoading(true);
         try {
             const { data: saleItems } = await supabase
@@ -79,11 +80,13 @@ export default function SmartBasket() {
                     if (count >= 1 && !processedPairs.has(pairKey)) {
                         const prodA = saleItems?.find(i => i.product_id === idA)?.products;
                         const prodB = saleItems?.find(i => i.product_id === idB)?.products;
-                        if (prodA && prodB) {
+                        const productA = Array.isArray(prodA) ? prodA[0] : prodA;
+                        const productB = Array.isArray(prodB) ? prodB[0] : prodB;
+                        if (productA && productB) {
                             realRecs.push({
                                 id: pairKey,
-                                trigger: prodA.name,
-                                suggestion: prodB.name,
+                                trigger: productA.name,
+                                suggestion: productB.name,
                                 discount: "%10",
                                 conversion: `${(Math.random() * 10 + 15).toFixed(1)}%`,
                                 color: realRecs.length % 2 === 0 ? "emerald" : "blue"

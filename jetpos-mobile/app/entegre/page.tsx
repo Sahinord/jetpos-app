@@ -136,7 +136,7 @@ export default function EntegrePage() {
 
         if (showLoader) setOrdersLoading(true);
         try {
-            const client = new TrendyolClient(store.settings, store.type);
+            const client = new TrendyolClient(store.settings, store.type as 'trendyol' | 'trendyol_go');
 
             const endDate = new Date();
             let hours = 48;

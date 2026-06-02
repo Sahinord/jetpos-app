@@ -59,6 +59,7 @@ import QRMenuManager from '@/components/Admin/QRMenuManager';
 import ShowcaseManager from '@/components/Admin/ShowcaseManager';
 import CFDManager from '@/components/Admin/CFDManager';
 import CRMPage from '@/components/CRM/CRMPage';
+import JetKDS from "@/components/KDS/JetKDS";
 import AuditLogs from "@/components/Admin/AuditLogs";
 import { createTrendyolGoClient } from "@/lib/trendyol-go-client";
 import EmployeePinLogin from "@/components/Auth/EmployeePinLogin";
@@ -136,6 +137,16 @@ export default function Home() {
       setIsPOSAuthorized(false);
     }
   }, [activeTab]);
+
+  // Kitchen staff auto-redirect to KDS tab
+  useEffect(() => {
+    if (activeEmployee) {
+      const isKitchen = activeEmployee.role === 'Kitchen' || activeEmployee.role === 'Mutfak' || activeEmployee.position === 'Mutfak';
+      if (isKitchen) {
+        setActiveTab("kds");
+      }
+    }
+  }, [activeEmployee]);
 
   // Platform mağazası seçildiğinde otomatik entegrasyon paneline yönlendir
   useEffect(() => {
@@ -1170,7 +1181,7 @@ export default function Home() {
   };
 
   // Normal App Rendering Logic (Wrapped to maintain Hook order)
-  const isEmployeeLoginEnabled = currentTenant?.features?.employee_login === true;
+  const isEmployeeLoginEnabled = currentTenant?.features?.employee_login === true || currentTenant?.features?.kds === true || currentTenant?.features?.waiter_panel === true;
   const isAdmin = currentTenant?.license_key === 'ADM257SA67';
 
   if (!currentTenant && !tenantLoading) {
@@ -1222,19 +1233,23 @@ export default function Home() {
     return <EmployeePinLogin />;
   }
 
+  const isKitchenStaff = activeEmployee?.role === 'Kitchen' || activeEmployee?.role === 'Mutfak' || activeEmployee?.position === 'Mutfak';
+
   return (
     <div className={`flex min-h-screen bg-background text-foreground theme-${theme}`}>
       <StoreSelectionOverlay />
-      <Sidebar
-        activeTab={activeTab}
-        onTabChange={(tab) => {
-          setActiveTab(tab);
-          setIsMobileSidebarOpen(false); // Sekme seçince menüyü kapat
-        }}
-        showHelpIcons={showHelpIcons}
-        showToast={showToast}
-        isMobileOpen={isMobileSidebarOpen}
-      />
+      {!isKitchenStaff && (
+        <Sidebar
+          activeTab={activeTab}
+          onTabChange={(tab) => {
+            setActiveTab(tab);
+            setIsMobileSidebarOpen(false); // Sekme seçince menüyü kapat
+          }}
+          showHelpIcons={showHelpIcons}
+          showToast={showToast}
+          isMobileOpen={isMobileSidebarOpen}
+        />
+      )}
 
       {/* Mobile Sidebar Overlay */}
       {isMobileSidebarOpen && (
@@ -1245,7 +1260,7 @@ export default function Home() {
       )}
 
       <main className="flex-1 overflow-y-auto max-h-screen relative flex flex-col min-w-0">
-        <TopBar activeTab={activeTab} onMenuClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)} />
+        <TopBar activeTab={activeTab} onMenuClick={() => !isKitchenStaff && setIsMobileSidebarOpen(!isMobileSidebarOpen)} />
 
         <div className="responsive-container pt-3 pb-12 flex-1 flex flex-col min-h-0">
           {activeTab === "home" && (
@@ -1468,6 +1483,11 @@ export default function Home() {
                 isCashDrawerEnabled={isCashDrawerEnabled}
                 cashDrawerPrinterName={cashDrawerPrinterName}
               />
+            </div>
+          )}
+          {activeTab === "kds" && (
+            <div className="max-w-[1500px] mx-auto w-full flex-1 flex flex-col min-h-0">
+              <JetKDS showToast={showToast} />
             </div>
           )}
           {activeTab === "calculator" && (

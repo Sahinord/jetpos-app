@@ -68,6 +68,7 @@ import {
     Image as ImageIcon,
     Coins,
     QrCode as QrCodeIcon,
+    ChefHat,
     type LucideIcon
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -202,6 +203,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
             feature: "adisyon",
             items: [
                 { id: "adisyon", label: "Masa Yönetimi", icon: Grid3X3, feature: null, description: "Restoran ve kafeler için masa bazlı sipariş takip ve adisyon ekranı." },
+                { id: "kds", label: "Mutfak Ekranı (KDS)", icon: ChefHat, feature: "kds", description: "Mutfak istasyonları için anlık sipariş hazırlama ekranı." },
             ]
         },
         {

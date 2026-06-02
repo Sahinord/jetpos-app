@@ -5,7 +5,7 @@ import { supabase, setCurrentTenant } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Search, ShoppingCart, Trash2, Plus, Minus,
-    Banknote, Wallet, Building2,
+    Banknote, Wallet, Building2, CreditCard,
     X, ChevronUp, ChevronDown, Package, CheckCircle,
     Users, ChevronRight, Camera, Mic, Loader2, AlertCircle, Bell
 } from 'lucide-react';
@@ -278,7 +278,7 @@ export default function POSPage() {
             await offlineDB.pending_sales.add({
                 uuid: crypto.randomUUID(), tenant_id: tenantId || '', warehouse_id: activeWhId || '',
                 items: cart.map(i => ({ product_id: i.id, item_name: i.name, quantity: i.quantity, unit_price: i.sale_price, total_price: i.sale_price * i.quantity })),
-                total_amount: totalAmount, payment_type: method, created_at: new Date().toISOString(), sync_status: 'pending'
+                total_amount: totalAmount, discount_amount: 0, payment_type: method, created_at: new Date().toISOString(), sync_status: 'pending'
             });
             toast.warning("Çevrimdışı kaydedildi");
             setCart([]); setShowCart(false); setIsCheckingOut(false);

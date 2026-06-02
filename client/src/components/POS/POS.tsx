@@ -16,6 +16,7 @@ import { useTenant } from "@/lib/tenant-context";
 import { supabase, auditLog } from "@/lib/supabase";
 import { readScaleWeight } from "@/lib/hardware";
 import CariSearchModal from "../Cari/CariSearchModal";
+import PinVerificationModal from "../Common/PinVerificationModal";
 import { SyncService } from "@/lib/sync-service";
 import { offlineDB } from "@/lib/offline-db";
 import { useLiveQuery } from "dexie-react-hooks";
@@ -92,6 +93,8 @@ export default function POS({
     const [selectedCategory, setSelectedCategory] = useState<string>("all");
     const [search, setSearch] = useState("");
     const [discount, setDiscount] = useState(0);
+    const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+    const [pendingDiscountValue, setPendingDiscountValue] = useState<number | null>(null);
     const [lastTransaction, setLastTransaction] = useState<any>(null);
     const [showReceiptModal, setShowReceiptModal] = useState(false);
 
@@ -422,7 +425,13 @@ export default function POS({
         if (isNaN(val)) return;
 
         if (activeInput === "discount") {
-            setDiscount(val);
+            const maxDiscount = subtotal * 0.30;
+            if (val > maxDiscount) {
+                setPendingDiscountValue(val);
+                setIsPinModalOpen(true);
+            } else {
+                setDiscount(val);
+            }
         } else if (activeInput === "quantity" && cart.length > 0) {
             const lastItem = cart[cart.length - 1];
             setCart(cart.map((item, idx) =>
@@ -1543,6 +1552,25 @@ export default function POS({
                     </div>
                 )}
             </AnimatePresence>
+            <PinVerificationModal
+                isOpen={isPinModalOpen}
+                title="Müdür Onayı Gerekli"
+                description={`%30'dan fazla (₺${pendingDiscountValue?.toFixed(2)}) iskonto uygulamak için yetkili PIN girin.`}
+                requiredRoles={['Owner', 'Manager']}
+                onSuccess={(emp) => {
+                    if (pendingDiscountValue !== null) {
+                        setDiscount(pendingDiscountValue);
+                        showToast(`Yetkili ${emp.name} tarafından iskonto onaylandı.`, "success");
+                    }
+                    setIsPinModalOpen(false);
+                    setPendingDiscountValue(null);
+                }}
+                onCancel={() => {
+                    setIsPinModalOpen(false);
+                    setPendingDiscountValue(null);
+                    showToast("İskonto yetkili onayı olmadığı için iptal edildi.", "warning");
+                }}
+            />
         </div>
     </div>
     );

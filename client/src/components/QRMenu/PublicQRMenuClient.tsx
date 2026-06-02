@@ -9,8 +9,8 @@ import {
     Wifi, Lock, ExternalLink, MessageCircle, Clock, Moon, AlertCircle
 } from "lucide-react";
 
-export default function PublicQRMenuClient({ params }: { params: Promise<{ slug: string }> }) {
-    const { slug } = React.use(params);
+export default function PublicQRMenuClient({ params }: { params: Promise<{ slug: string; tableId?: string }> }) {
+    const { slug, tableId } = React.use(params);
     const [settings, setSettings] = useState<any>(null);
     const [categories, setCategories] = useState<any[]>([]);
     const [products, setProducts] = useState<any[]>([]);
@@ -22,6 +22,224 @@ export default function PublicQRMenuClient({ params }: { params: Promise<{ slug:
     const [showAbout, setShowAbout] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<any>(null);
     const [isOpen, setIsOpen] = useState(true);
+
+    // Restaurant Ecosystem State
+    const [table, setTable] = useState<any>(null);
+    const [activeCalls, setActiveCalls] = useState<any[]>([]);
+    const [cooldowns, setCooldowns] = useState<{ [key: string]: number }>({});
+    const [showRatingModal, setShowRatingModal] = useState(false);
+    const [ratingVal, setRatingVal] = useState(5);
+    const [tipVal, setTipVal] = useState<number | null>(null);
+    const [customTip, setCustomTip] = useState("");
+    const [commentVal, setCommentVal] = useState("");
+    const [submittingRating, setSubmittingRating] = useState(false);
+    const [resolvedCall, setResolvedCall] = useState<any>(null);
+
+    useEffect(() => {
+        if (tableId) {
+            // Load cooldowns from localStorage
+            const savedCooldowns: any = {};
+            const now = Date.now();
+            ['waiter', 'bill', 'water', 'help'].forEach(type => {
+                const val = localStorage.getItem(`last_call_${type}_${tableId}`);
+                if (val) {
+                    const diff = now - parseInt(val);
+                    if (diff < 60000) {
+                        savedCooldowns[type] = parseInt(val);
+                    }
+                }
+            });
+            setCooldowns(savedCooldowns);
+            fetchTableData();
+        }
+    }, [tableId]);
+
+    // Timer to update cooldowns
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const now = Date.now();
+            setCooldowns(prev => {
+                const next: any = {};
+                let changed = false;
+                Object.entries(prev).forEach(([key, val]) => {
+                    if (now - val < 60000) {
+                        next[key] = val;
+                    } else {
+                        changed = true;
+                    }
+                });
+                return changed ? next : prev;
+            });
+        }, 1000);
+        return () => clearInterval(interval);
+    }, []);
+
+    useEffect(() => {
+        if (!tableId || !settings?.tenant_id) return;
+
+        fetchActiveCalls();
+
+        // Subscribe to table calls updates in realtime
+        const channel = supabase
+            .channel(`table_calls_client_${tableId}`)
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'table_calls',
+                filter: `table_id=eq.${tableId}`
+            }, (payload: any) => {
+                if (payload.eventType === 'INSERT') {
+                    setActiveCalls(prev => [...prev.filter(c => c.id !== payload.new.id), payload.new]);
+                } else if (payload.eventType === 'UPDATE') {
+                    if (payload.new.status === 'resolved' || payload.new.status === 'expired') {
+                        setActiveCalls(prev => prev.filter(c => c.id !== payload.new.id));
+                        if (payload.new.status === 'resolved' && payload.new.call_type === 'bill') {
+                            setResolvedCall(payload.new);
+                            setShowRatingModal(true);
+                        }
+                    } else {
+                        setActiveCalls(prev => prev.map(c => c.id === payload.new.id ? payload.new : c));
+                    }
+                } else if (payload.eventType === 'DELETE') {
+                    setActiveCalls(prev => prev.filter(c => c.id !== payload.old.id));
+                }
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [tableId, settings]);
+
+    const fetchTableData = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('restaurant_tables')
+                .select('*')
+                .eq('id', tableId)
+                .single();
+            if (!error && data) {
+                setTable(data);
+            }
+        } catch (e) {
+            console.error("Error fetching table data:", e);
+        }
+    };
+
+    const fetchActiveCalls = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('table_calls')
+                .select('*')
+                .eq('table_id', tableId)
+                .eq('status', 'active');
+            if (!error && data) {
+                setActiveCalls(data);
+            }
+        } catch (e) {
+            console.error("Error fetching active calls:", e);
+        }
+    };
+
+    const handleCall = async (type: 'waiter' | 'bill' | 'water' | 'help') => {
+        if (!tableId || !settings?.tenant_id) return;
+
+        const now = Date.now();
+        const lastVal = cooldowns[type];
+        if (lastVal && now - lastVal < 60000) {
+            return;
+        }
+
+        try {
+            // Check if call already active
+            const { data: activeCheck } = await supabase
+                .from('table_calls')
+                .select('id')
+                .eq('table_id', tableId)
+                .eq('call_type', type)
+                .eq('status', 'active')
+                .limit(1);
+
+            if (activeCheck && activeCheck.length > 0) {
+                alert("Bu çağrı zaten aktif! Lütfen garsonun yanıtlamasını bekleyin.");
+                return;
+            }
+
+            const { data, error } = await supabase
+                .from('table_calls')
+                .insert([{
+                    tenant_id: settings.tenant_id,
+                    table_id: tableId,
+                    table_name: table?.name || `Masa ${tableId}`,
+                    call_type: type,
+                    status: 'active'
+                }])
+                .select()
+                .single();
+
+            if (error) {
+                if (error.message && error.message.includes('60 saniye')) {
+                    alert("Aynı çağrı tipi için 60 saniye içinde mükerrer istek gönderilemez.");
+                } else {
+                    alert("Çağrı iletilemedi. Lütfen tekrar deneyin.");
+                }
+                return;
+            }
+
+            localStorage.setItem(`last_call_${type}_${tableId}`, now.toString());
+            setCooldowns(prev => ({ ...prev, [type]: now }));
+
+            // Insert into notifications
+            await supabase.from('notifications').insert([{
+                tenant_id: settings.tenant_id,
+                title: `${table?.name || 'Masa'} Yeni Çağrı`,
+                message: `${table?.name || 'Masa'} ${
+                    type === 'waiter' ? 'Garson Çağırıyor' :
+                    type === 'bill' ? 'Hesap İstiyor' :
+                    type === 'water' ? 'Su İstiyor' : 'Yardım İstiyor'
+                }`,
+                type: 'call',
+                reference_id: data.id
+            }]);
+
+        } catch (e: any) {
+            console.error("Error making call:", e);
+        }
+    };
+
+    const handleSubmitRating = async () => {
+        if (!settings?.tenant_id) return;
+        setSubmittingRating(true);
+        try {
+            const finalTip = tipVal === null ? parseFloat(customTip || "0") : tipVal;
+            const { error } = await supabase
+                .from('waiter_ratings')
+                .insert([{
+                    tenant_id: settings.tenant_id,
+                    waiter_id: resolvedCall?.assigned_to || null,
+                    table_id: tableId,
+                    table_name: table?.name || `Masa ${tableId}`,
+                    rating: ratingVal,
+                    tip_amount: finalTip || 0,
+                    comment: commentVal || null,
+                    kitchen_order_id: null
+                }]);
+
+            if (error) throw error;
+            
+            setShowRatingModal(false);
+            setRatingVal(5);
+            setTipVal(null);
+            setCustomTip("");
+            setCommentVal("");
+            alert("Değerlendirmeniz ve bahşişiniz başarıyla iletildi. Teşekkür ederiz!");
+        } catch (e: any) {
+            console.error("Error submitting rating:", e);
+            alert("Gönderim sırasında hata oluştu: " + e.message);
+        } finally {
+            setSubmittingRating(false);
+        }
+    };
 
     useEffect(() => {
         // Add seamless marquee animation to head
@@ -329,6 +547,92 @@ export default function PublicQRMenuClient({ params }: { params: Promise<{ slug:
                     return null;
                 })}
 
+                {/* Table Call Operations */}
+                {tableId && (
+                    <div className="px-6 pb-6">
+                        <div className={`p-6 rounded-[32px] border ${
+                            settings.dark_mode_enabled 
+                            ? 'bg-slate-900/60 border-slate-800' 
+                            : 'bg-white border-slate-100 shadow-xl'
+                        }`}>
+                            <div className="flex items-center justify-between mb-4">
+                                <div>
+                                    <span className="block text-[9px] font-black text-primary uppercase tracking-[2px]" style={{ color: primaryColor }}>MASA İŞLEMLERİ</span>
+                                    <h2 className={`text-lg font-black uppercase tracking-tight ${settings.dark_mode_enabled ? 'text-white' : 'text-slate-800'}`}>
+                                        {table?.name || `MASA ${tableId}`}
+                                    </h2>
+                                </div>
+                                {activeCalls.length > 0 && (
+                                    <span className="px-2.5 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-500 text-[9px] font-black uppercase tracking-widest animate-pulse">
+                                        Aktif Çağrı Var
+                                    </span>
+                                )}
+                            </div>
+                            
+                            {/* Call Status Banners */}
+                            {activeCalls.map(c => {
+                                const isAccepted = c.status === 'accepted';
+                                return (
+                                    <div key={c.id} className={`mb-3 p-3 rounded-2xl border flex items-center justify-between text-xs font-bold ${
+                                        isAccepted 
+                                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' 
+                                        : 'bg-orange-500/10 border-orange-500/20 text-orange-500'
+                                    }`}>
+                                        <div className="flex items-center gap-2">
+                                            <div className={`w-2 h-2 rounded-full ${isAccepted ? 'bg-emerald-500' : 'bg-orange-500 animate-ping'}`} />
+                                            <span>
+                                                {c.call_type === 'waiter' ? 'Garson Çağrısı' :
+                                                 c.call_type === 'bill' ? 'Hesap İsteği' :
+                                                 c.call_type === 'water' ? 'Su İsteği' : 'Yardım Çağrısı'}
+                                            </span>
+                                        </div>
+                                        <span className="text-[10px] font-black uppercase">
+                                            {isAccepted ? `${c.assigned_waiter_name} yolda (30 sn)` : 'Sıraya Alındı'}
+                                        </span>
+                                    </div>
+                                );
+                            })}
+
+                            {/* Buttons Grid */}
+                            <div className="grid grid-cols-2 gap-3">
+                                {[
+                                    { type: 'waiter', label: 'Garson Çağır', icon: '🛎️' },
+                                    { type: 'bill', label: 'Hesap İste', icon: '🧾' },
+                                    { type: 'water', label: 'Su İste', icon: '💧' },
+                                    { type: 'help', label: 'Yardım Çağır', icon: '❓' }
+                                ].map(btn => {
+                                    const lastVal = cooldowns[btn.type];
+                                    const isCooling = lastVal && (Date.now() - lastVal < 60000);
+                                    const remaining = isCooling ? Math.round((60000 - (Date.now() - lastVal)) / 1000) : 0;
+                                    const isActive = activeCalls.some(c => c.call_type === btn.type);
+
+                                    return (
+                                        <button
+                                            key={btn.type}
+                                            disabled={isCooling || isActive}
+                                            onClick={() => handleCall(btn.type as any)}
+                                            className={`p-4 rounded-2xl border transition-all flex flex-col items-center justify-center gap-1.5 active:scale-95 text-center ${
+                                                isActive 
+                                                ? 'bg-orange-500/10 border-orange-500/30 text-orange-500'
+                                                : isCooling
+                                                  ? 'bg-slate-500/5 border-slate-500/10 text-slate-400'
+                                                  : settings.dark_mode_enabled
+                                                    ? 'bg-slate-950/40 border-slate-800 hover:border-slate-700 text-white'
+                                                    : 'bg-slate-50 border-slate-200/60 hover:border-slate-300 text-slate-850 hover:bg-slate-100/50'
+                                            }`}
+                                        >
+                                            <span className="text-xl">{btn.icon}</span>
+                                            <span className="text-[10px] font-black uppercase tracking-wider">
+                                                {isCooling ? `${btn.label} (${remaining}s)` : btn.label}
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Sticky Search & Categories */}
                 <div className={`sticky ${settings.fixed_header_text ? 'top-[44px] sm:top-[48px]' : 'top-0'} z-50 p-4 sm:p-6 space-y-4 ${settings.dark_mode_enabled ? 'bg-slate-950/90' : 'bg-slate-50/90'} backdrop-blur-2xl border-b border-black/5`}>
                     <div className="relative group">
@@ -620,6 +924,132 @@ export default function PublicQRMenuClient({ params }: { params: Promise<{ slug:
                         </button>
                     </div>
                 )}
+
+                {/* Rating & Tip Modal */}
+                <AnimatePresence>
+                    {showRatingModal && (
+                        <div className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center p-0 sm:p-4">
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowRatingModal(false)} className="absolute inset-0 bg-black/90 backdrop-blur-xl" />
+                            <motion.div 
+                                initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+                                className={`relative w-full max-w-lg rounded-t-[40px] sm:rounded-[40px] p-6 overflow-hidden ${settings.dark_mode_enabled ? 'bg-slate-950 border-t border-white/10 text-white' : 'bg-white text-slate-900 shadow-2xl'}`}
+                            >
+                                <div className="flex items-center justify-between mb-6">
+                                    <div>
+                                        <span className="block text-[8px] font-black text-primary uppercase tracking-[2px]" style={{ color: primaryColor }}>DENEYİMİNİZİ DEĞERLENDİRİN</span>
+                                        <h2 className="text-xl font-black uppercase tracking-tight">Hizmetimizi Puanlayın</h2>
+                                    </div>
+                                    <button onClick={() => setShowRatingModal(false)} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-full text-slate-400 hover:text-slate-200">
+                                        <X size={20} />
+                                    </button>
+                                </div>
+
+                                <div className="space-y-6">
+                                    {/* Waiter Details */}
+                                    {resolvedCall?.assigned_waiter_name && (
+                                        <div className="p-4 bg-primary/10 rounded-2xl border border-primary/20 flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center text-lg font-black" style={{ color: primaryColor }}>
+                                                🤵
+                                            </div>
+                                            <div>
+                                                <span className="block text-[8px] font-black opacity-60 uppercase tracking-wider">HİZMET VEREN GARSON</span>
+                                                <span className="text-sm font-black uppercase text-foreground">{resolvedCall.assigned_waiter_name}</span>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Star Selection */}
+                                    <div className="text-center">
+                                        <span className="block text-[9px] font-black opacity-40 uppercase tracking-widest mb-3">GARSON PUANI</span>
+                                        <div className="flex justify-center gap-2">
+                                            {[1, 2, 3, 4, 5].map(star => (
+                                                <button
+                                                    key={star}
+                                                    onClick={() => setRatingVal(star)}
+                                                    className="p-1 text-3xl transition-transform active:scale-90"
+                                                >
+                                                    <Star 
+                                                        className="w-10 h-10" 
+                                                        fill={star <= ratingVal ? '#f59e0b' : 'transparent'} 
+                                                        color={star <= ratingVal ? '#f59e0b' : '#94a3b8'} 
+                                                    />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Tip Selection */}
+                                    {settings.enable_tips && (
+                                        <div>
+                                            <span className="block text-[9px] font-black opacity-40 uppercase tracking-widest mb-3 text-center">BAHŞİŞ BIRAK</span>
+                                            <div className="grid grid-cols-4 gap-2">
+                                                {[50, 100, 200].map(amt => (
+                                                    <button
+                                                        key={amt}
+                                                        onClick={() => {
+                                                            setTipVal(amt);
+                                                            setCustomTip("");
+                                                        }}
+                                                        className={`py-3 rounded-xl border text-xs font-black uppercase tracking-wider transition-all active:scale-95 ${
+                                                            tipVal === amt
+                                                            ? 'bg-primary text-white'
+                                                            : 'bg-slate-500/5 border-slate-500/10 text-foreground'
+                                                        }`}
+                                                        style={{ backgroundColor: tipVal === amt ? primaryColor : undefined }}
+                                                    >
+                                                        ₺{amt}
+                                                    </button>
+                                                ))}
+                                                <button
+                                                    onClick={() => setTipVal(null)}
+                                                    className={`py-3 rounded-xl border text-xs font-black uppercase tracking-wider transition-all active:scale-95 ${
+                                                        tipVal === null
+                                                        ? 'bg-primary text-white'
+                                                        : 'bg-slate-500/5 border-slate-500/10 text-foreground'
+                                                    }`}
+                                                    style={{ backgroundColor: tipVal === null ? primaryColor : undefined }}
+                                                >
+                                                    DİĞER
+                                                </button>
+                                            </div>
+
+                                            {tipVal === null && (
+                                                <input
+                                                    type="number"
+                                                    placeholder="Bahşiş Tutarı (₺)..."
+                                                    value={customTip}
+                                                    onChange={(e) => setCustomTip(e.target.value)}
+                                                    className="w-full mt-3 bg-black/40 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary"
+                                                />
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Comments */}
+                                    <div>
+                                        <span className="block text-[9px] font-black opacity-40 uppercase tracking-widest mb-3">YORUMUNUZ (İSTEĞE BAĞLI)</span>
+                                        <textarea
+                                            placeholder="Geri bildiriminiz bizim için çok değerli..."
+                                            value={commentVal}
+                                            onChange={(e) => setCommentVal(e.target.value)}
+                                            rows={3}
+                                            className="w-full bg-black/40 border border-slate-800 rounded-2xl p-4 text-sm focus:outline-none focus:border-primary resize-none"
+                                        />
+                                    </div>
+
+                                    <button
+                                        onClick={handleSubmitRating}
+                                        disabled={submittingRating}
+                                        className="w-full py-4 text-white font-black uppercase tracking-widest rounded-2xl shadow-xl active:scale-95 disabled:opacity-50 transition-all"
+                                        style={{ backgroundColor: primaryColor }}
+                                    >
+                                        {submittingRating ? 'Gönderiliyor...' : 'DEĞERLENDİRMEYİ GÖNDER'}
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
             </div>
         </div>
     );

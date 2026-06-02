@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, Package, ScanLine, Wallet, ClipboardCheck, Menu, X, Utensils, LogOut, ArrowLeftRight, Users, CreditCard, Calculator, Zap, Globe } from 'lucide-react';
+import { LayoutDashboard, Package, ScanLine, Wallet, ClipboardCheck, Menu, X, Utensils, LogOut, ArrowLeftRight, Users, CreditCard, Calculator, Zap, Globe, ChefHat } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
@@ -12,6 +12,11 @@ export default function BottomNav() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [features, setFeatures] = useState<any>({});
     const [companyName, setCompanyName] = useState('JetPOS Mobile');
+
+    const waiterRole = typeof window !== 'undefined' ? localStorage.getItem('activeWaiterRole') : null;
+    if (waiterRole === 'Kitchen' || waiterRole === 'Mutfak') {
+        return null;
+    }
 
     useEffect(() => {
         const tenantId = localStorage.getItem('tenantId');
@@ -73,6 +78,12 @@ export default function BottomNav() {
             icon: Utensils, 
             path: '/adisyon', 
             show: hasFeature('mobile_adisyon') || hasFeature('adisyon') 
+        },
+        { 
+            name: 'Mutfak Ekranı (KDS)', 
+            icon: ChefHat, 
+            path: '/kds', 
+            show: hasFeature('kds') 
         },
     ];
 

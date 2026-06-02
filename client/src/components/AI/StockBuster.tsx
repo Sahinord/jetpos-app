@@ -39,6 +39,7 @@ export default function StockBuster() {
     }, [currentTenant]);
 
     const fetchRealDeadStock = async () => {
+        if (!currentTenant) return;
         setLoading(true);
         try {
             const { data: products } = await supabase

@@ -18,7 +18,7 @@ export default function CRMPage({ pageId, onTabChange, showToast }: CRMPageProps
         case "crm_segments":
             return <Segments onTabChange={onTabChange} showToast={showToast} />;
         case "crm_campaigns":
-            return <Campaigns onTabChange={onTabChange} showToast={showToast} />;
+            return <Campaigns showToast={showToast} />;
         case "crm_loyalty":
             return (
                 <div className="glass-card p-12 text-center space-y-6 flex flex-col items-center justify-center min-h-[400px]">

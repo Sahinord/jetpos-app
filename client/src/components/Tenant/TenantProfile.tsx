@@ -23,8 +23,8 @@ export default function TenantProfile() {
     const planType = currentTenant?.features?.enterprise ? 'Enterprise' : (currentTenant?.features?.pro ? 'Pro' : 'Basic');
 
     const daysPercent = useMemo(() => {
-        if (!currentTenant?.expires_at || !currentTenant?.created_at) return 50;
-        const total = new Date(currentTenant.expires_at).getTime() - new Date(currentTenant.created_at).getTime();
+        if (!currentTenant?.expires_at || !(currentTenant as any).created_at) return 50;
+        const total = new Date(currentTenant.expires_at).getTime() - new Date((currentTenant as any).created_at).getTime();
         const remaining = new Date(currentTenant.expires_at).getTime() - Date.now();
         return Math.max(0, Math.min(100, (remaining / total) * 100));
     }, [currentTenant]);

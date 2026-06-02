@@ -61,6 +61,7 @@ export default function ShiftManager({ showToast }: any) {
     };
 
     const fetchShifts = async () => {
+        if (!currentTenant) return;
         try {
             setLoading(true);
 
@@ -101,6 +102,7 @@ export default function ShiftManager({ showToast }: any) {
     };
 
     const handleClockIn = async (employeeId: string) => {
+        if (!currentTenant) return;
         try {
             // Check if employee already has active shift
             const existingShift = activeShifts.find(s => s.employee_id === employeeId);

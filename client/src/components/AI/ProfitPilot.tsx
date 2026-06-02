@@ -39,6 +39,7 @@ export default function ProfitPilot() {
     }, [currentTenant]);
 
     const fetchRealTimeAnalysis = async () => {
+        if (!currentTenant) return;
         setLoading(true);
         try {
             const { data: products } = await supabase
