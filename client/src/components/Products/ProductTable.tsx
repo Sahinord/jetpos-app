@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import {
     Search,
     Edit2,
@@ -137,7 +137,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
     const ITEMS_PER_PAGE = 50;
 
     // Reset page on filter change
-    useMemo(() => {
+    useEffect(() => {
         setPage(1);
         setSelectedProducts([]); // Clear selections when filter/search changes
     }, [search, filter, sortBy]);
@@ -589,6 +589,11 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                     className="w-full bg-primary/5 border border-border rounded-2xl py-3.5 pl-12 pr-4 focus:outline-none focus:border-primary/50 transition-all text-lg font-medium placeholder:text-secondary/40 text-foreground"
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
+                                    onPaste={(e) => {
+                                        e.preventDefault();
+                                        const pastedText = e.clipboardData.getData('text').trim();
+                                        setSearch(pastedText);
+                                    }}
                                 />
                             </div>
 
