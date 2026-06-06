@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Service role key ile RLS bypass
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Service role key ile RLS bypass - lazy init (build sırasında env yokken hata vermesin)
+function getSupabaseAdmin() {
+    return createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+}
 
 export async function POST(req: NextRequest) {
     try {
+        const supabaseAdmin = getSupabaseAdmin();
         const body = await req.json();
         const { tenantId, updateData, adminPassword } = body;
 
