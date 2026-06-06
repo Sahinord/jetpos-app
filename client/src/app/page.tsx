@@ -878,9 +878,9 @@ export default function Home() {
         // Helper to find value
         const findValue = (obj: any, patterns: string[]) => {
           const keys = Object.keys(obj);
-          const normPatterns = patterns.map(p => p.toLowerCase().replace(/[^a-z0-9]/g, ''));
+          const normPatterns = patterns.map(p => p.toLowerCase().replace(/[^a-zçğıöşü0-9]/g, ''));
           for (const key of keys) {
-            const normKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const normKey = key.toLowerCase().replace(/[^a-zçğıöşü0-9]/g, '');
             if (normPatterns.includes(normKey)) return obj[key];
           }
           return undefined;
