@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Lock, ArrowRight, X, Delete } from 'lucide-react';
+import { User, Lock, ArrowRight, X, Delete, ArrowLeft } from 'lucide-react';
 import { useTenant } from '@/lib/tenant-context';
 import { supabase } from '@/lib/supabase';
 
@@ -244,6 +244,21 @@ export default function EmployeePinLogin({ onSuccess, onCancel, isModal = false 
                 <p className="text-center text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-6">
                     Güvenliğiniz için bilgilerinizi kimseyle paylaşmayın
                 </p>
+
+                <button 
+                    onClick={() => {
+                        localStorage.removeItem('currentTenantId');
+                        localStorage.removeItem('activeEmployee');
+                        localStorage.removeItem('licenseKey');
+                        localStorage.removeItem('savedLicense');
+                        localStorage.removeItem('savedExpiry');
+                        window.location.reload();
+                    }}
+                    className="w-full mt-6 py-3 text-slate-400 hover:text-white text-xs font-bold transition-all border border-slate-800 rounded-xl hover:bg-slate-800/50 flex items-center justify-center gap-2"
+                >
+                    <ArrowLeft className="w-4 h-4" />
+                    Lisans Ekranına Geri Dön
+                </button>
             </motion.div>
         </div>
     );

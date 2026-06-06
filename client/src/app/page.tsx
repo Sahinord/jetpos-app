@@ -65,6 +65,7 @@ import { createTrendyolGoClient } from "@/lib/trendyol-go-client";
 import EmployeePinLogin from "@/components/Auth/EmployeePinLogin";
 import { offlineDB } from "@/lib/offline-db";
 import { SyncService } from "@/lib/sync-service";
+import SetupWizard from "@/components/Setup/SetupWizard";
 
 export default function Home() {
   const { currentTenant, loading: tenantLoading, activeWarehouse, activeEmployee } = useTenant();
@@ -138,12 +139,18 @@ export default function Home() {
     }
   }, [activeTab]);
 
-  // Kitchen staff auto-redirect to KDS tab
+  // Staff auto-redirect based on role
   useEffect(() => {
     if (activeEmployee) {
-      const isKitchen = activeEmployee.role === 'Kitchen' || activeEmployee.role === 'Mutfak' || activeEmployee.position === 'Mutfak';
-      if (isKitchen) {
+      const role = activeEmployee.role?.toLowerCase() || '';
+      const position = activeEmployee.position?.toLowerCase() || '';
+      
+      if (role === 'kitchen' || role === 'mutfak' || position === 'mutfak') {
         setActiveTab("kds");
+      } else if (role === 'waiter' || role === 'garson' || position === 'garson') {
+        setActiveTab("adisyon");
+      } else if (role === 'owner' || role === 'manager' || role === 'admin') {
+        setActiveTab("home");
       }
     }
   }, [activeEmployee]);
@@ -1181,7 +1188,7 @@ export default function Home() {
   };
 
   // Normal App Rendering Logic (Wrapped to maintain Hook order)
-  const isEmployeeLoginEnabled = currentTenant?.features?.employee_login === true || currentTenant?.features?.kds === true || currentTenant?.features?.waiter_panel === true;
+  const isEmployeeLoginEnabled = currentTenant?.features?.employee_login === true && currentTenant?.features?.kds !== true;
   const isAdmin = currentTenant?.license_key === 'ADM257SA67';
 
   if (!currentTenant && !tenantLoading) {
@@ -1227,6 +1234,11 @@ export default function Home() {
         </div>
       </div>
     );
+  }
+
+  // If setup is not completed, block everything and show wizard
+  if (currentTenant && currentTenant.setup_completed === false) {
+    return <SetupWizard />;
   }
 
   if (isEmployeeLoginEnabled && !activeEmployee) {

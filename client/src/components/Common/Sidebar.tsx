@@ -167,12 +167,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
         }
     };
 
-    // Eksik sabit mağazaları otomatik senkronize et
-    useEffect(() => {
-        if (missingStores.length > 0 && !isSyncingStores) {
-            handleSyncStores();
-        }
-    }, [currentTenant?.fixed_warehouses, warehouses.length]);
+    // Otomatik senkronizasyon kaldırıldı — mağaza oluşturma sadece kullanıcı tetiklemesiyle yapılır
 
     // Kategorili menü yapısı
     const menuCategories: MenuCategory[] = [
@@ -211,7 +206,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
             label: "JetWeb & Dijital",
             icon: Globe,
             items: [
-                { id: "qrmenu", label: "QR Menü Yönetimi", icon: ExternalLink, feature: "qrmenu", description: "Dijital menünüzü tasarlayın ve yayınlayın." },
+                { id: "qrmenu", label: "JetQR (QR Menü)", icon: ExternalLink, feature: "qrmenu", description: "Dijital menünüzü tasarlayın ve yayınlayın." },
                 { id: "showcase", label: "Vitrin Tasarımı", icon: Monitor, feature: "showcase", description: "Müşterileriniz için premium bir açılış sayfası (Vitrin) oluşturun." },
             ]
         },

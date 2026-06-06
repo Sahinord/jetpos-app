@@ -165,8 +165,8 @@ export default function LicenseGate({ onSuccess }: { onSuccess: () => void }) {
                     p_password:  password
                 });
 
-            if (verifyError || !ok) {
-                setError('❌ Hatalı şifre!');
+            if (verifyError || !ok?.success) {
+                setError(ok?.message || '❌ Hatalı şifre!');
                 setPassword('');
                 setLoading(false);
                 return;
