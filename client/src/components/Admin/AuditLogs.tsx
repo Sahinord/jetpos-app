@@ -13,7 +13,8 @@ import {
     AlertCircle,
     Info,
     CheckCircle2,
-    Database
+    Database,
+    Package
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
@@ -29,6 +30,132 @@ export default function AuditLogs() {
     const [hasMore, setHasMore] = useState(true);
 
     const PAGE_SIZE = 50;
+
+    const isUndoable = (log: any) => {
+        if (!log.metadata) return false;
+        if (log.event_type === 'STOCK_CHANGE') {
+            return log.metadata.product_id && log.metadata.old_stock !== undefined && log.metadata.old_stock !== null;
+        }
+        if (log.event_type === 'PRICE_CHANGE') {
+            return log.metadata.product_id && (log.metadata.old_sale_price !== undefined || log.metadata.old_purchase_price !== undefined);
+        }
+        return false;
+    };
+
+    const handleUndo = async (log: any) => {
+        if (!currentTenant) return;
+        if (log.metadata?.is_undone) return;
+        if (!confirm("Bu işlemi geri almak istediğinize emin misiniz?")) return;
+
+        try {
+            const { event_type, metadata, id } = log;
+            if (!metadata) return;
+
+            if (event_type === 'STOCK_CHANGE') {
+                const { product_id, old_stock, warehouse_id } = metadata;
+                if (!product_id) throw new Error("Ürün ID bulunamadı");
+                if (old_stock === undefined || old_stock === null) throw new Error("Eski stok değeri bulunamadı");
+
+                if (warehouse_id) {
+                    const { error } = await supabase
+                        .from('warehouse_stock')
+                        .update({ quantity: Number(old_stock) })
+                        .eq('product_id', product_id)
+                        .eq('warehouse_id', warehouse_id)
+                        .eq('tenant_id', currentTenant.id);
+                    if (error) throw error;
+                } else {
+                    const { error } = await supabase
+                        .from('products')
+                        .update({ stock_quantity: Number(old_stock) })
+                        .eq('id', product_id)
+                        .eq('tenant_id', currentTenant.id);
+                    if (error) throw error;
+                }
+
+                // Mark as undone
+                const updatedMetadata = { ...metadata, is_undone: true };
+                await supabase
+                    .from('audit_logs')
+                    .update({ metadata: updatedMetadata })
+                    .eq('id', id)
+                    .eq('tenant_id', currentTenant.id);
+
+                // Log revert event
+                await supabase
+                    .from('audit_logs')
+                    .insert([{
+                        tenant_id: currentTenant.id,
+                        event_type: 'STOCK_CHANGE',
+                        description: `Geri Alma: "${metadata.product_name || 'Ürün'}" stok değişimi geri alındı: ${metadata.new_stock} -> ${old_stock}`,
+                        metadata: {
+                            product_id,
+                            reverted_log_id: id,
+                            operator: 'Yönetici'
+                        }
+                    }]);
+            } else if (event_type === 'PRICE_CHANGE') {
+                const { product_id, old_sale_price, old_purchase_price, warehouse_id } = metadata;
+                if (!product_id) throw new Error("Ürün ID bulunamadı");
+
+                const updatePayload: any = {};
+                if (old_sale_price !== undefined && old_sale_price !== null) {
+                    updatePayload.sale_price = Number(old_sale_price);
+                }
+                if (old_purchase_price !== undefined && old_purchase_price !== null) {
+                    updatePayload.purchase_price = Number(old_purchase_price);
+                }
+
+                if (Object.keys(updatePayload).length > 0) {
+                    if (warehouse_id) {
+                        const { error } = await supabase
+                            .from('warehouse_stock')
+                            .update(updatePayload)
+                            .eq('product_id', product_id)
+                            .eq('warehouse_id', warehouse_id)
+                            .eq('tenant_id', currentTenant.id);
+                        if (error) throw error;
+                    } else {
+                        const { error } = await supabase
+                            .from('products')
+                            .update(updatePayload)
+                            .eq('id', product_id)
+                            .eq('tenant_id', currentTenant.id);
+                        if (error) throw error;
+                    }
+                }
+
+                // Mark as undone
+                const updatedMetadata = { ...metadata, is_undone: true };
+                await supabase
+                    .from('audit_logs')
+                    .update({ metadata: updatedMetadata })
+                    .eq('id', id)
+                    .eq('tenant_id', currentTenant.id);
+
+                // Log revert event
+                await supabase
+                    .from('audit_logs')
+                    .insert([{
+                        tenant_id: currentTenant.id,
+                        event_type: 'PRICE_CHANGE',
+                        description: `Geri Alma: "${metadata.product_name || 'Ürün'}" fiyat değişimi geri alındı`,
+                        metadata: {
+                            product_id,
+                            reverted_log_id: id,
+                            operator: 'Yönetici'
+                        }
+                    }]);
+            }
+
+            alert("İşlem başarıyla geri alındı!");
+            fetchLogs(true);
+
+        } catch (err: any) {
+            console.error("Undo error:", err);
+            alert("Hata: " + err.message);
+        }
+    };
 
     useEffect(() => {
         fetchLogs(true);
@@ -83,6 +210,7 @@ export default function AuditLogs() {
 
     const getIcon = (type: string) => {
         switch (type) {
+            case 'STOCK_CHANGE': return <Package className="text-blue-400" size={18} />;
             case 'PRICE_CHANGE': return <Activity className="text-amber-500" size={18} />;
             case 'PRODUCT_DELETE': return <AlertCircle className="text-rose-500" size={18} />;
             case 'PRODUCT_RESTORE': return <CheckCircle2 className="text-emerald-500" size={18} />;
@@ -130,6 +258,7 @@ export default function AuditLogs() {
                         className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white outline-none cursor-pointer hover:bg-white/10 transition-all"
                     >
                         <option value="all" className="bg-slate-900">Tüm İşlemler</option>
+                        <option value="STOCK_CHANGE" className="bg-slate-900">Stok Değişimi</option>
                         <option value="PRICE_CHANGE" className="bg-slate-900">Fiyat Değişimi</option>
                         <option value="PRODUCT_DELETE" className="bg-slate-900">Ürün Silme</option>
                         <option value="PRODUCT_RESTORE" className="bg-slate-900">Ürün Geri Yükleme</option>
@@ -149,6 +278,7 @@ export default function AuditLogs() {
                                 <th className="p-4 text-[10px] font-black text-secondary uppercase tracking-widest">İşlem Türü</th>
                                 <th className="p-4 text-[10px] font-black text-secondary uppercase tracking-widest">Açıklama</th>
                                 <th className="p-4 text-[10px] font-black text-secondary uppercase tracking-widest">Operatör</th>
+                                <th className="p-4 text-[10px] font-black text-secondary uppercase tracking-widest text-right">Aksiyon</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
@@ -189,6 +319,21 @@ export default function AuditLogs() {
                                                 {log.metadata?.operator || 'Sistem'}
                                             </span>
                                         </div>
+                                    </td>
+                                    <td className="p-4 text-right">
+                                        {isUndoable(log) && (
+                                            <button
+                                                onClick={() => handleUndo(log)}
+                                                className={`px-3 py-1.5 rounded-xl text-[10px] font-black tracking-widest transition-all ${
+                                                    log.metadata?.is_undone
+                                                        ? 'bg-white/5 text-secondary/30 cursor-not-allowed border border-white/5'
+                                                        : 'bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white border border-rose-500/20 active:scale-95'
+                                                }`}
+                                                disabled={log.metadata?.is_undone}
+                                            >
+                                                {log.metadata?.is_undone ? 'GERİ ALINDI' : 'GERİ AL'}
+                                            </button>
+                                        )}
                                     </td>
                                 </motion.tr>
                             ))}

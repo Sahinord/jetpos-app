@@ -90,7 +90,7 @@ export default function SetupWizard() {
   const isBusinessStep = steps[currentStepIndex].id === 'business';
 
   // Sayfa yenilendiğinde owner yetkisini kaybettiysek PIN ile geri alma ekranı
-  if (!isBusinessStep && !setupEmployeeId && !currentTenant.setup_completed) {
+  if (!isBusinessStep && !setupEmployeeId && currentTenant && !currentTenant.setup_completed) {
     const handleRecoveryLogin = async () => {
       setRecoveryLoading(true);
       setRecoveryError('');

@@ -24,7 +24,8 @@ import {
     History as HistoryIcon,
     RotateCcw,
     Archive,
-    ArchiveRestore
+    ArchiveRestore,
+    ChevronDown
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { exportToExcel, importFromExcel } from "@/lib/excel";
@@ -34,9 +35,10 @@ import ProductDetailView from "./ProductDetailView";
 import BulkImportPage from "./BulkImportPage";
 
 
-export default function ProductTable({ products, onEdit, onDelete, onAdd, onManageCategories, onBulkImport, onClearAll, onToggleAllCampaign, campaignRate, hideFilters = false, limit, onRefresh, showToast, onViewChangeLogs, isPriceSyncEnabled = false, isStockSyncEnabled = false, lowStockThreshold = 10, isTrashMode = false, onRestore, isArchiveMode = false, onArchive, onUnarchive, onBulkArchive, onBulkArchiveByBarcode, allProducts }: any) {
+export default function ProductTable({ products, categories = [], onEdit, onDelete, onAdd, onManageCategories, onBulkImport, onClearAll, onToggleAllCampaign, campaignRate, hideFilters = false, limit, onRefresh, showToast, onViewChangeLogs, isPriceSyncEnabled = false, isStockSyncEnabled = false, lowStockThreshold = 10, isTrashMode = false, onRestore, isArchiveMode = false, onArchive, onUnarchive, onBulkArchive, onBulkArchiveByBarcode, allProducts }: any) {
     const [search, setSearch] = useState("");
     const [filter, setFilter] = useState("all"); // all, active, passive, campaign
+    const [selectedCategoryId, setSelectedCategoryId] = useState("all");
     const [sortBy, setSortBy] = useState("name-asc"); // name-asc, name-desc, stock-asc, stock-desc, price-desc
     const [previewCampaign, setPreviewCampaign] = useState(false);
     const [isRateModalOpen, setIsRateModalOpen] = useState(false);
@@ -60,7 +62,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
     const [archiveMatchedProducts, setArchiveMatchedProducts] = useState<any[]>([]);
 
 
-    const { currentTenant, activeWarehouse } = useTenant();
+    const { currentTenant, activeWarehouse, activeEmployee } = useTenant();
 
     // NEW: Processing state for bulk actions
 
@@ -92,13 +94,16 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                 filter === "all" ? true :
                     filter === "active" ? isActive :
                         filter === "passive" ? isPassive :
-                        filter === "pending" ? isPending :
-                            filter === "campaign" ? p.is_campaign === true :
-                                filter === "trendyol" ? p.sync_trendyol === true : true;
+                            filter === "pending" ? isPending :
+                                filter === "campaign" ? p.is_campaign === true :
+                                    filter === "trendyol" ? p.sync_trendyol === true : true;
 
-            return matchesSearch && matchesFilter;
+            const matchesCategory =
+                selectedCategoryId === "all" ? true : p.category_id === selectedCategoryId;
+
+            return matchesSearch && matchesFilter && matchesCategory;
         });
-    }, [products, search, filter, activeWarehouse, isPriceSyncEnabled]);
+    }, [products, search, filter, selectedCategoryId, activeWarehouse, isPriceSyncEnabled]);
 
     // 2. Count Logic
     const counts = useMemo(() => {
@@ -120,17 +125,27 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
     // 3. Sorting Logic
     const sortedAndFilteredProducts = useMemo(() => {
         return [...filteredProducts].sort((a: any, b: any) => {
+            const getEffectiveStock = (product: any) => {
+                const wsData = product.warehouse_stock?.find((ws: any) => ws.warehouse_id === activeWarehouse?.id);
+                return (isStockSyncEnabled || !activeWarehouse) ? (Number(product.stock_quantity) || 0) : (Number(wsData?.quantity) || 0);
+            };
+
+            const getEffectiveSalePrice = (product: any) => {
+                const wsData = product.warehouse_stock?.find((ws: any) => ws.warehouse_id === activeWarehouse?.id);
+                return Number(((!isPriceSyncEnabled && wsData?.sale_price) ? wsData.sale_price : product.sale_price) || product.external_price || 0);
+            };
+
             switch (sortBy) {
                 case "name-asc": return (a.name || "").localeCompare(b.name || "");
                 case "name-desc": return (b.name || "").localeCompare(a.name || "");
-                case "stock-asc": return (a.stock_quantity || 0) - (b.stock_quantity || 0);
-                case "stock-desc": return (b.stock_quantity || 0) - (a.stock_quantity || 0);
-                case "price-desc": return (b.sale_price || 0) - (a.sale_price || 0);
-                case "price-asc": return (a.sale_price || 0) - (b.sale_price || 0);
+                case "stock-asc": return getEffectiveStock(a) - getEffectiveStock(b);
+                case "stock-desc": return getEffectiveStock(b) - getEffectiveStock(a);
+                case "price-desc": return getEffectiveSalePrice(b) - getEffectiveSalePrice(a);
+                case "price-asc": return getEffectiveSalePrice(a) - getEffectiveSalePrice(b);
                 default: return 0;
             }
         });
-    }, [filteredProducts, sortBy]);
+    }, [filteredProducts, sortBy, activeWarehouse, isStockSyncEnabled, isPriceSyncEnabled]);
 
     // Pagination / Virtualization Logic
     const [page, setPage] = useState(1);
@@ -140,7 +155,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
     useEffect(() => {
         setPage(1);
         setSelectedProducts([]); // Clear selections when filter/search changes
-    }, [search, filter, sortBy]);
+    }, [search, filter, sortBy, selectedCategoryId]);
 
     const paginatedProducts = useMemo(() => {
         return sortedAndFilteredProducts.slice(0, page * ITEMS_PER_PAGE);
@@ -262,7 +277,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                 q.push(productId);
                                 localStorage.setItem('jetpos_label_queue', JSON.stringify(q));
                             }
-                        } catch(e) {}
+                        } catch (e) { }
 
                         logs.push({
                             product_id: productId,
@@ -421,8 +436,8 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
         if (!confirm(`${selectedProducts.length} ürünün stoklarını ${isRandomStock ? 'RASTGELE' : value} olarak güncellemek üzeresiniz. Emin misiniz?`)) return;
 
         try {
-            const { supabase: sb, setCurrentTenant: setTenant } = await import("@/lib/supabase");
-            const savedTenantId = localStorage.getItem('currentTenantId');
+            const { supabase: sb, setCurrentTenant: setTenant, auditLog } = await import("@/lib/supabase");
+            const savedTenantId = localStorage.getItem('currentTenantId') || '';
             if (savedTenantId) await setTenant(savedTenantId);
 
             let successCount = 0;
@@ -440,12 +455,25 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                     setProcessing(prev => ({ ...prev, current: i + 1 }));
 
                     const finalStock = Math.floor(Math.random() * 100) + 1;
+                    const product = products.find((p: any) => p.id === id);
+                    const oldStock = product ? (Number(product.stock_quantity) || 0) : 0;
+                    const productName = product ? product.name : 'Bilinmeyen Ürün';
+
                     const { error } = await sb.from('products').update({ stock_quantity: finalStock }).eq('id', id).eq('tenant_id', savedTenantId);
                     if (error) {
                         console.error(`Error updating product ${id}:`, error.message);
                         throw new Error(error.message);
                     } else {
                         successCount++;
+                        auditLog(savedTenantId, 'STOCK_CHANGE', `"${productName}" stok miktarı toplu işlemle rastgele ${finalStock} olarak güncellendi (Önceki: ${oldStock})`, {
+                            product_id: id,
+                            product_name: productName,
+                            old_stock: oldStock,
+                            new_stock: finalStock,
+                            operator: activeEmployee ? `${activeEmployee.first_name} ${activeEmployee.last_name}` : 'Yönetici',
+                            warehouse_id: activeWarehouse?.id || null,
+                            warehouse_name: activeWarehouse?.name || 'Genel'
+                        });
                     }
 
                     if (i % 10 === 0) await new Promise(r => setTimeout(r, 20));
@@ -464,6 +492,21 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                         throw new Error(error.message);
                     } else {
                         successCount += batchIds.length;
+                        // Log each item's stock change
+                        batchIds.forEach(id => {
+                            const product = products.find((p: any) => p.id === id);
+                            const oldStock = product ? (Number(product.stock_quantity) || 0) : 0;
+                            const productName = product ? product.name : 'Bilinmeyen Ürün';
+                            auditLog(savedTenantId, 'STOCK_CHANGE', `"${productName}" stok miktarı toplu işlemle sabit ${value} olarak güncellendi (Önceki: ${oldStock})`, {
+                                product_id: id,
+                                product_name: productName,
+                                old_stock: oldStock,
+                                new_stock: value,
+                                operator: activeEmployee ? `${activeEmployee.first_name} ${activeEmployee.last_name}` : 'Yönetici',
+                                warehouse_id: activeWarehouse?.id || null,
+                                warehouse_name: activeWarehouse?.name || 'Genel'
+                            });
+                        });
                     }
 
                     await new Promise(r => setTimeout(r, 100));
@@ -493,7 +536,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
             localStorage.setItem('jetpos_label_queue', JSON.stringify(newQ));
             if (showToast) showToast(`${selectedProducts.length} ürün etikete gönderildi!`, "success");
             setSelectedProducts([]);
-        } catch(e) {}
+        } catch (e) { }
     };
 
     // Archive Excel Functions
@@ -562,9 +605,9 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
 
     if (viewingProduct) {
         return (
-            <ProductDetailView 
-                product={viewingProduct} 
-                onBack={() => setViewingProduct(null)} 
+            <ProductDetailView
+                product={viewingProduct}
+                onBack={() => setViewingProduct(null)}
                 onEdit={(p) => {
                     setViewingProduct(null);
                     onEdit(p);
@@ -627,32 +670,58 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                         {/* Main Toolbar: Filters and Global Actions */}
                         <div className="flex flex-wrap items-center justify-between gap-6 p-4 bg-primary/5 rounded-2xl border border-border/50">
                             {!isTrashMode && (
-                                <div className="flex items-center space-x-6">
-                                    <div className="flex items-center space-x-2">
-                                        <Filter className="w-4 h-4 text-primary" />
-                                        <span className="text-[10px] font-black text-secondary uppercase tracking-[2px]">Filtrele:</span>
+                                <div className="flex flex-wrap items-center gap-6">
+                                    <div className="flex items-center space-x-6">
+                                        <div className="flex items-center space-x-2">
+                                            <Filter className="w-4 h-4 text-primary" />
+                                            <span className="text-[10px] font-black text-secondary uppercase tracking-[2px]">Filtrele:</span>
+                                        </div>
+                                        <div className="flex items-center bg-black/20 border border-border rounded-xl p-1">
+                                            {[
+                                                { id: 'all', label: 'Tümü' },
+                                                { id: 'active', label: 'Aktif' },
+                                                { id: 'passive', label: 'Pasif' },
+                                                { id: 'pending', label: 'Beklemede' },
+                                                { id: 'campaign', label: 'Kampanya' },
+                                                { id: 'trendyol', label: 'Trendyol' }
+                                            ].map((btn) => (
+                                                <button
+                                                    key={btn.id}
+                                                    onClick={() => setFilter(btn.id)}
+                                                    className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 ${filter === btn.id ? 'bg-primary text-white shadow-lg' : 'text-secondary hover:text-foreground'}`}
+                                                >
+                                                    <span>{btn.label.toUpperCase()}</span>
+                                                    <span className={`px-1.5 py-0.5 rounded-md text-[9px] ${filter === btn.id ? 'bg-white/20 text-white' : 'bg-white/5 text-secondary'}`}>
+                                                        {(counts as any)[btn.id]}
+                                                    </span>
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
-                                    <div className="flex items-center bg-black/20 border border-border rounded-xl p-1">
-                                        {[
-                                            { id: 'all', label: 'Tümü' },
-                                            { id: 'active', label: 'Aktif' },
-                                            { id: 'passive', label: 'Pasif' },
-                                            { id: 'pending', label: 'Beklemede' },
-                                            { id: 'campaign', label: 'Kampanya' },
-                                            { id: 'trendyol', label: 'Trendyol' }
-                                        ].map((btn) => (
-                                            <button
-                                                key={btn.id}
-                                                onClick={() => setFilter(btn.id)}
-                                                className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 ${filter === btn.id ? 'bg-primary text-white shadow-lg' : 'text-secondary hover:text-foreground'}`}
-                                            >
-                                                <span>{btn.label.toUpperCase()}</span>
-                                                <span className={`px-1.5 py-0.5 rounded-md text-[9px] ${filter === btn.id ? 'bg-white/20 text-white' : 'bg-white/5 text-secondary'}`}>
-                                                    {(counts as any)[btn.id]}
-                                                </span>
-                                            </button>
-                                        ))}
-                                    </div>
+
+                                    {categories && categories.length > 0 && (
+                                        <div className="flex items-center bg-black/25 border border-border rounded-xl p-1 shadow-inner">
+                                            <div className="flex items-center space-x-2 px-3 border-r border-border/40 py-1">
+                                                <FolderTree className="w-3.5 h-3.5 text-primary" />
+                                                <span className="text-[10px] font-black text-secondary uppercase tracking-[2.5px] select-none">Kategori</span>
+                                            </div>
+                                            <div className="relative flex items-center">
+                                                <select
+                                                    value={selectedCategoryId}
+                                                    onChange={(e) => setSelectedCategoryId(e.target.value)}
+                                                    className="appearance-none bg-transparent hover:bg-white/[0.02] text-xs font-black text-white px-4 py-2 pr-9 rounded-r-xl outline-none cursor-pointer transition-all uppercase"
+                                                >
+                                                    <option value="all" className="bg-[#0c1222]">TÜM KATEGORİLER</option>
+                                                    {categories.map((cat: any) => (
+                                                        <option key={cat.id} value={cat.id} className="bg-[#0c1222]">
+                                                            {cat.name.toUpperCase()}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <ChevronDown className="w-3.5 h-3.5 text-secondary absolute right-3 pointer-events-none transition-transform group-hover:text-white" />
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -1059,15 +1128,15 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                                         )}
                                                         {filter === 'trendyol' ? (
                                                             <button
-                                                                onClick={async (e) => { 
-                                                                    e.stopPropagation(); 
+                                                                onClick={async (e) => {
+                                                                    e.stopPropagation();
                                                                     if (confirm(`"${product.name}" ürününü Trendyol satışından kaldırmak istediğinize emin misiniz? (Fiziksel mağazadan SİLİNMEZ)`)) {
                                                                         const { error } = await supabase
                                                                             .from('products')
                                                                             .update({ sync_trendyol: false })
                                                                             .eq('id', product.id)
                                                                             .eq('tenant_id', currentTenant?.id);
-                                                                        
+
                                                                         if (error) {
                                                                             showToast("Hata oluştu: " + error.message, "error");
                                                                         } else {
@@ -1115,7 +1184,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                 {sortedAndFilteredProducts.length === 0 && (
                     <div className="py-20 flex flex-col items-center justify-center text-secondary">
                         <div className={`w-20 h-20 rounded-3xl flex items-center justify-center mb-6 border border-border/50 ${isTrashMode ? 'bg-emerald-500/5' : isArchiveMode ? 'bg-indigo-500/5' : 'bg-primary/5'}`}>
-                             {isTrashMode ? <RotateCcw className="w-10 h-10 text-emerald-500/30" /> : isArchiveMode ? <Archive className="w-10 h-10 text-indigo-500/30" /> : <Package className="w-10 h-10 opacity-20" />}
+                            {isTrashMode ? <RotateCcw className="w-10 h-10 text-emerald-500/30" /> : isArchiveMode ? <Archive className="w-10 h-10 text-indigo-500/30" /> : <Package className="w-10 h-10 opacity-20" />}
                         </div>
                         <p className="text-lg font-black tracking-tight">{isTrashMode ? 'Çöp kutun tertemiz!' : isArchiveMode ? 'Arşivde ürün yok!' : 'Aranan kritere uygun ürün bulunamadı.'}</p>
                         <p className="text-xs font-bold text-secondary/40 mt-1 uppercase tracking-widest">{isTrashMode ? 'Silinen ürünlerin burada 7 gün boyunca saklanır.' : isArchiveMode ? 'Ürün listesinden arşive taşıdığınız ürünler burada görünecek.' : 'Farklı bir arama yapmayı deneyin.'}</p>
@@ -1425,7 +1494,7 @@ export default function ProductTable({ products, onEdit, onDelete, onAdd, onMana
                                     className={`py-4 px-6 rounded-2xl font-black text-xs tracking-widest transition-all active:scale-95 ${archiveMatchedProducts.length > 0
                                         ? 'bg-indigo-500 hover:bg-indigo-600 text-white shadow-xl shadow-indigo-500/30'
                                         : 'bg-white/5 text-secondary/30 cursor-not-allowed'
-                                    }`}
+                                        }`}
                                 >
                                     {archiveMatchedProducts.length > 0 ? `${archiveMatchedProducts.length} ÜRÜNÜ ARŞİVLE` : 'EXCEL YÜKLE'}
                                 </button>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useTranslation, Language } from "@/lib/i18n";
 import {
     Volume2, VolumeX, Monitor,
     Palette, CheckCircle2,
@@ -33,6 +34,7 @@ export default function AppSettings({
     cfdSettings,
     setCfdSettings
 }: any) {
+    const { language, setLanguage, t } = useTranslation();
     const [systemPrinters, setSystemPrinters] = useState<{name: string; isDefault: boolean; status: number}[]>([]);
 
     useEffect(() => {
@@ -103,6 +105,52 @@ export default function AppSettings({
                                 {theme === t.id && <CheckCircle2 className="text-primary w-6 h-6" />}
                             </button>
                         ))}
+                    </div>
+                </motion.div>
+
+                {/* Language Settings */}
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="glass-card space-y-6">
+                    <div className="flex items-center gap-3 border-b border-border pb-4">
+                        <span className="text-2xl">🌍</span>
+                        <div>
+                            <h2 className="font-black tracking-widest uppercase text-foreground">{t('settings.language')}</h2>
+                            <p className="text-[10px] text-secondary font-bold mt-0.5">{t('settings.language_desc')}</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        {(['tr', 'en', 'ar'] as Language[]).map((lang) => {
+                            const labels: Record<Language, { flag: string; name: string; native: string }> = {
+                                tr: { flag: '🇹🇷', name: 'Türkçe', native: 'Türkçe' },
+                                en: { flag: '🇬🇧', name: 'English', native: 'English' },
+                                ar: { flag: '🇸🇦', name: 'Arabic', native: 'العربية' },
+                            };
+                            const l = labels[lang];
+                            const isActive = language === lang;
+                            return (
+                                <button
+                                    key={lang}
+                                    onClick={() => {
+                                        setLanguage(lang);
+                                        showToast(`${l.native} ${lang === 'tr' ? 'dili seçildi' : lang === 'en' ? 'selected' : 'تم اختيار اللغة'}`);
+                                    }}
+                                    className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ${
+                                        isActive
+                                            ? 'border-primary bg-primary/10 shadow-lg shadow-primary/10'
+                                            : 'border-border/50 hover:border-primary/30 hover:bg-primary/5'
+                                    }`}
+                                >
+                                    <span className="text-3xl">{l.flag}</span>
+                                    <div className="text-left">
+                                        <div className="font-black text-sm uppercase tracking-wider text-foreground">{l.native}</div>
+                                        <div className="text-[10px] text-secondary font-bold">{l.name}</div>
+                                    </div>
+                                    {isActive && (
+                                        <CheckCircle2 className="text-primary w-5 h-5 ml-auto" />
+                                    )}
+                                </button>
+                            );
+                        })}
                     </div>
                 </motion.div>
 

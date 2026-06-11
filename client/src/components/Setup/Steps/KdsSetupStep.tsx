@@ -87,7 +87,7 @@ export default function KdsSetupStep({ onNext, tenant, setupEmployeeId }: { onNe
                 </div>
               ))}
             </div>
-            <p className="text-xs text-slate-500 mt-4">Daha sonra Ayarlar > JetKDS menüsünden yeni istasyonlar ekleyebilir veya kategorileri bağlayabilirsiniz.</p>
+            <p className="text-xs text-slate-500 mt-4">Daha sonra Ayarlar &gt; JetKDS menüsünden yeni istasyonlar ekleyebilir veya kategorileri bağlayabilirsiniz.</p>
           </div>
         </div>
 

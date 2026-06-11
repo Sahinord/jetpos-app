@@ -141,7 +141,12 @@ export default function EmsaliyetFisleri() {
         }
 
         const totals = calculateTotals();
-        const validUntil = new Date(documentDate);
+        const parsedDate = new Date(documentDate);
+        if (!documentDate || isNaN(parsedDate.getTime())) {
+            alert('Lütfen geçerli bir fiş tarihi girin!');
+            return;
+        }
+        const validUntil = new Date(parsedDate);
         validUntil.setDate(validUntil.getDate() + validityDays);
 
         const { data: invoice, error: invoiceError } = await supabase

@@ -192,33 +192,6 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
             ]
         },
         {
-            id: "adisyon",
-            label: "JetMasa",
-            icon: Utensils,
-            feature: "adisyon",
-            items: [
-                { id: "adisyon", label: "Masa Yönetimi", icon: Grid3X3, feature: null, description: "Restoran ve kafeler için masa bazlı sipariş takip ve adisyon ekranı." },
-                { id: "kds", label: "Mutfak Ekranı (KDS)", icon: ChefHat, feature: "kds", description: "Mutfak istasyonları için anlık sipariş hazırlama ekranı." },
-            ]
-        },
-        {
-            id: "web",
-            label: "JetWeb & Dijital",
-            icon: Globe,
-            items: [
-                { id: "qrmenu", label: "JetQR (QR Menü)", icon: ExternalLink, feature: "qrmenu", description: "Dijital menünüzü tasarlayın ve yayınlayın." },
-                { id: "showcase", label: "Vitrin Tasarımı", icon: Monitor, feature: "showcase", description: "Müşterileriniz için premium bir açılış sayfası (Vitrin) oluşturun." },
-            ]
-        },
-        {
-            id: "marketing",
-            label: "JetGörünüm",
-            icon: Monitor,
-            items: [
-                { id: "cfd", label: "Müşteri Ekranı (CFD)", icon: Monitor, feature: "cfd", description: "Müşteri tarafında duran işlem takip ekranını yönetin ve özelleştirin." },
-            ]
-        },
-        {
             id: "products",
             label: "JetStok",
             icon: Package,
@@ -228,7 +201,17 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                 { id: "alerts", label: "Stok Uyarıları", icon: AlertTriangle, feature: "products", description: "Kritik stok seviyesine düşen ürünler için otomatik uyarılar." },
                 { id: "label_designer", label: "Ürün Etiketleri", icon: Tags, feature: "label_designer", description: "Barkodlu fiyat etiketleri tasarla ve yazdır." },
                 { id: "archive", label: "Arşiv", icon: Archive, feature: "products", description: "Arşivlenen ürünleri görüntüleyin, geri çıkarın veya toplu arşivleyin." },
-                { id: "trash", label: "Geri Dönüşüm Kutusu", icon: Trash2, feature: "products", description: "Silinen ürünleri görüntüleyin ve gerekirse geri yükleyin." },
+                { id: "trash", label: "Geri Dönüşüm", icon: Trash2, feature: "products", description: "Silinen ürünleri görüntüleyin ve gerekirse geri yükleyin." },
+            ]
+        },
+        {
+            id: "adisyon",
+            label: "JetMasa",
+            icon: Utensils,
+            feature: "adisyon",
+            items: [
+                { id: "adisyon", label: "Masa Yönetimi", icon: Grid3X3, feature: null, description: "Restoran ve kafeler için masa bazlı sipariş takip ve adisyon ekranı." },
+                { id: "kds", label: "Mutfak Ekranı (KDS)", icon: ChefHat, feature: "kds", description: "Mutfak istasyonları için anlık sipariş hazırlama ekranı." },
             ]
         },
         {
@@ -300,15 +283,16 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
             ]
         },
         {
-            id: "crm",
-            label: "JetPuan & Sadakat",
-            icon: Heart,
+            id: "analytics",
+            label: "JetRapor",
+            icon: BarChart3,
             items: [
-                { id: "crm_overview", label: "Müşteri Analizi", icon: Brain, description: "Yapay zeka destekli müşteri analizi ve sadakat programı özeti." },
-                { id: "crm_segments", label: "Segmentler", icon: Users, description: "Müşteri grupları (VIP, Risk, Yeni)." },
-                { id: "crm_loyalty", label: "Puan Sistemi", icon: Gift, description: "Sadakat puanı ayarları ve müşteri puan takibi." },
-                { id: "employee_manager", label: "JetKadro (Personel)", icon: Users, feature: "employee_module", description: "Personel bilgileri ve tanımlamalarını yönet." },
-                { id: "shift_manager", label: "Vardiya Takibi", icon: Clock, feature: "employee_module", description: "Çalışan giriş/çıkış ve vardiya performans takibi." },
+                { id: "reports", label: "Satış Raporları", icon: FileBarChart, feature: "reports", description: "Geleneksel ve gelişmiş satış performans raporları." },
+                { id: "profit_pilot", label: "Kâr Pilotu (AI)", icon: Target, feature: "ai_features", description: "İşletmenizi kâra sokacak yapay zeka destekli stratejiler." },
+                { id: "basket_offers", label: "Akıllı Sepet", icon: ShoppingCart, feature: "ai_features", description: "Sepet değerini arttıran dinamik teklif ve kampanya yönetimi." },
+                { id: "dead_stock", label: "Stok Eritme", icon: Trash2, feature: "ai_features", description: "Rafta yatan parayı (bayat stok) nakde çevirme operasyonu." },
+                { id: "simulation", label: "Fiyat Simülasyonu", icon: TrendingUp, feature: "price_simulator", description: "Fiyat değişikliklerinin kärlılık üzerindeki etkilerini simüle etme aracı." },
+                { id: "ai_insights", label: "AI Öngörüleri", icon: Brain, feature: "ai_features", description: "Yapay zeka analizleri ile işletmenize özel büyüme önerileri." },
             ]
         },
         {
@@ -323,16 +307,43 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
             ]
         },
         {
-            id: "analytics",
-            label: "JetRapor",
-            icon: BarChart3,
+            id: "crm",
+            label: "JetPuan & Sadakat",
+            icon: Heart,
             items: [
-                { id: "reports", label: "Satış Raporları", icon: FileBarChart, feature: "reports", description: "Geleneksel ve gelişmiş satış performans raporları." },
-                { id: "profit_pilot", label: "Kâr Pilotu (AI)", icon: Target, feature: "ai_features", description: "İşletmenizi kâra sokacak yapay zeka destekli stratejiler." },
-                { id: "basket_offers", label: "Akıllı Sepet", icon: ShoppingCart, feature: "ai_features", description: "Sepet değerini arttıran dinamik teklif ve kampanya yönetimi." },
-                { id: "dead_stock", label: "Stok Eritme", icon: Trash2, feature: "ai_features", description: "Rafta yatan parayı (bayat stok) nakde çevirme operasyonu." },
-                { id: "simulation", label: "Fiyat Simülasyonu", icon: TrendingUp, feature: "price_simulator", description: "Fiyat değişikliklerinin kärlılık üzerindeki etkilerini simüle etme aracı." },
-                { id: "ai_insights", label: "AI Öngörüleri", icon: Brain, feature: "ai_features", description: "Yapay zeka analizleri ile işletmenize özel büyüme önerileri." },
+                { id: "crm_overview", label: "Müşteri Analizi", icon: Brain, description: "Yapay zeka destekli müşteri analizi ve sadakat programı özeti." },
+                { id: "crm_segments", label: "Segmentler", icon: Users, description: "Müşteri grupları (VIP, Risk, Yeni)." },
+                { id: "crm_loyalty", label: "Puan Sistemi", icon: Gift, description: "Sadakat puanı ayarları ve müşteri puan takibi." },
+                { id: "employee_manager", label: "JetKadro (Personel)", icon: Users, feature: "employee_module", description: "Personel bilgileri ve tanımlamalarını yönet." },
+                { id: "shift_manager", label: "Vardiya Takibi", icon: Clock, feature: "employee_module", description: "Çalışan giriş/çıkış ve vardiya performans takibi." },
+            ]
+        },
+        {
+            id: "web",
+            label: "JetWeb & Dijital",
+            icon: Globe,
+            items: [
+                { id: "qrmenu", label: "JetQR (QR Menü)", icon: QrCode, feature: "qrmenu", description: "Dijital menünüzü tasarlayın ve yayınlayın." },
+                { id: "showcase", label: "Vitrin Tasarımı", icon: Monitor, feature: "showcase", description: "Müşterileriniz için premium bir açılış sayfası (Vitrin) oluşturun." },
+            ]
+        },
+        {
+            id: "marketing",
+            label: "JetGörünüm",
+            icon: Monitor,
+            items: [
+                { id: "cfd", label: "Müşteri Ekranı (CFD)", icon: Monitor, feature: "cfd", description: "Müşteri tarafında duran işlem takip ekranını yönetin ve özelleştirin." },
+            ]
+        },
+        {
+            id: "tools",
+            label: "JetAraçlar",
+            icon: Layers,
+            items: [
+                { id: "universal_converter", label: "Akıllı Dönüştürücü", icon: ImageIcon, feature: null, description: "Görsel, PDF ve Word dosyalarınız için hepsi bir arada dönüşüm aracı." },
+                { id: "qr_generator", label: "QR Kod Oluşturucu", icon: QrCode, feature: null, description: "WiFi, URL veya metinler için şık QR kodlar tasarlayın." },
+                { id: "currency_converter", label: "Döviz Çevirici", icon: Coins, feature: null, description: "Canlı kurlarla anlık döviz çeviri işlemleri yapın." },
+                { id: "receipt_designer", label: "Fiş Düzenleyicisi", icon: Receipt, feature: null, description: "Bilgi fişlerinizi özelleştirin: logo, mağaza adı, alt başlık, vergi bilgileri." },
             ]
         },
         {
@@ -342,17 +353,6 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
             items: [
                 { id: "audit_logs", label: "Sistem Kayıtları", icon: History, feature: null, description: "Fiyat değişimleri, silme işlemleri ve kritik dükkan hareketleri." },
                 { id: "settings", label: "Genel Ayarlar", icon: Settings, feature: null, description: "Sistem ayarları ve dükkan yapılandırması." },
-            ]
-        },
-        {
-            id: "tools",
-            label: "JetAraçlar",
-            icon: Layers,
-            items: [
-                { id: "universal_converter", label: "Akıllı Dönüştürücü", icon: ImageIcon, feature: null, description: "Görsel, PDF ve Word dosyalarınız için hepsi bir arada dönüşüm aracı." },
-                { id: "qr_generator", label: "QR Kod Oluşturucu", icon: QrCodeIcon, feature: null, description: "WiFi, URL veya metinler için şık QR kodlar tasarlayın." },
-                { id: "currency_converter", label: "Döviz Çevirici", icon: Coins, feature: null, description: "Canlı kurlarla anlık döviz çeviri işlemleri yapın." },
-                { id: "receipt_designer", label: "Fiş Düzenleyicisi", icon: Receipt, feature: null, description: "Bilgi fişlerinizi özelleştirin: logo, mağaza adı, alt başlık, vergi bilgileri." },
             ]
         }
     ];
@@ -821,13 +821,13 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                                                                 whileHover={{ x: 4 }}
                                                                 whileTap={{ scale: 0.98 }}
                                                                 onClick={() => handleTabChange(item.id)}
-                                                                className={`flex-1 flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm ${activeTab === item.id
+                                                                className={`flex-1 flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm min-w-0 ${activeTab === item.id
                                                                     ? 'sidebar-item-active'
                                                                     : 'text-[var(--color-sidebar-muted)] hover:bg-primary/5 hover:text-[var(--color-sidebar-foreground)]'
                                                                     }`}
                                                             >
-                                                                <item.icon className="w-4 h-4" />
-                                                                <span className="font-medium">{item.label}</span>
+                                                                <item.icon className="w-4 h-4 flex-shrink-0" />
+                                                                <span className="font-medium whitespace-nowrap overflow-hidden text-ellipsis">{item.label}</span>
                                                             </motion.button>
 
                                                             <div className="flex items-center gap-1">

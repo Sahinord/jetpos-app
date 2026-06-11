@@ -58,6 +58,11 @@ export default function SmartReports({ products }: any) {
         try {
             if (!currentTenant) return;
 
+            // Tarih nesnelerinin geçerli olup olmadığını kontrol edelim
+            const startIsValid = dateRange.start instanceof Date && !isNaN(dateRange.start.getTime());
+            const endIsValid = dateRange.end instanceof Date && !isNaN(dateRange.end.getTime());
+            if (!startIsValid || !endIsValid) return;
+
             const { data: saleItems, error: itemsError } = await supabase
                 .from('sale_items')
                 .select('*, products(*)')
@@ -189,15 +194,27 @@ export default function SmartReports({ products }: any) {
                     <input 
                         type="date" 
                         className="bg-transparent text-xs font-bold text-white outline-none"
-                        value={dateRange.start.toISOString().split('T')[0]}
-                        onChange={(e) => setDateRange(prev => ({ ...prev, start: new Date(new Date(e.target.value).setHours(0,0,0,0)) }))}
+                        value={dateRange.start instanceof Date && !isNaN(dateRange.start.getTime()) ? dateRange.start.toISOString().split('T')[0] : ""}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            if (!val) return;
+                            const d = new Date(val);
+                            if (isNaN(d.getTime())) return;
+                            setDateRange(prev => ({ ...prev, start: new Date(d.setHours(0,0,0,0)) }));
+                        }}
                     />
                     <span className="text-slate-600">-</span>
                     <input 
                         type="date" 
                         className="bg-transparent text-xs font-bold text-white outline-none"
-                        value={dateRange.end.toISOString().split('T')[0]}
-                        onChange={(e) => setDateRange(prev => ({ ...prev, end: new Date(new Date(e.target.value).setHours(23,59,59,999)) }))}
+                        value={dateRange.end instanceof Date && !isNaN(dateRange.end.getTime()) ? dateRange.end.toISOString().split('T')[0] : ""}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            if (!val) return;
+                            const d = new Date(val);
+                            if (isNaN(d.getTime())) return;
+                            setDateRange(prev => ({ ...prev, end: new Date(d.setHours(23,59,59,999)) }));
+                        }}
                     />
                 </div>
 

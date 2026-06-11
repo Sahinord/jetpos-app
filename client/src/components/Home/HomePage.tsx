@@ -46,6 +46,10 @@ interface QuickAccessItem {
 
 interface HomePageProps {
     onNavigate: (tab: string) => void;
+    dailyTransactions?: number;
+    criticalStockCount?: number;
+    activeUsersCount?: number;
+    todaySalesTotal?: number;
 }
 
 // Tüm kullanılabilir sayfalar
@@ -96,7 +100,7 @@ const TIPS = [
     "Verimlilik İpucu: Hızlı Satış terminalinde F1 kısayolunu kullan."
 ];
 
-export default function HomePage({ onNavigate }: HomePageProps) {
+export default function HomePage({ onNavigate, dailyTransactions = 0, criticalStockCount = 0, activeUsersCount = 1, todaySalesTotal = 0 }: HomePageProps) {
     const { currentTenant } = useTenant();
     const [favorites, setFavorites] = useState<string[]>(DEFAULT_FAVORITES);
     const [currentTip, setCurrentTip] = useState(0);
@@ -138,7 +142,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                     >
                         Hoş Geldin, <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-500 font-black">{currentTenant?.company_name || "DEĞERLİ ÜYEMİZ"}</span>
                     </motion.h1>
-                    <p className="text-secondary/40 font-mono text-xs uppercase tracking-widest">{formattedDate} // {new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</p>
+                    <p className="text-secondary/40 font-mono text-xs uppercase tracking-widest mt-2">{formattedDate} // {new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</p>
                 </div>
 
                 <div className="flex gap-4">
@@ -178,8 +182,8 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                             </div>
                         </div>
                         <div className="text-right">
-                            <p className="text-3xl font-black text-white tracking-tighter">₺0.00</p>
-                            <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">+%0.0 BUGÜN</p>
+                            <p className="text-3xl font-black text-white tracking-tighter">₺{todaySalesTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                            <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mt-1">BUGÜNKÜ CİRO</p>
                         </div>
                     </div>
 
@@ -276,9 +280,9 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             {/* Bottom Diagnostic Stats */}
             <footer className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
                 {[
-                    { label: "GÜNLÜK İŞLEM", value: "0", sub: "Beklemede", icon: ShoppingCart, color: "text-emerald-400" },
-                    { label: "KRİTİK STOK", value: "0", sub: "Ürün", icon: Package, color: "text-rose-400" },
-                    { label: "AKTİF KULLANICI", value: "1", sub: "Çevrimiçi", icon: User, color: "text-blue-400" }
+                    { label: "GÜNLÜK İŞLEM", value: dailyTransactions.toString(), sub: "Tamamlanan", icon: ShoppingCart, color: "text-emerald-400" },
+                    { label: "KRİTİK STOK", value: criticalStockCount.toString(), sub: "Ürün", icon: Package, color: "text-rose-400" },
+                    { label: "AKTİF KULLANICI", value: activeUsersCount.toString(), sub: "Çevrimiçi", icon: User, color: "text-blue-400" }
                 ].map((diag, i) => (
                     <motion.div
                         key={i}

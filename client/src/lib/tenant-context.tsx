@@ -16,6 +16,8 @@ interface Tenant {
     expires_at?: string;
     max_stores?: number;
     fixed_warehouses?: any[];
+    setup_completed?: boolean;
+    module_setup?: any;
 }
 
 interface Warehouse {

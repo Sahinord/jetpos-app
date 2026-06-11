@@ -14,6 +14,7 @@ import { PrintReceiptButton, triggerManualPrint, ReceiptPreview } from "./Receip
 import { Html5QrcodeScanner } from "html5-qrcode";
 import { useTenant } from "@/lib/tenant-context";
 import { supabase, auditLog } from "@/lib/supabase";
+import { useTranslation } from "@/lib/i18n";
 import { readScaleWeight } from "@/lib/hardware";
 import CariSearchModal from "../Cari/CariSearchModal";
 import PinVerificationModal from "../Common/PinVerificationModal";
@@ -43,10 +44,17 @@ export default function POS({
     onRefresh,
     receiptSettings = {}
 }: any) {
+    const { t } = useTranslation();
     const [contextMenu, setContextMenu] = useState<{ x: number, y: number, product: any } | null>(null);
     const [isQuickEditModalOpen, setIsQuickEditModalOpen] = useState(false);
     const [quickEditingProduct, setQuickEditingProduct] = useState<any>(null);
     const [isSaving, setIsSaving] = useState(false);
+
+    // Refund States
+    const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
+    const [refundItems, setRefundItems] = useState<any[]>([]);
+    const [refundSearch, setRefundSearch] = useState("");
+    const [isRefunding, setIsRefunding] = useState(false);
     // Audio Utility for "Beep"
     const playBeep = () => {
         if (!isBeepEnabled) return; // Respect global sound setting
@@ -448,7 +456,69 @@ export default function POS({
         setSuspendedSales([...suspendedSales, { id: Date.now(), cart, discount, time: new Date() }]);
         setCart([]);
         setDiscount(0);
-        showToast("Satış askıya alındı");
+        showToast(t('pos.sale_suspended'));
+    };
+
+    // === REFUND LOGIC ===
+    const addToRefund = (barcode: string) => {
+        const product = barcodeMap.get(barcode.toLowerCase());
+        if (!product) {
+            showToast(t('pos.refund_product_not_found') + ": " + barcode, "error");
+            return;
+        }
+        const existing = refundItems.find(item => item.id === product.id);
+        if (existing) {
+            setRefundItems(refundItems.map(item =>
+                item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+            ));
+        } else {
+            setRefundItems([...refundItems, { ...product, quantity: 1 }]);
+        }
+        playBeep();
+        showToast(`${product.name} — ${t('pos.refund_item_added')}`, "success");
+        setRefundSearch("");
+    };
+
+    const handleRefund = async () => {
+        if (refundItems.length === 0 || !currentTenant) return;
+        setIsRefunding(true);
+        try {
+            // 1. Restore stock for each item
+            for (const item of refundItems) {
+                const { error } = await supabase
+                    .from('products')
+                    .update({ stock_quantity: (item.stock_quantity || 0) + item.quantity })
+                    .eq('id', item.id)
+                    .eq('tenant_id', currentTenant.id);
+                if (error) throw error;
+            }
+
+            // 2. Record refund as negative sale
+            const refundTotal = refundItems.reduce((sum, item) => sum + (item.sale_price * item.quantity), 0);
+            const { error: saleError } = await supabase
+                .from('sales')
+                .insert({
+                    tenant_id: currentTenant.id,
+                    total_amount: -refundTotal,
+                    payment_method: 'İADE',
+                    items: refundItems.map(i => ({ id: i.id, name: i.name, barcode: i.barcode, quantity: i.quantity, price: i.sale_price })),
+                    warehouse_id: activeWarehouse?.id || null,
+                    employee_id: activeEmployee?.id || null,
+                });
+            if (saleError) throw saleError;
+
+            // 3. Audit log
+            auditLog(currentTenant.id, 'REFUND', `İade: ${refundItems.length} ürün, ₺${refundTotal.toFixed(2)}`);
+
+            showToast(t('pos.refund_success') + ` — ₺${refundTotal.toFixed(2)}`, "success");
+            setRefundItems([]);
+            setIsRefundModalOpen(false);
+            if (onRefresh) onRefresh();
+        } catch (err: any) {
+            showToast(err.message || "İade hatası", "error");
+        } finally {
+            setIsRefunding(false);
+        }
     };
 
     const recallSale = (suspended: any) => {
@@ -464,7 +534,7 @@ export default function POS({
         // VERESİYE kontrolü: Müşteri seçili değilse modalı aç ve dur.
         if (method === "VERESİYE" && !selectedCari) {
             setIsCariModalOpen(true);
-            showToast("Veresiye satışı için lütfen önce müşteri seçiniz!", "warning");
+            showToast(t('pos.select_customer_first'), "warning");
             return;
         }
 
@@ -548,8 +618,8 @@ export default function POS({
                             <div className={`absolute inset-0 w-2.5 h-2.5 rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-rose-500'} animate-ping opacity-30`} />
                         </div>
                         <div className="flex flex-col leading-none">
-                            <span className="text-[8px] font-black text-slate-500 tracking-[1.5px] uppercase mb-0.5">SİSTEM</span>
-                            <span className={`text-[11px] font-black ${isOnline ? 'text-emerald-500' : 'text-rose-500'} uppercase`}>{isOnline ? 'ONLINE' : 'OFFLINE'}</span>
+                            <span className="text-[8px] font-black text-slate-500 tracking-[1.5px] uppercase mb-0.5">{t('pos.system')}</span>
+                            <span className={`text-[11px] font-black ${isOnline ? 'text-emerald-500' : 'text-rose-500'} uppercase`}>{isOnline ? t('pos.online') : t('pos.offline')}</span>
                         </div>
                     </div>
 
@@ -557,8 +627,8 @@ export default function POS({
                         <div className="flex items-center h-12 px-4 bg-amber-500/10 border border-amber-500/20 rounded-xl animate-pulse">
                             <Clock size={16} className="text-amber-500 mr-3" />
                             <div className="flex flex-col leading-none">
-                                <span className="text-[8px] font-black text-amber-600 tracking-[1.5px] uppercase mb-0.5">BEKLEYEN</span>
-                                <span className="text-[11px] font-black text-amber-500 uppercase">{pendingCount} SATIŞ</span>
+                                <span className="text-[8px] font-black text-amber-600 tracking-[1.5px] uppercase mb-0.5">{t('pos.pending')}</span>
+                                <span className="text-[11px] font-black text-amber-500 uppercase">{pendingCount} {t('pos.sales')}</span>
                             </div>
                         </div>
                     )}
@@ -566,7 +636,7 @@ export default function POS({
                     <div className={`flex items-center h-12 px-4 ${theme === 'light' ? 'bg-white' : 'bg-slate-900/50'} border border-white/5 rounded-xl shadow-inner`}>
                         <Monitor size={16} className="text-primary mr-3" />
                         <div className="flex flex-col leading-none">
-                            <span className="text-[8px] font-black text-slate-500 tracking-[1.5px] uppercase mb-0.5">TERMİNAL</span>
+                            <span className="text-[8px] font-black text-slate-500 tracking-[1.5px] uppercase mb-0.5">{t('pos.terminal')}</span>
                             <span className={`text-[11px] font-black ${theme === 'light' ? 'text-slate-800' : 'text-slate-200'} uppercase`}>T-01</span>
                         </div>
                     </div>
@@ -579,7 +649,7 @@ export default function POS({
                         className="flex items-center gap-2 px-3 py-1.5 hover:bg-white/5 rounded-lg transition-all group"
                     >
                         <Users size={14} className="text-amber-500 group-hover:scale-110 transition-transform" />
-                        <span className="text-[10px] font-black text-white/90 uppercase tracking-widest">CARİ REHBER</span>
+                        <span className="text-[10px] font-black text-white/90 uppercase tracking-widest">{t('pos.cari_guide')}</span>
                     </button>
                     <div className="w-px h-6 bg-white/10 mx-1" />
                     <button
@@ -587,14 +657,14 @@ export default function POS({
                         className="flex items-center gap-2 px-3 py-1.5 hover:bg-white/5 rounded-lg transition-all group"
                     >
                         <BarChart3 size={14} className="text-indigo-400 group-hover:scale-110 transition-transform" />
-                        <span className="text-[10px] font-black text-white/90 uppercase tracking-widest">RAPORLAR</span>
+                        <span className="text-[10px] font-black text-white/90 uppercase tracking-widest">{t('pos.reports')}</span>
                     </button>
                 </div>
 
                 {/* 3. Terminal Settings & Price Mode */}
                 <div className={`flex items-center gap-6 h-12 px-6 ${theme === 'light' ? 'bg-white' : 'bg-slate-900/50'} border border-white/5 rounded-xl shadow-inner`}>
                     <div className="flex flex-col leading-none">
-                        <span className="text-[8px] font-black text-slate-500 tracking-[1.5px] uppercase mb-1">ŞUBE</span>
+                        <span className="text-[8px] font-black text-slate-500 tracking-[1.5px] uppercase mb-1">{t('pos.branch')}</span>
                         <div className="flex items-center gap-2">
                             <Building2 size={12} className="text-primary" />
                             <select
@@ -616,11 +686,11 @@ export default function POS({
                     </div>
                     <div className="w-px h-6 bg-white/10" />
                     <div className="flex flex-col leading-none">
-                        <span className="text-[8px] font-black text-slate-500 tracking-[1.5px] uppercase mb-1">FİYAT MODU</span>
+                        <span className="text-[8px] font-black text-slate-500 tracking-[1.5px] uppercase mb-1">{t('pos.price_mode')}</span>
                         <div className="flex items-center gap-2">
                             <BadgePercent size={14} className={isPriceSyncEnabled ? 'text-amber-500' : 'text-emerald-500'} />
                             <span className={`text-[10px] font-black ${isPriceSyncEnabled ? 'text-amber-500' : 'text-emerald-500'}`}>
-                                {isPriceSyncEnabled ? 'SENKRONİZE' : 'MAĞAZA BAZLI'}
+                                {isPriceSyncEnabled ? t('pos.synced') : t('pos.store_based')}
                             </span>
                         </div>
                     </div>
@@ -633,8 +703,8 @@ export default function POS({
                             <User size={16} className="text-primary" />
                         </div>
                         <div className="flex flex-col leading-none mr-4">
-                            <span className="text-[8px] font-black text-slate-500 tracking-[1.5px] uppercase mb-0.5">OPERATÖR</span>
-                            <span className={`text-[11px] font-black ${theme === 'light' ? 'text-slate-800' : 'text-white'} uppercase`}>{activeEmployee ? activeEmployee.first_name : 'ADMİN'}</span>
+                            <span className="text-[8px] font-black text-slate-500 tracking-[1.5px] uppercase mb-0.5">{t('pos.operator')}</span>
+                            <span className={`text-[11px] font-black ${theme === 'light' ? 'text-slate-800' : 'text-white'} uppercase`}>{activeEmployee ? activeEmployee.first_name : t('pos.admin')}</span>
                         </div>
                         <button
                             onClick={() => setActiveTab("settings")}
@@ -672,15 +742,15 @@ export default function POS({
                                         <ShoppingCart size={20} className="text-primary" />
                                     </div>
                                     <div>
-                                        <h3 className="font-black text-sm uppercase tracking-widest text-foreground">SATIŞ LİSTESİ</h3>
-                                        <p className="text-[9px] text-secondary font-bold tracking-wider">{cart.length} ürün</p>
+                                        <h3 className="font-black text-sm uppercase tracking-widest text-foreground">{t('pos.cart_title')}</h3>
+                                        <p className="text-[9px] text-secondary font-bold tracking-wider">{cart.length} {t('pos.items')}</p>
                                     </div>
                                 </div>
                                 <button
                                     onClick={() => setCart([])}
                                     className="px-4 py-2 text-xs font-bold text-rose-500 hover:text-rose-600 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 hover:border-rose-500/40 rounded-xl transition-all active:scale-95"
                                 >
-                                    TEMİZLE
+                                    {t('pos.clear')}
                                 </button>
                             </div>
                         </div>
@@ -690,10 +760,10 @@ export default function POS({
                                 <thead className="sticky top-0 bg-card z-10 text-[10px] font-black text-secondary uppercase tracking-widest border-b border-border">
                                     <tr>
                                         <th className="p-4 w-12 text-center">#</th>
-                                        <th className="p-4">ÜRÜN / BARKOD</th>
-                                        <th className="p-4 text-center">MİKTAR</th>
-                                        <th className="p-4 text-right">FİYAT</th>
-                                        <th className="p-4 text-right">TOPLAM</th>
+                                        <th className="p-4">{t('pos.product_barcode')}</th>
+                                        <th className="p-4 text-center">{t('pos.quantity')}</th>
+                                        <th className="p-4 text-right">{t('pos.price')}</th>
+                                        <th className="p-4 text-right">{t('pos.total')}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-border/50">
@@ -748,7 +818,7 @@ export default function POS({
                             {cart.length === 0 && (
                                 <div className="h-full flex flex-col items-center justify-center text-secondary opacity-20 p-20">
                                     <ShoppingCart size={80} strokeWidth={1} />
-                                    <p className="mt-4 font-black uppercase tracking-[4px]">SEPET BOŞ</p>
+                                    <p className="mt-4 font-black uppercase tracking-[4px]">{t('pos.cart_empty')}</p>
                                 </div>
                             )}
                         </div>
@@ -764,7 +834,7 @@ export default function POS({
                                 <div className="flex justify-between items-center px-3 py-1.5 bg-primary/5 rounded-lg border border-primary/10">
                                     <span className="text-[9px] font-black uppercase tracking-widest text-secondary flex items-center gap-1.5">
                                         <Calculator size={10} className="text-primary/50" />
-                                        Ara Toplam
+                                        {t('pos.subtotal')}
                                     </span>
                                     <span className="text-xs font-bold text-foreground">₺{subtotal.toFixed(2)}</span>
                                 </div>
@@ -773,7 +843,7 @@ export default function POS({
                                 <div className="flex justify-between items-center px-3 py-1.5 bg-rose-500/5 rounded-lg border border-rose-500/20">
                                     <span className="text-[9px] font-black uppercase tracking-widest text-rose-500 flex items-center gap-1.5">
                                         <BadgePercent size={10} className="text-rose-500" />
-                                        İndirim
+                                        {t('pos.discount')}
                                     </span>
                                     <span className="text-xs font-bold text-rose-500">- ₺{discount.toFixed(2)}</span>
                                 </div>
@@ -782,7 +852,7 @@ export default function POS({
                                 <div className="flex justify-between items-center px-3 py-1.5 bg-blue-500/5 rounded-lg border border-blue-500/20">
                                     <span className="text-[9px] font-black uppercase tracking-widest text-blue-600 flex items-center gap-1.5">
                                         <Hash size={10} className="text-blue-600" />
-                                        KDV Dahil
+                                        {t('pos.tax_included')}
                                     </span>
                                     <span className="text-xs font-bold text-blue-600">₺{(total * 0.1).toFixed(2)}</span>
                                 </div>
@@ -791,7 +861,7 @@ export default function POS({
                                 <div className="flex justify-between items-center px-3 py-1.5 bg-primary/5 rounded-lg border border-primary/10">
                                     <span className="text-[9px] font-black uppercase tracking-widest text-secondary flex items-center gap-1.5">
                                         <Banknote size={10} className="text-emerald-400/50" />
-                                        Ödenen (Nakit)
+                                        {t('pos.paid_cash')}
                                     </span>
                                     <span className="text-xs font-bold text-foreground">₺{parseFloat(numpadValue.replace(',', '.')) || 0}</span>
                                 </div>
@@ -800,7 +870,7 @@ export default function POS({
                                 <div className="flex justify-between items-center px-3 py-2 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border border-primary/20">
                                     <span className="text-[9px] font-black uppercase tracking-widest text-primary flex items-center gap-1.5">
                                         <Sparkles size={10} className="animate-pulse" />
-                                        Para Üstü
+                                        {t('pos.change')}
                                     </span>
                                     <span className="text-lg font-black text-primary">₺{Math.max(0, (parseFloat(numpadValue.replace(',', '.')) || 0) - total).toFixed(2)}</span>
                                 </div>
@@ -810,8 +880,8 @@ export default function POS({
                                     <div className="absolute inset-0 bg-gradient-to-t from-emerald-500/10 to-transparent" />
                                     <div className="relative flex justify-between items-center">
                                         <div>
-                                            <span className="text-[9px] font-black uppercase tracking-widest text-emerald-300 block mb-0.5">Genel Toplam</span>
-                                            <span className="text-[10px] text-emerald-400/60 font-bold">{cart.length} Ürün</span>
+                                            <span className="text-[9px] font-black uppercase tracking-widest text-emerald-300 block mb-0.5">{t('pos.grand_total')}</span>
+                                            <span className="text-[10px] text-emerald-400/60 font-bold">{cart.length} {t('pos.items')}</span>
                                         </div>
                                         <div className="text-right">
                                             <div className="text-2xl font-black bg-gradient-to-r from-emerald-400 to-emerald-300 bg-clip-text text-transparent">
@@ -836,7 +906,7 @@ export default function POS({
                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-secondary group-focus-within:text-primary w-5 h-5 transition-colors" />
                                 <input
                                     type="text"
-                                    placeholder="Ürün ara veya barkod okut..."
+                                    placeholder={t('pos.search_placeholder')}
                                     className={`relative w-full ${theme === 'light' ? 'bg-white border-primary/20 text-slate-900' : 'bg-card/50 border-border/60 text-white'} border rounded-xl py-4 pl-12 pr-12 outline-none font-medium placeholder:text-secondary/40 transition-all focus:shadow-lg focus:shadow-primary/5 backdrop-blur-sm`}
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
@@ -922,7 +992,7 @@ export default function POS({
                                                                             'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]'
                                                                         }`} />
                                                                     <span className="text-[10px] font-black tracking-tight whitespace-nowrap uppercase">
-                                                                        {qty} STOK
+                                                                        {qty} {t('pos.stock')}
                                                                     </span>
                                                                 </div>
                                                             </div>
@@ -938,7 +1008,7 @@ export default function POS({
 
                                 {/* Sentinel element for infinite scroll */}
                                 <div ref={sentinelRef} className="col-span-full h-10 flex items-center justify-center text-secondary/20 font-black text-[10px] tracking-[4px] uppercase py-10">
-                                    {filteredProducts.length > displayLimit ? "Ürünler Yükleniyor..." : "Listenin Sonu"}
+                                    {filteredProducts.length > displayLimit ? t('loading') : "—"}
                                 </div>
                             </div>
                         </div>
@@ -947,14 +1017,18 @@ export default function POS({
                     {/* RIGHT Sidebar (Scroll & Alignment Re-architecture) */}
                     <div className="w-[340px] h-full overflow-hidden">
                         <div className="h-full overflow-y-auto flex flex-col gap-3 justify-start items-stretch pr-2 pt-0 custom-scrollbar">
-                            {/* Suspend/Resume Actions */}
-                            <div className="grid grid-cols-2 gap-2">
+                            {/* Suspend/Resume/Refund Actions */}
+                            <div className="grid grid-cols-3 gap-2">
                                 <button onClick={suspendSale} className="py-3 bg-primary/5 border border-border text-secondary font-bold rounded-xl hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all text-[9px] tracking-widest uppercase flex items-center justify-center gap-2">
-                                    <Pause size={12} /> ASKIYA AL
+                                    <Pause size={12} /> {t('pos.suspend')}
                                 </button>
                                 <button onClick={() => setShowSuspendedModal(true)} className="py-3 bg-primary/5 border border-border text-secondary font-bold rounded-xl hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all text-[9px] tracking-widest uppercase flex items-center justify-center gap-2 relative">
-                                    <Play size={12} /> ASKIYI AÇ
+                                    <Play size={12} /> {t('pos.resume')}
                                     {suspendedSales.length > 0 && <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-[9px] rounded-full flex items-center justify-center border-2 border-card">{suspendedSales.length}</span>}
+                                </button>
+                                <button onClick={() => setIsRefundModalOpen(true)} className={`py-3 ${theme === 'light' ? 'bg-rose-50 border-rose-300 text-rose-600 hover:bg-rose-100' : 'bg-rose-500/10 border-rose-500/30 text-rose-400 hover:bg-rose-500/20'} border font-bold rounded-xl transition-all text-[9px] tracking-widest uppercase flex items-center justify-center gap-2 active:scale-95`}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                                    {t('pos.refund')}
                                 </button>
                             </div>
 
@@ -975,9 +1049,9 @@ export default function POS({
                                             <User size={16} className={selectedCari ? 'animate-pulse' : ''} />
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="text-[8px] font-black text-slate-500 tracking-[0.1em] uppercase">MÜŞTERİ</span>
+                                            <span className="text-[8px] font-black text-slate-500 tracking-[0.1em] uppercase">{t('pos.customer')}</span>
                                             <span className={`text-[11px] font-black uppercase truncate max-w-[180px] ${selectedCari ? 'text-amber-500' : theme === 'light' ? 'text-slate-800' : 'text-slate-400'}`}>
-                                                {selectedCari ? selectedCari.unvani : 'PERAKENDE MÜŞTERİ'}
+                                                {selectedCari ? selectedCari.unvani : t('pos.retail_customer')}
                                             </span>
                                         </div>
                                     </div>
@@ -998,23 +1072,23 @@ export default function POS({
                             <div className="grid grid-cols-4 gap-2">
                                 <button onClick={() => { setActiveInput(activeInput === "quantity" ? "discount" : "quantity"); }} className={`relative aspect-square rounded-xl flex flex-col items-center justify-center transition-all border ${activeInput === "discount" ? 'bg-primary text-white border-primary shadow-md' : theme === 'light' ? 'bg-white border-primary/20 text-primary hover:bg-primary/5' : 'bg-primary/5 border-border text-primary hover:bg-primary/10'}`} title="Mod Değiştir">
                                     <BadgePercent size={10} className="absolute top-1.5 left-1.5 opacity-40" />
-                                    <span className="text-[9px] font-black uppercase tracking-tighter text-center leading-tight">MOD<br/>DEĞİŞ</span>
+                                    <span className="text-[9px] font-black uppercase tracking-tighter text-center leading-tight" style={{whiteSpace:'pre-line'}}>{t('pos.mode_switch')}</span>
                                 </button>
                                 <button onClick={() => { setIsPriceCheckMode(!isPriceCheckMode); }} className={`relative aspect-square rounded-xl flex flex-col items-center justify-center transition-all border ${isPriceCheckMode ? 'bg-primary text-white border-primary' : theme === 'light' ? 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50' : 'bg-primary/5 border-border text-secondary hover:bg-primary/10'}`} title="Fiyat Gör">
                                     <Search size={10} className="absolute top-1.5 left-1.5 opacity-40" />
-                                    <span className="text-[9px] font-black uppercase tracking-tighter text-center leading-tight">FİYAT<br/>GÖR</span>
+                                    <span className="text-[9px] font-black uppercase tracking-tighter text-center leading-tight" style={{whiteSpace:'pre-line'}}>{t('pos.price_check')}</span>
                                 </button>
                                 <button onClick={() => setIsScannerOpen(true)} className={`relative aspect-square rounded-xl ${theme === 'light' ? 'bg-white border-primary/20 text-primary hover:bg-primary/5' : 'bg-primary/5 border-border text-primary hover:bg-primary/10'} border flex flex-col items-center justify-center transition-all shadow-sm`} title="Barkod Tara">
                                     <Camera size={10} className="absolute top-1.5 left-1.5 opacity-40" />
-                                    <span className="text-[9px] font-black uppercase tracking-tighter text-center leading-tight">BARKOD<br/>TARA</span>
+                                    <span className="text-[9px] font-black uppercase tracking-tighter text-center leading-tight" style={{whiteSpace:'pre-line'}}>{t('pos.barcode_scan')}</span>
                                 </button>
                                 <button onClick={() => setCart(cart.slice(0, -1))} className={`relative aspect-square rounded-xl ${theme === 'light' ? 'bg-white border-rose-200 text-rose-500 hover:bg-rose-50' : 'bg-primary/5 border-border text-rose-500 hover:bg-rose-500/10'} border flex flex-col items-center justify-center transition-all shadow-sm`} title="Son Satırı Sil">
                                     <Delete size={10} className="absolute top-1.5 left-1.5 opacity-40" />
-                                    <span className="text-[9px] font-black uppercase tracking-tighter text-center leading-tight">ÜRÜN<br/>SİL</span>
+                                    <span className="text-[9px] font-black uppercase tracking-tighter text-center leading-tight" style={{whiteSpace:'pre-line'}}>{t('pos.delete_last')}</span>
                                 </button>
                                 <button onClick={() => setCart([])} className={`relative aspect-square rounded-xl ${theme === 'light' ? 'bg-rose-50 border-rose-200 text-rose-600 hover:bg-rose-100' : 'bg-rose-500/10 border-rose-500/20 text-rose-500 hover:bg-rose-500/20'} border flex flex-col items-center justify-center transition-all shadow-sm`} title="Satışı İptal Et">
                                     <X size={10} className="absolute top-1.5 left-1.5 opacity-40" />
-                                    <span className="text-[9px] font-black uppercase tracking-tighter text-center leading-tight">SATIŞ<br/>İPTAL</span>
+                                    <span className="text-[9px] font-black uppercase tracking-tighter text-center leading-tight" style={{whiteSpace:'pre-line'}}>{t('pos.cancel_sale')}</span>
                                 </button>
                                 <button
                                     onClick={() => {
@@ -1028,7 +1102,7 @@ export default function POS({
                                     disabled={!lastTransaction}
                                 >
                                     <Clock size={10} className="absolute top-1.5 left-1.5 opacity-40" />
-                                    <span className="text-[9px] font-black uppercase tracking-tighter text-center leading-tight">FİŞ<br/>GERİ</span>
+                                    <span className="text-[9px] font-black uppercase tracking-tighter text-center leading-tight" style={{whiteSpace:'pre-line'}}>{t('pos.recall_receipt')}</span>
                                 </button>
                                 <button
                                     onClick={handleOpenCashDrawerManual}
@@ -1036,7 +1110,7 @@ export default function POS({
                                     title="Kasa Aç"
                                 >
                                     <Wallet size={10} className="absolute top-1.5 left-1.5 opacity-60" />
-                                    <span className={`text-[9px] font-black uppercase tracking-tighter text-center leading-tight ${theme === 'light' ? 'text-amber-600' : 'text-amber-400'}`}>KASA<br/>AÇ</span>
+                                    <span className={`text-[9px] font-black uppercase tracking-tighter text-center leading-tight ${theme === 'light' ? 'text-amber-600' : 'text-amber-400'}`} style={{whiteSpace:'pre-line'}}>{t('pos.open_drawer')}</span>
                                 </button>
                                 <button
                                     onClick={() => setIsCariModalOpen(true)}
@@ -1044,7 +1118,7 @@ export default function POS({
                                     title="Müşteri Seç"
                                 >
                                     <Users size={10} className="absolute top-1.5 left-1.5 opacity-40" />
-                                    <span className="text-[9px] font-black uppercase tracking-tighter text-center leading-tight">MÜŞTERİ<br/>SEÇ</span>
+                                    <span className="text-[9px] font-black uppercase tracking-tighter text-center leading-tight" style={{whiteSpace:'pre-line'}}>{t('pos.select_customer')}</span>
                                 </button>
                             </div>
 
@@ -1122,7 +1196,7 @@ export default function POS({
                                 >
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                                     <Banknote size={20} className="mb-1.5 group-hover:scale-105 transition-transform relative z-10" />
-                                    <span className="text-[10px] font-bold tracking-wider relative z-10">NAKİT</span>
+                                    <span className="text-[10px] font-bold tracking-wider relative z-10">{t('pos.cash')}</span>
                                 </button>
                                 <button
                                     onClick={() => {
@@ -1134,15 +1208,15 @@ export default function POS({
                                 >
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                                     <CreditCard size={20} className="mb-1.5 group-hover:scale-105 transition-transform relative z-10" />
-                                    <span className="text-[10px] font-bold tracking-wider relative z-10">KART</span>
+                                    <span className="text-[10px] font-bold tracking-wider relative z-10">{t('pos.card')}</span>
                                 </button>
                                 <button onClick={() => handleCheckout("VERESİYE")} className="group relative flex flex-col items-center justify-center p-3 rounded-xl bg-primary text-white hover:scale-[1.01] transition-all shadow-md shadow-primary/20 active:scale-95 border border-primary/20 overflow-hidden">
                                     <Wallet size={20} className="mb-1.5 z-10" />
-                                    <span className="text-[10px] font-bold z-10">VERESİYE</span>
+                                    <span className="text-[10px] font-bold z-10">{t('pos.credit')}</span>
                                 </button>
                                 <button onClick={() => handleCheckout("HAVALE/EFT")} className="group relative flex flex-col items-center justify-center p-3 rounded-xl bg-primary text-white hover:scale-[1.01] transition-all shadow-md shadow-primary/20 active:scale-95 border border-primary/20 overflow-hidden">
                                     <Building2 size={20} className="mb-1.5 z-10" />
-                                    <span className="text-[10px] font-bold z-10">HAVALE/EFT</span>
+                                    <span className="text-[10px] font-bold z-10">{t('pos.transfer')}</span>
                                 </button>
                             </div>
                         </div>
@@ -1192,7 +1266,7 @@ export default function POS({
                             <div className="p-6 border-b border-border bg-amber-500/10 flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <Clock className="text-amber-500" />
-                                    <h3 className="font-black uppercase tracking-widest">ASKIYA ALINMIŞ SATIŞLAR</h3>
+                                    <h3 className="font-black uppercase tracking-widest">{t('pos.suspended_sales')}</h3>
                                 </div>
                                 <button onClick={() => setShowSuspendedModal(false)} className="p-2 hover:bg-white/5 rounded-xl transition-all"><X /></button>
                             </div>
@@ -1571,6 +1645,124 @@ export default function POS({
                     showToast("İskonto yetkili onayı olmadığı için iptal edildi.", "warning");
                 }}
             />
+
+            {/* === REFUND MODAL === */}
+            <AnimatePresence>
+                {isRefundModalOpen && (
+                    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-background/95 backdrop-blur-xl">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="glass-card w-full max-w-lg !p-0 overflow-hidden shadow-2xl border-rose-500/30"
+                        >
+                            {/* Header */}
+                            <div className="p-5 border-b border-border bg-gradient-to-r from-rose-500/20 to-rose-500/5 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2.5 bg-rose-500/20 rounded-xl border border-rose-500/30">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-rose-500"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                                    </div>
+                                    <div>
+                                        <h3 className="font-black uppercase tracking-widest text-foreground">{t('pos.refund_title')}</h3>
+                                        <p className="text-[9px] text-secondary font-bold tracking-wider mt-0.5">{refundItems.length} {t('pos.items')}</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => { setIsRefundModalOpen(false); setRefundItems([]); setRefundSearch(''); }}
+                                    className="p-2 hover:bg-white/5 rounded-xl transition-all text-secondary hover:text-foreground"
+                                >
+                                    <X />
+                                </button>
+                            </div>
+
+                            {/* Barcode Input */}
+                            <div className="p-4 border-b border-border/50">
+                                <div className="relative">
+                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-rose-400" />
+                                    <input
+                                        type="text"
+                                        placeholder={t('pos.refund_scan_placeholder')}
+                                        className="w-full bg-rose-500/5 border border-rose-500/20 rounded-xl py-3.5 pl-12 pr-4 focus:outline-none focus:border-rose-500/50 transition-all text-lg font-bold placeholder:text-secondary/40 text-foreground"
+                                        value={refundSearch}
+                                        onChange={(e) => setRefundSearch(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && refundSearch.trim()) {
+                                                addToRefund(refundSearch.trim());
+                                            }
+                                        }}
+                                        onPaste={(e) => {
+                                            e.preventDefault();
+                                            const pasted = e.clipboardData.getData('text').trim();
+                                            if (pasted) addToRefund(pasted);
+                                        }}
+                                        autoFocus
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Refund Items List */}
+                            <div className="max-h-[40vh] overflow-y-auto p-4 space-y-2">
+                                {refundItems.length === 0 ? (
+                                    <div className="text-center py-12 text-secondary/30">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-3 opacity-30"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                                        <p className="font-black text-xs uppercase tracking-[3px]">{t('pos.refund_empty')}</p>
+                                    </div>
+                                ) : (
+                                    refundItems.map((item) => (
+                                        <div key={item.id} className="flex items-center justify-between p-3 bg-rose-500/5 border border-rose-500/10 rounded-xl">
+                                            <div className="flex-1">
+                                                <div className="font-bold text-sm text-foreground">{item.name}</div>
+                                                <div className="text-[10px] text-secondary font-medium">{item.barcode}</div>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => setRefundItems(refundItems.map(i => i.id === item.id ? { ...i, quantity: Math.max(1, i.quantity - 1) } : i))}
+                                                        className="p-1 hover:text-rose-500 transition-colors"
+                                                    >
+                                                        <Minus size={14} />
+                                                    </button>
+                                                    <span className="font-black text-primary text-sm w-8 text-center">{item.quantity}</span>
+                                                    <button
+                                                        onClick={() => setRefundItems(refundItems.map(i => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i))}
+                                                        className="p-1 hover:text-emerald-500 transition-colors"
+                                                    >
+                                                        <Plus size={14} />
+                                                    </button>
+                                                </div>
+                                                <span className="font-black text-sm text-foreground w-20 text-right">₺{(item.sale_price * item.quantity).toFixed(2)}</span>
+                                                <button
+                                                    onClick={() => setRefundItems(refundItems.filter(i => i.id !== item.id))}
+                                                    className="p-1.5 hover:bg-rose-500/20 text-rose-500 rounded-md transition-colors"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+
+                            {/* Refund Footer */}
+                            {refundItems.length > 0 && (
+                                <div className="p-4 border-t border-border bg-card/50 space-y-3">
+                                    <div className="flex justify-between items-center px-2">
+                                        <span className="text-xs font-black uppercase tracking-widest text-rose-400">{t('pos.refund_total')}</span>
+                                        <span className="text-xl font-black text-rose-500">₺{refundItems.reduce((sum, item) => sum + (item.sale_price * item.quantity), 0).toFixed(2)}</span>
+                                    </div>
+                                    <button
+                                        onClick={handleRefund}
+                                        disabled={isRefunding}
+                                        className="w-full py-4 bg-gradient-to-r from-rose-500 to-rose-600 text-white font-black text-sm uppercase tracking-widest rounded-xl hover:shadow-lg hover:shadow-rose-500/30 active:scale-[0.98] transition-all disabled:opacity-50"
+                                    >
+                                        {isRefunding ? t('loading') : t('pos.refund_confirm')}
+                                    </button>
+                                </div>
+                            )}
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     </div>
     );

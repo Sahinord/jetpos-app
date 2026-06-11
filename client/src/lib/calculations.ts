@@ -12,9 +12,9 @@ export interface ProductPriceData {
  * Calculates profit in TL and Percentage
  */
 export const calculateProfit = (
-  purchasePrice: number, 
-  salePrice: number, 
-  commissionRate: number = 0, 
+  purchasePrice: number,
+  salePrice: number,
+  commissionRate: number = 0,
   shippingCost: number = 0
 ) => {
   const commissionAmount = (salePrice * commissionRate) / 100;
@@ -85,14 +85,38 @@ export const calculateVatValues = (price: number, vatRate: number, included: boo
 /**
  * Summary Stats Calculations
  */
-export const calculateStockMetrics = (products: any[]) => {
+export const calculateStockMetrics = (
+  products: any[],
+  activeWarehouseId?: string,
+  isStockSyncEnabled: boolean = false,
+  isPriceSyncEnabled: boolean = false
+) => {
   const result = products.reduce((acc, product) => {
-    const qty = product.stock_quantity || 0;
-    const cost = (product.purchase_price || 0) * qty;
-    const value = (product.sale_price || 0) * qty;
+    const wsData = (activeWarehouseId && product.warehouse_stock)
+      ? product.warehouse_stock.find((ws: any) => ws.warehouse_id === activeWarehouseId)
+      : null;
+
+    const qty = (isStockSyncEnabled || !activeWarehouseId)
+      ? (Number(product.stock_quantity) || 0)
+      : (Number(wsData?.quantity) || 0);
+
+    const purchasePrice = (!isPriceSyncEnabled && wsData && wsData.purchase_price !== undefined && wsData.purchase_price !== null)
+      ? (Number(wsData.purchase_price) || 0)
+      : (Number(product.purchase_price) || 0);
+
+    const salePrice = Number(((!isPriceSyncEnabled && wsData && wsData.sale_price) ? wsData.sale_price : product.sale_price) || product.external_price || 0);
+
+    const cost = purchasePrice * qty;
+    const value = salePrice * qty;
+
+    const isWeightBased = product.unit?.toUpperCase() === 'KG';
 
     acc.totalItems += 1;
-    acc.totalStock += qty;
+    if (isWeightBased) {
+      acc.totalStockKg += qty;
+    } else {
+      acc.totalStock += qty;
+    }
     acc.totalCost += cost;
     acc.totalValue += value;
     acc.potentialProfit += (value - cost);
@@ -101,6 +125,7 @@ export const calculateStockMetrics = (products: any[]) => {
   }, {
     totalItems: 0,
     totalStock: 0,
+    totalStockKg: 0,
     totalCost: 0,
     totalValue: 0,
     potentialProfit: 0
@@ -110,6 +135,7 @@ export const calculateStockMetrics = (products: any[]) => {
   return {
     totalItems: result.totalItems,
     totalStock: parseFloat(result.totalStock.toFixed(3)),
+    totalStockKg: parseFloat(result.totalStockKg.toFixed(3)),
     totalCost: parseFloat(result.totalCost.toFixed(2)),
     totalValue: parseFloat(result.totalValue.toFixed(2)),
     potentialProfit: parseFloat(result.potentialProfit.toFixed(2))

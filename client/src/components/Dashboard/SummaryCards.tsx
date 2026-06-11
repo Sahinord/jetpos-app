@@ -1,21 +1,97 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Package, TrendingUp, DollarSign, List, ShoppingBag, CreditCard, Wallet, Settings, X, Store, ChevronDown, Trash2, Plus } from "lucide-react";
+import {
+    Package, TrendingUp, DollarSign, List, ShoppingBag, CreditCard,
+    Wallet, Settings, X, Store, ChevronDown, Trash2, Plus,
+    ArrowUpRight, ArrowDownRight, Minus, Weight, ToggleLeft, ToggleRight
+} from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useTenant } from "@/lib/tenant-context";
 
 interface SummaryProps {
     totalItems: number;
     totalStock: number;
+    totalStockKg: number;
     totalStockValue: number;
     potentialProfit: number;
+}
+
+// Animated counter hook
+function useAnimatedCounter(target: number, duration = 1200) {
+    const [value, setValue] = useState(0);
+    const frameRef = useRef<number>(0);
+
+    useEffect(() => {
+        const startTime = performance.now();
+        const startValue = 0;
+
+        const tick = (now: number) => {
+            const elapsed = now - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            // ease-out cubic
+            const eased = 1 - Math.pow(1 - progress, 3);
+            setValue(startValue + (target - startValue) * eased);
+
+            if (progress < 1) {
+                frameRef.current = requestAnimationFrame(tick);
+            }
+        };
+        frameRef.current = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(frameRef.current);
+    }, [target, duration]);
+
+    return value;
+}
+
+// Mini Sparkline SVG component
+function Sparkline({ data, color, height = 32 }: { data: number[], color: string, height?: number }) {
+    if (!data || data.length < 2) return null;
+
+    const max = Math.max(...data, 1);
+    const min = Math.min(...data, 0);
+    const range = max - min || 1;
+    const w = 80;
+    const h = height;
+    const padding = 2;
+
+    const points = data.map((v, i) => {
+        const x = padding + (i / (data.length - 1)) * (w - padding * 2);
+        const y = h - padding - ((v - min) / range) * (h - padding * 2);
+        return `${x},${y}`;
+    }).join(' ');
+
+    const areaPoints = `${padding},${h - padding} ${points} ${w - padding},${h - padding}`;
+
+    return (
+        <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="opacity-60">
+            <defs>
+                <linearGradient id={`spark-fill-${color.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={color} stopOpacity="0.3" />
+                    <stop offset="100%" stopColor={color} stopOpacity="0" />
+                </linearGradient>
+            </defs>
+            <polygon
+                points={areaPoints}
+                fill={`url(#spark-fill-${color.replace('#', '')})`}
+            />
+            <polyline
+                points={points}
+                fill="none"
+                stroke={color}
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+        </svg>
+    );
 }
 
 export default function SummaryCards({
     totalItems,
     totalStock,
+    totalStockKg,
     totalStockValue,
     potentialProfit
 }: SummaryProps) {
@@ -35,7 +111,21 @@ export default function SummaryCards({
         return 'month';
     });
 
-    // 8 Sabit Kutu Sistemi
+    // KG dahil toggle
+    const [includeKgStock, setIncludeKgStock] = useState<boolean>(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('dashboard_include_kg') === 'true';
+        }
+        return false;
+    });
+
+    const toggleKgStock = () => {
+        const next = !includeKgStock;
+        setIncludeKgStock(next);
+        localStorage.setItem('dashboard_include_kg', String(next));
+    };
+
+    // Kutu Sistemi (KG kartı ayarlardan eklenebilir)
     const allCardIds = [
         "total_items", "total_stock", "stock_value", "potential_profit",
         "store_sales", "trendyol_sales", "expenses", "net_profit"
@@ -44,7 +134,13 @@ export default function SummaryCards({
     const [boxAssignments, setBoxAssignments] = useState<(string | null)[]>(() => {
         if (typeof window !== 'undefined') {
             const saved = localStorage.getItem('dashboard_box_assignments');
-            if (saved) return JSON.parse(saved);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                // Force max 8 slots for backward compatibility with previous 9-slot experiment
+                if (Array.isArray(parsed)) {
+                    return parsed.slice(0, 8);
+                }
+            }
         }
         return allCardIds;
     });
@@ -145,17 +241,121 @@ export default function SummaryCards({
 
     const formatTL = (val: number) => `₺${val.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+    // Generate mock sparkline data based on card type
+    const getSparkData = (id: string): number[] => {
+        // Deterministic pseudo-random based on id hash
+        const seed = id.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+        return Array.from({ length: 7 }, (_, i) => {
+            const base = Math.sin(seed + i * 0.8) * 30 + 50;
+            return Math.max(0, base + (i * 5));
+        });
+    };
+
     const cards = [
-        { id: "total_items", title: "Toplam Ürün Çeşidi", value: totalItems.toLocaleString('tr-TR'), icon: List, iconColor: "text-blue-400", bgClass: "bg-blue-500/10", borderClass: "border-blue-500/20", shadowClass: "shadow-[0_0_15px_rgba(59,130,246,0.2)]", dropShadowClass: "drop-shadow-[0_0_5px_rgba(59,130,246,0.5)]" },
-        { id: "total_stock", title: "Toplam Stok Adedi", value: totalStock.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 2 }), icon: Package, iconColor: "text-emerald-400", bgClass: "bg-emerald-500/10", borderClass: "border-emerald-500/20", shadowClass: "shadow-[0_0_15px_rgba(16,185,129,0.2)]", dropShadowClass: "drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]" },
-        { id: "stock_value", title: "Toplam Stok Değeri", value: formatTL(totalStockValue), icon: DollarSign, iconColor: "text-amber-500", bgClass: "bg-amber-500/10", borderClass: "border-amber-500/20", shadowClass: "shadow-[0_0_15px_rgba(245,158,11,0.2)]", dropShadowClass: "drop-shadow-[0_0_5px_rgba(245,158,11,0.5)]" },
-        { id: "potential_profit", title: "Potansiyel Net Kar", value: formatTL(potentialProfit), icon: TrendingUp, iconColor: "text-purple-400", bgClass: "bg-purple-500/10", borderClass: "border-purple-500/20", shadowClass: "shadow-[0_0_15px_rgba(168,85,247,0.2)]", dropShadowClass: "drop-shadow-[0_0_5px_rgba(168,85,247,0.5)]" },
+        {
+            id: "total_items", title: "Toplam Ürün Çeşidi", value: totalItems, isCurrency: false,
+            icon: List,
+            gradient: "from-blue-500 to-blue-600",
+            glowColor: "rgba(59,130,246,0.15)",
+            accentColor: "#3b82f6",
+            bgRing: "rgba(59,130,246,0.1)",
+            trend: "neutral" as const
+        },
+        {
+            id: "total_stock",
+            title: includeKgStock ? "Toplam Stok (Adet+KG)" : "Toplam Stok Adedi",
+            value: includeKgStock ? totalStock + totalStockKg : totalStock,
+            isCurrency: false,
+            suffix: includeKgStock ? undefined : 'adet',
+            icon: Package,
+            gradient: "from-emerald-500 to-emerald-600",
+            glowColor: "rgba(16,185,129,0.15)",
+            accentColor: "#10b981",
+            bgRing: "rgba(16,185,129,0.1)",
+            trend: "neutral" as const,
+            hasKgToggle: true
+        },
+        {
+            id: "total_stock_kg",
+            title: "Stok (KG Bazlı)",
+            value: totalStockKg,
+            isCurrency: false,
+            suffix: 'kg',
+            icon: Weight,
+            gradient: "from-teal-500 to-emerald-500",
+            glowColor: "rgba(20,184,166,0.15)",
+            accentColor: "#14b8a6",
+            bgRing: "rgba(20,184,166,0.1)",
+            trend: "neutral" as const
+        },
+        {
+            id: "stock_value", title: "Toplam Stok Değeri", value: totalStockValue, isCurrency: true,
+            icon: DollarSign,
+            gradient: "from-amber-500 to-orange-500",
+            glowColor: "rgba(245,158,11,0.15)",
+            accentColor: "#f59e0b",
+            bgRing: "rgba(245,158,11,0.1)",
+            trend: "up" as const
+        },
+        {
+            id: "potential_profit", title: "Potansiyel Net Kar", value: potentialProfit, isCurrency: true,
+            icon: TrendingUp,
+            gradient: "from-purple-500 to-violet-600",
+            glowColor: "rgba(168,85,247,0.15)",
+            accentColor: "#a855f7",
+            bgRing: "rgba(168,85,247,0.1)",
+            trend: "up" as const
+        },
         // YENİ FİNANSAL KARTLAR
-        { id: "store_sales", title: `Mağaza Satışları ${timeLabel}`, value: formatTL(finances.storeSales), icon: Store, iconColor: "text-cyan-400", bgClass: "bg-cyan-500/10", borderClass: "border-cyan-500/20", shadowClass: "shadow-[0_0_15px_rgba(34,211,238,0.2)]", dropShadowClass: "drop-shadow-[0_0_5px_rgba(34,211,238,0.5)]" },
-        { id: "trendyol_sales", title: `Trendyol Geliri ${timeLabel}`, value: formatTL(finances.trendyolSales), icon: ShoppingBag, iconColor: "text-orange-400", bgClass: "bg-orange-500/10", borderClass: "border-orange-500/20", shadowClass: "shadow-[0_0_15px_rgba(251,146,60,0.2)]", dropShadowClass: "drop-shadow-[0_0_5px_rgba(251,146,60,0.5)]" },
-        { id: "expenses", title: `Net Giderler ${timeLabel}`, value: formatTL(finances.expenses), icon: CreditCard, iconColor: "text-rose-400", bgClass: "bg-rose-500/10", borderClass: "border-rose-500/20", shadowClass: "shadow-[0_0_15px_rgba(251,113,133,0.2)]", dropShadowClass: "drop-shadow-[0_0_5px_rgba(251,113,133,0.5)]" },
-        { id: "net_profit", title: `Gerçekleşen Kar ${timeLabel}`, value: formatTL(finances.netProfit), icon: Wallet, iconColor: "text-indigo-400", bgClass: "bg-indigo-500/10", borderClass: "border-indigo-500/20", shadowClass: "shadow-[0_0_15px_rgba(129,140,248,0.2)]", dropShadowClass: "drop-shadow-[0_0_5px_rgba(129,140,248,0.5)]" }
+        {
+            id: "store_sales", title: `Mağaza Satışları ${timeLabel}`, value: finances.storeSales, isCurrency: true,
+            icon: Store,
+            gradient: "from-cyan-500 to-teal-500",
+            glowColor: "rgba(34,211,238,0.15)",
+            accentColor: "#22d3ee",
+            bgRing: "rgba(34,211,238,0.1)",
+            trend: finances.storeSales > 0 ? "up" as const : "neutral" as const
+        },
+        {
+            id: "trendyol_sales", title: `Trendyol Geliri ${timeLabel}`, value: finances.trendyolSales, isCurrency: true,
+            icon: ShoppingBag,
+            gradient: "from-orange-500 to-red-500",
+            glowColor: "rgba(251,146,60,0.15)",
+            accentColor: "#fb923c",
+            bgRing: "rgba(251,146,60,0.1)",
+            trend: finances.trendyolSales > 0 ? "up" as const : "neutral" as const
+        },
+        {
+            id: "expenses", title: `Net Giderler ${timeLabel}`, value: finances.expenses, isCurrency: true,
+            icon: CreditCard,
+            gradient: "from-rose-500 to-pink-600",
+            glowColor: "rgba(251,113,133,0.15)",
+            accentColor: "#fb7185",
+            bgRing: "rgba(251,113,133,0.1)",
+            trend: finances.expenses > 0 ? "down" as const : "neutral" as const
+        },
+        {
+            id: "net_profit", title: `Gerçekleşen Kar ${timeLabel}`, value: finances.netProfit, isCurrency: true,
+            icon: Wallet,
+            gradient: "from-indigo-500 to-blue-600",
+            glowColor: "rgba(129,140,248,0.15)",
+            accentColor: "#818cf8",
+            bgRing: "rgba(129,140,248,0.1)",
+            trend: finances.netProfit > 0 ? "up" as const : finances.netProfit < 0 ? "down" as const : "neutral" as const
+        }
     ];
+
+    const TrendIcon = ({ trend }: { trend: 'up' | 'down' | 'neutral' }) => {
+        if (trend === 'up') return <ArrowUpRight className="w-3.5 h-3.5" />;
+        if (trend === 'down') return <ArrowDownRight className="w-3.5 h-3.5" />;
+        return <Minus className="w-3.5 h-3.5" />;
+    };
+
+    const trendColor = (trend: 'up' | 'down' | 'neutral') => {
+        if (trend === 'up') return 'text-emerald-400 bg-emerald-500/10';
+        if (trend === 'down') return 'text-rose-400 bg-rose-500/10';
+        return 'text-secondary/60 bg-white/5';
+    };
 
     return (
         <div className="relative space-y-4">
@@ -202,7 +402,7 @@ export default function SummaryCards({
             </div>
 
             {/* KARTLAR */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 relative z-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5 relative z-10">
                 <AnimatePresence>
                     {boxAssignments.map((assignedId, index) => {
                         const card = cards.find(c => c.id === assignedId);
@@ -216,7 +416,7 @@ export default function SummaryCards({
                                     exit={{ opacity: 0, scale: 0.95 }}
                                     transition={{ duration: 0.2 }}
                                     onClick={() => setActiveBoxIndex(index)}
-                                    className="glass-card relative !p-6 flex flex-col items-center justify-center gap-3 group cursor-pointer border border-dashed border-white/10 hover:border-primary/50 hover:bg-primary/5 transition-all text-secondary/30 hover:text-primary min-h-[140px]"
+                                    className="glass-card relative !p-6 flex flex-col items-center justify-center gap-3 group cursor-pointer border border-dashed border-white/10 hover:border-primary/50 hover:bg-primary/5 transition-all text-secondary/30 hover:text-primary min-h-[160px]"
                                 >
                                     <Plus className="w-8 h-8 opacity-20 group-hover:opacity-100 transition-opacity" />
                                     <p className="text-[10px] font-black uppercase tracking-widest">Kutu {index + 1} Boş</p>
@@ -227,34 +427,97 @@ export default function SummaryCards({
                         return (
                             <motion.div
                                 key={`${index}-${card.id}`}
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
+                                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
-                                transition={{ duration: 0.2 }}
+                                transition={{ duration: 0.4, delay: index * 0.06, ease: [0.25, 0.46, 0.45, 0.94] }}
                                 layoutId={`box-${index}`}
-                                className="glass-card relative !p-5 lg:!p-6 flex flex-col gap-3 group hover:scale-[1.02] transition-all border border-white/5 hover:border-white/10"
+                                className="relative group cursor-default"
                             >
-                                <div className="flex items-center justify-between">
-                                    <div className={`w-10 h-10 lg:w-12 lg:h-12 rounded-2xl flex items-center justify-center border ${card.borderClass} ${card.bgClass} ${card.shadowClass}`}>
-                                        <card.icon className={`w-5 h-5 lg:w-6 lg:h-6 ${card.iconColor} ${card.dropShadowClass}`} />
+                                {/* Card Container */}
+                                <div
+                                    className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-card/80 backdrop-blur-xl p-5 lg:p-6 transition-all duration-300 hover:border-white/[0.12] hover:translate-y-[-2px]"
+                                    style={{
+                                        boxShadow: `0 0 0 1px rgba(255,255,255,0.02), 0 8px 40px -12px ${card.glowColor}`
+                                    }}
+                                >
+                                    {/* Subtle top gradient line */}
+                                    <div
+                                        className={`absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r ${card.gradient} opacity-60`}
+                                    />
+
+                                    {/* Background glow */}
+                                    <div
+                                        className="absolute -top-12 -right-12 w-32 h-32 rounded-full blur-[60px] opacity-20 group-hover:opacity-30 transition-opacity duration-500"
+                                        style={{ background: card.accentColor }}
+                                    />
+
+                                    {/* Header Row */}
+                                    <div className="flex items-start justify-between mb-4 relative z-10">
+                                        <div className="flex items-center gap-3">
+                                            {/* Icon with gradient ring */}
+                                            <div
+                                                className="relative w-11 h-11 rounded-xl flex items-center justify-center"
+                                                style={{ background: card.bgRing }}
+                                            >
+                                                <div className={`absolute inset-0 rounded-xl bg-gradient-to-br ${card.gradient} opacity-[0.08]`} />
+                                                <card.icon className="w-5 h-5 relative z-10" style={{ color: card.accentColor }} />
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] font-bold uppercase tracking-[1.5px] text-secondary/50 leading-tight line-clamp-1">{card.title}</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Settings button */}
+                                        <button
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                setActiveBoxIndex(index);
+                                            }}
+                                            className="relative z-10 w-7 h-7 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-white/10"
+                                            title="Bu Kutuyu Değiştir"
+                                        >
+                                            <Settings className="w-3.5 h-3.5 text-secondary/50" />
+                                        </button>
                                     </div>
-                                    <button
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            setActiveBoxIndex(index);
-                                        }}
-                                        className={`relative z-10 w-8 h-8 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all ${card.bgClass} hover:bg-white/10`}
-                                        title="Bu Kutuyu Değiştir"
-                                    >
-                                        <Settings className={`w-4 h-4 ${card.iconColor}`} />
-                                    </button>
-                                </div>
-                                <div>
-                                    <p className="text-[9px] lg:text-[10px] font-black uppercase tracking-[1.5px] text-secondary/60 mb-1 line-clamp-1">{card.title}</p>
-                                    <h3 className={`text-xl lg:text-2xl font-black tracking-tight ${formatTL(finances.netProfit) === card.value && finances.netProfit < 0 ? 'text-red-500' : 'text-foreground'}`}>
-                                        {card.value}
-                                    </h3>
+
+                                    {/* Value Row */}
+                                    <div className="flex items-end justify-between relative z-10">
+                                        <div className="space-y-2 flex-1 min-w-0">
+                                            <AnimatedValue
+                                                value={card.value}
+                                                isCurrency={card.isCurrency}
+                                                isNegative={card.id === 'net_profit' && finances.netProfit < 0}
+                                                suffix={(card as any).suffix}
+                                            />
+
+                                            {/* Trend badge */}
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${trendColor(card.trend)}`}>
+                                                    <TrendIcon trend={card.trend} />
+                                                    <span>{card.trend === 'up' ? 'Artış' : card.trend === 'down' ? 'Düşüş' : 'Sabit'}</span>
+                                                </div>
+
+                                                {/* KG Toggle */}
+                                                {(card as any).hasKgToggle && (
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); toggleKgStock(); }}
+                                                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider transition-all ${includeKgStock ? 'text-teal-400 bg-teal-500/10' : 'text-secondary/40 bg-white/[0.03] hover:text-secondary/60'}`}
+                                                        title={includeKgStock ? 'KG dahil - tıkla kapat' : 'KG hariç - tıkla dahil et'}
+                                                    >
+                                                        {includeKgStock ? <ToggleRight className="w-3 h-3" /> : <ToggleLeft className="w-3 h-3" />}
+                                                        <span>KG</span>
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Mini Sparkline */}
+                                        <div className="shrink-0 ml-2 opacity-40 group-hover:opacity-70 transition-opacity">
+                                            <Sparkline data={getSparkData(card.id)} color={card.accentColor} />
+                                        </div>
+                                    </div>
                                 </div>
                             </motion.div>
                         );
@@ -312,8 +575,8 @@ export default function SummaryCards({
                                             className={`flex items-center justify-between p-3 rounded-2xl border transition-all ${isAlreadyAssigned ? 'opacity-50 cursor-not-allowed bg-black/20 border-white/5' : isSelected ? 'bg-white/5 border-white/20 cursor-pointer' : 'bg-white/[0.02] border-border/50 hover:bg-white/5 cursor-pointer'}`}
                                         >
                                             <div className="flex items-center gap-3">
-                                                <div className={`p-2.5 rounded-xl ${isAlreadyAssigned ? 'bg-white/5' : c.bgClass}`}>
-                                                    <c.icon className={`w-4 h-4 ${isAlreadyAssigned ? 'text-secondary/50' : c.iconColor}`} />
+                                                <div className={`p-2.5 rounded-xl ${isAlreadyAssigned ? 'bg-white/5' : ''}`} style={!isAlreadyAssigned ? { background: c.bgRing } : {}}>
+                                                    <c.icon className="w-4 h-4" style={{ color: isAlreadyAssigned ? 'var(--color-secondary)' : c.accentColor }} />
                                                 </div>
                                                 <div className="flex flex-col gap-0.5">
                                                     <span className={`text-sm font-bold transition-colors ${isAlreadyAssigned ? 'text-secondary/50' : isSelected ? 'text-foreground' : 'text-secondary'}`}>{c.title}</span>
@@ -321,7 +584,7 @@ export default function SummaryCards({
                                                 </div>
                                             </div>
                                             {isSelected && (
-                                                <div className={`w-2 h-2 rounded-full bg-white ${c.shadowClass}`} />
+                                                <div className="w-2 h-2 rounded-full" style={{ background: c.accentColor, boxShadow: `0 0 8px ${c.glowColor}` }} />
                                             )}
                                         </div>
                                     );
@@ -332,5 +595,21 @@ export default function SummaryCards({
                 )}
             </AnimatePresence>
         </div >
+    );
+}
+
+// Sub-component for animated value display
+function AnimatedValue({ value, isCurrency, isNegative, suffix }: { value: number, isCurrency: boolean, isNegative: boolean, suffix?: string }) {
+    const animated = useAnimatedCounter(value, 1400);
+
+    const formatted = isCurrency
+        ? `₺${animated.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        : animated.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: value % 1 !== 0 ? 2 : 0 });
+
+    return (
+        <h3 className={`text-2xl lg:text-[1.65rem] font-black tracking-tight tabular-nums ${isNegative ? 'text-red-400' : 'text-foreground'}`}>
+            {formatted}
+            {suffix && <span className="text-xs font-bold text-secondary/40 ml-1 uppercase">{suffix}</span>}
+        </h3>
     );
 }

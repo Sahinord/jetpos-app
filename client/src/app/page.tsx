@@ -126,7 +126,12 @@ export default function Home() {
 
   const [toast, setToast] = useState({ isVisible: false, message: "", type: "success" as ToastType });
 
-  const stats = calculateStockMetrics(products);
+  const stats = calculateStockMetrics(
+    products,
+    activeWarehouse?.id,
+    activeWarehouse?.platform ? false : isStockSyncEnabled,
+    isPriceSyncEnabled
+  );
 
   const showToast = (message: string, type: ToastType = "success") => {
     setToast({ isVisible: true, message, type });
@@ -144,7 +149,7 @@ export default function Home() {
     if (activeEmployee) {
       const role = activeEmployee.role?.toLowerCase() || '';
       const position = activeEmployee.position?.toLowerCase() || '';
-      
+
       if (role === 'kitchen' || role === 'mutfak' || position === 'mutfak') {
         setActiveTab("kds");
       } else if (role === 'waiter' || role === 'garson' || position === 'garson') {
@@ -234,6 +239,9 @@ export default function Home() {
 
     const savedPriceSync = localStorage.getItem('isPriceSyncEnabled');
     if (savedPriceSync !== null) setIsPriceSyncEnabled(savedPriceSync === 'true');
+
+    const savedStockSync = localStorage.getItem('isStockSyncEnabled');
+    if (savedStockSync !== null) setIsStockSyncEnabled(savedStockSync === 'true');
 
     const savedStockDeduction = localStorage.getItem('isWarehouseStockDeductionEnabled');
     if (savedStockDeduction !== null) setIsWarehouseStockDeductionEnabled(savedStockDeduction === 'true');
@@ -715,7 +723,29 @@ export default function Home() {
             q.push(savedProductId);
             localStorage.setItem('jetpos_label_queue', JSON.stringify(q));
           }
-        } catch(e) {}
+        } catch (e) { }
+      }
+
+      const oldStock = editingProduct ? (Number((editingProduct as any).stock_quantity) || 0) : 0;
+      const newStock = Number(formData.stock_quantity) || 0;
+
+      if (!editingProduct || oldStock !== newStock) {
+        auditLog(
+          currentTenant.id,
+          editingProduct ? 'STOCK_CHANGE' : 'PRODUCT_CREATE',
+          editingProduct
+            ? `"${formData.name}" ürününün stoku güncellendi: ${oldStock} -> ${newStock}`
+            : `Yeni ürün eklendi: "${formData.name}" (Başlangıç Stoku: ${newStock})`,
+          {
+            product_id: savedProductId,
+            product_name: formData.name,
+            old_stock: oldStock,
+            new_stock: newStock,
+            operator: activeEmployee ? `${activeEmployee.first_name} ${activeEmployee.last_name}` : 'Yönetici',
+            warehouse_id: activeWarehouse?.id || null,
+            warehouse_name: activeWarehouse?.name || 'Genel'
+          }
+        );
       }
 
       showToast(editingProduct ? "Ürün güncellendi" : "Yeni ürün eklendi");
@@ -896,14 +926,14 @@ export default function Home() {
 
         let barcode = String(findValue(item, ["Barkod", "Stok_Kodu", "Stok Kodu", "Barkod No", "Barcode", "SKU"]) || "");
         if (!barcode || barcode.trim() === "") barcode = `AUTO-${Date.now()}-${Math.floor(Math.random() * 10000000)}`;
- 
+
         let name = findValue(item, ["Adi_1", "Adi1", "Ürün Adı", "Ürün", "Adı", "Name", "Açıklama", "Product"]);
         if (!name) name = item["ADI"] || item["CISIM_ADI"] || (barcode !== "" ? `Ürün ${barcode}` : "İsimsiz Ürün");
- 
+
         const purchase_price = parseNum(findValue(item, ["Alis_Fiyati", "Alış_Fiyatı", "Maliyet", "Cost", "Alış"]));
         let external_price = parseNum(findValue(item, ["Trendyol_Satış_Fiyatı", "Trendyol Satış Fiyatı", "Trendyol_Fiyatı", "Trendyol Satış", "Trendyol Fiyat", "Pazar Yeri Fiyatı", "Online Fiyat", "External Price"]));
         let sale_price = parseNum(findValue(item, ["Piyasa_Satış_Fiyatı", "Piyasa Satış Fiyatı", "Fiyati", "Satış Fiyatı", "Fiyat", "Price", "Etiket"]));
-        
+
         // Eğer dükkan fiyatı 0 ve Trendyol fiyatı varsa, dükkan fiyatına da onu yaz (User preference)
         if (sale_price <= 0 && external_price > 0) {
           sale_price = external_price;
@@ -1015,10 +1045,10 @@ export default function Home() {
         employee_id: activeEmployee?.id || '',
         customer_id: customerId,
         items: cartItems.map(item => ({
-            product_id: item.id,
-            quantity: item.quantity,
-            unit_price: item.sale_price,
-            total_price: item.sale_price * item.quantity
+          product_id: item.id,
+          quantity: item.quantity,
+          unit_price: item.sale_price,
+          total_price: item.sale_price * item.quantity
         })),
         total_amount: totalAmount,
         discount_amount: 0,
@@ -1276,7 +1306,21 @@ export default function Home() {
 
         <div className="responsive-container pt-3 pb-12 flex-1 flex flex-col min-h-0">
           {activeTab === "home" && (
-            <HomePage onNavigate={setActiveTab} />
+            <HomePage 
+              onNavigate={setActiveTab} 
+              dailyTransactions={saleItems.filter(item => {
+                const today = new Date();
+                const itemDate = new Date(item.created_at);
+                return itemDate.getDate() === today.getDate() && itemDate.getMonth() === today.getMonth() && itemDate.getFullYear() === today.getFullYear();
+              }).length}
+              todaySalesTotal={saleItems.filter(item => {
+                const today = new Date();
+                const itemDate = new Date(item.created_at);
+                return itemDate.getDate() === today.getDate() && itemDate.getMonth() === today.getMonth() && itemDate.getFullYear() === today.getFullYear();
+              }).reduce((sum, item) => sum + ((Number(item.quantity) * Number(item.unit_price)) || 0), 0)}
+              criticalStockCount={products.filter((p: any) => Number(p.stock_quantity) <= lowStockThreshold).length}
+              activeUsersCount={activeEmployee ? 1 : 1}
+            />
           )}
 
           {activeTab === "dashboard" && (
@@ -1285,11 +1329,12 @@ export default function Home() {
               <SummaryCards
                 totalItems={stats.totalItems}
                 totalStock={stats.totalStock}
+                totalStockKg={stats.totalStockKg}
                 totalStockValue={stats.totalCost}
                 potentialProfit={stats.potentialProfit}
               />
 
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
                 <div className="lg:col-span-2">
                   <SalesChart sales={saleItems.map(item => ({
                     created_at: item.created_at,
@@ -1299,7 +1344,6 @@ export default function Home() {
                 <div>
                   <QuickStockAlerts products={products} saleItems={saleItems} onViewAll={() => setActiveTab('alerts')} lowStockThreshold={lowStockThreshold} />
                 </div>
-
               </div>
 
               {/* Trendyol GO Integration */}
@@ -1428,6 +1472,7 @@ export default function Home() {
             <div className="max-w-[1500px] mx-auto w-full">
               <ProductTable
                 products={products}
+                categories={categories}
                 onEdit={(p: any) => {
                   const wsData = p.warehouse_stock?.find((ws: any) => ws.warehouse_id === activeWarehouse?.id);
                   const contextProduct = {
@@ -1579,6 +1624,7 @@ export default function Home() {
 
               <ProductTable
                 products={archiveProducts}
+                categories={categories}
                 isArchiveMode={true}
                 onUnarchive={handleUnarchiveProduct}
                 onArchive={handleArchiveProduct}
@@ -1589,7 +1635,7 @@ export default function Home() {
                   setIsModalOpen(true);
                 }}
                 onDelete={handleDelete}
-                onAdd={() => {}}
+                onAdd={() => { }}
                 onManageCategories={() => setIsCatModalOpen(true)}
                 onBulkImport={handleBulkImport}
                 onToggleAllCampaign={handleToggleAllCampaign}
@@ -1640,6 +1686,11 @@ export default function Home() {
           {activeTab === "warehouse" && (
             <div className="max-w-[1500px] mx-auto w-full">
               <WarehousePage />
+            </div>
+          )}
+          {activeTab === "audit_logs" && (
+            <div className="max-w-[1500px] mx-auto w-full">
+              <AuditLogs />
             </div>
           )}
 
