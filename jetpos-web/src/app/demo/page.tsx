@@ -126,7 +126,7 @@ export default function DemoPage() {
                     >
                         <div style={{
                             width: "5rem", height: "5rem", borderRadius: "50%",
-                            background: "linear-gradient(135deg, #22c55e, #16a34a)",
+                            backgroundImage: "linear-gradient(135deg, #22c55e, #16a34a)",
                             display: "flex", alignItems: "center", justifyContent: "center",
                             margin: "0 auto 2rem",
                             boxShadow: "0 0 60px rgba(34,197,94,0.4)"
@@ -152,7 +152,7 @@ export default function DemoPage() {
                             </Link>
                             <Link href="/fiyatlandirma" style={{
                                 padding: "0.875rem 2rem", borderRadius: "0.875rem",
-                                background: "linear-gradient(135deg, #7886C7, #5A659F)",
+                                backgroundImage: "linear-gradient(135deg, #7886C7, #5A659F)",
                                 color: "white", textDecoration: "none", fontWeight: 700, fontSize: "0.95rem",
                                 display: "flex", alignItems: "center", gap: "0.5rem"
                             }}>
@@ -176,7 +176,7 @@ export default function DemoPage() {
                 <div style={{
                     position: "absolute", top: "0", left: "50%", transform: "translateX(-50%)",
                     width: "600px", height: "400px",
-                    background: "radial-gradient(ellipse at center, rgba(120, 134, 199, 0.15) 0%, transparent 70%)",
+                    backgroundImage: "radial-gradient(ellipse at center, rgba(120, 134, 199, 0.15) 0%, transparent 70%)",
                     pointerEvents: "none"
                 }} />
 
@@ -196,7 +196,7 @@ export default function DemoPage() {
                         lineHeight: 1.15, marginBottom: "1.25rem"
                     }}>
                         JetPOS&apos;u Ücretsiz{" "}
-                        <span style={{ background: "linear-gradient(135deg, #7886C7, #5A659F)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                        <span style={{ backgroundImage: "linear-gradient(135deg, #7886C7, #5A659F)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
                             Demo ile
                         </span>{" "}
                         Keşfedin

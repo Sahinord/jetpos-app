@@ -32,7 +32,7 @@ const testimonials = [
         role: "Elektronik Market",
         city: "İzmir, Bornova",
         initials: "MA",
-        color: "#10b981",
+        color: "#6366F1",
         rating: 5,
         text: "E-fatura geçiş sürecinde JetPOS ekibi bize çok yardımcı oldu. 48 saat içinde her şey hazırdı. Yapay zeka satış tahminleri gerçekten işe yarıyor, stok açığı yaşamıyorum artık.",
         since: "6 aydır kullanıyor",
@@ -54,7 +54,7 @@ const testimonials = [
         role: "Oyuncak & Kırtasiye",
         city: "Antalya, Muratpaşa",
         initials: "KÇ",
-        color: "#ef4444",
+        color: "#8b5cf6",
         rating: 5,
         text: "Kasa açık kaldı mı, stok bitti mi — artık anlık bildirim alıyorum. Raporlar sayesinde hangi ürünün ne zaman biteceğini önceden tahmin edebiliyorum. Müşteri desteği de çok hızlı.",
         since: "10 aydır kullanıyor",
@@ -105,7 +105,26 @@ export default function Testimonials() {
     const t = testimonials[current];
 
     return (
-        <section style={{ padding: "6rem 0", position: "relative", zIndex: 2, overflow: "visible" }}>
+        <section 
+            style={{
+                padding: "6.5rem 0",
+                position: "relative",
+                overflow: "visible",
+                backgroundColor: "#FFFFFF",
+            }}
+        >
+            {/* Subtle Radial Glow Spot at the top */}
+            <div style={{
+                position: "absolute",
+                top: "-150px",
+                left: "50%",
+                transform: "translateX(-50%)",
+                width: "800px",
+                height: "300px",
+                background: "radial-gradient(circle at center, rgba(120, 134, 199, 0.04) 0%, transparent 70%)",
+                pointerEvents: "none",
+                zIndex: 1,
+            }} />
             
             {/* Dynamic Animated Aura */}
             <div style={{
@@ -120,7 +139,7 @@ export default function Testimonials() {
             }}>
                 <motion.div
                     animate={{
-                        background: `radial-gradient(circle at 50% 50%, ${t.color}0A 0%, transparent 55%)`,
+                        backgroundImage: `radial-gradient(circle at 50% 50%, ${t.color}05 0%, transparent 55%)`,
                     }}
                     transition={{ duration: 1 }}
                     style={{ width: "100%", height: "100%" }}
@@ -138,29 +157,29 @@ export default function Testimonials() {
                 >
                     <div style={{
                         display: "inline-flex", alignItems: "center", gap: "0.4rem",
-                        background: "rgba(255,255,255,0.02)",
-                        border: "1px solid rgba(255,255,255,0.06)",
+                        background: "rgba(120, 134, 199, 0.08)",
+                        border: "1px solid rgba(120, 134, 199, 0.18)",
                         borderRadius: "9999px",
                         padding: "0.4rem 1rem",
                         marginBottom: "1.25rem",
                         backdropFilter: "blur(6px)",
                     }}>
                         <Star style={{ width: "0.9rem", height: "0.9rem", color: "#f59e0b", fill: "#f59e0b" }} />
-                        <span style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.6)", fontWeight: 600, letterSpacing: "0.01em" }}>
+                        <span style={{ fontSize: "0.8rem", color: "#7886C7", fontWeight: 600, letterSpacing: "0.01em" }}>
                             Müşteri Deneyimleri
                         </span>
                     </div>
                     <h2 style={{
                         fontSize: "clamp(2rem, 5vw, 3rem)",
                         fontWeight: 900,
-                        color: "white",
+                        color: "#111827",
                         margin: "0 0 0.75rem",
                         lineHeight: 1.1,
                         letterSpacing: "-0.03em",
                     }}>
                         İşletmeler <span className="holographic-text">JetPOS'u Seçiyor</span>
                     </h2>
-                    <p style={{ color: "rgba(255,255,255,0.35)", fontSize: "1rem", fontWeight: 500 }}>
+                    <p style={{ color: "#4B5563", fontSize: "1rem", fontWeight: 500 }}>
                         2,400+ işletme ile büyüyen kocaman bir topluluk.
                     </p>
                 </motion.div>
@@ -185,20 +204,21 @@ export default function Testimonials() {
                         ].map((btn, i) => (
                             <motion.button
                                 key={i}
-                                whileHover={{ scale: 1.05, backgroundColor: "rgba(255,255,255,0.08)" }}
+                                whileHover={{ scale: 1.05, backgroundColor: "rgba(120, 134, 199, 0.08)" }}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={btn.fn}
                                 style={{
                                     width: "3rem", height: "3rem",
                                     borderRadius: "50%",
-                                    background: "rgba(255,255,255,0.04)",
-                                    border: "1px solid rgba(255,255,255,0.08)",
-                                    color: "white",
+                                    background: "#ffffff",
+                                    border: "1px solid #E5E7EB",
+                                    color: "#111827",
                                     cursor: "pointer",
                                     display: "flex", alignItems: "center", justifyContent: "center",
                                     backdropFilter: "blur(12px)",
+                                    boxShadow: "0 4px 12px rgba(120, 134, 199, 0.05)",
                                 }}
-                            >
+                             >
                                 <btn.icon style={{ width: "1.25rem", height: "1.25rem" }} />
                             </motion.button>
                         ))}
@@ -218,12 +238,12 @@ export default function Testimonials() {
                             }}
                             style={{
                                 width: "100%",
-                                background: "rgba(10, 15, 30, 0.4)",
-                                border: `1px solid ${t.color}22`,
+                                background: "#ffffff",
+                                border: `1px solid #E5E7EB`,
                                 borderRadius: "2rem",
                                 padding: "2.5rem 3rem",
                                 backdropFilter: "blur(24px)",
-                                boxShadow: `0 30px 80px -15px rgba(0,0,0,0.4), 0 0 0 1px ${t.color}10 inset`,
+                                boxShadow: `0 30px 60px -15px rgba(120,134,199,0.06), 0 0 0 1px rgba(120,134,199,0.05) inset`,
                                 position: "relative",
                                 display: "grid",
                                 gridTemplateColumns: "140px 1fr",
@@ -239,7 +259,7 @@ export default function Testimonials() {
                                 left: "20%",
                                 right: "20%",
                                 height: "1px",
-                                background: `linear-gradient(90deg, transparent, ${t.color}, transparent)`,
+                                backgroundImage: `linear-gradient(90deg, transparent, ${t.color}, transparent)`,
                                 opacity: 0.4,
                             }} />
 
@@ -249,7 +269,7 @@ export default function Testimonials() {
                                     <div style={{
                                         width: "100%", height: "100%",
                                         borderRadius: "1.5rem",
-                                        background: `linear-gradient(135deg, ${t.color}, ${t.color}88)`,
+                                        backgroundImage: `linear-gradient(135deg, ${t.color}, ${t.color}88)`,
                                         display: "flex", alignItems: "center", justifyContent: "center",
                                         fontSize: "2rem", fontWeight: 900, color: "white",
                                         boxShadow: `0 12px 24px ${t.color}33`,
@@ -266,8 +286,8 @@ export default function Testimonials() {
                                         zIndex: 1,
                                     }} />
                                 </div>
-                                <h3 style={{ fontSize: "1.15rem", fontWeight: 800, color: "white", marginBottom: "0.15rem" }}>{t.name}</h3>
-                                <p style={{ color: "rgba(255,255,255,0.35)", fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                                <h3 style={{ fontSize: "1.15rem", fontWeight: 800, color: "#111827", marginBottom: "0.15rem" }}>{t.name}</h3>
+                                <p style={{ color: "#6B7280", fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.03em" }}>
                                     {t.role}
                                 </p>
                             </div>
@@ -280,11 +300,11 @@ export default function Testimonials() {
                                     ))}
                                 </div>
 
-                                <Quote style={{ width: "2.5rem", height: "2.5rem", color: `${t.color}15`, position: "absolute", top: "2rem", right: "3rem" }} />
+                                <Quote style={{ width: "2.5rem", height: "2.5rem", color: `${t.color}10`, position: "absolute", top: "2rem", right: "3rem" }} />
 
                                 <blockquote style={{
                                     fontSize: "1.1rem",
-                                    color: "rgba(255,255,255,0.85)",
+                                    color: "#374151",
                                     lineHeight: 1.6,
                                     margin: "0 0 1.5rem",
                                     fontWeight: 500,
@@ -295,15 +315,15 @@ export default function Testimonials() {
                                 <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", alignItems: "center" }}>
                                     <div style={{
                                         display: "flex", alignItems: "center", gap: "0.5rem",
-                                        background: `${t.color}15`,
-                                        border: `1px solid ${t.color}25`,
+                                        background: `${t.color}0D`,
+                                        border: `1px solid ${t.color}20`,
                                         padding: "0.4rem 1rem",
                                         borderRadius: "0.75rem",
                                     }}>
                                         <CheckCircle2 style={{ width: "0.9rem", height: "0.9rem", color: t.color }} />
-                                        <span style={{ fontSize: "0.8rem", color: "white", fontWeight: 700 }}>{t.highlight}</span>
+                                        <span style={{ fontSize: "0.8rem", color: t.color, fontWeight: 700 }}>{t.highlight}</span>
                                     </div>
-                                    <span style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.3)", fontWeight: 600 }}>
+                                    <span style={{ fontSize: "0.8rem", color: "#6B7280", fontWeight: 600 }}>
                                         {t.city} • {t.since}
                                     </span>
                                 </div>
@@ -324,7 +344,7 @@ export default function Testimonials() {
                                     width: i === current ? "2rem" : "0.6rem",
                                     height: "0.6rem",
                                     borderRadius: "999px",
-                                    background: i === current ? t.color : "rgba(255,255,255,0.1)",
+                                    background: i === current ? t.color : "#E5E7EB",
                                     border: "none",
                                     cursor: "pointer",
                                     transition: "all 0.4s cubic-bezier(0.23, 1, 0.32, 1)",
@@ -335,6 +355,17 @@ export default function Testimonials() {
                     </div>
                 </div>
             </div>
+            {/* Gradient transition to Pricing section (#FAFBFC) */}
+            <div style={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: "180px",
+                background: "linear-gradient(to bottom, rgba(248,249,252,0) 0%, rgba(248,249,252,0.6) 50%, rgba(248,249,252,1) 100%)",
+                pointerEvents: "none",
+                zIndex: 10,
+            }} />
 
             <style>{`
                 @keyframes spin {
@@ -358,4 +389,3 @@ export default function Testimonials() {
         </section>
     );
 }
-

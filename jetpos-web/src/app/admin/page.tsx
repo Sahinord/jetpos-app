@@ -43,7 +43,7 @@ type DemoRequest = {
 };
 
 const STATUS_CONFIG = {
-    new: { label: "Yeni", color: "#7886C7", bg: "rgba(120,134,199,0.15)", icon: AlertCircle },
+    new: { label: "Yeni", color: "#7886C7", bg: "rgba(120, 134, 199,0.15)", icon: AlertCircle },
     calling: { label: "Aranıyor", color: "#f59e0b", bg: "rgba(245,158,11,0.15)", icon: PhoneCall },
     done: { label: "Tamamlandı", color: "#22c55e", bg: "rgba(34,197,94,0.15)", icon: CheckCircle2 },
     not_interested: { label: "İlgilenmedi", color: "#6b7280", bg: "rgba(107,114,128,0.15)", icon: AlertCircle },
@@ -490,7 +490,7 @@ export default function AdminPage() {
                 ].map(item => (
                     <button key={item.id} onClick={() => { setActiveTab(item.id as any); setIsMobileMenuOpen(false); }} style={{
                         width: "100%", display: "flex", alignItems: "center", gap: "0.8rem", padding: "0.8rem 1.25rem", borderRadius: "12px", border: "none",
-                        background: activeTab === item.id ? "rgba(120,134,199,0.1)" : "transparent",
+                        background: activeTab === item.id ? "rgba(120, 134, 199,0.1)" : "transparent",
                         color: activeTab === item.id ? "#7886C7" : "rgba(255,255,255,0.4)",
                         fontSize: "0.85rem", fontWeight: activeTab === item.id ? 800 : 500, cursor: "pointer", transition: "all 0.2s", textAlign: "left", marginBottom: "4px"
                     }}>
@@ -564,7 +564,7 @@ export default function AdminPage() {
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2.5rem" }}>
                             <div>
-                                <h2 style={{ fontSize: "1.75rem", fontWeight: 900, marginBottom: "0.25rem", background: "linear-gradient(to right, #fff, #94a3b8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>YÃ¶netim Paneli</h2>
+                                <h2 style={{ fontSize: "1.75rem", fontWeight: 900, marginBottom: "0.25rem", backgroundImage: "linear-gradient(to right, #fff, #94a3b8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>YÃ¶netim Paneli</h2>
                                 <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.875rem" }}>HoÅŸ geldiniz, sistem durumu ve istatistikler aÅŸaÄŸÄ±dadÄ±r.</p>
                             </div>
                             <button onClick={loadAll} style={{ padding: "0.6rem 1.2rem", borderRadius: "0.75rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "white", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", fontWeight: 600 }}>
@@ -611,7 +611,7 @@ export default function AdminPage() {
                                     {requests.slice(0, 4).length > 0 ? requests.slice(0, 4).map(r => (
                                         <div key={r.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1rem", background: "rgba(255,255,255,0.02)", borderRadius: "1rem", border: "1px solid rgba(255,255,255,0.03)" }}>
                                             <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-                                                <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "0.75rem", background: "linear-gradient(135deg, #1e293b, #334155)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "0.8rem" }}>{r.name[0]}</div>
+                                                <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "0.75rem", backgroundImage: "linear-gradient(135deg, #1e293b, #334155)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "0.8rem" }}>{r.name[0]}</div>
                                                 <div>
                                                     <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>{r.name}</div>
                                                     <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.3)" }}>{r.company}</div>
@@ -625,7 +625,7 @@ export default function AdminPage() {
                                 </div>
                             </div>
                             <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-                                <div style={{ background: "linear-gradient(135deg, #5A659F, #7886C7)", borderRadius: "1.75rem", padding: "2rem", color: "white", position: "relative", overflow: "hidden" }}>
+                                <div style={{ backgroundImage: "linear-gradient(135deg, #5A659F, #7886C7)", borderRadius: "1.75rem", padding: "2rem", color: "white", position: "relative", overflow: "hidden" }}>
                                     <div style={{ position: "relative", zIndex: 2 }}>
                                         <h3 style={{ fontSize: "1.25rem", fontWeight: 800, marginBottom: "0.5rem" }}>Lisans OluÅŸtur</h3>
                                         <p style={{ fontSize: "0.875rem", color: "rgba(255,255,255,0.8)", marginBottom: "1.5rem" }}>HÄ±zlÄ±ca yeni bir mÃ¼ÅŸteri lisansÄ± tanÄ±mlayÄ±n ve paylaÅŸÄ±n.</p>
@@ -665,7 +665,7 @@ export default function AdminPage() {
                             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
                                 {filteredRequests.map((req, i) => (
                                     <motion.div key={req.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} onClick={() => setSelectedRequest(req)} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "1rem", padding: "1.25rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "1rem" }}>
-                                        <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "0.75rem", background: "linear-gradient(135deg, #7886C7, #B0BAE6)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800 }}>{req.name[0]}</div>
+                                        <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "0.75rem", backgroundImage: "linear-gradient(135deg, #7886C7, #B0BAE6)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800 }}>{req.name[0]}</div>
                                         <div style={{ flex: 1 }}>
                                             <div style={{ fontWeight: 700 }}>{req.name}</div>
                                             <div style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.4)" }}>{req.company} â€¢ {req.email}</div>

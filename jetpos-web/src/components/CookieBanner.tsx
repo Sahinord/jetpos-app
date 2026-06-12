@@ -90,7 +90,7 @@ export default function CookieBanner() {
                     {/* Top accent */}
                     <div style={{
                         height: "2px",
-                        background: "linear-gradient(90deg, #7886C7, #8b5cf6, #7886C7)",
+                        backgroundImage: "linear-gradient(90deg, #7886C7, #8b5cf6, #7886C7)",
                         backgroundSize: "200% 100%",
                         animation: "bannerGrad 3s linear infinite",
                     }} />
@@ -211,7 +211,7 @@ export default function CookieBanner() {
                                 style={{
                                     flex: 1,
                                     padding: "0.625rem 1rem",
-                                    background: "linear-gradient(135deg, #7886C7, #5A659F)",
+                                    backgroundImage: "linear-gradient(135deg, #7886C7, #5A659F)",
                                     color: "white",
                                     border: "none",
                                     borderRadius: "0.75rem",

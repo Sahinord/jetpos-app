@@ -211,7 +211,7 @@ export default function CustomPackagePage() {
                                 {FEATURE_GROUPS.map((group) => (
                                     <div key={group.id}>
                                         <div style={{ display: "flex", alignItems: "center", gap: "0.875rem", marginBottom: "1.75rem" }}>
-                                            <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "0.75rem", background: "rgba(120,134,199,0.1)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(120,134,199,0.2)" }}>
+                                            <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "0.75rem", background: "rgba(120, 134, 199,0.1)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(120, 134, 199,0.2)" }}>
                                                 <group.icon style={{ width: "1.25rem", height: "1.25rem", color: "#7886C7" }} />
                                             </div>
                                             <h2 style={{ fontSize: "1.5rem", fontWeight: 800, letterSpacing: "-0.02em" }}>{group.title}</h2>

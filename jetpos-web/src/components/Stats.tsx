@@ -119,11 +119,11 @@ export default function Stats() {
             {/* Subtle separator top */}
             <div style={{
                 position: "absolute", top: 0, left: "15%", right: "15%", height: "1px",
-                background: "linear-gradient(90deg, transparent, rgba(120, 134, 199, 0.3), transparent)",
+                backgroundImage: "linear-gradient(90deg, transparent, rgba(120, 134, 199, 0.3), transparent)",
             }} />
             <div style={{
                 position: "absolute", bottom: 0, left: "15%", right: "15%", height: "1px",
-                background: "linear-gradient(90deg, transparent, rgba(139,92,246,0.2), transparent)",
+                backgroundImage: "linear-gradient(90deg, transparent, rgba(139,92,246,0.2), transparent)",
             }} />
 
             {/* Background glow */}
@@ -131,7 +131,7 @@ export default function Stats() {
                 position: "absolute", top: "50%", left: "50%",
                 transform: "translate(-50%, -50%)",
                 width: "600px", height: "300px",
-                background: "radial-gradient(ellipse, rgba(120, 134, 199, 0.06) 0%, transparent 70%)",
+                backgroundImage: "radial-gradient(ellipse, rgba(120, 134, 199, 0.06) 0%, transparent 70%)",
                 pointerEvents: "none",
             }} />
 
@@ -165,7 +165,7 @@ export default function Stats() {
                     }}>
                         Rakamlarla{" "}
                         <span style={{
-                            background: "linear-gradient(135deg, #7886C7, #B0BAE6)",
+                            backgroundImage: "linear-gradient(135deg, #7886C7, #B0BAE6)",
                             WebkitBackgroundClip: "text",
                             WebkitTextFillColor: "transparent",
                         }}>JetPOS</span>
@@ -262,7 +262,7 @@ function StatCard({ stat, index, visible }: { stat: typeof stats[0]; index: numb
             <div style={{
                 position: "absolute", top: "-20%", right: "-20%",
                 width: "150px", height: "150px",
-                background: `radial-gradient(circle, ${stat.color}15 0%, transparent 70%)`,
+                backgroundImage: `radial-gradient(circle, ${stat.color}15 0%, transparent 70%)`,
                 opacity: hovered ? 1 : 0.4,
                 transition: "opacity 0.6s ease",
                 pointerEvents: "none",
@@ -271,7 +271,7 @@ function StatCard({ stat, index, visible }: { stat: typeof stats[0]; index: numb
             {/* Icon Container */}
             <div style={{
                 width: "3.5rem", height: "3.5rem",
-                background: `linear-gradient(135deg, ${stat.bg}, rgba(255,255,255,0.05))`,
+                backgroundImage: `linear-gradient(135deg, ${stat.bg}, rgba(255,255,255,0.05))`,
                 border: `1px solid ${stat.border}`,
                 borderRadius: "1.125rem",
                 display: "flex", alignItems: "center", justifyContent: "center",
@@ -357,7 +357,7 @@ function StatCard({ stat, index, visible }: { stat: typeof stats[0]; index: numb
                         }}
                         style={{
                             height: "100%",
-                            background: `linear-gradient(90deg, ${stat.color}ee, white)`,
+                            backgroundImage: `linear-gradient(90deg, ${stat.color}ee, white)`,
                             borderRadius: "9999px",
                             boxShadow: `0 0 10px ${stat.color}aa`,
                         }}
@@ -373,7 +373,7 @@ function StatCard({ stat, index, visible }: { stat: typeof stats[0]; index: numb
                     inset: 0,
                     borderRadius: "2rem",
                     padding: "1px",
-                    background: `linear-gradient(135deg, ${stat.color}60, transparent 40%, ${stat.color}40)`,
+                    backgroundImage: `linear-gradient(135deg, ${stat.color}60, transparent 40%, ${stat.color}40)`,
                     WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
                     WebkitMaskComposite: "xor",
                     maskComposite: "exclude",

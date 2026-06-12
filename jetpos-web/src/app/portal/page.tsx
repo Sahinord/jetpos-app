@@ -207,7 +207,7 @@ export default function PortalPage() {
                 ) : (
                     <div style={{ 
                         width: "2.5rem", height: "2.5rem", borderRadius: "10px",
-                        background: "linear-gradient(135deg, #7886C7, #B0BAE6)",
+                        backgroundImage: "linear-gradient(135deg, #7886C7, #B0BAE6)",
                         display: "flex", alignItems: "center", justifyContent: "center"
                     }}>
                         <Sparkles style={{ width: "1.2rem", color: "white" }} />
@@ -225,7 +225,7 @@ export default function PortalPage() {
                         style={{
                             width: "100%", display: "flex", alignItems: "center", gap: "0.8rem",
                             padding: "0.9rem 1.2rem", borderRadius: "12px", border: "none",
-                            background: activeTab === item.id ? "rgba(120,134,199,0.1)" : "transparent",
+                            background: activeTab === item.id ? "rgba(120, 134, 199,0.1)" : "transparent",
                             color: activeTab === item.id ? "#7886C7" : "rgba(255,255,255,0.4)",
                             fontSize: "0.875rem", fontWeight: activeTab === item.id ? 800 : 600, 
                             cursor: "pointer", transition: "all 0.2s", textAlign: "left", marginBottom: "4px"
@@ -276,7 +276,7 @@ export default function PortalPage() {
                 padding: "1rem 1.5rem", display: "none", justifyContent: "space-between", alignItems: "center"
             }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                    <div style={{ width: "2rem", height: "2rem", borderRadius: "8px", background: "linear-gradient(135deg, #7886C7, #B0BAE6)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <div style={{ width: "2rem", height: "2rem", borderRadius: "8px", backgroundImage: "linear-gradient(135deg, #7886C7, #B0BAE6)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                         <Sparkles style={{ width: "1rem", color: "white" }} />
                     </div>
                     <span style={{ fontWeight: 800 }}>JetPOS</span>
@@ -335,11 +335,11 @@ export default function PortalPage() {
                                     <div style={{ marginTop: "0.5rem", fontSize: "0.85rem", color: "#22c55e", fontWeight: 700 }}>↑ %{salesSummary.growth} (Canlı)</div>
                                 </div>
                                 <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "24px", padding: "2rem" }}>
-                                    <div style={{ width: "3rem", height: "3rem", borderRadius: "14px", background: "rgba(120,134,199,0.1)", color: "#7886C7", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1.5rem" }}><ShoppingBag style={{ width: "1.4rem" }} /></div>
+                                    <div style={{ width: "3rem", height: "3rem", borderRadius: "14px", background: "rgba(120, 134, 199,0.1)", color: "#7886C7", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1.5rem" }}><ShoppingBag style={{ width: "1.4rem" }} /></div>
                                     <div style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.3)", fontWeight: 800, textTransform: "uppercase", marginBottom: "0.5rem" }}>İşlem Sayısı</div>
                                     <div style={{ fontSize: "2.25rem", fontWeight: 900 }}>{salesSummary.count} <small style={{ fontSize: "1rem", color: "rgba(255,255,255,0.2)" }}>Fiş</small></div>
                                 </div>
-                                <div style={{ background: "linear-gradient(135deg, #7886C7, #5A659F)", borderRadius: "24px", padding: "2rem" }}>
+                                <div style={{ backgroundImage: "linear-gradient(135deg, #7886C7, #5A659F)", borderRadius: "24px", padding: "2rem" }}>
                                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "1.5rem" }}>
                                         <div style={{ width: "3rem", height: "3rem", borderRadius: "14px", background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}><ShieldCheck style={{ width: "1.4rem" }} /></div>
                                         <div style={{ background: "rgba(255,255,255,0.2)", padding: "0.4rem 0.8rem", borderRadius: "99px", fontSize: "0.75rem", fontWeight: 900 }}>{daysRemaining} Gün</div>
@@ -360,7 +360,7 @@ export default function PortalPage() {
                                         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                                             {announcements.length > 0 ? announcements.map(a => (
                                                 <div key={a.id} style={{ display: "flex", gap: "1.25rem", padding: "1.5rem", background: "rgba(255,255,255,0.02)", borderRadius: "20px", border: "1px solid rgba(255,255,255,0.03)" }}>
-                                                    <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "12px", background: "rgba(120,134,199,0.1)", color: "var(--primary-color)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Info style={{ width: "1.1rem" }} /></div>
+                                                    <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "12px", background: "rgba(120, 134, 199,0.1)", color: "var(--primary-color)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Info style={{ width: "1.1rem" }} /></div>
                                                     <div>
                                                         <div style={{ fontWeight: 800, fontSize: "1rem", marginBottom: "0.25rem" }}>{a.title}</div>
                                                         <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.875rem", margin: 0, lineHeight: 1.5 }}>{a.message}</p>
@@ -400,7 +400,7 @@ export default function PortalPage() {
                                             <button onClick={() => setShowTicketModal(true)} style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "1rem", borderRadius: "16px", background: "var(--primary-bg)", color: "var(--primary-color)", border: "none", fontWeight: 700, fontSize: "0.9rem", cursor: "pointer" }}><MessageSquare style={{ width: "1.1rem" }} /> Destek Talebi</button>
                                         </div>
                                     </div>
-                                    <div style={{ background: `linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.2), rgba(var(--primary-color-rgb), 0.05))`, border: "1px solid var(--primary-bg)", borderRadius: "28px", padding: "2rem" }}>
+                                    <div style={{ backgroundImage: `linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.2), rgba(var(--primary-color-rgb), 0.05))`, border: "1px solid var(--primary-bg)", borderRadius: "28px", padding: "2rem" }}>
                                         <h3 style={{ fontWeight: 900, fontSize: "1.2rem", marginBottom: "0.5rem" }}>AI Analiz</h3>
                                         <p style={{ fontSize: "0.8rem", opacity: 0.6, marginBottom: "1.5rem" }}>İşletme verileriniz yapay zeka ile inceleniyor.</p>
                                         <button style={{ width: "100%", padding: "0.8rem", borderRadius: "12px", background: "white", color: "#000", fontWeight: 800, border: "none", cursor: "pointer" }}>Raporu Gör</button>
@@ -464,7 +464,7 @@ export default function PortalPage() {
                                     </div>
                                 </div>
                                 <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
-                                    <div style={{ background: "linear-gradient(180deg, rgba(120,134,199,0.1), transparent)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "28px", padding: "2rem" }}>
+                                    <div style={{ backgroundImage: "linear-gradient(180deg, rgba(120, 134, 199,0.1), transparent)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "28px", padding: "2rem" }}>
                                         <h3 style={{ fontWeight: 900, fontSize: "1.2rem", marginBottom: "1.5rem" }}>Ödeme Yöntemi</h3>
                                         <div style={{ background: "rgba(255,255,255,0.03)", padding: "1.5rem", borderRadius: "20px", border: "1px solid rgba(255,255,255,0.06)", marginBottom: "2rem" }}>
                                             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "1rem" }}>
@@ -539,7 +539,7 @@ export default function PortalPage() {
                                     ].map((v, i) => (
                                         <div key={i} onClick={() => {}} style={{ cursor: "pointer" }}>
                                             <div style={{ width: "100%", aspectRatio: "16/9", background: "rgba(255,255,255,0.03)", borderRadius: "20px", border: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1rem", position: "relative", overflow: "hidden" }}>
-                                                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.6))" }} />
+                                                <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.6))" }} />
                                                 <div style={{ padding: "1rem", borderRadius: "50%", background: "white", color: "#000", zIndex: 1 }}><Play style={{ width: "1.2rem", fill: "currentColor" }} /></div>
                                                 <span style={{ position: "absolute", bottom: "1rem", right: "1rem", padding: "0.2rem 0.5rem", background: "rgba(0,0,0,0.8)", borderRadius: "6px", fontSize: "0.7rem", fontWeight: 800 }}>{v.duration}</span>
                                             </div>

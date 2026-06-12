@@ -74,7 +74,7 @@ export default function BlogPageClient({ posts }: { posts: any[] }) {
                                 onClick={() => setActiveCategory(cat)}
                                 style={{
                                     padding: "0.5rem 1rem", borderRadius: "9999px", border: "1px solid rgba(255,255,255,0.1)",
-                                    background: activeCategory === cat ? "rgba(120,134,199,0.2)" : "rgba(255,255,255,0.04)",
+                                    background: activeCategory === cat ? "rgba(120, 134, 199,0.2)" : "rgba(255,255,255,0.04)",
                                     color: activeCategory === cat ? "#7886C7" : "rgba(255,255,255,0.55)",
                                     fontWeight: 600, fontSize: "0.825rem", cursor: "pointer",
                                     fontFamily: "inherit", transition: "all 0.2s",
@@ -99,17 +99,17 @@ export default function BlogPageClient({ posts }: { posts: any[] }) {
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: "2.5rem" }}>
                         <Link href={`/blog/${featured.slug}`} style={{ textDecoration: "none", display: "block" }}>
                             <div style={{
-                                background: "rgba(120,134,199,0.07)", border: "1px solid rgba(120,134,199,0.2)",
+                                background: "rgba(120, 134, 199,0.07)", border: "1px solid rgba(120, 134, 199,0.2)",
                                 borderRadius: "1.5rem", padding: "2.5rem",
                                 display: "grid", gridTemplateColumns: "1fr auto", gap: "2rem", alignItems: "center",
                                 transition: "all 0.3s",
                             }}
-                                onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(120,134,199,0.4)"; }}
-                                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(120,134,199,0.2)"; }}
+                                onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(120, 134, 199,0.4)"; }}
+                                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(120, 134, 199,0.2)"; }}
                             >
                                 <div>
                                     <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem", flexWrap: "wrap" }}>
-                                        <span style={{ fontSize: "0.7rem", fontWeight: 800, background: "rgba(120,134,199,0.2)", color: "#7886C7", padding: "0.2rem 0.625rem", borderRadius: "9999px" }}>
+                                        <span style={{ fontSize: "0.7rem", fontWeight: 800, background: "rgba(120, 134, 199,0.2)", color: "#7886C7", padding: "0.2rem 0.625rem", borderRadius: "9999px" }}>
                                             ⭐ ÖNE ÇIKAN
                                         </span>
                                         {featured.category && (
@@ -130,7 +130,7 @@ export default function BlogPageClient({ posts }: { posts: any[] }) {
                                 <div style={{ flexShrink: 0 }}>
                                     <div style={{
                                         width: "3.5rem", height: "3.5rem", borderRadius: "50%",
-                                        background: "rgba(120,134,199,0.15)", border: "1px solid rgba(120,134,199,0.3)",
+                                        background: "rgba(120, 134, 199,0.15)", border: "1px solid rgba(120, 134, 199,0.3)",
                                         display: "flex", alignItems: "center", justifyContent: "center",
                                     }}>
                                         <ArrowRight style={{ width: "1.25rem", height: "1.25rem", color: "#7886C7" }} />

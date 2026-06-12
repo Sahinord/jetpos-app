@@ -1,20 +1,149 @@
 "use client";
 
-import React, { useState } from "react";
-import { Phone, User, ArrowRight, Scan, CheckCircle, TrendingUp, ShoppingCart, Clock, Shield } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { Phone, User, TrendingUp, ShoppingCart, Bell, AlertCircle, ArrowRight, CheckCircle, BarChart3, Package, FileText, Wallet } from "lucide-react";
 import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
 
-const stats = [
-    { icon: TrendingUp, label: "Ürün Çeşidi", value: "4.853", color: "#7886C7", bg: "rgba(120, 134, 199, 0.12)" },
-    { icon: ShoppingCart, label: "Stok Adedi", value: "135", color: "#8b5cf6", bg: "rgba(139,92,246,0.12)" },
-    { icon: Clock, label: "İşlem Hızı", value: "0.8sn", color: "#10b981", bg: "rgba(16,185,129,0.12)" },
+const feedEvents = [
+    { title: "Yeni sipariş tamamlandı", desc: "₺1.240 barkodlu ödeme alındı", time: "Şimdi", color: "#10B981" },
+    { title: "Günlük hedef aşıldı", desc: "Bugün ₺28.450 satış yapıldı", time: "2 dk önce", color: "#7886C7" },
+    { title: "Düşük stok uyarısı", desc: "3 ürün için sipariş gerekli", time: "5 dk önce", color: "#f59e0b" },
+    { title: "Yeni ürün eklendi", desc: "Stok sisteme kaydedildi", time: "8 dk önce", color: "#8b5cf6" },
 ];
+
+const rotatingWords = ["Yönetin.", "Büyütün.", "Dijitalleştirin.", "Hızlandırın."];
+
+type DashPeriod = "daily" | "monthly" | "yearly";
+const periodData: Record<DashPeriod, { label: string; sales: number; orders: number; invoices: number; cash: string; cashSub: string; growth: string; salesLabel: string }> = {
+    daily:   { label: "Günlük", salesLabel: "Günlük Satış Hacmi", sales: 28450,    orders: 142,   invoices: 98,   cash: "₺18.250 Nakit",    cashSub: "₺10.200 Kredi / POS",   growth: "+250%" },
+    monthly: { label: "Aylık",  salesLabel: "Aylık Satış Hacmi",  sales: 854200,   orders: 4260,  invoices: 2940, cash: "₺547.500 Nakit",   cashSub: "₺306.700 Kredi / POS",  growth: "+180%" },
+    yearly:  { label: "Yıllık", salesLabel: "Yıllık Satış Hacmi", sales: 10250000, orders: 51120, invoices: 35280,cash: "₺6.570.000 Nakit", cashSub: "₺3.680.000 Kredi / POS",growth: "+320%" },
+};
 
 export default function Hero() {
     const [name, setName] = useState("");
     const [phone, setPhone] = useState("");
     const [submitted, setSubmitted] = useState(false);
     const [focused, setFocused] = useState<string | null>(null);
+    const [count, setCount] = useState(0);
+    const [wordIndex, setWordIndex] = useState(0);
+    const [dashPeriod, setDashPeriod] = useState<DashPeriod>("daily");
+    
+    // Live dashboard metrics count-up states
+    const [salesCount, setSalesCount] = useState(0);
+    const [orderCount, setOrderCount] = useState(0);
+    const [invoiceCount, setInvoiceCount] = useState(0);
+    const [cashDisplay, setCashDisplay] = useState(periodData.daily.cash);
+    const [cashSubDisplay, setCashSubDisplay] = useState(periodData.daily.cashSub);
+    const [pulse, setPulse] = useState(false);
+
+    const heroRef = useRef<HTMLDivElement>(null);
+
+    // Easing count up animation for counters — re-runs when dashPeriod changes
+    useEffect(() => {
+        const target = periodData[dashPeriod];
+        let currentStep = 0;
+        const duration = 1200; // ms
+        const fps = 60;
+        const totalSteps = Math.round((duration / 1000) * fps);
+        
+        // Capture starting values for smooth transition
+        let startSales = 0, startOrders = 0, startInvoices = 0;
+        setSalesCount(prev => { startSales = prev; return prev; });
+        setOrderCount(prev => { startOrders = prev; return prev; });
+        setInvoiceCount(prev => { startInvoices = prev; return prev; });
+
+        setCashDisplay(target.cash);
+        setCashSubDisplay(target.cashSub);
+        
+        const timer = setInterval(() => {
+            currentStep++;
+            const progress = currentStep / totalSteps;
+            // Easing out cubic
+            const ease = 1 - Math.pow(1 - progress, 3);
+            
+            setSalesCount(Math.floor(startSales + (target.sales - startSales) * ease));
+            setOrderCount(Math.floor(startOrders + (target.orders - startOrders) * ease));
+            setInvoiceCount(Math.floor(startInvoices + (target.invoices - startInvoices) * ease));
+            
+            if (currentStep >= totalSteps) {
+                setSalesCount(target.sales);
+                setOrderCount(target.orders);
+                setInvoiceCount(target.invoices);
+                clearInterval(timer);
+            }
+        }, 1000 / fps);
+        
+        return () => clearInterval(timer);
+    }, [dashPeriod]);
+
+    // One-time count-up for business counter badge
+    useEffect(() => {
+        let step = 0;
+        const total = 90; // ~1.5s at 60fps
+        const timer = setInterval(() => {
+            step++;
+            const ease = 1 - Math.pow(1 - step / total, 3);
+            setCount(Math.floor(ease * 1500));
+            if (step >= total) { setCount(1500); clearInterval(timer); }
+        }, 1000 / 60);
+        return () => clearInterval(timer);
+    }, []);
+
+    // Live continuous increment for the business counter
+    useEffect(() => {
+        if (count < 1500) return;
+
+        const liveInterval = setInterval(() => {
+            setCount(prev => prev + Math.floor(Math.random() * 2) + 1);
+        }, 3000 + Math.random() * 3000); // Increment every 3-6 seconds
+
+        return () => clearInterval(liveInterval);
+    }, [count >= 1500]);
+
+    // Micro-animation pulse trigger on increment
+    useEffect(() => {
+        if (count > 1500) {
+            setPulse(true);
+            const timer = setTimeout(() => setPulse(false), 500);
+            return () => clearTimeout(timer);
+        }
+    }, [count]);
+
+    // Rotating word animation for hero headline
+    useEffect(() => {
+        const wordTimer = setInterval(() => {
+            setWordIndex(prev => (prev + 1) % rotatingWords.length);
+        }, 3000);
+        return () => clearInterval(wordTimer);
+    }, []);
+
+    // Mouse move parallax listener
+    useEffect(() => {
+        const handleMouseMove = (e: MouseEvent) => {
+            if (!heroRef.current) return;
+            const { clientX, clientY } = e;
+            const rect = heroRef.current.getBoundingClientRect();
+            
+            // Calculate cursor offset relative to container center (-0.5 to 0.5)
+            const x = (clientX - rect.left) / rect.width - 0.5;
+            const y = (clientY - rect.top) / rect.height - 0.5;
+            
+            heroRef.current.style.setProperty("--mx", `${x}`);
+            heroRef.current.style.setProperty("--my", `${y}`);
+        };
+        
+        const container = heroRef.current;
+        if (container) {
+            container.addEventListener("mousemove", handleMouseMove);
+        }
+        return () => {
+            if (container) {
+                container.removeEventListener("mousemove", handleMouseMove);
+            }
+        };
+    }, []);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -22,240 +151,246 @@ export default function Hero() {
     };
 
     return (
-        <section style={{
-            minHeight: "100vh",
-            display: "flex",
-            alignItems: "center",
-            position: "relative",
-            overflow: "visible",
-            paddingTop: "5rem",
-        }}>
-            {/* Glow orbs */}
+        <section 
+            ref={heroRef}
+            style={{
+                position: "relative",
+                minHeight: "100vh",
+                backgroundColor: "#FFFFFF",
+                overflow: "hidden",
+                paddingTop: "7rem",
+                color: "#111827",
+                display: "flex",
+                flexDirection: "column",
+            }}
+        >
+            {/* Subtle Radial Glow Spot behind the dashboard/timeline (Hardware-Accelerated) */}
             <div style={{
-                position: "absolute", top: "15%", left: "5%",
-                width: "500px", height: "500px",
-                background: "radial-gradient(circle, rgba(120, 134, 199, 0.15) 0%, transparent 65%)",
-                borderRadius: "50%", pointerEvents: "none",
-                animation: "floatOrb 8s ease-in-out infinite",
-            }} />
-            <div style={{
-                position: "absolute", bottom: "10%", right: "10%",
-                width: "400px", height: "400px",
-                background: "radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 65%)",
-                borderRadius: "50%", pointerEvents: "none",
-                animation: "floatOrb 10s ease-in-out infinite reverse",
+                position: "absolute",
+                top: "10%",
+                right: "5%",
+                width: "700px",
+                height: "700px",
+                background: "radial-gradient(circle, rgba(120, 134, 199, 0.08) 0%, transparent 70%)",
+                pointerEvents: "none",
+                zIndex: 0,
+                transform: "translate3d(0,0,0)",
+                willChange: "transform",
             }} />
 
             <div style={{
                 maxWidth: "1400px", margin: "0 auto",
-                padding: "3rem 2rem 5rem",
+                padding: "2rem 2rem 6rem",
                 display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "2rem",
+                gridTemplateColumns: "1fr 1.15fr", // Right column does not exceed 55% of total width
+                gap: "5rem", // Standard Stripe/Linear spacing gap
                 alignItems: "center",
                 width: "100%",
-                position: "relative", zIndex: 1,
+                position: "relative", zIndex: 2,
             }} className="hero-grid">
 
-                {/* ── LEFT ── */}
+                {/* ── LEFT COLUMN ── */}
                 <div style={{
                     display: "flex", flexDirection: "column", gap: "2rem",
-                    animation: "slideInLeft 0.8s cubic-bezier(0.22,1,0.36,1) both",
                 }}>
-
-                    {/* Top pill badge */}
+                    
+                    {/* Badge */}
                     <div style={{
                         display: "inline-flex", alignItems: "center", gap: "0.625rem",
-                        background: "rgba(120, 134, 199, 0.1)",
-                        border: "1px solid rgba(120, 134, 199, 0.2)",
+                        background: "white",
+                        border: "1px solid rgba(120,134,199,0.12)",
                         borderRadius: "9999px",
-                        padding: "0.4rem 1rem 0.4rem 0.5rem",
+                        padding: "0.4rem 1rem",
                         width: "fit-content",
-                        animation: "fadeUp 0.6s 0.1s cubic-bezier(0.22,1,0.36,1) both",
+                        boxShadow: "0 4px 12px rgba(120,134,199,0.04)",
+                        animation: "fadeUp 0.8s 0.1s cubic-bezier(0.22,1,0.36,1) both",
                     }}>
-                        <span style={{
-                            background: "linear-gradient(135deg, #7886C7, #5A659F)",
-                            borderRadius: "9999px", padding: "0.2rem 0.6rem",
-                            fontSize: "0.7rem", fontWeight: 700, color: "white",
-                            letterSpacing: "0.05em", textTransform: "uppercase",
-                        }}>YENİ</span>
-                        <span style={{ fontSize: "0.82rem", color: "#B0BAE6", fontWeight: 500 }}>
-                            Ramazan Ayı Kampanyası — %30 İndirim
+                        <span style={{ fontSize: "1rem" }}>⚡</span>
+                        <span style={{ fontSize: "0.875rem", color: "#111827", fontWeight: 600 }}>
+                            7 Gün Ücretsiz Deneme
                         </span>
                     </div>
 
-                    {/* Heading */}
-                    <div style={{ animation: "fadeUp 0.6s 0.25s cubic-bezier(0.22,1,0.36,1) both" }}>
+                    {/* Headline */}
+                    <div>
                         <h1 style={{
-                            fontSize: "clamp(2.75rem, 5.5vw, 4.25rem)",
+                            fontSize: "clamp(3rem, 5.5vw, 4.5rem)",
                             fontWeight: 900,
-                            lineHeight: 1.08,
-                            color: "white",
-                            letterSpacing: "-0.04em",
+                            lineHeight: 1.2,
+                            color: "#111827",
+                            letterSpacing: "-0.02em",
                             margin: 0,
                         }}>
-                            Dükkanınızı
-                            <br />
-                            <span style={{
+                            <div style={{ animation: "fadeUp 0.8s 0.2s cubic-bezier(0.22,1,0.36,1) both" }}>İşletmenizi</div>
+                            <div style={{ animation: "fadeUp 0.8s 0.3s cubic-bezier(0.22,1,0.36,1) both" }}>Tek Ekrandan</div>
+                            <div style={{
+                                animation: "fadeUp 0.8s 0.4s cubic-bezier(0.22,1,0.36,1) both",
                                 position: "relative",
+                                height: "1.3em",
+                                overflow: "hidden",
                                 display: "inline-block",
                             }}>
-                                <span style={{
-                                    background: "linear-gradient(135deg, #7886C7 0%, #B0BAE6 50%, #7886C7 100%)",
-                                    backgroundSize: "200% auto",
-                                    WebkitBackgroundClip: "text",
-                                    WebkitTextFillColor: "transparent",
-                                    animation: "shimmer 4s linear infinite",
-                                }}>dijitalleştirin.</span>
-                            </span>
+                                <AnimatePresence mode="wait">
+                                    <motion.span
+                                        key={rotatingWords[wordIndex]}
+                                        initial={{ y: "100%", opacity: 0 }}
+                                        animate={{ y: "0%", opacity: 1 }}
+                                        exit={{ y: "-100%", opacity: 0 }}
+                                        transition={{
+                                            duration: 0.5,
+                                            ease: [0.22, 1, 0.36, 1],
+                                        }}
+                                        style={{
+                                            display: "block",
+                                            willChange: "transform, opacity",
+                                            background: "linear-gradient(135deg, #7886C7 0%, #5A659F 60%, #9AA7DF 100%)",
+                                            backgroundSize: "200% 200%",
+                                            WebkitBackgroundClip: "text",
+                                            WebkitTextFillColor: "transparent",
+                                            backgroundClip: "text",
+                                            animation: "gradientShift 4s ease infinite",
+                                        }}
+                                    >
+                                        {rotatingWords[wordIndex]}
+                                    </motion.span>
+                                </AnimatePresence>
+                            </div>
                         </h1>
                         <p style={{
-                            marginTop: "1.25rem",
-                            fontSize: "1.05rem",
-                            color: "rgba(255,255,255,0.45)",
-                            lineHeight: 1.75,
-                            maxWidth: "460px",
+                            marginTop: "1.5rem",
+                            fontSize: "1.125rem",
+                            color: "#4b5563",
+                            lineHeight: 1.7,
+                            maxWidth: "480px",
+                            fontWeight: 500,
+                            animation: "fadeUp 0.8s 0.5s cubic-bezier(0.22,1,0.36,1) both",
                         }}>
-                            Barkod okuyarak saniyeler içinde satış yapın. Ön muhasebe, stok takibi ve raporlama tek platformda.
+                            Satış, stok, raporlama, cari hesap ve e-fatura süreçlerinizi JetPOS ile kolayca yönetin.
                         </p>
                     </div>
 
-                    {/* CTA row */}
-                    <div style={{
-                        display: "flex", gap: "0.875rem", alignItems: "center", flexWrap: "wrap",
-                        animation: "fadeUp 0.6s 0.4s cubic-bezier(0.22,1,0.36,1) both",
-                    }}>
-                        <button style={{
-                            display: "inline-flex", alignItems: "center", gap: "0.5rem",
-                            padding: "0.8rem 1.75rem",
-                            background: "linear-gradient(135deg, #5A659F, #7886C7)",
-                            color: "white", fontWeight: 700, fontSize: "0.95rem",
-                            border: "none", borderRadius: "0.875rem", cursor: "pointer",
-                            boxShadow: "0 0 0 1px rgba(120, 134, 199, 0.3), 0 8px 24px rgba(120, 134, 199, 0.4)",
-                            fontFamily: "inherit", transition: "all 0.25s",
-                            letterSpacing: "-0.01em",
-                        }}
-                            onMouseEnter={e => {
-                                e.currentTarget.style.transform = "translateY(-2px)";
-                                e.currentTarget.style.boxShadow = "0 0 0 1px rgba(120, 134, 199, 0.4), 0 12px 32px rgba(120, 134, 199, 0.55)";
-                            }}
-                            onMouseLeave={e => {
-                                e.currentTarget.style.transform = "translateY(0)";
-                                e.currentTarget.style.boxShadow = "0 0 0 1px rgba(120, 134, 199, 0.3), 0 8px 24px rgba(120, 134, 199, 0.4)";
-                            }}
-                        >
-                            Hemen Teklif Al
-                        </button>
-                        <button style={{
-                            display: "inline-flex", alignItems: "center", gap: "0.5rem",
-                            padding: "0.8rem 1.5rem",
-                            background: "transparent",
-                            color: "rgba(255,255,255,0.7)", fontWeight: 600, fontSize: "0.95rem",
-                            border: "1px solid rgba(255,255,255,0.12)", borderRadius: "0.875rem",
-                            cursor: "pointer", fontFamily: "inherit", transition: "all 0.25s",
-                        }}
-                            onMouseEnter={e => {
-                                e.currentTarget.style.color = "white";
-                                e.currentTarget.style.borderColor = "rgba(255,255,255,0.25)";
-                                e.currentTarget.style.background = "rgba(255,255,255,0.05)";
-                            }}
-                            onMouseLeave={e => {
-                                e.currentTarget.style.color = "rgba(255,255,255,0.7)";
-                                e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)";
-                                e.currentTarget.style.background = "transparent";
-                            }}
-                        >
-                            Ücretsiz Dene <ArrowRight style={{ width: "1rem", height: "1rem" }} />
-                        </button>
-                    </div>
-
-                    {/* Trust row */}
+                    {/* Social Proof */}
                     <div style={{
                         display: "flex", alignItems: "center", gap: "1.25rem", flexWrap: "wrap",
-                        animation: "fadeUp 0.6s 0.55s cubic-bezier(0.22,1,0.36,1) both",
+                        animation: "fadeUp 0.8s 0.6s cubic-bezier(0.22,1,0.36,1) both",
                     }}>
                         <div style={{ display: "flex" }}>
-                            {["#f59e0b", "#7886C7", "#10b981", "#8b5cf6", "#ef4444"].map((c, i) => (
+                            {["#7886C7", "#4F46E5", "#6366F1", "#818CF8"].map((c, i) => (
                                 <div key={i} style={{
-                                    width: "2rem", height: "2rem", borderRadius: "50%",
-                                    background: `linear-gradient(135deg, ${c}dd, ${c}88)`,
-                                    border: "2px solid #030712",
-                                    marginLeft: i === 0 ? 0 : "-0.6rem",
-                                    fontSize: "0.65rem", color: "white", fontWeight: 800,
+                                    width: "2.5rem", height: "2.5rem", borderRadius: "50%",
+                                    backgroundImage: `linear-gradient(135deg, ${c}dd, ${c}88)`,
+                                    border: "2px solid #F8FAFC",
+                                    marginLeft: i === 0 ? 0 : "-0.75rem",
+                                    fontSize: "0.75rem", color: "white", fontWeight: 800,
                                     display: "flex", alignItems: "center", justifyContent: "center",
+                                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                                 }}>
-                                    {["K", "M", "A", "S", "E"][i]}
+                                    {["J", "P", "O", "S"][i]}
                                 </div>
                             ))}
                         </div>
                         <div>
-                            <div style={{ display: "flex", gap: "2px", marginBottom: "2px" }}>
-                                {[...Array(5)].map((_, i) => (
-                                    <svg key={i} width="12" height="12" viewBox="0 0 12 12" fill="#f59e0b">
-                                        <path d="M6 1l1.5 3 3.5.5-2.5 2.5.5 3.5L6 9l-3 1.5.5-3.5L1 4.5 4.5 4z" />
-                                    </svg>
-                                ))}
-                            </div>
-                            <p style={{ margin: 0, fontSize: "0.78rem", color: "rgba(255,255,255,0.45)" }}>
-                                <strong style={{ color: "rgba(255,255,255,0.75)" }}>2,400+</strong> işletme JetPOS&apos;ta büyüyor
+                            <p style={{ margin: 0, fontSize: "0.9rem", color: "#4b5563", fontWeight: 600, display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                                <span style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    position: "relative",
+                                    width: "8px",
+                                    height: "8px",
+                                    borderRadius: "50%",
+                                    background: "#10B981",
+                                    marginRight: "0.125rem"
+                                }}>
+                                    <span style={{
+                                        position: "absolute",
+                                        width: "100%",
+                                        height: "100%",
+                                        borderRadius: "50%",
+                                        background: "#10B981",
+                                        animation: "pulseDot 1.5s infinite",
+                                    }} />
+                                </span>
+                                <div style={{ 
+                                    position: "relative",
+                                    height: "1.35rem", 
+                                    overflow: "hidden", 
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                }}>
+                                    <AnimatePresence mode="popLayout">
+                                        <motion.strong
+                                            key={count}
+                                            initial={{ opacity: 0, y: 15 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -15 }}
+                                            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                                            style={{ 
+                                                display: "inline-block",
+                                                color: "#111827",
+                                                fontWeight: 800,
+                                                transformOrigin: "left center",
+                                            }}
+                                        >
+                                            {count.toLocaleString('tr-TR')}+ işletme
+                                        </motion.strong>
+                                    </AnimatePresence>
+                                </div>
+                                <span>JetPOS'a güveniyor</span>
                             </p>
-                        </div>
-                        <div style={{ width: "1px", height: "2rem", background: "rgba(255,255,255,0.08)" }} />
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
-                            <Shield style={{ width: "0.875rem", height: "0.875rem", color: "#10b981" }} />
-                            <span style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.45)" }}>SSL Güvenli</span>
                         </div>
                     </div>
 
-                    {/* Contact Form */}
+                    {/* Contact Form Card */}
                     <div style={{
-                        background: "rgba(255,255,255,0.03)",
-                        border: "1px solid rgba(255,255,255,0.08)",
-                        borderRadius: "1.25rem",
-                        padding: "1.5rem",
-                        position: "relative",
-                        overflow: "hidden",
-                        animation: "fadeUp 0.6s 0.7s cubic-bezier(0.22,1,0.36,1) both",
+                        background: "white",
+                        border: "1px solid rgba(120,134,199,0.15)",
+                        borderRadius: "1.5rem",
+                        padding: "1.75rem",
+                        boxShadow: "0 20px 40px rgba(120,134,199,0.03), 0 1px 3px rgba(120,134,199,0.02)",
+                        maxWidth: "460px",
+                        animation: "fadeUp 0.8s 0.7s cubic-bezier(0.22,1,0.36,1) both",
                     }}>
-                        {/* subtle top accent line */}
-                        <div style={{
-                            position: "absolute", top: 0, left: "10%", right: "10%", height: "1px",
-                            background: "linear-gradient(90deg, transparent, rgba(120, 134, 199, 0.5), transparent)",
-                        }} />
-
                         {submitted ? (
-                            <div style={{ textAlign: "center", padding: "1.5rem 0" }}>
+                            <div style={{ textAlign: "center", padding: "2rem 0" }}>
                                 <div style={{
-                                    width: "3rem", height: "3rem",
+                                    width: "4rem", height: "4rem",
                                     background: "rgba(120, 134, 199, 0.1)",
-                                    border: "1px solid rgba(120, 134, 199, 0.3)",
                                     borderRadius: "50%",
                                     display: "flex", alignItems: "center", justifyContent: "center",
-                                    margin: "0 auto 0.875rem",
+                                    margin: "0 auto 1rem",
                                 }}>
-                                    <CheckCircle style={{ width: "1.5rem", height: "1.5rem", color: "#7886C7" }} />
+                                    <CheckCircle style={{ width: "2rem", height: "2rem", color: "#7886C7" }} />
                                 </div>
-                                <p style={{ color: "white", fontWeight: 700, fontSize: "1.05rem", margin: "0 0 0.25rem" }}>Talebiniz Alındı!</p>
-                                <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.875rem", margin: 0 }}>En kısa sürede sizi arayacağız.</p>
+                                <p style={{ color: "#111827", fontWeight: 800, fontSize: "1.25rem", margin: "0 0 0.5rem" }}>Talebiniz Alındı!</p>
+                                <p style={{ color: "#6b7280", fontSize: "1rem", margin: 0 }}>Uzman ekibimiz sizi en kısa sürede arayacak.</p>
                             </div>
                         ) : (
                             <form onSubmit={handleSubmit}>
-                                <p style={{ color: "white", fontWeight: 700, fontSize: "1rem", margin: "0 0 1rem", letterSpacing: "-0.01em" }}>
-                                    Hemen Sizi Arayalım
-                                </p>
-                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.625rem", marginBottom: "0.75rem" }} className="form-grid">
+                                <div style={{ marginBottom: "1.25rem" }}>
+                                    <p style={{ color: "#111827", fontWeight: 800, fontSize: "1.125rem", margin: "0 0 0.25rem" }}>
+                                        Hemen Sizi Arayalım
+                                    </p>
+                                    <p style={{ color: "#6b7280", fontSize: "0.875rem", margin: 0 }}>
+                                        Birkaç dakika içinde geri dönüş
+                                    </p>
+                                </div>
+                                <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem", marginBottom: "1.25rem" }}>
                                     {[
-                                        { id: "name", icon: User, placeholder: "Adınız ve Soyadınız *", value: name, onChange: setName, type: "text" },
-                                        { id: "phone", icon: Phone, placeholder: "Telefon Numaranız *", value: phone, onChange: setPhone, type: "tel" },
+                                        { id: "name", icon: User, placeholder: "Ad Soyad", value: name, onChange: setName, type: "text" },
+                                        { id: "phone", icon: Phone, placeholder: "Telefon Numaranız", value: phone, onChange: setPhone, type: "tel" },
                                     ].map(({ id, icon: Icon, placeholder, value, onChange, type }) => (
                                         <div key={id} style={{
-                                            display: "flex", alignItems: "center", gap: "0.625rem",
-                                            background: focused === id ? "rgba(120, 134, 199, 0.06)" : "rgba(255,255,255,0.04)",
-                                            border: `1px solid ${focused === id ? "rgba(120, 134, 199, 0.35)" : "rgba(255,255,255,0.08)"}`,
-                                            borderRadius: "0.75rem", padding: "0.625rem 0.875rem",
-                                            transition: "all 0.2s",
+                                            display: "flex", alignItems: "center", gap: "0.75rem",
+                                            background: "#F8FAFC",
+                                            border: `1px solid ${focused === id ? "rgba(120, 134, 199, 0.6)" : "rgba(120, 134, 199, 0.15)"}`,
+                                            borderRadius: "0.75rem", padding: "0.875rem 1rem",
+                                            transition: "all 0.2s ease",
+                                            boxShadow: focused === id 
+                                                ? "0 0 0 4px rgba(120, 134, 199, 0.12), 0 4px 12px rgba(120, 134, 199, 0.04)" 
+                                                : "0 2px 4px rgba(0,0,0,0.01) inset",
                                         }}>
-                                            <Icon style={{ width: "0.9rem", height: "0.9rem", color: focused === id ? "#7886C7" : "rgba(255,255,255,0.25)", flexShrink: 0, transition: "color 0.2s" }} />
+                                            <Icon style={{ width: "1rem", height: "1rem", color: focused === id ? "#7886C7" : "#9ca3af", flexShrink: 0, transition: "color 0.2s" }} />
                                             <input
                                                 type={type}
                                                 placeholder={placeholder}
@@ -266,255 +401,301 @@ export default function Hero() {
                                                 required
                                                 style={{
                                                     background: "none", border: "none", outline: "none",
-                                                    color: "white", fontSize: "0.83rem", width: "100%",
-                                                    fontFamily: "inherit",
+                                                    color: "#111827", fontSize: "0.95rem", width: "100%",
+                                                    fontFamily: "inherit", fontWeight: 500,
                                                 }}
                                             />
                                         </div>
                                     ))}
                                 </div>
-                                <button type="submit" style={{
+                                <button type="submit" className="cta-btn" style={{
                                     width: "100%",
-                                    display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
-                                    padding: "0.75rem",
-                                    background: "linear-gradient(135deg, #5A659F, #7886C7)",
-                                    color: "white", fontWeight: 700, fontSize: "0.9rem",
-                                    border: "none", borderRadius: "0.75rem", cursor: "pointer",
+                                    padding: "1rem",
+                                    backgroundImage: "linear-gradient(135deg, #7886C7, #5A659F)",
+                                    color: "white", fontWeight: 700, fontSize: "1rem",
+                                    border: "none", borderRadius: "0.875rem", cursor: "pointer",
                                     fontFamily: "inherit",
-                                    boxShadow: "0 4px 16px rgba(120, 134, 199, 0.35)",
-                                    transition: "all 0.2s",
-                                    letterSpacing: "-0.01em",
-                                }}
-                                    onMouseEnter={e => {
-                                        e.currentTarget.style.transform = "translateY(-1px)";
-                                        e.currentTarget.style.boxShadow = "0 8px 24px rgba(120, 134, 199, 0.5)";
-                                    }}
-                                    onMouseLeave={e => {
-                                        e.currentTarget.style.transform = "translateY(0)";
-                                        e.currentTarget.style.boxShadow = "0 4px 16px rgba(120, 134, 199, 0.35)";
-                                    }}
-                                >
-                                    <Phone style={{ width: "0.9rem", height: "0.9rem" }} />
-                                    Hemen Sizi Arayalım →
+                                    boxShadow: "0 4px 16px rgba(120, 134, 199, 0.25)",
+                                    transition: "all 0.3s cubic-bezier(0.22,1,0.36,1)",
+                                    display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem"
+                                }}>
+                                    Hemen Başlayın
+                                    <ArrowRight className="arrow-icon" style={{ width: "1rem", height: "1rem", transition: "transform 0.3s" }} />
                                 </button>
+                                <p style={{ textAlign: "center", marginTop: "1rem", fontSize: "0.75rem", color: "#9ca3af", margin: "1rem 0 0" }}>
+                                    Bilgileriniz gizli tutulur - KVKK uyumlu
+                                </p>
                             </form>
                         )}
                     </div>
                 </div>
 
-                {/* ── RIGHT — Scanner Mockup ── */}
+                {/* ── RIGHT COLUMN ── */}
                 <div style={{
                     position: "relative",
                     display: "flex",
                     justifyContent: "center",
                     alignItems: "center",
-                    padding: "2rem 5rem",
                     animation: "slideInRight 0.8s 0.2s cubic-bezier(0.22,1,0.36,1) both",
                 }}>
-
-                    {/* Stat card — sol üst */}
+                    
+                    {/* Unified Parallax Wrapper for Dashboard and Timeline */}
                     <div style={{
-                        position: "absolute", top: "-3%", left: "-1",
-                        background: "rgba(3,7,18,0.88)",
-                        border: `1px solid ${stats[0].color}33`,
-                        borderRadius: "0.875rem",
-                        padding: "0.75rem 1rem",
-                        backdropFilter: "blur(16px)",
-                        display: "flex", alignItems: "center", gap: "0.625rem",
-                        boxShadow: `0 8px 24px rgba(0,0,0,0.5), 0 0 0 1px ${stats[0].color}22 inset`,
-                        animation: "fadeUp 0.6s 0.5s cubic-bezier(0.22,1,0.36,1) both",
-                        whiteSpace: "nowrap", zIndex: 10,
-                    }} className="float-card-1">
-                        <div style={{
-                            width: "2rem", height: "2rem", borderRadius: "0.5rem",
-                            background: stats[0].bg, border: `1px solid ${stats[0].color}33`,
-                            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                        }}>
-                            <TrendingUp style={{ width: "0.875rem", height: "0.875rem", color: stats[0].color }} />
-                        </div>
-                        <div>
-                            <p style={{ margin: 0, fontSize: "0.62rem", color: "rgba(255,255,255,0.4)", fontWeight: 500 }}>{stats[0].label}</p>
-                            <p style={{ margin: 0, fontSize: "0.9rem", color: "white", fontWeight: 700 }}>{stats[0].value}</p>
-                        </div>
-                    </div>
-
-                    {/* Stat card — sağ orta */}
-                    <div style={{
-                        position: "absolute", top: "38%", right: 0,
-                        background: "rgba(3,7,18,0.88)",
-                        border: `1px solid ${stats[1].color}33`,
-                        borderRadius: "0.875rem",
-                        padding: "0.75rem 1rem",
-                        backdropFilter: "blur(16px)",
-                        display: "flex", alignItems: "center", gap: "0.625rem",
-                        boxShadow: `0 8px 24px rgba(0,0,0,0.5), 0 0 0 1px ${stats[1].color}22 inset`,
-                        animation: "fadeUp 0.6s 0.7s cubic-bezier(0.22,1,0.36,1) both",
-                        whiteSpace: "nowrap", zIndex: 10,
-                    }} className="float-card-2">
-                        <div style={{
-                            width: "2rem", height: "2rem", borderRadius: "0.5rem",
-                            background: stats[1].bg, border: `1px solid ${stats[1].color}33`,
-                            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                        }}>
-                            <ShoppingCart style={{ width: "0.875rem", height: "0.875rem", color: stats[1].color }} />
-                        </div>
-                        <div>
-                            <p style={{ margin: 0, fontSize: "0.62rem", color: "rgba(255,255,255,0.4)", fontWeight: 500 }}>{stats[1].label}</p>
-                            <p style={{ margin: 0, fontSize: "0.9rem", color: "white", fontWeight: 700 }}>{stats[1].value}</p>
-                        </div>
-                    </div>
-
-                    {/* Stat card — sol alt */}
-                    <div style={{
-                        position: "absolute", bottom: "-2%", left: "10%",
-                        background: "rgba(3,7,18,0.88)",
-                        border: `1px solid ${stats[2].color}33`,
-                        borderRadius: "0.875rem",
-                        padding: "0.75rem 1rem",
-                        backdropFilter: "blur(16px)",
-                        display: "flex", alignItems: "center", gap: "0.625rem",
-                        boxShadow: `0 8px 24px rgba(0,0,0,0.5), 0 0 0 1px ${stats[2].color}22 inset`,
-                        animation: "fadeUp 0.6s 0.9s cubic-bezier(0.22,1,0.36,1) both",
-                        whiteSpace: "nowrap", zIndex: 10,
-                    }} className="float-card-3">
-                        <div style={{
-                            width: "2rem", height: "2rem", borderRadius: "0.5rem",
-                            background: stats[2].bg, border: `1px solid ${stats[2].color}33`,
-                            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                        }}>
-                            <Clock style={{ width: "0.875rem", height: "0.875rem", color: stats[2].color }} />
-                        </div>
-                        <div>
-                            <p style={{ margin: 0, fontSize: "0.62rem", color: "rgba(255,255,255,0.4)", fontWeight: 500 }}>{stats[2].label}</p>
-                            <p style={{ margin: 0, fontSize: "0.9rem", color: "white", fontWeight: 700 }}>{stats[2].value}</p>
-                        </div>
-                    </div>
-
-                    {/* Main card */}
-                    <div style={{
-                        background: "linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
-                        border: "1px solid rgba(255,255,255,0.08)",
-                        borderRadius: "2rem",
-                        padding: "2.25rem",
-                        backdropFilter: "blur(24px)",
-                        boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(120, 134, 199, 0.06) inset",
-                        width: "100%",
-                        maxWidth: "480px",
-                        position: "relative",
-                        overflow: "hidden",
+                        transform: "translate3d(calc(var(--mx, 0) * 15px), calc(var(--my, 0) * 15px), 0)",
+                        transition: "transform 0.2s cubic-bezier(0.25, 1, 0.5, 1)",
+                        zIndex: 2,
                     }}>
-                        {/* Inner glow top */}
+                        {/* Floating Animation Wrapper containing both elements */}
                         <div style={{
-                            position: "absolute", top: 0, left: "20%", right: "20%", height: "1px",
-                            background: "linear-gradient(90deg, transparent, rgba(120, 134, 199, 0.6), transparent)",
-                        }} />
-
-                        {/* Header */}
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
-                                <div style={{
-                                    width: "2.25rem", height: "2.25rem",
-                                    background: "linear-gradient(135deg, rgba(120, 134, 199, 0.2), rgba(120, 134, 199, 0.1))",
-                                    border: "1px solid rgba(120, 134, 199, 0.25)",
-                                    borderRadius: "0.625rem",
-                                    display: "flex", alignItems: "center", justifyContent: "center",
-                                }}>
-                                    <Scan style={{ width: "1.1rem", height: "1.1rem", color: "#7886C7" }} />
-                                </div>
-                                <div>
-                                    <p style={{ margin: 0, fontSize: "0.75rem", color: "rgba(255,255,255,0.4)", fontWeight: 500 }}>JetPOS</p>
-                                    <p style={{ margin: 0, fontSize: "0.875rem", color: "white", fontWeight: 700 }}>Barkod Okuyucu</p>
-                                </div>
-                            </div>
-                            {/* Live indicator */}
-                            <div style={{
-                                display: "flex", alignItems: "center", gap: "0.375rem",
-                                background: "rgba(16,185,129,0.1)",
-                                border: "1px solid rgba(16,185,129,0.2)",
-                                borderRadius: "9999px",
-                                padding: "0.25rem 0.625rem",
-                            }}>
-                                <div style={{
-                                    width: "0.4rem", height: "0.4rem", borderRadius: "50%",
-                                    background: "#10b981",
-                                    boxShadow: "0 0 6px #10b981",
-                                    animation: "pulse 2s infinite",
-                                }} />
-                                <span style={{ fontSize: "0.7rem", color: "#10b981", fontWeight: 600 }}>Canlı</span>
-                            </div>
-                        </div>
-
-                        {/* Image area */}
-                        <div style={{
-                            borderRadius: "1.25rem",
-                            overflow: "hidden",
-                            background: "radial-gradient(ellipse at center, rgba(120, 134, 199, 0.12) 0%, rgba(0,0,0,0.4) 70%)",
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            minHeight: "240px",
+                            display: "flex",
+                            alignItems: "center", // Vertically centers dashboard and timeline
+                            gap: "2.5rem", // Exactly 40px spacing gap between dashboard and timeline
                             position: "relative",
-                            border: "1px solid rgba(255,255,255,0.05)",
+                            animation: "floatMain 8s ease-in-out infinite",
+                            paddingTop: "3rem", // Compact margin at the top of the floating group for ticker space
                         }}>
-                            {/* Scan line animation */}
-                            <div style={{
-                                position: "absolute", left: "10%", right: "10%", height: "2px",
-                                background: "linear-gradient(90deg, transparent, #7886C7, transparent)",
-                                boxShadow: "0 0 12px #7886C7",
-                                animation: "scanLine 2.5s ease-in-out infinite",
-                                zIndex: 2,
-                            }} />
-                            <Image
-                                src="/scannerhero.png"
-                                alt="Barkod Okuyucu"
-                                width={420}
-                                height={300}
-                                style={{
-                                    objectFit: "contain",
-                                    maxHeight: "300px",
-                                    width: "auto",
-                                    filter: "drop-shadow(0 12px 32px rgba(120, 134, 199, 0.35))",
-                                    position: "relative", zIndex: 1,
-                                }}
-                            />
+                            {/* Horizontal SaaS Info Ticker - Floats directly above the dashboard card */}
+                            <div className="ticker-wrap" style={{
+                                position: "absolute",
+                                top: 0,
+                                left: 0,
+                                zIndex: 10,
+                                width: "420px", // Matched with dashboard card width
+                            }}>
+                                {/* Left Blur Fade */}
+                                <div style={{
+                                    position: "absolute", left: 0, top: 0, bottom: 0, width: "35px", zIndex: 2,
+                                    background: "linear-gradient(to right, #EEF2FF, transparent)",
+                                    pointerEvents: "none"
+                                }} />
+                                {/* Right Blur Fade */}
+                                <div style={{
+                                    position: "absolute", right: 0, top: 0, bottom: 0, width: "35px", zIndex: 2,
+                                    background: "linear-gradient(to left, #EEF2FF, transparent)",
+                                    pointerEvents: "none"
+                                }} />
+                                
+                                <div className="ticker-track">
+                                    {[
+                                        "Anlık Satış Takibi",
+                                        "Stok Yönetimi",
+                                        "E-Fatura Entegrasyonu",
+                                        "ÖKC Uyumlu",
+                                        "Bulut Tabanlı",
+                                        "Çoklu Şube Yönetimi",
+                                        "Cari Hesap Takibi",
+                                        "Mobil Erişim",
+                                        "Barkod Sistemi",
+                                        "Anlık Raporlama"
+                                    ].concat([
+                                        "Anlık Satış Takibi",
+                                        "Stok Yönetimi",
+                                        "E-Fatura Entegrasyonu",
+                                        "ÖKC Uyumlu",
+                                        "Bulut Tabanlı",
+                                        "Çoklu Şube Yönetimi",
+                                        "Cari Hesap Takibi",
+                                        "Mobil Erişim",
+                                        "Barkod Sistemi",
+                                        "Anlık Raporlama"
+                                    ]).map((item, index) => (
+                                        <div key={index} className="ticker-item">
+                                            <span className="ticker-check">✓</span>
+                                            <span>{item}</span>
+                                            <span className="ticker-separator">✦</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Dashboard Card - Rebalanced sizes */}
+                            <div className="dashboard-card" style={{
+                                background: "rgba(10, 15, 30, 0.95)",
+                                backdropFilter: "blur(20px)",
+                                borderRadius: "1.5rem",
+                                padding: "2.25rem 2rem", // Spacious, premium padding
+                                width: "420px", // Exact width (420-460px)
+                                height: "620px", // Exact height (620-680px)
+                                boxShadow: "20px 50px 100px -20px rgba(0, 0, 0, 0.45), 0 0 80px -10px rgba(120, 134, 199, 0.35), 15px 20px 50px -10px rgba(120, 134, 199, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.1) inset",
+                                transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+                                display: "flex",
+                                flexDirection: "column",
+                                justifyContent: "space-between",
+                            }}>
+                                {/* Premium header */}
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem", borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: "1rem" }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                                        <div style={{ width: "2rem", height: "2rem", background: "rgba(120, 134, 199, 0.15)", borderRadius: "0.5rem", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                            <BarChart3 style={{ width: "1rem", height: "1rem", color: "#7886C7" }} />
+                                        </div>
+                                        <div style={{ display: "flex", flexDirection: "column" }}>
+                                            <span style={{ color: "white", fontWeight: 700, fontSize: "0.9rem", lineHeight: 1.2 }}>JetPOS Canlı Panel</span>
+                                            <span style={{ color: "rgba(255, 255, 255, 0.4)", fontSize: "0.7rem", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                                                <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#7886C7", display: "inline-block", animation: "pulseDot 1.5s infinite" }} /> Canlı İzleme
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div style={{ display: "flex", gap: "0.25rem", background: "rgba(255,255,255,0.05)", borderRadius: "9999px", padding: "0.15rem" }}>
+                                        {(["daily", "monthly", "yearly"] as DashPeriod[]).map(p => (
+                                            <button
+                                                key={p}
+                                                onClick={() => setDashPeriod(p)}
+                                                style={{
+                                                    padding: "0.2rem 0.6rem",
+                                                    borderRadius: "9999px",
+                                                    border: "none",
+                                                    cursor: "pointer",
+                                                    fontSize: "0.65rem",
+                                                    fontWeight: 700,
+                                                    fontFamily: "inherit",
+                                                    transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+                                                    background: dashPeriod === p ? "rgba(120, 134, 199, 0.25)" : "transparent",
+                                                    color: dashPeriod === p ? "#A8B4E0" : "rgba(255,255,255,0.35)",
+                                                    boxShadow: dashPeriod === p ? "0 0 12px rgba(120, 134, 199, 0.3)" : "none",
+                                                }}
+                                            >
+                                                {periodData[p].label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Main Stat: Satışlar */}
+                                <div style={{ marginBottom: "1rem" }}>
+                                    <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.8rem", marginBottom: "0.3rem", fontWeight: 600 }}>{periodData[dashPeriod].salesLabel}</p>
+                                    <div style={{ display: "flex", alignItems: "baseline", gap: "0.5rem" }}>
+                                        <h3 style={{ fontSize: "2rem", fontWeight: 800, color: "white", margin: 0, lineHeight: 1, letterSpacing: "-0.02em", transition: "opacity 0.2s" }}>
+                                            ₺{salesCount.toLocaleString('tr-TR')}
+                                        </h3>
+                                        <span style={{ color: "#7886C7", fontSize: "0.85rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.125rem" }}>
+                                            <TrendingUp style={{ width: "0.8rem", height: "0.8rem" }} /> {periodData[dashPeriod].growth}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                {/* Premium Sparkline Chart */}
+                                <div style={{ margin: "1rem 0 1.5rem" }}>
+                                    <svg viewBox="0 0 300 50" width="100%" height="50" style={{ overflow: "visible" }}>
+                                        <defs>
+                                            <linearGradient id="glowGrad" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="0%" stopColor="#7886C7" stopOpacity="0.3"/>
+                                                <stop offset="100%" stopColor="#7886C7" stopOpacity="0.0"/>
+                                            </linearGradient>
+                                        </defs>
+                                        <path d="M 0 35 Q 30 18 60 28 T 120 12 T 180 22 T 240 8 T 300 12" fill="none" stroke="#7886C7" strokeWidth="2.5" />
+                                        <path d="M 0 35 Q 30 18 60 28 T 120 12 T 180 22 T 240 8 T 300 12 L 300 50 L 0 50 Z" fill="url(#glowGrad)" />
+                                        <circle cx="300" cy="12" r="3.5" fill="#7886C7" />
+                                    </svg>
+                                </div>
+
+                                {/* Metrics Grid - Premium layout spacing */}
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: "1.25rem" }}>
+                                    {[
+                                        { label: `${periodData[dashPeriod].label} Sipariş`, val: `${orderCount.toLocaleString('tr-TR')} Adet`, icon: ShoppingCart, desc: "Anlık sipariş akışı" },
+                                        { label: "Stok Durumu", val: "3 Kritik", icon: Package, desc: "Sipariş gerekli", warning: true },
+                                        { label: "E-Fatura", val: `${invoiceCount.toLocaleString('tr-TR')} Başarılı`, icon: FileText, desc: "%100 hatasız gönderim" },
+                                        { label: "Kasa Özeti", val: cashDisplay, icon: Wallet, desc: cashSubDisplay }
+                                    ].map((item, index) => (
+                                        <div key={index} style={{
+                                            background: "rgba(255, 255, 255, 0.02)",
+                                            border: "1px solid rgba(255, 255, 255, 0.05)",
+                                            borderRadius: "0.625rem",
+                                            padding: "0.75rem 0.875rem",
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            gap: "0.2rem",
+                                        }}>
+                                            <div style={{ display: "flex", alignItems: "center", gap: "0.3rem", marginBottom: "0.1rem" }}>
+                                                <item.icon style={{ width: "0.8rem", height: "0.8rem", color: item.warning ? "#f59e0b" : "#7886C7" }} />
+                                                <span style={{ fontSize: "0.7rem", color: "rgba(255, 255, 255, 0.4)", fontWeight: 600 }}>{item.label}</span>
+                                            </div>
+                                            <span style={{ fontSize: "0.9rem", color: "white", fontWeight: 700 }}>{item.val}</span>
+                                            <span style={{ fontSize: "0.65rem", color: "rgba(255, 255, 255, 0.35)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.desc}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Activity Feed Premium Glassmorphism Card - Centered, 80% height of dashboard */}
+                            <div className="timeline-card" style={{
+                                position: "relative",
+                                width: "300px", // Proportional width (total right group = 760px)
+                                height: "496px", // Dashboard height 620px * 0.80 = 496px
+                                background: "rgba(255, 255, 255, 0.45)", // White card glassmorphism effect
+                                backdropFilter: "blur(20px)",
+                                WebkitBackdropFilter: "blur(20px)",
+                                border: "1px solid rgba(120, 134, 199, 0.12)",
+                                borderRadius: "1.5rem",
+                                padding: "1.75rem 1.5rem", // Compact, premium padding
+                                boxShadow: "0 30px 60px -15px rgba(120, 134, 199, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.5) inset",
+                                display: "flex",
+                                flexDirection: "column",
+                            }}>
+                                {/* Vertical timeline line (spans top to bottom padding) */}
+                                <div style={{
+                                    position: "absolute",
+                                    left: "34px", // Precisely centered under the dots (24px card left padding + 10px dot center offset)
+                                    top: "1.75rem",
+                                    bottom: "1.75rem",
+                                    width: "2px",
+                                    background: "linear-gradient(180deg, rgba(120, 134, 199, 0.08) 0%, rgba(120, 134, 199, 0.5) 50%, rgba(120, 134, 199, 0.08) 100%)",
+                                    boxShadow: "0 0 8px rgba(120, 134, 199, 0.5)", // Light blue glow
+                                    zIndex: 1,
+                                }} />
+
+                                {/* Event List - Distributed statically, no duplicates or scroll */}
+                                <div style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    justifyContent: "space-between",
+                                    height: "100%",
+                                    position: "relative",
+                                    zIndex: 2,
+                                }}>
+                                    {feedEvents.map((event, index) => (
+                                        <div key={index} className="activity-item" style={{
+                                            display: "flex",
+                                            alignItems: "flex-start",
+                                            position: "relative",
+                                            padding: "0.75rem 0.5rem 0.75rem 1.75rem", // Beautiful static vertical spacing
+                                            cursor: "pointer",
+                                            borderRadius: "0.75rem",
+                                            ...({ "--dot-color": event.color } as React.CSSProperties)
+                                        }}>
+                                            {/* Timeline dot */}
+                                            <div className="activity-dot" style={{
+                                                position: "absolute",
+                                                left: "6px",
+                                                top: "50%",
+                                                transform: "translateY(-50%)",
+                                                width: "10px",
+                                                height: "10px",
+                                                borderRadius: "50%",
+                                                background: event.color,
+                                                boxShadow: `0 0 8px ${event.color}`,
+                                                zIndex: 2,
+                                                transition: "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s",
+                                            }} />
+
+                                            {/* Event Details */}
+                                            <div style={{ flex: 1, minWidth: 0, paddingRight: "0.5rem" }}>
+                                                <p style={{ margin: 0, fontSize: "0.825rem", color: "#0f172a", fontWeight: 700, lineHeight: 1.2 }}>
+                                                    {event.title}
+                                                </p>
+                                                <p style={{ margin: 0, fontSize: "0.725rem", color: "#475569", marginTop: "0.25rem", lineHeight: 1.2 }}>
+                                                    {event.desc}
+                                                </p>
+                                            </div>
+
+                                            {/* Relative Timestamp */}
+                                            <span style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: 600, flexShrink: 0 }}>
+                                                {event.time}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
-
-                        {/* Bottom buttons */}
-                        <div style={{ display: "flex", justifyContent: "center", gap: "0.625rem", marginTop: "1.25rem" }}>
-                            <button style={{
-                                padding: "0.625rem 1.25rem",
-                                background: "rgba(255,255,255,0.04)",
-                                border: "1px solid rgba(255,255,255,0.08)",
-                                borderRadius: "0.75rem",
-                                color: "rgba(255,255,255,0.6)", fontSize: "0.8rem", fontWeight: 600,
-                                cursor: "pointer", fontFamily: "inherit",
-                                display: "flex", alignItems: "center", justifyContent: "center", gap: "0.375rem",
-                                transition: "all 0.2s",
-                            }}
-                                onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.08)")}
-                                onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
-                            >
-                                <Scan style={{ width: "0.8rem", height: "0.8rem" }} />
-                                Önizleme
-                            </button>
-                            <button style={{
-                                padding: "0.625rem 1.25rem",
-                                background: "linear-gradient(135deg, #5A659F, #7886C7)",
-                                border: "none",
-                                borderRadius: "0.75rem",
-                                color: "white", fontSize: "0.8rem", fontWeight: 700,
-                                cursor: "pointer", fontFamily: "inherit",
-                                display: "flex", alignItems: "center", justifyContent: "center", gap: "0.375rem",
-                                boxShadow: "0 4px 12px rgba(120, 134, 199, 0.4)",
-                                transition: "all 0.2s",
-                            }}
-                                onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 6px 20px rgba(120, 134, 199, 0.6)")}
-                                onMouseLeave={e => (e.currentTarget.style.boxShadow = "0 4px 12px rgba(120, 134, 199, 0.4)")}
-                            >
-                                <Scan style={{ width: "0.8rem", height: "0.8rem" }} />
-                                Barkod Okut
-                            </button>
-                        </div>
-
-
                     </div>
 
                 </div>
@@ -522,66 +703,130 @@ export default function Hero() {
 
             <style>{`
                 @keyframes slideInLeft {
-                    from { opacity: 0; transform: translateX(-20px); }
+                    from { opacity: 0; transform: translateX(-30px); }
                     to   { opacity: 1; transform: translateX(0); }
                 }
                 @keyframes slideInRight {
-                    from { opacity: 0; transform: translateX(20px); }
+                    from { opacity: 0; transform: translateX(30px); }
                     to   { opacity: 1; transform: translateX(0); }
                 }
                 @keyframes fadeUp {
-                    from { opacity: 0; transform: translateY(12px); }
+                    from { opacity: 0; transform: translateY(20px); }
                     to   { opacity: 1; transform: translateY(0); }
                 }
-                @keyframes floatOrb {
+                @keyframes floatMain {
                     0%, 100% { transform: translateY(0px); }
-                    50% { transform: translateY(-18px); }
+                    50% { transform: translateY(-12px); }
                 }
-                @keyframes floatCard {
-                    0%, 100% { transform: translateY(0px); }
-                    50% { transform: translateY(-5px); }
+                @keyframes activityFeedScrollDown {
+                    0% { transform: translateY(-20%); }
+                    100% { transform: translateY(0%); }
                 }
-                @keyframes floatCard2 {
-                    0%, 100% { transform: translateY(0px); }
-                    50% { transform: translateY(-7px); }
+                @keyframes pulseDot {
+                    0% { opacity: 0.4; }
+                    50% { opacity: 1; }
+                    100% { opacity: 0.4; }
                 }
-                @keyframes floatCard3 {
-                    0%, 100% { transform: translateY(0px); }
-                    50% { transform: translateY(-4px); }
+                
+                /* hero-title shimmer removed — using inline gradient on rotating word instead */
+
+                /* CTA Button Hover */
+                .cta-btn:hover {
+                    transform: translateY(-2px) scale(1.02) !important;
+                    box-shadow: 0 12px 32px rgba(120, 134, 199, 0.4) !important;
                 }
-                .float-card-1 {
-                    animation: fadeUp 0.6s 0.5s cubic-bezier(0.22,1,0.36,1) both,
-                               floatCard 6s 1.1s ease-in-out infinite;
+                .cta-btn:hover .arrow-icon {
+                    transform: translateX(4px) !important;
                 }
-                .float-card-2 {
-                    animation: fadeUp 0.6s 0.7s cubic-bezier(0.22,1,0.36,1) both,
-                               floatCard2 7s 1.3s ease-in-out infinite;
+
+                /* Dashboard Card Hover */
+                .dashboard-container:hover .dashboard-card {
+                    transform: translateY(-6px) scale(1.02);
+                    box-shadow: 25px 60px 110px -20px rgba(0, 0, 0, 0.55), 0 0 100px -5px rgba(120, 134, 199, 0.45), 20px 25px 60px -10px rgba(120, 134, 199, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.15) inset !important;
                 }
-                .float-card-3 {
-                    animation: fadeUp 0.6s 0.9s cubic-bezier(0.22,1,0.36,1) both,
-                               floatCard3 8s 1.5s ease-in-out infinite;
-                }
-                @keyframes shimmer {
-                    0% { background-position: 0% center; }
-                    100% { background-position: 200% center; }
-                }
-                @keyframes scanLine {
-                    0%   { top: 12%; opacity: 0; }
-                    10%  { opacity: 0.6; }
-                    90%  { opacity: 0.6; }
-                    100% { top: 88%; opacity: 0; }
-                }
-                @keyframes pulse {
-                    0%, 100% { opacity: 1; }
-                    50% { opacity: 0.4; }
-                }
+
+                 .activity-track {
+                     animation: activityFeedScrollDown 22s linear infinite;
+                 }
+                 .activity-track:hover {
+                     animation-play-state: paused;
+                 }
+                 .activity-item {
+                     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+                     opacity: 0.9;
+                 }
+                 .activity-item:hover {
+                     opacity: 1;
+                     transform: translateX(4px);
+                     background: rgba(120, 134, 199, 0.05);
+                     box-shadow: 0 4px 12px rgba(120, 134, 199, 0.02);
+                 }
+                 .activity-item:hover .activity-dot {
+                     transform: translateY(-50%) scale(1.3) !important;
+                     box-shadow: 0 0 12px var(--dot-color) !important;
+                 }
+
+                 /* Ticker Styles */
+                 .ticker-wrap {
+                     display: flex;
+                     align-items: center;
+                     overflow: hidden;
+                     width: 100%;
+                     max-width: 400px;
+                     height: 38px;
+                     background: rgba(120, 134, 199, 0.04);
+                     border: 1px solid rgba(120, 134, 199, 0.15);
+                     border-radius: 9999px;
+                     position: relative;
+                     backdrop-filter: blur(6px);
+                     -webkit-backdrop-filter: blur(6px);
+                     box-shadow: 0 4px 12px rgba(120, 134, 199, 0.02);
+                 }
+
+                 .ticker-track {
+                     display: flex;
+                     width: max-content;
+                     animation: tickerLoop 24s linear infinite;
+                     gap: 1.5rem;
+                     padding-left: 0.75rem;
+                 }
+
+                 .ticker-track:hover {
+                     animation-play-state: paused;
+                 }
+
+                 .ticker-item {
+                     display: flex;
+                     align-items: center;
+                     gap: 0.5rem;
+                     font-size: 0.825rem;
+                     font-weight: 700;
+                     color: #5A659F;
+                     white-space: nowrap;
+                 }
+
+                 .ticker-check {
+                     color: #7886C7;
+                     font-weight: 900;
+                     text-shadow: 0 0 6px rgba(120, 134, 199, 0.5);
+                 }
+
+                 .ticker-separator {
+                     color: rgba(120, 134, 199, 0.35);
+                     font-size: 0.875rem;
+                     margin-left: 0.5rem;
+                     text-shadow: 0 0 4px rgba(120, 134, 199, 0.3);
+                 }
+
+                 @keyframes tickerLoop {
+                     0% { transform: translate3d(0, 0, 0); }
+                     100% { transform: translate3d(-50%, 0, 0); }
+                 }
+                
                 @media (max-width: 960px) {
                     .hero-grid {
                         grid-template-columns: 1fr !important;
                         gap: 3rem !important;
-                    }
-                    .form-grid {
-                        grid-template-columns: 1fr !important;
                     }
                 }
             `}</style>

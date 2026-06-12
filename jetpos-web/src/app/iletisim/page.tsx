@@ -17,7 +17,7 @@ export default function ContactPage() {
                 <div style={{
                     position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)",
                     width: "1200px", height: "600px",
-                    background: "radial-gradient(circle at center, rgba(120,134,199,0.06) 0%, transparent 70%)",
+                    backgroundImage: "radial-gradient(circle at center, rgba(120, 134, 199,0.06) 0%, transparent 70%)",
                     pointerEvents: "none"
                 }} />
                 

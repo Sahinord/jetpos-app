@@ -96,7 +96,7 @@ export default function GizlilikPage() {
                 <div style={{
                     position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)",
                     width: "500px", height: "300px",
-                    background: "radial-gradient(ellipse at center, rgba(120, 134, 199, 0.12) 0%, transparent 70%)",
+                    backgroundImage: "radial-gradient(ellipse at center, rgba(120, 134, 199, 0.12) 0%, transparent 70%)",
                     pointerEvents: "none"
                 }} />
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
@@ -114,7 +114,7 @@ export default function GizlilikPage() {
                     </p>
                     <h1 style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", fontWeight: 900, color: "white", marginBottom: "1rem", lineHeight: 1.15 }}>
                         Gizlilik & KVKK{" "}
-                        <span style={{ background: "linear-gradient(135deg, #7886C7, #5A659F)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                        <span style={{ backgroundImage: "linear-gradient(135deg, #7886C7, #5A659F)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
                             Politikası
                         </span>
                     </h1>
@@ -374,7 +374,7 @@ export default function GizlilikPage() {
                     style={{
                         position: "fixed", bottom: "2rem", right: "2rem",
                         width: "2.75rem", height: "2.75rem", borderRadius: "50%",
-                        background: "linear-gradient(135deg, #7886C7, #5A659F)",
+                        backgroundImage: "linear-gradient(135deg, #7886C7, #5A659F)",
                         border: "none", cursor: "pointer",
                         display: "flex", alignItems: "center", justifyContent: "center",
                         boxShadow: "0 4px 20px rgba(120, 134, 199, 0.5)", zIndex: 50

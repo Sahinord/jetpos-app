@@ -1,7 +1,30 @@
 @import "tailwindcss";
 
+@theme {
+  --color-background: #F8FAFC;
+  --color-foreground: #111827;
+  --color-card: #ffffff;
+  --color-card-foreground: #111827;
+  --color-primary: #7886C7;
+  --color-secondary: #4b5563;
+  --color-accent: #7886C7;
+  --color-destructive: #ef4444;
+  --color-border: #E5E7EB;
+  --color-sidebar: #ffffff;
+  --color-sidebar-foreground: #111827;
+  --color-sidebar-muted: #64748b;
+  --color-input-bg: #ffffff;
+  --color-input-border: #E5E7EB;
+
+  /* Neon Accents */
+  --color-neon-cyan: #7886C7;
+  --color-neon-pink: #8b5cf6;
+  --color-neon-blue: #3b82f6;
+}
+
+
 /* =====================================================
-   JETPOS - PREMIUM DESIGN SYSTEM
+   JETPOS - PREMIUM DESIGN SYSTEM (LIGHT THEME)
    ===================================================== */
 
 /* CSS Variables */
@@ -10,11 +33,11 @@
   --primary-dark: #5A659F;
   --primary-light: #9AA7DF;
   --accent: #B0BAE6;
-  --cyan: #06b6d4;
+  --cyan: #7886C7;
   --purple: #8b5cf6;
-  --deep: #111827;
-  --navy: #1f2937;
-  --border: #D9E0FF;
+  --deep: #FFFFFF;
+  --navy: #F8FAFC;
+  --border: #E5E7EB;
   --light-bg: #F8FAFC;
 }
 
@@ -35,12 +58,8 @@ html {
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background-color: #111827;
-  background-image:
-    linear-gradient(rgba(120, 134, 199, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(120, 134, 199, 0.045) 1px, transparent 1px);
-  background-size: 60px 60px;
-  color: #ffffff;
+  background-color: #F8FAFC;
+  color: #111827;
   overflow-x: hidden;
   line-height: 1.6;
 }
@@ -51,7 +70,7 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #111827;
+  background: #F8FAFC;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -60,8 +79,8 @@ body {
 }
 
 ::selection {
-  background: rgba(120, 134, 199, 0.35);
-  color: #fff;
+  background: rgba(120, 134, 199, 0.2);
+  color: #111827;
 }
 
 /* =====================================================
@@ -74,21 +93,28 @@ body {
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(120, 134, 199, 0.22) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 50% at 80% 80%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
-    radial-gradient(ellipse 50% 40% at 10% 60%, rgba(120, 134, 199, 0.07) 0%, transparent 50%),
-    linear-gradient(to bottom, #111827 0%, #1f2937 50%, #111827 100%);
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(120, 134, 199, 0.1) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 80%, rgba(120, 134, 199, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 40% at 10% 60%, rgba(120, 134, 199, 0.05) 0%, transparent 50%),
+    linear-gradient(to bottom, #F8FAFC 0%, #FFFFFF 50%, #F8FAFC 100%);
 }
 
-.site-bg::after {
+.main-canvas {
+  position: relative;
+}
+
+.main-canvas::after {
   content: '';
   position: absolute;
   inset: 0;
-  background-image:
-    linear-gradient(rgba(120, 134, 199, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(120, 134, 199, 0.035) 1px, transparent 1px);
-  background-size: 64px 64px;
-  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+  z-index: 1;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cpath d='M 40 0 L 0 0 0 40' fill='none' stroke='rgba(120, 134, 199, 0.06)' stroke-width='0.75'/%3E%3C/svg%3E");
+  background-size: 40px 40px;
+}
+
+.canvas-grid {
+  /* Deprecated: using .main-canvas::after instead for smooth scroll */
 }
 
 .site-container {
@@ -110,29 +136,28 @@ body {
 }
 
 /* =====================================================
-   GLASS EFFECTS
+   GLASS EFFECTS (LIGHT PREMIUM CARDS)
    ===================================================== */
 
 .glass {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(120, 134, 199, 0.12);
 }
 
-/* Legacy aliases */
 .glass-ultra {
-  background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(120, 134, 199, 0.12);
 }
 
 .glass-dark {
-  background: rgba(17, 24, 39, 0.6);
+  background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(120, 134, 199, 0.15);
+  border: 1px solid rgba(120, 134, 199, 0.12);
 }
 
 /* =====================================================
@@ -151,7 +176,7 @@ body {
 }
 
 .holographic-text {
-  background: linear-gradient(135deg, #7886C7 0%, #B0BAE6 50%, #9AA7DF 100%);
+  background: linear-gradient(135deg, #7886C7 0%, #5A659F 50%, #9AA7DF 100%);
   background-size: 200% 200%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -177,8 +202,8 @@ body {
   font-weight: 600;
   font-size: 1rem;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 0 0 1px rgba(120, 134, 199, 0.3), 0 4px 24px rgba(120, 134, 199, 0.4);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 20px rgba(120, 134, 199, 0.25);
   text-decoration: none;
   font-family: inherit;
 }
@@ -186,7 +211,7 @@ body {
 .btn-primary:hover,
 .btn-cyber:hover {
   transform: translateY(-2px);
-  box-shadow: 0 0 0 1px rgba(120, 134, 199, 0.5), 0 8px 32px rgba(120, 134, 199, 0.6);
+  box-shadow: 0 8px 30px rgba(120, 134, 199, 0.45);
 }
 
 .btn-outline {
@@ -196,8 +221,8 @@ body {
   gap: 0.5rem;
   padding: 0.875rem 2rem;
   background: transparent;
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #111827;
+  border: 1px solid rgba(120, 134, 199, 0.25);
   border-radius: 0.75rem;
   font-weight: 600;
   font-size: 1rem;
@@ -207,8 +232,8 @@ body {
 }
 
 .btn-outline:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(120, 134, 199, 0.06);
+  border-color: rgba(120, 134, 199, 0.45);
   transform: translateY(-2px);
 }
 
@@ -221,12 +246,12 @@ body {
   align-items: center;
   gap: 0.375rem;
   padding: 0.375rem 0.875rem;
-  background: rgba(120, 134, 199, 0.12);
-  border: 1px solid rgba(120, 134, 199, 0.3);
+  background: rgba(120, 134, 199, 0.08);
+  border: 1px solid rgba(120, 134, 199, 0.18);
   border-radius: 9999px;
   font-size: 0.8125rem;
   font-weight: 600;
-  color: #B0BAE6;
+  color: #7886C7;
   letter-spacing: 0.02em;
 }
 
@@ -235,19 +260,20 @@ body {
    ===================================================== */
 
 .feature-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: #ffffff;
+  border: 1px solid #E5E7EB;
   border-radius: 1.25rem;
   padding: 2rem;
-  transition: all 0.35s ease;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   overflow: hidden;
+  box-shadow: 0 4px 20px rgba(120, 134, 199, 0.02);
 }
 
 .feature-card:hover {
-  border-color: rgba(120, 134, 199, 0.28);
+  border-color: rgba(120, 134, 199, 0.4);
   transform: translateY(-4px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(120, 134, 199, 0.12);
+  box-shadow: 0 20px 40px rgba(120, 134, 199, 0.08), 0 0 20px rgba(120, 134, 199, 0.15);
 }
 
 /* =====================================================
@@ -257,7 +283,7 @@ body {
 .stat-number {
   font-size: clamp(2rem, 5vw, 3.25rem);
   font-weight: 800;
-  background: linear-gradient(135deg, #ffffff 0%, #B0BAE6 100%);
+  background: linear-gradient(135deg, #111827 0%, #7886C7 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -282,11 +308,11 @@ body {
 @keyframes pulse-glow {
   0%,
   100% {
-    box-shadow: 0 0 20px rgba(120, 134, 199, 0.4);
+    box-shadow: 0 0 20px rgba(120, 134, 199, 0.2);
   }
 
   50% {
-    box-shadow: 0 0 40px rgba(120, 134, 199, 0.7), 0 0 80px rgba(120, 134, 199, 0.3);
+    box-shadow: 0 0 40px rgba(120, 134, 199, 0.4), 0 0 80px rgba(120, 134, 199, 0.1);
   }
 }
 
@@ -304,5 +330,5 @@ body {
 
 .gradient-divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(120, 134, 199, 0.4), transparent);
+  background: linear-gradient(90deg, transparent, rgba(120, 134, 199, 0.25), transparent);
 }

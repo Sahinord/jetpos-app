@@ -36,7 +36,7 @@ export default function Navbar() {
 
     return (
         <>
-            {/* Wrapper - tam genişlik, fixed */}
+            {/* Wrapper - full width, fixed */}
             <div style={{
                 position: "fixed",
                 top: 0, left: 0, right: 0,
@@ -51,16 +51,16 @@ export default function Navbar() {
                     maxWidth: "1100px",
                     borderRadius: "9999px",
                     background: scrolled
-                        ? "rgba(17, 24, 39, 0.95)"
-                        : "rgba(17, 24, 39, 0.45)",
+                        ? "rgba(255, 255, 255, 0.85)"
+                        : "rgba(255, 255, 255, 0.7)",
                     backdropFilter: "blur(20px)",
                     WebkitBackdropFilter: "blur(20px)",
                     border: scrolled
-                        ? "1px solid rgba(120, 134, 199, 0.28)"
-                        : "1px solid rgba(255,255,255,0.08)",
+                        ? "1px solid rgba(120, 134, 199, 0.25)"
+                        : "1px solid rgba(120, 134, 199, 0.12)",
                     boxShadow: scrolled
-                        ? "0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(120, 134, 199, 0.08) inset"
-                        : "0 2px 16px rgba(0,0,0,0.2)",
+                        ? "0 10px 30px rgba(120, 134, 199, 0.08), 0 1px 3px rgba(120, 134, 199, 0.02)"
+                        : "0 2px 16px rgba(0,0,0,0.03)",
                     transition: "all 0.4s cubic-bezier(0.4,0,0.2,1)",
                     pointerEvents: "auto",
                 }}>
@@ -78,11 +78,11 @@ export default function Navbar() {
                             <div style={{
                                 width: "2.5rem", height: "2.5rem",
                                 borderRadius: "50%",
-                                border: scrolled ? "1px solid rgba(120, 134, 199, 0.3)" : "1px solid rgba(255,255,255,0.15)",
-                                background: "rgba(255,255,255,0.03)",
+                                border: "1px solid rgba(120, 134, 199, 0.15)",
+                                background: "white",
                                 display: "flex", alignItems: "center", justifyContent: "center",
                                 overflow: "hidden",
-                                boxShadow: "0 0 15px rgba(120, 134, 199, 0.25)",
+                                boxShadow: "0 2px 8px rgba(120, 134, 199, 0.05)",
                                 flexShrink: 0,
                                 transition: "all 0.4s"
                             }}>
@@ -95,7 +95,7 @@ export default function Navbar() {
                                 />
                             </div>
                             <span style={{
-                                fontSize: "1.3rem", fontWeight: 800, color: scrolled ? "white" : "white",
+                                fontSize: "1.3rem", fontWeight: 800, color: "#111827",
                                 letterSpacing: "-0.04em"
                             }}>
                                 Jet<span style={{ color: "#7886C7" }}>POS</span>
@@ -118,11 +118,11 @@ export default function Navbar() {
                                                 style={{
                                                     fontSize: "0.875rem",
                                                     fontWeight: isActive ? 600 : 500,
-                                                    color: isActive ? "white" : "rgba(255,255,255,0.6)",
+                                                    color: isActive ? "#7886C7" : "rgba(17, 24, 39, 0.65)",
                                                     padding: "0.5rem 0.875rem",
                                                     borderRadius: "9999px",
-                                                    background: isActive ? "rgba(120, 134, 199, 0.12)" : "transparent",
-                                                    border: isActive ? "1px solid rgba(120, 134, 199, 0.25)" : "1px solid transparent",
+                                                    background: isActive ? "rgba(120, 134, 199, 0.08)" : "transparent",
+                                                    border: isActive ? "1px solid rgba(120, 134, 199, 0.15)" : "1px solid transparent",
                                                     cursor: "pointer",
                                                     fontFamily: "inherit",
                                                     transition: "all 0.2s ease",
@@ -132,13 +132,13 @@ export default function Navbar() {
                                                 }}
                                                 onMouseEnter={e => {
                                                     if (!isActive) {
-                                                        e.currentTarget.style.color = "white";
-                                                        e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+                                                        e.currentTarget.style.color = "#111827";
+                                                        e.currentTarget.style.background = "rgba(120, 134, 199, 0.06)";
                                                     }
                                                 }}
                                                 onMouseLeave={e => {
                                                     if (!isActive) {
-                                                        e.currentTarget.style.color = "rgba(255,255,255,0.6)";
+                                                        e.currentTarget.style.color = "rgba(17, 24, 39, 0.65)";
                                                         e.currentTarget.style.background = "transparent";
                                                     }
                                                 }}
@@ -157,15 +157,15 @@ export default function Navbar() {
                                                     width: "280px"
                                                 }}>
                                                     <div style={{
-                                                        background: "rgba(17, 24, 39, 0.95)",
+                                                        background: "rgba(255, 255, 255, 0.95)",
                                                         backdropFilter: "blur(20px)",
-                                                        border: "1px solid rgba(120, 134, 199, 0.2)",
+                                                        border: "1px solid rgba(120, 134, 199, 0.15)",
                                                         borderRadius: "1rem",
                                                         padding: "0.5rem",
                                                         display: "flex",
                                                         flexDirection: "column",
                                                         gap: "0.25rem",
-                                                        boxShadow: "0 10px 40px rgba(0,0,0,0.5)"
+                                                        boxShadow: "0 10px 30px rgba(120, 134, 199, 0.08)"
                                                     }}>
                                                         {link.items.map((subItem) => (
                                                             <Link
@@ -179,11 +179,11 @@ export default function Navbar() {
                                                                     textDecoration: "none",
                                                                     transition: "background 0.2s"
                                                                 }}
-                                                                onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.06)"}
+                                                                onMouseEnter={e => e.currentTarget.style.background = "rgba(120, 134, 199, 0.05)"}
                                                                 onMouseLeave={e => e.currentTarget.style.background = "transparent"}
                                                             >
-                                                                <span style={{ color: "white", fontSize: "0.9rem", fontWeight: 600 }}>{subItem.label}</span>
-                                                                <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.75rem", marginTop: "0.125rem" }}>{subItem.desc}</span>
+                                                                <span style={{ color: "#111827", fontSize: "0.9rem", fontWeight: 600 }}>{subItem.label}</span>
+                                                                <span style={{ color: "rgba(17, 24, 39, 0.5)", fontSize: "0.75rem", marginTop: "0.125rem" }}>{subItem.desc}</span>
                                                             </Link>
                                                         ))}
                                                     </div>
@@ -201,23 +201,23 @@ export default function Navbar() {
                                         style={{
                                             fontSize: "0.875rem",
                                             fontWeight: isActive ? 600 : 500,
-                                            color: isActive ? "white" : "rgba(255,255,255,0.6)",
+                                            color: isActive ? "#7886C7" : "rgba(17, 24, 39, 0.65)",
                                             textDecoration: "none",
                                             padding: "0.5rem 0.875rem",
                                             borderRadius: "9999px",
-                                            background: isActive ? "rgba(120, 134, 199, 0.12)" : "transparent",
-                                            border: isActive ? "1px solid rgba(120, 134, 199, 0.25)" : "1px solid transparent",
+                                            background: isActive ? "rgba(120, 134, 199, 0.08)" : "transparent",
+                                            border: isActive ? "1px solid rgba(120, 134, 199, 0.15)" : "1px solid transparent",
                                             transition: "all 0.2s ease",
                                         }}
                                         onMouseEnter={e => {
                                             if (!isActive) {
-                                                e.currentTarget.style.color = "white";
-                                                e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+                                                e.currentTarget.style.color = "#111827";
+                                                e.currentTarget.style.background = "rgba(120, 134, 199, 0.06)";
                                             }
                                         }}
                                         onMouseLeave={e => {
                                             if (!isActive) {
-                                                e.currentTarget.style.color = "rgba(255,255,255,0.6)";
+                                                e.currentTarget.style.color = "rgba(17, 24, 39, 0.65)";
                                                 e.currentTarget.style.background = "transparent";
                                             }
                                         }}
@@ -233,21 +233,23 @@ export default function Navbar() {
                             <Link href="/portal/login" style={{
                                 padding: "0.5rem 1.125rem",
                                 borderRadius: "9999px",
-                                border: "1px solid rgba(255,255,255,0.18)",
+                                border: "1px solid rgba(120, 134, 199, 0.25)",
                                 background: "transparent",
-                                color: "rgba(255,255,255,0.85)",
+                                color: "#111827",
                                 fontWeight: 600, fontSize: "0.875rem",
                                 cursor: "pointer", fontFamily: "inherit",
                                 transition: "all 0.2s",
                                 textDecoration: "none"
                             }}
                                 onMouseEnter={e => {
-                                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.35)";
-                                    e.currentTarget.style.color = "white";
+                                    e.currentTarget.style.borderColor = "rgba(120, 134, 199, 0.5)";
+                                    e.currentTarget.style.color = "#111827";
+                                    e.currentTarget.style.background = "rgba(120, 134, 199, 0.06)";
                                 }}
                                 onMouseLeave={e => {
-                                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)";
-                                    e.currentTarget.style.color = "rgba(255,255,255,0.85)";
+                                    e.currentTarget.style.borderColor = "rgba(120, 134, 199, 0.25)";
+                                    e.currentTarget.style.color = "#111827";
+                                    e.currentTarget.style.background = "transparent";
                                 }}
                             >
                                 Giriş Yap
@@ -256,7 +258,7 @@ export default function Navbar() {
                                 padding: "0.5rem 1.125rem",
                                 borderRadius: "9999px",
                                 border: "none",
-                                background: "linear-gradient(135deg, #7886C7, #5A659F)",
+                                backgroundImage: "linear-gradient(135deg, #7886C7, #5A659F)",
                                 color: "white",
                                 fontWeight: 600, fontSize: "0.875rem",
                                 cursor: "pointer", fontFamily: "inherit",
@@ -278,7 +280,7 @@ export default function Navbar() {
                             className="nav-mobile"
                             style={{
                                 background: "none", border: "none", cursor: "pointer",
-                                color: "white", padding: "0.5rem", display: "none"
+                                color: "#111827", padding: "0.5rem", display: "none"
                             }}
                             aria-label="Menü"
                         >
@@ -295,14 +297,14 @@ export default function Navbar() {
             {mobileMenuOpen && (
                 <div style={{ position: "fixed", inset: 0, zIndex: 40 }}>
                     <div
-                        style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
+                        style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.3)", backdropFilter: "blur(4px)" }}
                         onClick={() => setMobileMenuOpen(false)}
                     />
                     <div style={{
                         position: "absolute", top: "5rem", left: "1rem", right: "1rem",
-                        background: "rgba(17, 24, 39, 0.97)",
+                        background: "rgba(255, 255, 255, 0.97)",
                         backdropFilter: "blur(20px)",
-                        border: "1px solid rgba(120, 134, 199, 0.2)",
+                        border: "1px solid rgba(120, 134, 199, 0.15)",
                         borderRadius: "1.25rem",
                         padding: "1.25rem"
                     }}>
@@ -310,21 +312,21 @@ export default function Navbar() {
                             {navLinks.map((link) => (
                                 link.items ? (
                                     <div key={link.label} style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                                        <div style={{ padding: "0.5rem 1rem", color: "rgba(255,255,255,0.5)", fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>{link.label}</div>
+                                        <div style={{ padding: "0.5rem 1rem", color: "rgba(17,24,39,0.5)", fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>{link.label}</div>
                                         {link.items.map(subItem => (
                                             <Link
                                                 key={subItem.href}
                                                 href={subItem.href}
                                                 style={{
-                                                    color: "rgba(255,255,255,0.9)", fontWeight: 500,
+                                                    color: "#111827", fontWeight: 500,
                                                     textDecoration: "none", padding: "0.75rem 1rem 0.75rem 1.5rem",
                                                     borderRadius: "0.75rem",
-                                                    background: "rgba(255,255,255,0.02)"
+                                                    background: "rgba(120, 134, 199, 0.03)"
                                                 }}
                                                 onClick={() => setMobileMenuOpen(false)}
                                             >
                                                 <div style={{ fontSize: "0.95rem" }}>{subItem.label}</div>
-                                                <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.4)", marginTop: "0.125rem" }}>{subItem.desc}</div>
+                                                <div style={{ fontSize: "0.75rem", color: "rgba(17,24,39,0.4)", marginTop: "0.125rem" }}>{subItem.desc}</div>
                                             </Link>
                                         ))}
                                     </div>
@@ -333,10 +335,10 @@ export default function Navbar() {
                                         key={link.href}
                                         href={link.href as string}
                                         style={{
-                                            color: "rgba(255,255,255,0.8)", fontWeight: 500,
+                                            color: "#111827", fontWeight: 500,
                                             textDecoration: "none", padding: "0.75rem 1rem",
                                             borderRadius: "0.75rem",
-                                            background: "rgba(255,255,255,0.04)"
+                                            background: "rgba(120, 134, 199, 0.03)"
                                         }}
                                         onClick={() => setMobileMenuOpen(false)}
                                     >
@@ -345,19 +347,19 @@ export default function Navbar() {
                                 )
                             ))}
                             <Link href="/portal/login" style={{
-                                color: "rgba(255,255,255,0.8)", fontWeight: 500,
+                                color: "#111827", fontWeight: 500,
                                 textDecoration: "none", padding: "0.75rem 1rem",
                                 borderRadius: "0.75rem",
-                                background: "rgba(255,255,255,0.04)"
+                                background: "rgba(120, 134, 199, 0.03)"
                             }} onClick={() => setMobileMenuOpen(false)}>
                                 Müşteri Paneli
                             </Link>
-                            <div style={{ height: "1px", background: "rgba(255,255,255,0.07)", margin: "0.25rem 0" }} />
+                            <div style={{ height: "1px", background: "rgba(120, 134, 199, 0.08)", margin: "0.25rem 0" }} />
                             <Link href="/demo"
                                 style={{
                                     display: "block", textAlign: "center",
                                     padding: "0.875rem", borderRadius: "0.75rem",
-                                    background: "linear-gradient(135deg, #7886C7, #5A659F)",
+                                    backgroundImage: "linear-gradient(135deg, #7886C7, #5A659F)",
                                     color: "white", fontWeight: 700, textDecoration: "none"
                                 }}
                                 onClick={() => setMobileMenuOpen(false)}

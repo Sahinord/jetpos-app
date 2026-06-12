@@ -82,7 +82,7 @@ export default function WhatsAppButton() {
                     width: "3.5rem",
                     height: "3.5rem",
                     borderRadius: "50%",
-                    background: "linear-gradient(135deg, #25d366, #128c7e)",
+                    backgroundImage: "linear-gradient(135deg, #25d366, #128c7e)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",

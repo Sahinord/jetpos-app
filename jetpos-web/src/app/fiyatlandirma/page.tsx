@@ -670,9 +670,9 @@ function FiyatlandirmaContent() {
                                     {categories.map((cat, idx) => (
                                         <div key={cat} style={{ marginBottom: idx === categories.length - 1 ? 0 : "3rem" }}>
                                             <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1.5rem" }}>
-                                                <div style={{ height: "1px", flex: 1, background: "linear-gradient(to right, transparent, rgba(120, 134, 199, 0.2))" }} />
+                                                <div style={{ height: "1px", flex: 1, backgroundImage: "linear-gradient(to right, transparent, rgba(120, 134, 199, 0.2))" }} />
                                                 <h3 style={{ fontSize: "0.9rem", fontWeight: 800, color: "rgba(120, 134, 199, 0.8)", textTransform: "uppercase", letterSpacing: "0.2em" }}>{cat}</h3>
-                                                <div style={{ height: "1px", flex: 1, background: "linear-gradient(to left, transparent, rgba(120, 134, 199, 0.2))" }} />
+                                                <div style={{ height: "1px", flex: 1, backgroundImage: "linear-gradient(to left, transparent, rgba(120, 134, 199, 0.2))" }} />
                                             </div>
                                             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "1rem" }}>
                                                 {FEATURES.filter(f => f.category === cat).map((f: any) => {
@@ -704,7 +704,7 @@ function FiyatlandirmaContent() {
                                                                     </button>
                                                                 </div>
                                                                 {active && (
-                                                                    <div style={{ background: "#7886C7", borderRadius: "55%", padding: "0.15rem", boxShadow: "0 0 10px rgba(120,134,199,0.3)" }}>
+                                                                    <div style={{ background: "#7886C7", borderRadius: "55%", padding: "0.15rem", boxShadow: "0 0 10px rgba(120, 134, 199,0.3)" }}>
                                                                         <Check style={{ width: "0.75rem", height: "0.75rem", color: "white" }} strokeWidth={3} />
                                                                     </div>
                                                                 )}
@@ -742,7 +742,7 @@ function FiyatlandirmaContent() {
                                     padding: "1.25rem 3rem", borderRadius: "100px", display: "flex", alignItems: "center", gap: "3.5rem", zIndex: 1000, boxShadow: "0 30px 60px rgba(0,0,0,0.6)"
                                 }}>
                                     <div style={{ display: "flex", alignItems: "center", gap: "1.25rem" }}>
-                                        <div style={{ width: "3.25rem", height: "3.25rem", borderRadius: "50%", background: "linear-gradient(135deg, #7886C7, #B0BAE6)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: "1.35rem", color: "white", boxShadow: "0 0 20px rgba(120, 134, 199, 0.4)" }}>{selectedFeatures.length}</div>
+                                        <div style={{ width: "3.25rem", height: "3.25rem", borderRadius: "50%", backgroundImage: "linear-gradient(135deg, #7886C7, #B0BAE6)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: "1.35rem", color: "white", boxShadow: "0 0 20px rgba(120, 134, 199, 0.4)" }}>{selectedFeatures.length}</div>
                                         <div style={{ display: "flex", flexDirection: "column" }}>
                                             <span style={{ fontWeight: 900, fontSize: "1.1rem", color: "white" }}>Harika Bir Paket!</span>
                                             <span style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.45)" }}>Sizin için en uygun teklifi hazırlayalım</span>
@@ -785,7 +785,7 @@ function FiyatlandirmaContent() {
                                                 <label style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.3)", fontWeight: 800, paddingLeft: "1rem" }}>E-POSTA</label>
                                                 <input type="email" required value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} style={{ padding: "1.25rem", borderRadius: "1.25rem", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)", color: "white", fontSize: "1rem" }} />
                                             </div>
-                                            <button disabled={loading} style={{ marginTop: "1rem", background: "#7886C7", color: "white", border: "none", padding: "1.5rem", borderRadius: "1.5rem", fontWeight: 900, fontSize: "1.2rem", cursor: "pointer", transition: "all 0.3s", boxShadow: "0 10px 30px rgba(120,134,199,0.3)" }}>{loading ? "GÖNDERİLİYOR..." : "ÖZEL TEKLİFİMİ İLET"}</button>
+                                            <button disabled={loading} style={{ marginTop: "1rem", background: "#7886C7", color: "white", border: "none", padding: "1.5rem", borderRadius: "1.5rem", fontWeight: 900, fontSize: "1.2rem", cursor: "pointer", transition: "all 0.3s", boxShadow: "0 10px 30px rgba(120, 134, 199,0.3)" }}>{loading ? "GÖNDERİLİYOR..." : "ÖZEL TEKLİFİMİ İLET"}</button>
                                         </form>
                                     </motion.div>
                                 </div>

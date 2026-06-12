@@ -14,24 +14,6 @@ const solutions = [
         features: ["15.6\" HD Dokunmatik Ekran", "Entegre Müşteri Ekranı", "Fansız Sessiz Çalışma", "Tüm Çevresel Birimlerle Uyumlu"],
         image: "/jetkasa.png",
         color: "#7886C7"
-    },
-    {
-        id: "jetmatik",
-        title: "JetMatik",
-        subtitle: "Self-Servis Sipariş Kiosku",
-        description: "Müşterilerinizin kendi siparişlerini vermesini sağlayarak iş yükünüzü azaltın. Akışkan arayüzü ve güvenilir donanımı ile kuyrukları eritin.",
-        features: ["Devasa Dikey Dokunmatik Panel", "Entegre Ödeme Terminali", "Hızlı Fiş Yazıcısı", "Göz Alıcı LED Aydınlatma"],
-        image: "/jetmatik.png",
-        color: "#06b6d4"
-    },
-    {
-        id: "jetosk",
-        title: "JetOSK",
-        subtitle: "Kompakt Self-Check-Out",
-        description: "Dar alanlar için ideal, masaüstü veya duvara monte edilebilen hızlı ödeme noktası. Market ve unlu mamul işletmelerinin favorisi.",
-        features: ["Kompakt Minimalist Tasarım", "Hızlı Barkod Okuyucu", "Temassız Ödeme Entegrasyonu", "Kolay Kurulum ve Montaj"],
-        image: "/jetosk.png",
-        color: "#8b5cf6"
     }
 ];
 
@@ -117,7 +99,7 @@ export default function HardwareSolutions() {
                                     transform: "translate(-50%, -50%)",
                                     width: "120%",
                                     height: "120%",
-                                    background: `radial-gradient(circle, ${item.color}15 0%, transparent 70%)`,
+                                    backgroundImage: `radial-gradient(circle, ${item.color}15 0%, transparent 70%)`,
                                     zIndex: 1,
                                     pointerEvents: "none"
                                 }} />
@@ -139,7 +121,7 @@ export default function HardwareSolutions() {
                                     }}>
                                         {item.id.toUpperCase()}
                                     </div>
-                                    <div style={{ height: "1px", flex: 1, background: `linear-gradient(90deg, ${item.color}33, transparent)` }} />
+                                    <div style={{ height: "1px", flex: 1, backgroundImage: `linear-gradient(90deg, ${item.color}33, transparent)` }} />
                                 </div>
                                 <h3 style={{
                                     fontSize: "clamp(2rem, 4vw, 3rem)",

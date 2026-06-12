@@ -38,7 +38,7 @@ export default function AboutPage() {
                 <div style={{
                     position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)",
                     width: "1000px", height: "600px",
-                    background: "radial-gradient(circle at center, rgba(120,134,199,0.08) 0%, transparent 70%)",
+                    backgroundImage: "radial-gradient(circle at center, rgba(120, 134, 199,0.08) 0%, transparent 70%)",
                     pointerEvents: "none"
                 }} />
                 
@@ -118,7 +118,7 @@ export default function AboutPage() {
                             <div style={{ textAlign: "center", padding: "3rem" }}>
                                 <div style={{ 
                                     width: "5rem", height: "5rem", borderRadius: "50%", 
-                                    background: "rgba(120,134,199,0.1)", border: "1px solid rgba(120,134,199,0.3)",
+                                    background: "rgba(120, 134, 199,0.1)", border: "1px solid rgba(120, 134, 199,0.3)",
                                     display: "flex", alignItems: "center", justifyContent: "center",
                                     margin: "0 auto 1.5rem"
                                 }}>

@@ -20,7 +20,7 @@ export default function NotFound() {
                     position: "absolute", top: "50%", left: "50%",
                     transform: "translate(-50%, -50%)",
                     width: "600px", height: "400px",
-                    background: "radial-gradient(ellipse, rgba(120, 134, 199, 0.08) 0%, transparent 70%)",
+                    backgroundImage: "radial-gradient(ellipse, rgba(120, 134, 199, 0.08) 0%, transparent 70%)",
                     pointerEvents: "none",
                 }} />
 
@@ -29,7 +29,7 @@ export default function NotFound() {
                     <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: "0.625rem", textDecoration: "none", marginBottom: "3rem" }}>
                         <div style={{
                             width: "2.5rem", height: "2.5rem",
-                            background: "linear-gradient(135deg, #7886C7, #5A659F)",
+                            backgroundImage: "linear-gradient(135deg, #7886C7, #5A659F)",
                             borderRadius: "50%",
                             display: "flex", alignItems: "center", justifyContent: "center",
                             boxShadow: "0 0 20px rgba(120, 134, 199, 0.4)",
@@ -46,7 +46,7 @@ export default function NotFound() {
                         fontSize: "clamp(6rem, 20vw, 10rem)",
                         fontWeight: 900,
                         lineHeight: 1,
-                        background: "linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.04))",
+                        backgroundImage: "linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.04))",
                         WebkitBackgroundClip: "text",
                         WebkitTextFillColor: "transparent",
                         marginBottom: "1.5rem",
@@ -72,7 +72,7 @@ export default function NotFound() {
                         <Link href="/" style={{
                             display: "inline-flex", alignItems: "center", gap: "0.5rem",
                             padding: "0.875rem 1.75rem", borderRadius: "9999px",
-                            background: "linear-gradient(135deg, #7886C7, #5A659F)",
+                            backgroundImage: "linear-gradient(135deg, #7886C7, #5A659F)",
                             color: "white", fontWeight: 700, fontSize: "0.95rem",
                             textDecoration: "none", boxShadow: "0 4px 16px rgba(120, 134, 199, 0.4)",
                             transition: "all 0.2s",

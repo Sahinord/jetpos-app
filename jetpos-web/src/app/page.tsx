@@ -2,7 +2,6 @@ import React from "react";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import AppShowcase from "@/components/AppShowcase";
-import HardwareSolutions from "@/components/HardwareSolutions";
 import Features from "@/components/Features";
 import ConnectionAnimation from "@/components/ConnectionAnimation";
 import Integrations from "@/components/Integrations";
@@ -20,11 +19,10 @@ export default function Home() {
     <>
       <div className="site-bg" />
       <StickyBanner />
-      <main style={{ position: "relative", zIndex: 1, minHeight: "100vh", overflowX: "hidden" }}>
+      <main className="main-canvas" style={{ position: "relative", zIndex: 1, minHeight: "100vh", overflowX: "hidden" }}>
         <Navbar />
         <Hero />
         <AppShowcase />
-        <HardwareSolutions />
         <Features />
         <ConnectionAnimation />
         <Integrations />

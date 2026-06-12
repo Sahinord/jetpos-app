@@ -95,16 +95,16 @@ export default function TermsPage() {
                 <div style={{
                     position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)",
                     width: "500px", height: "300px",
-                    background: "radial-gradient(ellipse at center, rgba(120,134,199,0.12) 0%, transparent 70%)",
+                    backgroundImage: "radial-gradient(ellipse at center, rgba(120, 134, 199,0.12) 0%, transparent 70%)",
                     pointerEvents: "none"
                 }} />
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
                     <div style={{
                         width: "3.5rem", height: "3.5rem", borderRadius: "1.25rem",
-                        background: "rgba(120,134,199,0.15)", border: "1px solid rgba(120,134,199,0.3)",
+                        background: "rgba(120, 134, 199,0.15)", border: "1px solid rgba(120, 134, 199,0.3)",
                         display: "flex", alignItems: "center", justifyContent: "center",
                         margin: "0 auto 1.5rem",
-                        boxShadow: "0 0 30px rgba(120,134,199,0.2)"
+                        boxShadow: "0 0 30px rgba(120, 134, 199,0.2)"
                     }}>
                         <FileText style={{ width: "1.75rem", height: "1.75rem", color: "#B0BAE6" }} />
                     </div>
@@ -148,7 +148,7 @@ export default function TermsPage() {
                                     style={{
                                         textAlign: "left", padding: "0.6rem 0.875rem",
                                         borderRadius: "0.75rem", border: "none",
-                                        background: activeSection === s.id ? "rgba(120,134,199,0.15)" : "transparent",
+                                        background: activeSection === s.id ? "rgba(120, 134, 199,0.15)" : "transparent",
                                         color: activeSection === s.id ? "white" : "rgba(255,255,255,0.4)",
                                         fontSize: "0.875rem", cursor: "pointer", fontFamily: "inherit",
                                         fontWeight: activeSection === s.id ? 700 : 500,
@@ -272,10 +272,10 @@ export default function TermsPage() {
                     style={{
                         position: "fixed", bottom: "2.5rem", right: "2.5rem",
                         width: "3rem", height: "3rem", borderRadius: "50%",
-                        background: "linear-gradient(135deg, #7886C7, #B0BAE6)",
+                        backgroundImage: "linear-gradient(135deg, #7886C7, #B0BAE6)",
                         border: "none", cursor: "pointer",
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        boxShadow: "0 10px 30px rgba(120,134,199,0.5)", zIndex: 50
+                        boxShadow: "0 10px 30px rgba(120, 134, 199,0.5)", zIndex: 50
                     }}
                 >
                     <ArrowUp style={{ width: "1.25rem", height: "1.25rem", color: "white" }} />

@@ -49,7 +49,7 @@ export default function StickyBanner() {
             animation: "bannerSlideDown 0.5s cubic-bezier(0.22,1,0.36,1) both",
         }}>
             <div style={{
-                background: "linear-gradient(90deg, #5A659F 0%, #7886C7 35%, #8b5cf6 65%, #5A659F 100%)",
+                backgroundImage: "linear-gradient(90deg, #5A659F 0%, #7886C7 35%, #8b5cf6 65%, #5A659F 100%)",
                 backgroundSize: "200% 100%",
                 animation: "bannerGrad 4s linear infinite",
                 padding: "0.6rem 1.5rem",
@@ -59,7 +59,7 @@ export default function StickyBanner() {
                 {/* Shimmer */}
                 <div style={{
                     position: "absolute", inset: 0,
-                    background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%)",
+                    backgroundImage: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%)",
                     backgroundSize: "200% 100%",
                     animation: "bannerShimmer 2.5s linear infinite",
                     pointerEvents: "none",

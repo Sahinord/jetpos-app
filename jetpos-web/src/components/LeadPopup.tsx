@@ -77,7 +77,7 @@ export default function LeadPopup() {
                 animation: closing ? "popOut 0.35s cubic-bezier(0.4,0,1,1) forwards" : "popIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both",
             }}>
                 <div style={{
-                    background: "linear-gradient(145deg, rgba(17,24,39,0.98), rgba(31,41,55,0.98))",
+                    backgroundImage: "linear-gradient(145deg, rgba(17,24,39,0.98), rgba(31,41,55,0.98))",
                     backdropFilter: "blur(24px)",
                     border: "1px solid rgba(120, 134, 199, 0.25)",
                     borderRadius: "2rem",
@@ -88,7 +88,7 @@ export default function LeadPopup() {
                     {/* Animated top gradient line */}
                     <div style={{
                         height: "3px",
-                        background: "linear-gradient(90deg, #7886C7, #8b5cf6, #06b6d4, #7886C7)",
+                        backgroundImage: "linear-gradient(90deg, #7886C7, #8b5cf6, #06b6d4, #7886C7)",
                         backgroundSize: "300% 100%",
                         animation: "rainbowFlow 3s linear infinite",
                     }} />
@@ -97,13 +97,13 @@ export default function LeadPopup() {
                     <div style={{
                         position: "absolute", top: "-60px", right: "-60px",
                         width: "240px", height: "240px",
-                        background: "radial-gradient(circle, rgba(124,58,237,0.15) 0%, transparent 70%)",
+                        backgroundImage: "radial-gradient(circle, rgba(124,58,237,0.15) 0%, transparent 70%)",
                         pointerEvents: "none",
                     }} />
                     <div style={{
                         position: "absolute", bottom: "-40px", left: "-40px",
                         width: "200px", height: "200px",
-                        background: "radial-gradient(circle, rgba(120, 134, 199, 0.12) 0%, transparent 70%)",
+                        backgroundImage: "radial-gradient(circle, rgba(120, 134, 199, 0.12) 0%, transparent 70%)",
                         pointerEvents: "none",
                     }} />
 
@@ -144,7 +144,7 @@ export default function LeadPopup() {
                             }}>
                                 <div style={{
                                     width: "5rem", height: "5rem",
-                                    background: "linear-gradient(135deg, rgba(16,185,129,0.2), rgba(16,185,129,0.05))",
+                                    backgroundImage: "linear-gradient(135deg, rgba(16,185,129,0.2), rgba(16,185,129,0.05))",
                                     border: "1px solid rgba(16,185,129,0.3)",
                                     borderRadius: "50%",
                                     display: "flex", alignItems: "center", justifyContent: "center",
@@ -165,7 +165,7 @@ export default function LeadPopup() {
                                     onClick={close}
                                     style={{
                                         padding: "0.75rem 2rem",
-                                        background: "linear-gradient(135deg, #5A659F, #7886C7)",
+                                        backgroundImage: "linear-gradient(135deg, #5A659F, #7886C7)",
                                         color: "white", fontWeight: 700, fontSize: "0.95rem",
                                         border: "none", borderRadius: "0.875rem", cursor: "pointer",
                                         fontFamily: "inherit",
@@ -183,7 +183,7 @@ export default function LeadPopup() {
                                     {/* Promo badge */}
                                     <div style={{
                                         display: "inline-flex", alignItems: "center", gap: "0.5rem",
-                                        background: "linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.05))",
+                                        backgroundImage: "linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.05))",
                                         border: "1px solid rgba(245,158,11,0.3)",
                                         borderRadius: "9999px",
                                         padding: "0.3rem 0.875rem",
@@ -206,7 +206,7 @@ export default function LeadPopup() {
                                     }}>
                                         Ücretsiz Demo &{" "}
                                         <span style={{
-                                            background: "linear-gradient(135deg, #7886C7, #B0BAE6)",
+                                            backgroundImage: "linear-gradient(135deg, #7886C7, #B0BAE6)",
                                             WebkitBackgroundClip: "text",
                                             WebkitTextFillColor: "transparent",
                                         }}>
@@ -281,7 +281,7 @@ export default function LeadPopup() {
                                         width: "100%",
                                         display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
                                         padding: "0.9rem",
-                                        background: "linear-gradient(135deg, #5A659F, #7886C7)",
+                                        backgroundImage: "linear-gradient(135deg, #5A659F, #7886C7)",
                                         color: "white", fontWeight: 800, fontSize: "0.95rem",
                                         border: "none", borderRadius: "0.875rem", cursor: "pointer",
                                         fontFamily: "inherit",

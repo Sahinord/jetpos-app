@@ -34,10 +34,10 @@ export default function Contact() {
     const inputStyle: React.CSSProperties = {
         width: "100%",
         padding: "0.75rem 1rem",
-        background: "rgba(255,255,255,0.04)",
-        border: "1px solid rgba(255,255,255,0.1)",
+        background: "#F8FAFC",
+        border: "1px solid #E5E7EB",
         borderRadius: "0.75rem",
-        color: "white",
+        color: "#111827",
         fontSize: "0.95rem",
         outline: "none",
         transition: "border-color 0.2s, background 0.2s",
@@ -46,16 +46,35 @@ export default function Contact() {
     };
 
     const handleFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        e.target.style.borderColor = "rgba(120, 134, 199, 0.5)";
-        e.target.style.background = "rgba(255,255,255,0.06)";
+        e.target.style.borderColor = "#7886C7";
+        e.target.style.background = "#ffffff";
     };
     const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        e.target.style.borderColor = "rgba(255,255,255,0.1)";
-        e.target.style.background = "rgba(255,255,255,0.04)";
+        e.target.style.borderColor = "#E5E7EB";
+        e.target.style.background = "#F8FAFC";
     };
 
     return (
-        <section id="contact" style={{ padding: "7rem 0", position: "relative", zIndex: 2 }}>
+        <section 
+            id="contact" 
+            style={{
+                padding: "6.5rem 0",
+                position: "relative",
+                backgroundColor: "#FFFFFF",
+            }}
+        >
+            {/* Subtle Radial Glow Spot at the top */}
+            <div style={{
+                position: "absolute",
+                top: "-150px",
+                left: "50%",
+                transform: "translateX(-50%)",
+                width: "800px",
+                height: "300px",
+                background: "radial-gradient(circle at center, rgba(120, 134, 199, 0.04) 0%, transparent 70%)",
+                pointerEvents: "none",
+                zIndex: 1,
+            }} />
             <div className="site-container">
                 {/* Section Header */}
                 <motion.div
@@ -71,13 +90,13 @@ export default function Contact() {
                     <h2 style={{
                         fontSize: "clamp(2rem, 5vw, 3.25rem)",
                         fontWeight: 800,
-                        color: "white",
+                        color: "#111827",
                         marginBottom: "1rem",
                         lineHeight: 1.2
                     }}>
                         <span className="holographic-text">Bizimle</span> İletişime Geçin
                     </h2>
-                    <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "1.125rem", maxWidth: "560px", margin: "0 auto" }}>
+                    <p style={{ color: "#4B5563", fontSize: "1.125rem", maxWidth: "560px", margin: "0 auto" }}>
                         Sorularınız mı var? Ekibimiz size yardımcı olmak için burada.
                     </p>
                 </motion.div>
@@ -91,12 +110,13 @@ export default function Contact() {
                         transition={{ duration: 0.6 }}
                     >
                         <div style={{
-                            background: "rgba(255,255,255,0.03)",
-                            border: "1px solid rgba(255,255,255,0.08)",
+                            background: "#ffffff",
+                            border: "1px solid #E5E7EB",
                             borderRadius: "1.5rem",
-                            padding: "2.25rem"
+                            padding: "2.25rem",
+                            boxShadow: "0 4px 20px rgba(120, 134, 199, 0.02)"
                         }}>
-                            <h3 style={{ fontSize: "1.5rem", fontWeight: 700, color: "white", marginBottom: "1.5rem" }}>
+                            <h3 style={{ fontSize: "1.5rem", fontWeight: 700, color: "#111827", marginBottom: "1.5rem" }}>
                                 Bize Ulaşın
                             </h3>
 
@@ -111,22 +131,22 @@ export default function Contact() {
                                 >
                                     <div style={{
                                         width: "4rem", height: "4rem", borderRadius: "50%",
-                                        background: "linear-gradient(135deg, #22c55e, #16a34a)",
+                                        backgroundImage: "linear-gradient(135deg, #7886C7, #5A659F)",
                                         display: "flex", alignItems: "center", justifyContent: "center",
-                                        boxShadow: "0 0 30px rgba(34,197,94,0.3)"
+                                        boxShadow: "0 0 30px rgba(120,134,199,0.3)"
                                     }}>
                                         <Check style={{ width: "2rem", height: "2rem", color: "white" }} />
                                     </div>
-                                    <h4 style={{ color: "white", fontWeight: 700, fontSize: "1.25rem", margin: 0 }}>Mesajınız Alındı!</h4>
-                                    <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.9rem", margin: 0 }}>
+                                    <h4 style={{ color: "#111827", fontWeight: 700, fontSize: "1.25rem", margin: 0 }}>Mesajınız Alındı!</h4>
+                                    <p style={{ color: "#4B5563", fontSize: "0.9rem", margin: 0 }}>
                                         En kısa sürede size dönüş yapacağız.
                                     </p>
                                     <button
                                         onClick={() => setStatus("idle")}
                                         style={{
                                             marginTop: "0.5rem", padding: "0.625rem 1.5rem",
-                                            background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
-                                            borderRadius: "0.75rem", color: "rgba(255,255,255,0.7)",
+                                            background: "#F1F5F9", border: "1px solid #E5E7EB",
+                                            borderRadius: "0.75rem", color: "#4B5563",
                                             cursor: "pointer", fontFamily: "inherit", fontSize: "0.875rem"
                                         }}
                                     >
@@ -136,7 +156,7 @@ export default function Contact() {
                             ) : (
                                 <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
                                     <div>
-                                        <label htmlFor="contact-name" style={{ display: "block", color: "rgba(255,255,255,0.7)", marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: 500 }}>
+                                        <label htmlFor="contact-name" style={{ display: "block", color: "#4B5563", marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: 500 }}>
                                             Ad Soyad
                                         </label>
                                         <input
@@ -152,7 +172,7 @@ export default function Contact() {
                                         />
                                     </div>
                                     <div>
-                                        <label htmlFor="contact-email" style={{ display: "block", color: "rgba(255,255,255,0.7)", marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: 500 }}>
+                                        <label htmlFor="contact-email" style={{ display: "block", color: "#4B5563", marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: 500 }}>
                                             E-posta
                                         </label>
                                         <input
@@ -168,7 +188,7 @@ export default function Contact() {
                                         />
                                     </div>
                                     <div>
-                                        <label htmlFor="contact-message" style={{ display: "block", color: "rgba(255,255,255,0.7)", marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: 500 }}>
+                                        <label htmlFor="contact-message" style={{ display: "block", color: "#4B5563", marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: 500 }}>
                                             Mesajınız
                                         </label>
                                         <textarea
@@ -186,9 +206,9 @@ export default function Contact() {
 
                                     {status === "error" && (
                                         <div style={{
-                                            background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)",
+                                            background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)",
                                             borderRadius: "0.75rem", padding: "0.75rem 1rem",
-                                            color: "#fca5a5", fontSize: "0.875rem"
+                                            color: "#ef4444", fontSize: "0.875rem"
                                         }}>
                                             {errorMsg}
                                         </div>
@@ -227,12 +247,12 @@ export default function Contact() {
                     >
                         {[
                             { icon: Mail, label: "E-posta", value: "info@jetpos.shop", href: "mailto:info@jetpos.shop", color: "#7886C7" },
-                            { icon: Phone, label: "Telefon", value: "0536 661 0169", href: "tel:05366610169", color: "#4ade80" },
-                            { icon: MapPin, label: "Adres", value: "Su Yolu Cad Turgut Özal Mah No 31/A", href: "#", color: "#f87171" },
+                            { icon: Phone, label: "Telefon", value: "0536 661 0169", href: "tel:05366610169", color: "#4F46E5" },
+                            { icon: MapPin, label: "Adres", value: "Su Yolu Cad Turgut Özal Mah No 31/A", href: "#", color: "#6366F1" },
                         ].map((item, i) => (
                             <div key={i} style={{
-                                background: "rgba(255,255,255,0.03)",
-                                border: "1px solid rgba(255,255,255,0.07)",
+                                background: "#ffffff",
+                                border: "1px solid #E5E7EB",
                                 borderRadius: "1.25rem",
                                 padding: "1.5rem",
                                 display: "flex",
@@ -241,12 +261,14 @@ export default function Contact() {
                                 transition: "all 0.3s"
                             }}
                                 onMouseEnter={e => {
-                                    (e.currentTarget as HTMLDivElement).style.borderColor = `${item.color}40`;
+                                    (e.currentTarget as HTMLDivElement).style.borderColor = `${item.color}`;
                                     (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)";
+                                    (e.currentTarget as HTMLDivElement).style.boxShadow = `0 10px 24px rgba(120, 134, 199, 0.05)`;
                                 }}
                                 onMouseLeave={e => {
-                                    (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.07)";
+                                    (e.currentTarget as HTMLDivElement).style.borderColor = "#E5E7EB";
                                     (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
+                                    (e.currentTarget as HTMLDivElement).style.boxShadow = "none";
                                 }}
                             >
                                 <div style={{
@@ -259,8 +281,8 @@ export default function Contact() {
                                     <item.icon style={{ width: "1.25rem", height: "1.25rem", color: item.color }} />
                                 </div>
                                 <div>
-                                    <div style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.4)", fontWeight: 500, marginBottom: "0.25rem" }}>{item.label}</div>
-                                    <a href={item.href} style={{ color: "rgba(255,255,255,0.85)", fontSize: "0.95rem", fontWeight: 500, textDecoration: "none", whiteSpace: "pre-line" }}>
+                                    <div style={{ fontSize: "0.8rem", color: "#6B7280", fontWeight: 500, marginBottom: "0.25rem" }}>{item.label}</div>
+                                    <a href={item.href} style={{ color: "#374151", fontSize: "0.95rem", fontWeight: 600, textDecoration: "none", whiteSpace: "pre-line" }}>
                                         {item.value}
                                     </a>
                                 </div>

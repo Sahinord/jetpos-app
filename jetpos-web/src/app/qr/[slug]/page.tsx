@@ -57,8 +57,8 @@ export default async function QRMenuPage({ params }: { params: { slug: string } 
 
   return (
     <div style={{ 
-      backgroundColor: isDark ? '#0f172a' : '#f8fafc', 
-      color: isDark ? '#f1f5f9' : '#0f172a', 
+      backgroundColor: isDark ? '#1f2937' : '#f8fafc', 
+      color: isDark ? '#f1f5f9' : '#1f2937', 
       minHeight: '100vh', 
       paddingBottom: '4rem' 
     }}>
@@ -111,9 +111,7 @@ export default async function QRMenuPage({ params }: { params: { slug: string } 
           className="w-full overflow-hidden py-2 whitespace-nowrap shadow-sm"
         >
           {/* Basit bir CSS animasyonu gerektirir, tailwind config'de yoksa inline eklenebilir veya standart kayan yazı kullanılabilir */}
-          <marquee scrollamount="5" className="font-medium text-sm block">
-            {qrSettings.marquee_text}
-          </marquee>
+          <div dangerouslySetInnerHTML={{ __html: `<marquee scrollamount="5" class="font-medium text-sm block">${qrSettings.marquee_text}</marquee>` }} />
         </div>
       )}
 
@@ -124,7 +122,7 @@ export default async function QRMenuPage({ params }: { params: { slug: string } 
             <p>Menü hazırlanıyor...</p>
           </div>
         ) : (
-          categorizedProducts.map((category) => (
+          categorizedProducts.map((category: any) => (
             <div key={category.id} className="scroll-mt-6" id={`category-${category.id}`}>
               <h2 
                 style={{ color: primaryColor, borderBottomColor: primaryColor }} 
@@ -134,7 +132,7 @@ export default async function QRMenuPage({ params }: { params: { slug: string } 
               </h2>
               
               <div className={`grid gap-4 ${qrSettings.layout_type === 'grid' ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-1'}`}>
-                {category.products.map((product) => (
+                {category.products.map((product: any) => (
                   <div 
                     key={product.id} 
                     className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col transition-transform hover:scale-[1.02]"

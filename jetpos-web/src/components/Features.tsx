@@ -52,8 +52,8 @@ const features = [
 ];
 
 const COLOR = "#7886C7";
-const GLOW = "rgba(120, 134, 199, 0.2)";
-const BORDER = "rgba(120, 134, 199, 0.25)";
+const GLOW = "rgba(120, 134, 199, 0.15)";
+const BORDER = "rgba(120, 134, 199, 0.35)";
 
 export default function Features() {
     const [hovered, setHovered] = useState<number | null>(null);
@@ -64,18 +64,16 @@ export default function Features() {
             onMouseEnter={() => setHovered(i)}
             onMouseLeave={() => setHovered(null)}
             style={{
-                background: hovered === i
-                    ? "linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)"
-                    : "linear-gradient(160deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)",
-                border: `1px solid ${hovered === i ? BORDER : "rgba(255,255,255,0.07)"}`,
+                background: "#ffffff",
+                border: `1px solid ${hovered === i ? BORDER : "#E5E7EB"}`,
                 borderRadius: "1.5rem",
                 padding: "1.25rem",
                 cursor: "default",
-                transition: "all 0.35s cubic-bezier(0.22,1,0.36,1)",
+                transition: "all 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
                 transform: hovered === i ? "translateY(-6px)" : "translateY(0)",
                 boxShadow: hovered === i
-                    ? `0 20px 48px rgba(0,0,0,0.4), 0 0 0 1px ${BORDER} inset, 0 0 40px ${GLOW}`
-                    : "0 4px 24px rgba(0,0,0,0.2)",
+                    ? `0 20px 40px rgba(120, 134, 199, 0.06), 0 0 24px ${GLOW}`
+                    : "0 4px 12px rgba(120, 134, 199, 0.01)",
                 display: "flex",
                 flexDirection: "column" as const,
                 gap: "1rem",
@@ -89,7 +87,7 @@ export default function Features() {
                 position: "absolute", top: "1rem", right: "1rem",
                 width: "0.4rem", height: "0.4rem", borderRadius: "50%",
                 background: COLOR,
-                opacity: hovered === i ? 1 : 0.3,
+                opacity: hovered === i ? 1 : 0.25,
                 boxShadow: hovered === i ? `0 0 8px ${COLOR}` : "none",
                 transition: "all 0.35s",
             }} />
@@ -101,7 +99,7 @@ export default function Features() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                background: `radial-gradient(ellipse at center, ${GLOW} 0%, transparent 70%)`,
+                backgroundImage: `radial-gradient(ellipse at center, rgba(120, 134, 199, 0.06) 0%, transparent 70%)`,
                 borderRadius: "1rem",
             }}>
                 <Image
@@ -113,8 +111,8 @@ export default function Features() {
                         objectFit: "contain",
                         width: "180px",
                         height: "180px",
-                        transform: hovered === i ? "scale(1.08) translateY(-4px)" : "scale(1)",
-                        transition: "all 0.35s cubic-bezier(0.22,1,0.36,1)",
+                        transform: hovered === i ? "scale(1.06) translateY(-2px)" : "scale(1)",
+                        transition: "all 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
                     }}
                 />
             </div>
@@ -125,7 +123,7 @@ export default function Features() {
                     margin: 0,
                     fontSize: "1rem",
                     fontWeight: 700,
-                    color: "white",
+                    color: "#111827",
                     letterSpacing: "-0.01em",
                 }}>
                     {f.title}
@@ -133,7 +131,7 @@ export default function Features() {
                 <p style={{
                     margin: 0,
                     fontSize: "0.8rem",
-                    color: "rgba(255,255,255,0.45)",
+                    color: "#4B5563",
                     lineHeight: 1.6,
                 }}>
                     {f.desc}
@@ -143,18 +141,28 @@ export default function Features() {
     );
 
     return (
-        <section style={{
-            padding: "6rem 2rem",
-            position: "relative",
-            overflow: "hidden",
-        }}>
-            {/* Top separator */}
+        <section 
+            style={{
+                padding: "6.5rem 2rem",
+                position: "relative",
+                overflow: "hidden",
+                backgroundColor: "#FAFBFC",
+            }}
+        >
+            {/* Subtle Radial Glow Spot at the top */}
             <div style={{
-                position: "absolute", top: 0, left: "20%", right: "20%", height: "1px",
-                background: "linear-gradient(90deg, transparent, rgba(120, 134, 199, 0.3), transparent)",
+                position: "absolute",
+                top: "-150px",
+                left: "50%",
+                transform: "translateX(-50%)",
+                width: "800px",
+                height: "300px",
+                background: "radial-gradient(circle at center, rgba(120, 134, 199, 0.04) 0%, transparent 70%)",
+                pointerEvents: "none",
+                zIndex: 1,
             }} />
 
-            <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
+            <div style={{ maxWidth: "1400px", margin: "0 auto", position: "relative", zIndex: 2 }}>
 
                 {/* Header */}
                 <div style={{ textAlign: "center", marginBottom: "4rem" }}>
@@ -171,7 +179,7 @@ export default function Features() {
                             width: "0.4rem", height: "0.4rem", borderRadius: "50%",
                             background: "#7886C7", boxShadow: "0 0 6px #7886C7",
                         }} />
-                        <span style={{ fontSize: "0.78rem", color: "#B0BAE6", fontWeight: 600, letterSpacing: "0.04em" }}>
+                        <span style={{ fontSize: "0.78rem", color: "#7886C7", fontWeight: 600, letterSpacing: "0.04em" }}>
                             Yapabilecekleriniz
                         </span>
                     </div>
@@ -179,7 +187,7 @@ export default function Features() {
                     <h2 style={{
                         fontSize: "clamp(2rem, 4vw, 3.25rem)",
                         fontWeight: 900,
-                        color: "white",
+                        color: "#111827",
                         margin: "0 0 1rem",
                         lineHeight: 1.15,
                         animation: "featFadeUp 0.6s 0.2s both",
@@ -189,7 +197,7 @@ export default function Features() {
 
                     <p style={{
                         fontSize: "1rem",
-                        color: "rgba(255,255,255,0.45)",
+                        color: "#4B5563",
                         margin: 0,
                         animation: "featFadeUp 0.6s 0.3s both",
                     }}>
@@ -218,6 +226,17 @@ export default function Features() {
                     {features.slice(5).map((f, i) => renderCard(f, i + 5))}
                 </div>
             </div>
+            {/* Gradient transition to ConnectionAnimation section (#FFFFFF) */}
+            <div style={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: "180px",
+                background: "linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,1) 100%)",
+                pointerEvents: "none",
+                zIndex: 10,
+            }} />
 
             <style>{`
                 @keyframes featFadeUp {
