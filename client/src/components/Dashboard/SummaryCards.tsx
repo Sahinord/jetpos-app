@@ -15,6 +15,7 @@ interface SummaryProps {
     totalStock: number;
     totalStockKg: number;
     totalStockValue: number;
+    totalStockValueSale: number;
     potentialProfit: number;
 }
 
@@ -93,6 +94,7 @@ export default function SummaryCards({
     totalStock,
     totalStockKg,
     totalStockValue,
+    totalStockValueSale,
     potentialProfit
 }: SummaryProps) {
     const { currentTenant } = useTenant();
@@ -123,6 +125,20 @@ export default function SummaryCards({
         const next = !includeKgStock;
         setIncludeKgStock(next);
         localStorage.setItem('dashboard_include_kg', String(next));
+    };
+
+    // Stok Değeri: Alış / Satış toggle
+    const [stockValueMode, setStockValueMode] = useState<'purchase' | 'sale'>(() => {
+        if (typeof window !== 'undefined') {
+            return (localStorage.getItem('dashboard_stock_value_mode') as 'purchase' | 'sale') || 'purchase';
+        }
+        return 'purchase';
+    });
+
+    const toggleStockValueMode = () => {
+        const next = stockValueMode === 'purchase' ? 'sale' : 'purchase';
+        setStockValueMode(next);
+        localStorage.setItem('dashboard_stock_value_mode', next);
     };
 
     // Kutu Sistemi (KG kartı ayarlardan eklenebilir)
@@ -289,13 +305,17 @@ export default function SummaryCards({
             trend: "neutral" as const
         },
         {
-            id: "stock_value", title: "Toplam Stok Değeri", value: totalStockValue, isCurrency: true,
+            id: "stock_value",
+            title: stockValueMode === 'purchase' ? "Stok Değeri (Alış)" : "Stok Değeri (Satış)",
+            value: stockValueMode === 'purchase' ? totalStockValue : totalStockValueSale,
+            isCurrency: true,
             icon: DollarSign,
             gradient: "from-amber-500 to-orange-500",
             glowColor: "rgba(245,158,11,0.15)",
             accentColor: "#f59e0b",
             bgRing: "rgba(245,158,11,0.1)",
-            trend: "up" as const
+            trend: "up" as const,
+            hasStockValueToggle: true
         },
         {
             id: "potential_profit", title: "Potansiyel Net Kar", value: potentialProfit, isCurrency: true,
@@ -508,6 +528,18 @@ export default function SummaryCards({
                                                     >
                                                         {includeKgStock ? <ToggleRight className="w-3 h-3" /> : <ToggleLeft className="w-3 h-3" />}
                                                         <span>KG</span>
+                                                    </button>
+                                                )}
+
+                                                {/* Alış / Satış Toggle */}
+                                                {(card as any).hasStockValueToggle && (
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); toggleStockValueMode(); }}
+                                                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider transition-all ${stockValueMode === 'sale' ? 'text-amber-400 bg-amber-500/10' : 'text-secondary/40 bg-white/[0.03] hover:text-secondary/60'}`}
+                                                        title={stockValueMode === 'purchase' ? 'Alış fiyatından gösteriliyor - tıkla satış fiyatına geç' : 'Satış fiyatından gösteriliyor - tıkla alış fiyatına geç'}
+                                                    >
+                                                        {stockValueMode === 'sale' ? <ToggleRight className="w-3 h-3" /> : <ToggleLeft className="w-3 h-3" />}
+                                                        <span>{stockValueMode === 'purchase' ? 'ALIŞ' : 'SATIŞ'}</span>
                                                     </button>
                                                 )}
                                             </div>

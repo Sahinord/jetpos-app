@@ -1331,6 +1331,7 @@ export default function Home() {
                 totalStock={stats.totalStock}
                 totalStockKg={stats.totalStockKg}
                 totalStockValue={stats.totalCost}
+                totalStockValueSale={stats.totalValue}
                 potentialProfit={stats.potentialProfit}
               />
 
