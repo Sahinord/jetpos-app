@@ -6,7 +6,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://grlwmcuxobb
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdybHdtY3V4b2JiZ3VicGhvdmhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwNzM1MzAsImV4cCI6MjA4MzY0OTUzMH0.REYSFxWZe4ky5rX14nB7uILiuJZf_e7wwPMK34H0Aeo';
 
 if (typeof window !== 'undefined') {
-    console.log("🌐 [Supabase] URL initialized:", supabaseUrl);
+    // console.log("🌐 [Supabase] URL initialized:", supabaseUrl);
 }
 
 // Get initial values from localStorage if available
@@ -55,7 +55,7 @@ export async function setCurrentTenant(tenantId: string) {
             throw error;
         }
 
-        console.log('✅ Tenant context set:', tenantId);
+        // console.log('✅ Tenant context set:', tenantId);
     } catch (err) {
         console.error('Error setting tenant:', err);
         throw err;

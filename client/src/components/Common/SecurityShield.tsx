@@ -10,32 +10,51 @@ import { useEffect } from 'react';
  */
 export default function SecurityShield() {
     useEffect(() => {
-        // Only run in production
         const isProduction = process.env.NODE_ENV === 'production';
-        
-        if (isProduction) {
-            // 1. Clear console and override functions
-            console.log("%c⚠️ GÜVENLİK UYARISI", "color: red; font-size: 30px; font-weight: bold;");
-            console.log("%cBu alan geliştiricilere özeldir. Buraya kod yapıştırmanız verilerinizin çalınmasına neden olabilir.", "font-size: 16px;");
-            
-            // Re-clear after a short delay
-            setTimeout(() => {
-                console.clear();
-                const noop = () => {};
-                (window.console as any).log = noop;
-                (window.console as any).info = noop;
-                (window.console as any).warn = noop;
-                (window.console as any).debug = noop;
-                // Leave error for debugging if needed, but we could silence it too
-                // (window.console as any).error = noop;
-            }, 1000);
 
-            // 2. Disable Right Click
+        // Keep references to original console methods
+        const originalLog = console.log;
+        const originalWarn = console.warn;
+        const originalError = console.error;
+        const originalClear = console.clear;
+
+        // Print the giant Instagram-style Self-XSS warning
+        const printWarning = () => {
+            originalLog(
+                "%cDur!",
+                "color: #ff3040; font-size: 80px; font-weight: 900; font-family: sans-serif; text-shadow: 2px 2px 0px #000;"
+            );
+            originalLog(
+                "%cBu, geliştiriciler için tasarlanmış bir tarayıcı özelliğidir. Biri sana buraya bir kod kopyalayıp yapıştırmanı söylediyse bu bir dolandırıcılıktır ve bunu yaptığında senin JetPOS hesabına ve verilerine erişebilecektir.",
+                "font-size: 18px; font-weight: bold; font-family: sans-serif; line-height: 1.6; color: #f8fafc;"
+            );
+            originalLog(
+                "%cDaha fazla bilgi için https://www.jetpos.shop/guvenlikvekorunmak adresine göz atın.",
+                "font-size: 14px; font-family: sans-serif; color: #94a3b8; text-decoration: underline;"
+            );
+        };
+
+        // Always print warning on startup (both dev and prod)
+        printWarning();
+
+        if (isProduction) {
+            // Silence all future logs in production
+            const noop = () => { };
+            (window.console as any).log = noop;
+            (window.console as any).info = noop;
+            (window.console as any).warn = noop;
+            (window.console as any).debug = noop;
+            (window.console as any).clear = noop; // Prevent clearing our warning
+
+            // Keep error logging restricted to avoid complete silence on critical issues, 
+            // but we can choose to silence it if required.
+
+            // 1. Disable Right Click
             const handleContextMenu = (e: MouseEvent) => {
                 e.preventDefault();
             };
 
-            // 3. Disable Shortcuts (F12, Ctrl+Shift+I, etc)
+            // 2. Disable Shortcuts (F12, Ctrl+Shift+I, etc)
             const handleKeyDown = (e: KeyboardEvent) => {
                 // F12
                 if (e.key === 'F12') {

@@ -190,15 +190,15 @@ export default function Home() {
           .maybeSingle();
 
         if (integration?.is_active) {
-          console.log('[Trendyol Auto-Sync] Active integration found. Starting background sync...');
+          // console.log('[Trendyol Auto-Sync] Active integration found. Starting background sync...');
           const res = await apiFetch(`/api/trendyol/sync-orders?tenantId=${currentTenant.id}&days=30`, {
             method: 'POST'
           });
-          console.log('[Trendyol Auto-Sync] Completed:', res);
+          // console.log('[Trendyol Auto-Sync] Completed:', res);
           
           // 2. If sync succeeded and added orders, refresh page data so dashboard updates immediately
           if (res?.success && res?.count > 0) {
-            console.log('[Trendyol Auto-Sync] New orders synced. Refreshing data...');
+            // console.log('[Trendyol Auto-Sync] New orders synced. Refreshing data...');
             fetchData();
           }
         }

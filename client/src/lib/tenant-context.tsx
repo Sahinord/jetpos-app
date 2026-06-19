@@ -85,7 +85,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
     const fetchTenants = async () => {
         setLoading(true);
-        console.log("🚀 [TenantContext] fetchTenants started...");
+        // console.log("🚀 [TenantContext] fetchTenants started...");
         
         // Failsafe: 10 saniye sonra her ne olursa olsun loading'i kapat
         const failsafeTimeout = setTimeout(() => {
@@ -98,10 +98,10 @@ export function TenantProvider({ children }: { children: ReactNode }) {
             let savedLicenseKey = localStorage.getItem('licenseKey');
             const savedTenantId = localStorage.getItem('currentTenantId');
 
-            console.log("📍 [TenantContext] LocalStorage state:", { savedLicenseKey, savedTenantId });
+            // console.log("📍 [TenantContext] LocalStorage state:", { savedLicenseKey, savedTenantId });
 
             if (!savedLicenseKey || !savedTenantId) {
-                console.log("ℹ️ [TenantContext] No saved license or tenant ID. Showing LicenseGate.");
+                // console.log("ℹ️ [TenantContext] No saved license or tenant ID. Showing LicenseGate.");
                 setLoading(false);
                 clearTimeout(failsafeTimeout);
                 return;
@@ -127,7 +127,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
                 return;
             }
 
-            console.log("📡 [TenantContext] Validating license via RPC...");
+            // console.log("📡 [TenantContext] Validating license via RPC...");
             
             const timeoutPromise = new Promise((_, reject) => 
                 setTimeout(() => reject(new Error("Supabase RPC timeout")), 8000)
@@ -152,7 +152,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
                     savedLicenseKey
                 });
                 if (!data && !error) {
-                    console.log("🗑️ [TenantContext] Tenant not found, clearing state.");
+                    // console.log("🗑️ [TenantContext] Tenant not found, clearing state.");
                     localStorage.removeItem('licenseKey');
                     localStorage.removeItem('currentTenantId');
                 }
@@ -161,9 +161,9 @@ export function TenantProvider({ children }: { children: ReactNode }) {
                 return;
             }
 
-            console.log("✅ [TenantContext] License validated for:", data.company_name);
+            // console.log("✅ [TenantContext] License validated for:", data.company_name);
             
-            console.log("🔐 [TenantContext] Setting RLS context...");
+            // console.log("🔐 [TenantContext] Setting RLS context...");
             await setRLSTenant(data.id);
 
             // RPC tüm alanları döndürmüyor (fixed_warehouses, openrouter_api_key gibi)
@@ -185,12 +185,12 @@ export function TenantProvider({ children }: { children: ReactNode }) {
             setCurrentTenant(enrichedTenant);
             setAvailableTenants([enrichedTenant]);
 
-            console.log("🚀 [TenantContext] Initialization complete. fixed_warehouses:", enrichedTenant.fixed_warehouses?.length || 0);
+            // console.log("🚀 [TenantContext] Initialization complete. fixed_warehouses:", enrichedTenant.fixed_warehouses?.length || 0);
 
         } catch (error: any) {
             console.error('🔥 [TenantContext] Critical Error:', error.message || error);
         } finally {
-            console.log("🏁 [TenantContext] fetchTenants finished.");
+            // console.log("🏁 [TenantContext] fetchTenants finished.");
             setLoading(false);
             clearTimeout(failsafeTimeout);
         }
