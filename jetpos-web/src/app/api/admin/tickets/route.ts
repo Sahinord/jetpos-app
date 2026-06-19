@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { adminGuard } from "@/lib/adminAuth";
 
 function getAdminSupabase() {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -7,13 +8,9 @@ function getAdminSupabase() {
     return createClient(url, serviceKey);
 }
 
-function checkAdminAuth(req: NextRequest) {
-    const token = req.headers.get("x-admin-token");
-    return !!token && token === process.env.ADMIN_SECRET_TOKEN;
-}
-
 export async function GET(req: NextRequest) {
-    if (!checkAdminAuth(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const guard = adminGuard(req);
+    if (guard) return guard;
     try {
         const sb = getAdminSupabase();
         const { data, error } = await sb.from("support_tickets").select("*, tenants(company_name)").order("created_at", { ascending: false });
@@ -23,7 +20,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-    if (!checkAdminAuth(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const guard = adminGuard(req);
+    if (guard) return guard;
     const id = req.nextUrl.searchParams.get("id");
     try {
         const body = await req.json();

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { adminGuard } from "@/lib/adminAuth";
 
 function getAdminSupabase() {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -8,19 +9,10 @@ function getAdminSupabase() {
     return createClient(url, serviceKey);
 }
 
-function checkAdminAuth(req: NextRequest): boolean {
-    const token = req.headers.get("x-admin-token");
-    const expected = process.env.ADMIN_SECRET_TOKEN;
-    return !!token && token === expected;
-}
-
-function unauthorized() {
-    return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
-}
-
 // ── GET ───────────────────────────────────────────────────────────
 export async function GET(req: NextRequest) {
-    if (!checkAdminAuth(req)) return unauthorized();
+    const guard = adminGuard(req);
+    if (guard) return guard;
     try {
         const sb = getAdminSupabase();
         // tenants tablosunu kullan, client_name ve user_email olarak alias ver
@@ -65,7 +57,8 @@ export async function GET(req: NextRequest) {
 
 // ── POST ──────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
-    if (!checkAdminAuth(req)) return unauthorized();
+    const guard = adminGuard(req);
+    if (guard) return guard;
     try {
         const body = await req.json();
         // company_name ve license_key zorunlu
@@ -123,7 +116,8 @@ export async function POST(req: NextRequest) {
 
 // ── PATCH ────────────────────────────────────────────────────────
 export async function PATCH(req: NextRequest) {
-    if (!checkAdminAuth(req)) return unauthorized();
+    const guard = adminGuard(req);
+    if (guard) return guard;
     const id = req.nextUrl.searchParams.get("id");
     if (!id) return NextResponse.json({ error: "id zorunlu" }, { status: 400 });
     try {
@@ -173,7 +167,8 @@ export async function PATCH(req: NextRequest) {
 
 // ── DELETE ────────────────────────────────────────────────────────
 export async function DELETE(req: NextRequest) {
-    if (!checkAdminAuth(req)) return unauthorized();
+    const guard = adminGuard(req);
+    if (guard) return guard;
     const id = req.nextUrl.searchParams.get("id");
     if (!id) return NextResponse.json({ error: "id zorunlu" }, { status: 400 });
     try {
