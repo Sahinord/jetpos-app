@@ -141,7 +141,16 @@ export function TenantProvider({ children }: { children: ReactNode }) {
             const { data, error } = await Promise.race([rpcPromise, timeoutPromise]) as any;
 
             if (error || !data) {
-                console.error("❌ [TenantContext] License validation failed:", error);
+                console.error("❌ [TenantContext] License validation failed. Details:", {
+                    error,
+                    errorMessage: error?.message,
+                    errorCode: error?.code,
+                    errorDetails: error?.details,
+                    errorHint: error?.hint,
+                    data,
+                    savedTenantId,
+                    savedLicenseKey
+                });
                 if (!data && !error) {
                     console.log("🗑️ [TenantContext] Tenant not found, clearing state.");
                     localStorage.removeItem('licenseKey');

@@ -9,7 +9,30 @@ if (typeof window !== 'undefined') {
     console.log("🌐 [Supabase] URL initialized:", supabaseUrl);
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Get initial values from localStorage if available
+const getInitialHeaders = () => {
+    if (typeof window === 'undefined') return {};
+    return {
+        'x-tenant-id': localStorage.getItem('currentTenantId') || '',
+        'x-license-key': localStorage.getItem('licenseKey') || ''
+    };
+};
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    global: {
+        headers: getInitialHeaders()
+    }
+});
+
+if (typeof window !== 'undefined') {
+    // Expose a helper to update headers dynamically
+    (supabase as any).updateRLSHeaders = (tenantId: string, licenseKey: string) => {
+        if (supabase.rest) {
+            supabase.rest.headers['x-tenant-id'] = tenantId;
+            supabase.rest.headers['x-license-key'] = licenseKey;
+        }
+    };
+}
 
 /**
  * Tenant ID'yi RLS için set et
@@ -17,9 +40,15 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
  */
 export async function setCurrentTenant(tenantId: string) {
     try {
+        if (typeof window !== 'undefined') {
+            const licenseKey = localStorage.getItem('licenseKey') || '';
+            (supabase as any).updateRLSHeaders(tenantId, licenseKey);
+        }
+
         const { error } = await supabase.rpc('set_current_tenant', {
             tenant_id: tenantId
         });
+
 
         if (error) {
             console.error('Failed to set tenant context:', error);
