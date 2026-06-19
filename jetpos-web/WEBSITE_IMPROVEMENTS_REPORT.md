@@ -184,7 +184,9 @@
 ### 📊 Accessibility Score
 
 - **Before**: ~60/100 (Major issues)
-- **After**: ~95/100 (WCAG 2.1 AA compliant)
+- **After**: Henüz doğrulanmadı — Lighthouse/axe ile gerçek audit gerekiyor
+
+> ⚠️ Bu bölüm daha önce "~95/100 (WCAG 2.1 AA compliant)" olarak belirtilmişti ancak gerçek bir audit aracıyla doğrulanmamıştı.
 
 ### 🎨 Design Score
 

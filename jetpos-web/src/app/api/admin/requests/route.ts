@@ -10,7 +10,7 @@ function getAdminSupabase() {
 
 function checkAdminAuth(req: NextRequest): boolean {
     const token = req.headers.get("x-admin-token");
-    const expected = process.env.ADMIN_SECRET_TOKEN || process.env.NEXT_PUBLIC_ADMIN_PASSWORD;
+    const expected = process.env.ADMIN_SECRET_TOKEN;
     return !!token && token === expected;
 }
 

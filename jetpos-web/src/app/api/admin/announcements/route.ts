@@ -9,7 +9,7 @@ function getAdminSupabase() {
 
 function checkAdminAuth(req: NextRequest) {
     const token = req.headers.get("x-admin-token");
-    return token === (process.env.ADMIN_SECRET_TOKEN || process.env.NEXT_PUBLIC_ADMIN_PASSWORD);
+    return !!token && token === process.env.ADMIN_SECRET_TOKEN;
 }
 
 export async function GET(req: NextRequest) {

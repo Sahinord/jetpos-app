@@ -12,8 +12,6 @@ import {
 
 import { supabase } from "@/lib/supabase";
 
-const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "jetpos2025";
-
 // Güvenli admin fetch â€“ service role key server'da kalÄ±r
 async function adminFetch(path: string, options: RequestInit = {}) {
     const token = sessionStorage.getItem("jetpos_admin_token") || "";
@@ -428,15 +426,26 @@ export default function AdminPage() {
         } finally { setUpdatingId(null); }
     };
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (password === ADMIN_PASSWORD) {
-            setAuthed(true);
-            // Token'Ä± session'a kaydet â€“ API route'lar bunu x-admin-token ile kullanacak
-            sessionStorage.setItem("jetpos_admin_auth", "true");
-            sessionStorage.setItem("jetpos_admin_token", ADMIN_PASSWORD);
-            loadAll();
-        } else {
+        try {
+            const res = await fetch("/api/admin/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ password }),
+            });
+            if (res.ok) {
+                setAuthed(true);
+                // Token'Ä± session'a kaydet â€“ API route'lar bunu x-admin-token ile kullanacak.
+                // Åifre artÄ±k client koduna gÃ¶mÃ¼lÃ¼ deÄŸil, doÄŸrulama server'da yapÄ±ldÄ±.
+                sessionStorage.setItem("jetpos_admin_auth", "true");
+                sessionStorage.setItem("jetpos_admin_token", password);
+                loadAll();
+            } else {
+                setPasswordError(true);
+                setTimeout(() => setPasswordError(false), 2000);
+            }
+        } catch (e) {
             setPasswordError(true);
             setTimeout(() => setPasswordError(false), 2000);
         }
