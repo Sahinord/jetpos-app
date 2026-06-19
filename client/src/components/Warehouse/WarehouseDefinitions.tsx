@@ -61,7 +61,7 @@ export default function WarehouseDefinitions({ onUpdate }: { onUpdate: () => voi
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h3 className="text-lg font-bold text-white uppercase tracking-wider">Depo ve Şube Tanımları</h3>
+                <h3 className="text-lg font-bold text-foreground uppercase tracking-wider">Depo ve Şube Tanımları</h3>
                 {!isAdding && (
                     <button 
                         onClick={() => setIsAdding(true)}
@@ -81,7 +81,7 @@ export default function WarehouseDefinitions({ onUpdate }: { onUpdate: () => voi
                                 <input 
                                     autoFocus
                                     placeholder="Örn: Trendyol Mağazası"
-                                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white focus:border-indigo-500"
+                                    className="w-full px-4 py-2 bg-background border border-border rounded-xl text-foreground focus:border-primary"
                                     value={newWh.name}
                                     onChange={e => setNewWh({...newWh, name: e.target.value})}
                                 />
@@ -90,7 +90,7 @@ export default function WarehouseDefinitions({ onUpdate }: { onUpdate: () => voi
                                 <label className="block text-xs font-bold text-secondary uppercase mb-2">Kod</label>
                                 <input 
                                     placeholder="Örn: TR-01"
-                                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white focus:border-indigo-500 uppercase"
+                                    className="w-full px-4 py-2 bg-background border border-border rounded-xl text-foreground focus:border-primary uppercase"
                                     value={newWh.code}
                                     onChange={e => setNewWh({...newWh, code: e.target.value})}
                                 />
@@ -98,7 +98,7 @@ export default function WarehouseDefinitions({ onUpdate }: { onUpdate: () => voi
                             <div>
                                 <label className="block text-xs font-bold text-secondary uppercase mb-2">Tip</label>
                                 <select 
-                                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white focus:border-indigo-500"
+                                    className="w-full px-4 py-2 bg-background border border-border rounded-xl text-foreground focus:border-primary"
                                     value={newWh.type}
                                     onChange={e => setNewWh({...newWh, type: e.target.value})}
                                 >
@@ -109,7 +109,7 @@ export default function WarehouseDefinitions({ onUpdate }: { onUpdate: () => voi
                             </div>
                             <div className="flex gap-2">
                                 <button onClick={handleSave} className="flex-1 py-2 bg-green-500 hover:bg-green-600 rounded-xl text-white font-bold text-sm">Kaydet</button>
-                                <button onClick={() => setIsAdding(false)} className="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-white font-bold text-sm">Vazgeç</button>
+                                <button onClick={() => setIsAdding(false)} className="flex-1 py-2 bg-muted/50 hover:bg-muted border border-border rounded-xl text-foreground font-bold text-sm">Vazgeç</button>
                             </div>
                         </div>
                     </div>
@@ -133,10 +133,10 @@ export default function WarehouseDefinitions({ onUpdate }: { onUpdate: () => voi
                                     <Trash2 className="w-4 h-4" />
                                 </button>
                             </div>
-                            <h4 className="text-xl font-black text-white uppercase tracking-tighter">{wh.name}</h4>
-                            <p className="text-xs text-secondary font-mono mb-4">{wh.code || 'KODSUZ'}</p>
+                            <h4 className="text-xl font-black text-foreground uppercase tracking-tighter">{wh.name}</h4>
+                            <p className="text-xs text-secondary mt-1">{wh.address || 'Adres belirtilmemiş'}</p>
                             
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 mt-4">
                                 <span className={`text-[10px] uppercase font-black px-2 py-0.5 rounded-full ${
                                     wh.type === 'virtual' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/20' : 
                                     wh.type === 'shelf' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/20' : 

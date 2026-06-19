@@ -1,13 +1,20 @@
 import React from "react";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
-import AppShowcase from "@/components/AppShowcase";
+import TrustBar from "@/components/TrustBar";
+import ShowcaseCards from "@/components/ShowcaseCards";
 import Features from "@/components/Features";
 import ConnectionAnimation from "@/components/ConnectionAnimation";
+import PremiumFeatures from "@/components/PremiumFeatures";
+import SetupSteps from "@/components/SetupSteps";
+import AnalyticsCenter from "@/components/AnalyticsCenter";
+import IndustryCarousel from "@/components/IndustryCarousel";
+import JetKDSSection from "@/components/JetKDSSection";
+import JetQRSection from "@/components/JetQRSection";
 import Integrations from "@/components/Integrations";
 import Testimonials from "@/components/Testimonials";
-import Pricing from "@/components/Pricing";
-import Contact from "@/components/Contact";
+import CallToAction from "@/components/CallToAction";
+import SupportFormSection from "@/components/SupportFormSection";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import StickyBanner from "@/components/StickyBanner";
@@ -22,13 +29,18 @@ export default function Home() {
       <main className="main-canvas" style={{ position: "relative", zIndex: 1, minHeight: "100vh", overflowX: "hidden" }}>
         <Navbar />
         <Hero />
-        <AppShowcase />
-        <Features />
+        <TrustBar />
+        <ShowcaseCards />
         <ConnectionAnimation />
-        <Integrations />
+        <PremiumFeatures />
+        <SetupSteps />
+        <AnalyticsCenter />
+        <JetKDSSection />
+        <JetQRSection />
+        <IndustryCarousel />
         <Testimonials />
-        <Pricing />
-        <Contact />
+        <CallToAction />
+        <SupportFormSection />
         <Footer />
       </main>
       <WhatsAppButton />

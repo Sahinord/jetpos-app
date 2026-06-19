@@ -493,7 +493,7 @@ function OverviewTab({ stats, orders, isConfigured, isSystemLevel, settings, syn
                         <Package className="w-5 h-5 text-orange-500" />
                     </div>
                     <div>
-                        <h3 className="text-sm font-black text-white">Trendyol GO</h3>
+                        <h3 className="text-sm font-black text-foreground">Trendyol GO</h3>
                         <p className="text-[10px] text-secondary/60 font-bold">
                             {settings.isStage ? 'Stage Ortamı' : 'Production'} • {isSystemLevel ? 'Sistem Bazlı' : 'Tenant Bazlı'}
                         </p>
@@ -528,7 +528,7 @@ function OverviewTab({ stats, orders, isConfigured, isSystemLevel, settings, syn
                         <ShoppingCart className="w-16 h-16 text-orange-500" />
                     </div>
                     <p className="text-[10px] text-orange-300/80 font-black uppercase mb-2 tracking-widest">Toplam Sipariş</p>
-                    <p className="text-3xl font-black text-white mb-1">{stats.totalOrders}</p>
+                    <p className="text-3xl font-black text-foreground mb-1">{stats.totalOrders}</p>
                     <p className="text-[10px] text-secondary/50 font-bold">Son {syncDays} gün</p>
                 </div>
 
@@ -569,7 +569,7 @@ function OverviewTab({ stats, orders, isConfigured, isSystemLevel, settings, syn
             {/* Mini Günlük Trend Grafiği */}
             <div className="glass-card !p-6">
                 <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
+                    <h4 className="text-xs font-black text-foreground uppercase tracking-wider flex items-center gap-2">
                         <BarChart3 className="w-4 h-4 text-orange-500" />
                         Son 7 Gün Ciro Trendi
                     </h4>
@@ -600,7 +600,7 @@ function OverviewTab({ stats, orders, isConfigured, isSystemLevel, settings, syn
                 <button
                     onClick={() => handleSyncOrders(syncDays)}
                     disabled={syncing || !isConfigured}
-                    className="flex items-center justify-center gap-3 px-5 py-4 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 rounded-2xl text-white font-black transition-all active:scale-[0.98] disabled:opacity-50 shadow-xl shadow-orange-500/20"
+                    className="flex items-center justify-center gap-3 px-5 py-4 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 rounded-2xl text-primary-foreground font-black transition-all active:scale-[0.98] disabled:opacity-50 shadow-xl shadow-orange-500/20"
                 >
                     <RefreshCw className={`w-5 h-5 ${syncing ? 'animate-spin' : ''}`} />
                     <span className="tracking-wide">{syncing ? 'SENKRONİZE EDİLİYOR...' : 'SİPARİŞLERİ ÇEK'}</span>
@@ -608,7 +608,7 @@ function OverviewTab({ stats, orders, isConfigured, isSystemLevel, settings, syn
                 <button
                     onClick={handleSyncStock}
                     disabled={syncing || !isConfigured}
-                    className="flex items-center justify-center gap-3 px-5 py-4 bg-slate-900 hover:bg-slate-800 border border-white/5 hover:border-orange-500/30 rounded-2xl text-white font-black transition-all disabled:opacity-50 active:scale-[0.99]"
+                    className="flex items-center justify-center gap-3 px-5 py-4 bg-muted/50 hover:bg-muted border border-border hover:border-orange-500/30 rounded-2xl text-foreground font-black transition-all disabled:opacity-50 active:scale-[0.99]"
                 >
                     <Package className="w-5 h-5 text-orange-500" />
                     <span>STOKLARI GÜNCELLE</span>
@@ -619,7 +619,7 @@ function OverviewTab({ stats, orders, isConfigured, isSystemLevel, settings, syn
             {orders.length > 0 && (
                 <div className="glass-card !p-6">
                     <div className="flex items-center justify-between mb-4">
-                        <h4 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
+                        <h4 className="text-xs font-black text-foreground uppercase tracking-wider flex items-center gap-2">
                             <Zap className="w-4 h-4 text-orange-500" />
                             Son Siparişler
                         </h4>
@@ -635,7 +635,7 @@ function OverviewTab({ stats, orders, isConfigured, isSystemLevel, settings, syn
                                         #{order.order_number?.toString().slice(-6)}
                                     </span>
                                     <div>
-                                        <p className="text-xs font-bold text-white group-hover:text-orange-400 transition-colors">{order.customer_name}</p>
+                                        <p className="text-xs font-bold text-foreground group-hover:text-orange-400 transition-colors">{order.customer_name}</p>
                                         <p className="text-[10px] text-secondary/50">
                                             {new Date(order.created_at).toLocaleString('tr-TR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                                         </p>
@@ -643,7 +643,7 @@ function OverviewTab({ stats, orders, isConfigured, isSystemLevel, settings, syn
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <OrderStatusBadge status={order.status} />
-                                    <span className="text-sm font-black text-white">{order.total_price} ₺</span>
+                                    <span className="text-sm font-black text-foreground">{order.total_price} ₺</span>
                                 </div>
                             </div>
                         ))}
@@ -706,7 +706,7 @@ function OrdersTab({ orders, syncDays, setSyncDays, fetchOrders, handleSyncOrder
                                 setSyncDays(d);
                                 fetchOrders(d);
                             }}
-                            className={`px-4 py-2 rounded-lg text-xs font-black transition-all ${syncDays === d ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' : 'text-secondary hover:text-white hover:bg-white/5'}`}
+                            className={`px-4 py-2 rounded-lg text-xs font-black transition-all ${syncDays === d ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' : 'text-secondary hover:text-foreground hover:bg-muted'}`}
                         >
                             {d === 1 ? '24 Saat' : `${d} Gün`}
                         </button>
@@ -730,7 +730,7 @@ function OrdersTab({ orders, syncDays, setSyncDays, fetchOrders, handleSyncOrder
                         onClick={() => setStatusFilter(s.key)}
                         className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all border ${statusFilter === s.key
                             ? 'bg-orange-500/10 border-orange-500/30 text-orange-400'
-                            : 'bg-white/[0.02] border-white/5 text-secondary hover:text-white hover:bg-white/5'}`}
+                            : 'bg-background border-border text-secondary hover:text-foreground hover:bg-muted'}`}
                     >
                         <s.icon className="w-3.5 h-3.5" />
                         {s.label}
@@ -751,7 +751,7 @@ function OrdersTab({ orders, syncDays, setSyncDays, fetchOrders, handleSyncOrder
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                     placeholder="Sipariş no veya müşteri adı ile ara..."
-                    className="w-full bg-white/[0.02] border border-white/5 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder:text-secondary/30 focus:border-orange-500/30 outline-none transition-all"
+                    className="w-full bg-background border border-border rounded-xl pl-11 pr-4 py-3 text-sm text-foreground placeholder:text-secondary/30 focus:border-orange-500/30 outline-none transition-all"
                 />
             </div>
 
@@ -777,7 +777,7 @@ function OrdersTab({ orders, syncDays, setSyncDays, fetchOrders, handleSyncOrder
                             {/* Müşteri ve Ürünler */}
                             <div className="flex items-end justify-between">
                                 <div className="flex-1">
-                                    <p className="text-sm font-bold text-white mb-2">{order.customer_name}</p>
+                                    <p className="text-sm font-bold text-foreground mb-2">{order.customer_name}</p>
                                     <div className="space-y-1.5">
                                         {order.items && Array.isArray(order.items) && order.items.slice(0, 4).map((item: any, idx: number) => {
                                             const name = item.product?.productSaleName || item.product?.name || item.productName || item.name || item.itemName || item.label || 'İsimsiz Ürün';
@@ -801,7 +801,7 @@ function OrdersTab({ orders, syncDays, setSyncDays, fetchOrders, handleSyncOrder
                                 </div>
                                 <div className="text-right ml-4">
                                     <p className="text-[9px] uppercase tracking-widest font-black text-secondary/50 mb-1">Toplam</p>
-                                    <p className="text-xl font-black text-white">{order.total_price} <span className="text-xs text-orange-400">₺</span></p>
+                                    <p className="text-xl font-black text-foreground">{order.total_price} <span className="text-xs text-orange-400">₺</span></p>
                                 </div>
                             </div>
                         </div>
@@ -883,7 +883,7 @@ function FinanceTab({ orders, syncDays }: { orders: any[]; syncDays: number }) {
                         </div>
                         <p className="text-[10px] text-emerald-300/80 font-black uppercase tracking-widest">Brüt Ciro</p>
                     </div>
-                    <p className="text-2xl font-black text-white">
+                    <p className="text-2xl font-black text-foreground">
                         {analytics.grossRevenue.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                         <span className="text-sm text-emerald-500/60 ml-1">₺</span>
                     </p>
@@ -927,7 +927,7 @@ function FinanceTab({ orders, syncDays }: { orders: any[]; syncDays: number }) {
             <div className="grid grid-cols-3 gap-4">
                 <div className="glass-card !p-4 text-center">
                     <p className="text-[10px] text-secondary/50 font-black uppercase mb-1">Ortalama Sepet</p>
-                    <p className="text-lg font-black text-white">{analytics.avgOrderValue.toFixed(0)} <span className="text-xs text-orange-400">₺</span></p>
+                    <p className="text-lg font-black text-foreground">{analytics.avgOrderValue.toFixed(0)} <span className="text-xs text-orange-400">₺</span></p>
                 </div>
                 <div className="glass-card !p-4 text-center">
                     <p className="text-[10px] text-secondary/50 font-black uppercase mb-1">İptal Oranı</p>
@@ -944,7 +944,7 @@ function FinanceTab({ orders, syncDays }: { orders: any[]; syncDays: number }) {
             {/* 14 Günlük Ciro Trendi */}
             <div className="glass-card !p-6">
                 <div className="flex items-center justify-between mb-6">
-                    <h4 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
+                    <h4 className="text-xs font-black text-foreground uppercase tracking-wider flex items-center gap-2">
                         <TrendingUp className="w-4 h-4 text-orange-500" />
                         14 Günlük Ciro Trendi
                     </h4>
@@ -960,7 +960,7 @@ function FinanceTab({ orders, syncDays }: { orders: any[]; syncDays: number }) {
                                 />
                                 {/* Hover Tooltip */}
                                 <div className="absolute -top-14 left-1/2 -translate-x-1/2 bg-slate-900 border border-white/10 rounded-lg px-2 py-1 opacity-0 group-hover:opacity-100 transition-all pointer-events-none whitespace-nowrap z-10 shadow-xl">
-                                    <p className="text-[9px] text-white font-bold">{d.revenue.toFixed(0)} ₺</p>
+                                    <p className="text-[9px] text-foreground font-bold">{d.revenue.toFixed(0)} ₺</p>
                                     <p className="text-[8px] text-secondary/50">{d.orders} sipariş</p>
                                 </div>
                             </div>
@@ -986,7 +986,7 @@ function SettingsTab({ settings, setSettings, handleSaveSettings, handleTestConn
                         {isConfigured ? <CheckCircle className="w-5 h-5 text-emerald-500" /> : <AlertCircle className="w-5 h-5 text-rose-500" />}
                     </div>
                     <div>
-                        <p className="text-sm font-black text-white">
+                        <p className="text-sm font-black text-foreground">
                             {isConfigured ? 'Entegrasyon Aktif' : 'Yapılandırma Gerekli'}
                         </p>
                         <p className="text-[10px] text-secondary/50 font-bold">
@@ -1004,7 +1004,7 @@ function SettingsTab({ settings, setSettings, handleSaveSettings, handleTestConn
 
             {/* API Credentials Form */}
             <div className="glass-card !p-6 space-y-5">
-                <h4 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2 mb-4">
+                <h4 className="text-xs font-black text-foreground uppercase tracking-wider flex items-center gap-2 mb-4">
                     <Lock className="w-4 h-4 text-orange-500" />
                     API Bağlantı Bilgileri
                 </h4>
@@ -1016,7 +1016,7 @@ function SettingsTab({ settings, setSettings, handleSaveSettings, handleTestConn
                             type="text"
                             value={settings.sellerId}
                             onChange={e => setSettings({ ...settings, sellerId: e.target.value })}
-                            className="w-full bg-slate-950/50 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-white focus:border-orange-500/50 outline-none transition-all"
+                            className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:border-orange-500/50 outline-none transition-all"
                             placeholder="249371"
                         />
                     </div>
@@ -1026,7 +1026,7 @@ function SettingsTab({ settings, setSettings, handleSaveSettings, handleTestConn
                             type="text"
                             value={settings.storeId}
                             onChange={e => setSettings({ ...settings, storeId: e.target.value })}
-                            className="w-full bg-slate-950/50 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-white focus:border-orange-500/50 outline-none transition-all"
+                            className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:border-orange-500/50 outline-none transition-all"
                             placeholder="206054"
                         />
                     </div>
@@ -1038,7 +1038,7 @@ function SettingsTab({ settings, setSettings, handleSaveSettings, handleTestConn
                                 type="text"
                                 value={settings.apiKey}
                                 onChange={e => setSettings({ ...settings, apiKey: e.target.value })}
-                                className="w-full bg-slate-950/50 border border-white/5 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:border-orange-500/50 outline-none transition-all"
+                                className="w-full bg-background border border-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-foreground focus:border-orange-500/50 outline-none transition-all"
                                 placeholder="qMAPJ..."
                             />
                         </div>
@@ -1051,7 +1051,7 @@ function SettingsTab({ settings, setSettings, handleSaveSettings, handleTestConn
                                 type="password"
                                 value={settings.apiSecret}
                                 onChange={e => setSettings({ ...settings, apiSecret: e.target.value })}
-                                className="w-full bg-slate-950/50 border border-white/5 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:border-orange-500/50 outline-none transition-all"
+                                className="w-full bg-background border border-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-foreground focus:border-orange-500/50 outline-none transition-all"
                                 placeholder="••••••••"
                             />
                         </div>
@@ -1062,7 +1062,7 @@ function SettingsTab({ settings, setSettings, handleSaveSettings, handleTestConn
                             type="text"
                             value={settings.agentName}
                             onChange={e => setSettings({ ...settings, agentName: e.target.value })}
-                            className="w-full bg-slate-950/50 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-white focus:border-orange-500/50 outline-none transition-all font-mono"
+                            className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:border-orange-500/50 outline-none transition-all font-mono"
                             placeholder="Trendyol panelindeki Referans Kodunu buraya yapıştırın"
                         />
                     </div>
@@ -1072,7 +1072,7 @@ function SettingsTab({ settings, setSettings, handleSaveSettings, handleTestConn
                             type="text"
                             value={settings.token || ""}
                             onChange={e => setSettings({ ...settings, token: e.target.value })}
-                            className="w-full bg-slate-950/50 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-white focus:border-orange-500/50 outline-none transition-all font-mono"
+                            className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:border-orange-500/50 outline-none transition-all font-mono"
                             placeholder="Trendyol panelindeki Token bilgisini buraya yapıştırın"
                         />
                     </div>
@@ -1081,7 +1081,7 @@ function SettingsTab({ settings, setSettings, handleSaveSettings, handleTestConn
 
             {/* Şalterler */}
             <div className="glass-card !p-6 space-y-5">
-                <h4 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2 mb-4">
+                <h4 className="text-xs font-black text-foreground uppercase tracking-wider flex items-center gap-2 mb-4">
                     <Settings className="w-4 h-4 text-orange-500" />
                     Senkronizasyon Ayarları
                 </h4>
@@ -1092,7 +1092,7 @@ function SettingsTab({ settings, setSettings, handleSaveSettings, handleTestConn
                         <div className="flex items-center gap-3">
                             <Globe className="w-5 h-5 text-amber-500" />
                             <div>
-                                <span className="text-sm font-bold text-white group-hover:text-amber-400 transition-colors">Stage Modu</span>
+                                <span className="text-sm font-bold text-foreground group-hover:text-amber-400 transition-colors">Stage Modu</span>
                                 <p className="text-[10px] text-secondary/50 font-medium">Test ortamı (stageapi.tgoapis.com)</p>
                             </div>
                         </div>
@@ -1112,7 +1112,7 @@ function SettingsTab({ settings, setSettings, handleSaveSettings, handleTestConn
                         <div className="flex items-center gap-3">
                             <Package className="w-5 h-5 text-emerald-500" />
                             <div>
-                                <span className="text-sm font-bold text-white group-hover:text-emerald-400 transition-colors">Stok Senkronizasyonu</span>
+                                <span className="text-sm font-bold text-foreground group-hover:text-emerald-400 transition-colors">Stok Senkronizasyonu</span>
                                 <p className="text-[10px] text-secondary/50 font-medium">Stokları Trendyol'a gönder</p>
                             </div>
                         </div>
@@ -1134,7 +1134,7 @@ function SettingsTab({ settings, setSettings, handleSaveSettings, handleTestConn
                 <button
                     onClick={handleTestConnection}
                     disabled={syncing}
-                    className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 bg-white/5 hover:bg-white/10 border border-white/5 hover:border-emerald-500/30 rounded-2xl text-sm font-bold text-white transition-all disabled:opacity-50"
+                    className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 bg-muted/50 hover:bg-muted border border-border hover:border-emerald-500/30 rounded-2xl text-sm font-bold text-foreground transition-all disabled:opacity-50"
                 >
                     <CheckCircle className="w-5 h-5 text-emerald-500" />
                     Bağlantıyı Test Et
@@ -1143,7 +1143,7 @@ function SettingsTab({ settings, setSettings, handleSaveSettings, handleTestConn
                 <button
                     onClick={handleSyncStock}
                     disabled={syncing || !isConfigured}
-                    className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 bg-white/5 hover:bg-white/10 border border-white/5 hover:border-orange-500/30 rounded-2xl text-sm font-bold text-white transition-all disabled:opacity-50"
+                    className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 bg-muted/50 hover:bg-muted border border-border hover:border-orange-500/30 rounded-2xl text-sm font-bold text-foreground transition-all disabled:opacity-50"
                 >
                     <Package className="w-5 h-5 text-orange-500" />
                     Stokları Güncelle
@@ -1152,7 +1152,7 @@ function SettingsTab({ settings, setSettings, handleSaveSettings, handleTestConn
                 <button
                     onClick={handleSaveSettings}
                     disabled={loading}
-                    className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 rounded-2xl text-sm font-black text-white transition-all shadow-xl shadow-orange-500/20 disabled:opacity-50"
+                    className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 rounded-2xl text-sm font-black text-foreground transition-all shadow-xl shadow-orange-500/20 disabled:opacity-50"
                 >
                     <Save className="w-5 h-5" />
                     Ayarları Kaydet

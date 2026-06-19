@@ -23,6 +23,8 @@ const FEATURE_GROUPS = [
             { id: "barkodlu_satis", name: "Modern Barkod Sistemi", price: 100, description: "Tüm barkod türlerini ve el terminallerini destekler." },
             { id: "mobil_barkod", name: "Mobil Satış Paneli", price: 120, description: "Telefon kamerasını barkod okuyucu olarak kullanma." },
             { id: "magaza_takip", name: "Merkezi Yönetim", price: 200, description: "Tüm şubeleri tek panelden anlık izleme." },
+            { id: "qr_menu", name: "QR Menü ve Sipariş", price: 150, description: "Masanızdan temassız sipariş ve ödeme altyapısı." },
+            { id: "kds_mutfak", name: "Mutfak Ekranı (KDS)", price: 200, description: "Siparişleri anlık olarak mutfağa ileten dijital ekran." },
         ]
     },
     {
@@ -47,11 +49,12 @@ const FEATURE_GROUPS = [
     },
     {
         id: "ai",
-        title: "Yapay Zeka (JetAI)",
+        title: "Yapay Zeka (JetAI) & Analitik",
         icon: Brain,
         features: [
             { id: "ai_fiyat", name: "AI Fiyat Analizi", price: 300, description: "Rakiplerle fiyat karşılaştırması yapan AI modülü." },
             { id: "ai_talep", name: "Tahminleme Algoritması", price: 250, description: "Gelecek hafta ne satacağınızı tahmin eder." },
+            { id: "gelismis_analitik", name: "Gelişmiş Analitik", price: 200, description: "Detaylı grafikler ve performans raporları." },
         ]
     },
     {
@@ -60,7 +63,7 @@ const FEATURE_GROUPS = [
         icon: Truck,
         features: [
             { id: "getir_sync", name: "Online Sipariş Sync", price: 200, description: "Getir, Yemeksepeti ve Trendyol Yemek." },
-            { id: "pazaryeri_sync", name: "E-Ticaret Köprüsü", price: 200, description: "Trendyol, Hepsiburada ve N11 stok senkronizasyonu." },
+            { id: "pazaryeri_sync", name: "E-Ticaret Köprüsü", price: 200, description: "Trendyol, İkas, Hepsiburada ve N11 entegrasyonu." },
         ]
     }
 ];
@@ -135,7 +138,7 @@ export default function CustomPackagePage() {
     }, [selectedFeatures, counts, isYearly]);
 
     return (
-        <div style={{ background: "#111827", color: "white", minHeight: "100vh", position: "relative" }}>
+        <div style={{ background: "#FAFBFC", color: "#111827", minHeight: "100vh", position: "relative" }}>
             <div className="site-bg" />
             <Navbar />
 
@@ -145,11 +148,11 @@ export default function CustomPackagePage() {
                     {/* Back Link */}
                     <Link href="/fiyatlandirma" style={{
                         display: "inline-flex", alignItems: "center", gap: "0.5rem",
-                        color: "rgba(255,255,255,0.4)", textDecoration: "none",
+                        color: "#6B7280", textDecoration: "none", fontWeight: 600,
                         fontSize: "0.9rem", marginBottom: "2rem", transition: "color 0.2s"
                     }}
-                        onMouseEnter={e => e.currentTarget.style.color = "white"}
-                        onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.4)"}
+                        onMouseEnter={e => e.currentTarget.style.color = "#111827"}
+                        onMouseLeave={e => e.currentTarget.style.color = "#6B7280"}
                     >
                         <ArrowLeft style={{ width: "1rem", height: "1rem" }} />
                         Geri Dön
@@ -166,18 +169,18 @@ export default function CustomPackagePage() {
                             >
                                 <h1 style={{
                                     fontSize: "clamp(2rem, 5vw, 3.5rem)", fontWeight: 900, 
-                                    lineHeight: 1.1, marginBottom: "1.25rem", letterSpacing: "-0.04em"
+                                    lineHeight: 1.1, marginBottom: "1.25rem", letterSpacing: "-0.04em", color: "#111827"
                                 }}>
                                     Kendi Planını <span className="holographic-text">Oluştur</span>
                                 </h1>
-                                <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "1.1rem", maxWidth: "600px" }}>
+                                <p style={{ color: "#4B5563", fontSize: "1.1rem", maxWidth: "600px" }}>
                                     İşletmenizin ihtiyacı olmayan hiçbir özelliğe para ödemeyin. Sadece seçtiklerinizi kullanın.
                                 </p>
                             </motion.div>
 
                             {/* Preset Selectors */}
                             <div style={{ marginBottom: "3.5rem" }}>
-                                <p style={{ fontSize: "0.80rem", fontWeight: 700, color: "rgba(255,255,255,0.25)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "1.25rem" }}>
+                                <p style={{ fontSize: "0.80rem", fontWeight: 700, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "1.25rem" }}>
                                     Sektörel Şablonlar
                                 </p>
                                 <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
@@ -189,14 +192,15 @@ export default function CustomPackagePage() {
                                             onClick={() => applyPreset(p.features)}
                                             className="preset-btn"
                                             style={{
-                                                background: "rgba(255,255,255,0.03)",
-                                                border: "1px solid rgba(255,255,255,0.08)",
+                                                background: "white",
+                                                border: "1px solid #E5E7EB",
                                                 padding: "0.875rem 1.5rem",
                                                 borderRadius: "1.25rem",
-                                                color: "white",
+                                                color: "#111827",
                                                 display: "flex", alignItems: "center", gap: "0.875rem",
                                                 cursor: "pointer", fontSize: "0.95rem", fontWeight: 600,
-                                                transition: "all 0.3s"
+                                                transition: "all 0.3s",
+                                                boxShadow: "0 2px 10px rgba(0,0,0,0.02)"
                                             }}
                                         >
                                             <p.icon style={{ width: "1.15rem", height: "1.15rem", color: "#7886C7" }} />
@@ -227,21 +231,21 @@ export default function CustomPackagePage() {
                                                         whileHover={{ scale: 1.02 }}
                                                         className="feature-card"
                                                         style={{
-                                                            background: isSelected ? "rgba(120, 134, 199, 0.06)" : "rgba(255,255,255,0.02)",
-                                                            border: `1px solid ${isSelected ? "rgba(120, 134, 199, 0.4)" : "rgba(255,255,255,0.06)"}`,
+                                                            background: isSelected ? "rgba(120, 134, 199, 0.04)" : "white",
+                                                            border: `1px solid ${isSelected ? "#7886C7" : "#E5E7EB"}`,
                                                             borderRadius: "1.5rem",
                                                             padding: "1.75rem",
                                                             cursor: "pointer",
                                                             transition: "all 0.3s ease",
                                                             position: "relative",
-                                                            boxShadow: isSelected ? "0 10px 40px -10px rgba(120, 134, 199, 0.15)" : "none"
+                                                            boxShadow: isSelected ? "0 10px 40px -10px rgba(120, 134, 199, 0.15)" : "0 4px 12px rgba(0,0,0,0.02)"
                                                         }}
                                                     >
                                                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.875rem" }}>
-                                                            <span style={{ fontWeight: 800, color: isSelected ? "white" : "rgba(255,255,255,0.85)", fontSize: "1.05rem" }}>{feature.name}</span>
+                                                            <span style={{ fontWeight: 800, color: isSelected ? "#111827" : "#374151", fontSize: "1.05rem" }}>{feature.name}</span>
                                                             <div style={{
                                                                 width: "1.5rem", height: "1.5rem", borderRadius: "50%",
-                                                                border: `2px solid ${isSelected ? "#7886C7" : "rgba(255,255,255,0.15)"}`,
+                                                                border: `2px solid ${isSelected ? "#7886C7" : "#E5E7EB"}`,
                                                                 display: "flex", alignItems: "center", justifyContent: "center",
                                                                 background: isSelected ? "#7886C7" : "transparent",
                                                                 transition: "all 0.3s"
@@ -249,12 +253,12 @@ export default function CustomPackagePage() {
                                                                 {isSelected && <Check style={{ width: "0.9rem", height: "0.9rem", color: "white" }} />}
                                                             </div>
                                                         </div>
-                                                        <p style={{ fontSize: "0.875rem", color: "rgba(255,255,255,0.35)", lineHeight: 1.6, marginBottom: "1.5rem" }}>
+                                                        <p style={{ fontSize: "0.875rem", color: "#6B7280", lineHeight: 1.6, marginBottom: "1.5rem" }}>
                                                             {feature.description}
                                                         </p>
                                                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                                                            <span style={{ fontSize: "1.125rem", fontWeight: 800, color: isSelected ? "#7886C7" : "rgba(255,255,255,0.4)" }}>
-                                                                +₺{feature.price} <span style={{ fontSize: "0.75rem", fontWeight: 400 }}>/ ay</span>
+                                                            <span style={{ fontSize: "1.125rem", fontWeight: 800, color: isSelected ? "#7886C7" : "#6B7280" }}>
+                                                                +₺{feature.price} <span style={{ fontSize: "0.75rem", fontWeight: 500 }}>/ ay</span>
                                                             </span>
                                                         </div>
                                                     </motion.div>
@@ -276,60 +280,61 @@ export default function CustomPackagePage() {
                                     <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
                                         {ADDONS.map((addon) => (
                                             <div key={addon.id} className="addon-row" style={{
-                                                background: "rgba(255,255,255,0.025)",
-                                                border: "1px solid rgba(255,255,255,0.06)",
+                                                background: "white",
+                                                border: "1px solid #E5E7EB",
                                                 borderRadius: "1.5rem",
                                                 padding: "1.25rem 1.75rem",
                                                 display: "flex",
                                                 alignItems: "center",
                                                 gap: "1.5rem",
-                                                transition: "all 0.3s"
+                                                transition: "all 0.3s",
+                                                boxShadow: "0 4px 12px rgba(0,0,0,0.02)"
                                             }}>
                                                 <div style={{
                                                     width: "3rem", height: "3rem", borderRadius: "1rem",
-                                                    background: "rgba(167,139,250,0.08)", display: "flex", alignItems: "center", justifyContent: "center"
+                                                    background: "rgba(167,139,250,0.1)", display: "flex", alignItems: "center", justifyContent: "center"
                                                 }}>
                                                     <addon.icon style={{ width: "1.375rem", height: "1.375rem", color: "#a78bfa" }} />
                                                 </div>
                                                 <div style={{ flex: 1 }}>
-                                                    <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "white", marginBottom: "0.25rem" }}>{addon.name}</h3>
-                                                    <p style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.35)", fontWeight: 500 }}>
-                                                        ₺{addon.pricePerUnit} <span style={{ opacity: 0.6 }}>/ her bir {addon.unit}</span>
+                                                    <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "#111827", marginBottom: "0.25rem" }}>{addon.name}</h3>
+                                                    <p style={{ fontSize: "0.85rem", color: "#6B7280", fontWeight: 500 }}>
+                                                        ₺{addon.pricePerUnit} <span style={{ opacity: 0.8 }}>/ her bir {addon.unit}</span>
                                                     </p>
                                                 </div>
                                                 <div style={{ 
                                                     display: "flex", alignItems: "center", gap: "1rem", 
-                                                    background: "rgba(0,0,0,0.3)", padding: "0.5rem", borderRadius: "1rem",
-                                                    border: "1px solid rgba(255,255,255,0.05)"
+                                                    background: "#F3F4F6", padding: "0.5rem", borderRadius: "1rem",
+                                                    border: "1px solid #E5E7EB"
                                                 }}>
                                                     <button
                                                         onClick={() => updateCount(addon.id, -1)}
                                                         style={{
-                                                            width: "2.5rem", height: "2.5rem", borderRadius: "0.75rem", border: "none",
-                                                            background: "rgba(255,255,255,0.05)", color: "white", cursor: "pointer",
+                                                            width: "2.5rem", height: "2.5rem", borderRadius: "0.75rem", border: "1px solid #E5E7EB",
+                                                            background: "white", color: "#374151", cursor: "pointer",
                                                             display: "flex", alignItems: "center", justifyContent: "center",
                                                             transition: "all 0.2s"
                                                         }}
-                                                        onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
-                                                        onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}
+                                                        onMouseEnter={e => e.currentTarget.style.background = "#F9FAFB"}
+                                                        onMouseLeave={e => e.currentTarget.style.background = "white"}
                                                     >
                                                         <Minus style={{ width: "1.1rem", height: "1.1rem" }} />
                                                     </button>
                                                     <div style={{ minWidth: "2.5rem", textAlign: "center" }}>
-                                                        <span style={{ fontSize: "1.25rem", fontWeight: 900, color: counts[addon.id] > 0 ? "#7886C7" : "white" }}>
+                                                        <span style={{ fontSize: "1.25rem", fontWeight: 900, color: counts[addon.id] > 0 ? "#7886C7" : "#111827" }}>
                                                             {counts[addon.id]}
                                                         </span>
                                                     </div>
                                                     <button
                                                         onClick={() => updateCount(addon.id, 1)}
                                                         style={{
-                                                            width: "2.5rem", height: "2.5rem", borderRadius: "0.75rem", border: "none",
-                                                            background: "rgba(255,255,255,0.05)", color: "white", cursor: "pointer",
+                                                            width: "2.5rem", height: "2.5rem", borderRadius: "0.75rem", border: "1px solid #E5E7EB",
+                                                            background: "white", color: "#374151", cursor: "pointer",
                                                             display: "flex", alignItems: "center", justifyContent: "center",
                                                             transition: "all 0.2s"
                                                         }}
-                                                        onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
-                                                        onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}
+                                                        onMouseEnter={e => e.currentTarget.style.background = "#F9FAFB"}
+                                                        onMouseLeave={e => e.currentTarget.style.background = "white"}
                                                     >
                                                         <Plus style={{ width: "1.1rem", height: "1.1rem" }} />
                                                     </button>
@@ -343,18 +348,18 @@ export default function CustomPackagePage() {
 
                         {/* Sticky Sidebar */}
                         <div className="sidebar-container">
-                            <motion.div
-                                layout
-                                className="receipt-card"
-                                style={{
-                                    background: "rgba(10, 15, 30, 0.4)",
-                                    backdropFilter: "blur(32px)",
-                                    border: "1px solid rgba(255,255,255,0.1)",
-                                    borderRadius: "2.5rem",
-                                    padding: "2.5rem",
-                                    boxShadow: "0 40px 100px -20px rgba(0,0,0,0.7), inset 0 0 0 1px rgba(255,255,255,0.05)"
-                                }}
-                            >
+                                <motion.div
+                                    layout
+                                    className="receipt-card"
+                                    style={{
+                                        background: "#111827",
+                                        border: "1px solid rgba(255,255,255,0.1)",
+                                        borderRadius: "2.5rem",
+                                        padding: "2.5rem",
+                                        boxShadow: "0 20px 40px rgba(0,0,0,0.1)",
+                                        color: "white"
+                                    }}
+                                >
                                 <h2 style={{ fontSize: "1.5rem", fontWeight: 900, marginBottom: "2rem", display: "flex", alignItems: "center", gap: "1rem" }}>
                                     <ShoppingCart style={{ width: "1.5rem", height: "1.5rem", color: "#7886C7" }} />
                                     Paket Özeti
@@ -466,11 +471,11 @@ export default function CustomPackagePage() {
 
                             <div style={{
                                 marginTop: "1.5rem", padding: "1.5rem", borderRadius: "1.75rem",
-                                background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)",
-                                display: "flex", gap: "1rem"
+                                background: "white", border: "1px solid #E5E7EB",
+                                display: "flex", gap: "1rem", boxShadow: "0 4px 12px rgba(0,0,0,0.02)"
                             }}>
                                 <Info style={{ width: "1.5rem", height: "1.5rem", color: "#7886C7", flexShrink: 0 }} />
-                                <p style={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.35)", lineHeight: 1.5 }}>
+                                <p style={{ fontSize: "0.9rem", color: "#4B5563", lineHeight: 1.5 }}>
                                     Hangi özelliklerin size uygun olduğundan emin değil misiniz? Uzmanlarımızla <b>hemen görüşün.</b>
                                 </p>
                             </div>

@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Image from "next/image";
 
+import { Package } from "lucide-react";
+
 const features = [
     {
         icon: "/fatura.png",
@@ -10,7 +12,7 @@ const features = [
         desc: "E-Fatura ve E-Arşiv süreçlerinizi dijital ortamda sorunsuz yönetin.",
     },
     {
-        icon: "/calendar.png",
+        icon: Package,
         title: "Stok Takibi",
         desc: "Perakende işletmenizde stok hareketlerinizi anlık olarak takip edin ve optimize edin.",
     },
@@ -58,7 +60,11 @@ const BORDER = "rgba(120, 134, 199, 0.35)";
 export default function Features() {
     const [hovered, setHovered] = useState<number | null>(null);
 
-    const renderCard = (f: typeof features[0], i: number) => (
+    const renderCard = (f: typeof features[0], i: number) => {
+        const isStringIcon = typeof f.icon === 'string';
+        const IconComponent = !isStringIcon ? f.icon as React.ElementType : null;
+        
+        return (
         <div
             key={i}
             onMouseEnter={() => setHovered(i)}
@@ -102,19 +108,33 @@ export default function Features() {
                 backgroundImage: `radial-gradient(ellipse at center, rgba(120, 134, 199, 0.06) 0%, transparent 70%)`,
                 borderRadius: "1rem",
             }}>
-                <Image
-                    src={f.icon}
-                    alt={f.title}
-                    width={180}
-                    height={180}
-                    style={{
-                        objectFit: "contain",
+                {isStringIcon ? (
+                    <Image
+                        src={f.icon as string}
+                        alt={f.title}
+                        width={180}
+                        height={180}
+                        style={{
+                            objectFit: "contain",
+                            width: "180px",
+                            height: "180px",
+                            transform: hovered === i ? "scale(1.06) translateY(-2px)" : "scale(1)",
+                            transition: "all 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
+                        }}
+                    />
+                ) : (
+                    <div style={{
                         width: "180px",
                         height: "180px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
                         transform: hovered === i ? "scale(1.06) translateY(-2px)" : "scale(1)",
                         transition: "all 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
-                    }}
-                />
+                    }}>
+                        {IconComponent && <IconComponent style={{ width: "80px", height: "80px", color: "#7886C7", filter: hovered === i ? "drop-shadow(0 4px 12px rgba(120, 134, 199, 0.3))" : "none", transition: "all 0.3s" }} />}
+                    </div>
+                )}
             </div>
 
             {/* Text */}
@@ -138,7 +158,8 @@ export default function Features() {
                 </p>
             </div>
         </div>
-    );
+        );
+    };
 
     return (
         <section 

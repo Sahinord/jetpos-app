@@ -13,12 +13,11 @@ const navLinks = [
         items: [
             { href: "/urunler/jetpos", label: "JetPOS", desc: "Satış & Ön Muhasebe Sistemi" },
             { href: "/urunler/jetkds", label: "JetKDS", desc: "Akıllı Mutfak Ekranı (KDS)" },
-            { href: "/urunler/jetqr", label: "JetQR", desc: "Dijital QR Menü & Sipariş" },
+            { href: "/jetqr", label: "JetQR", desc: "Dijital QR Menü & Sipariş" },
         ]
     },
     { href: "/fiyatlandirma", label: "Fiyatlandırma" },
     { href: "/fiyatlandirma/ozellestir", label: "Paketini Oluştur" },
-    { href: "/demo", label: "Ücretsiz Demo" },
     { href: "/iletisim", label: "İletişim" },
 ];
 
@@ -128,7 +127,8 @@ export default function Navbar() {
                                                     transition: "all 0.2s ease",
                                                     display: "flex",
                                                     alignItems: "center",
-                                                    gap: "0.25rem"
+                                                    gap: "0.25rem",
+                                                    whiteSpace: "nowrap"
                                                 }}
                                                 onMouseEnter={e => {
                                                     if (!isActive) {
@@ -154,18 +154,18 @@ export default function Navbar() {
                                                     left: "50%",
                                                     transform: "translateX(-50%)",
                                                     paddingTop: "0.5rem",
-                                                    width: "280px"
+                                                    width: "280px",
+                                                    zIndex: 100
                                                 }}>
                                                     <div style={{
-                                                        background: "rgba(255, 255, 255, 0.95)",
-                                                        backdropFilter: "blur(20px)",
+                                                        background: "#FFFFFF",
                                                         border: "1px solid rgba(120, 134, 199, 0.15)",
                                                         borderRadius: "1rem",
                                                         padding: "0.5rem",
                                                         display: "flex",
                                                         flexDirection: "column",
                                                         gap: "0.25rem",
-                                                        boxShadow: "0 10px 30px rgba(120, 134, 199, 0.08)"
+                                                        boxShadow: "0 10px 40px rgba(120, 134, 199, 0.15)"
                                                     }}>
                                                         {link.items.map((subItem) => (
                                                             <Link
@@ -208,6 +208,7 @@ export default function Navbar() {
                                             background: isActive ? "rgba(120, 134, 199, 0.08)" : "transparent",
                                             border: isActive ? "1px solid rgba(120, 134, 199, 0.15)" : "1px solid transparent",
                                             transition: "all 0.2s ease",
+                                            whiteSpace: "nowrap"
                                         }}
                                         onMouseEnter={e => {
                                             if (!isActive) {
@@ -239,7 +240,8 @@ export default function Navbar() {
                                 fontWeight: 600, fontSize: "0.875rem",
                                 cursor: "pointer", fontFamily: "inherit",
                                 transition: "all 0.2s",
-                                textDecoration: "none"
+                                textDecoration: "none",
+                                whiteSpace: "nowrap"
                             }}
                                 onMouseEnter={e => {
                                     e.currentTarget.style.borderColor = "rgba(120, 134, 199, 0.5)";
@@ -265,7 +267,8 @@ export default function Navbar() {
                                 transition: "all 0.2s",
                                 boxShadow: "0 2px 12px rgba(120, 134, 199, 0.4)",
                                 textDecoration: "none",
-                                display: "inline-flex", alignItems: "center"
+                                display: "inline-flex", alignItems: "center",
+                                whiteSpace: "nowrap"
                             }}
                                 onMouseEnter={(e: React.MouseEvent<HTMLAnchorElement>) => (e.currentTarget.style.boxShadow = "0 4px 20px rgba(120, 134, 199, 0.6)")}
                                 onMouseLeave={(e: React.MouseEvent<HTMLAnchorElement>) => (e.currentTarget.style.boxShadow = "0 2px 12px rgba(120, 134, 199, 0.4)")}
@@ -372,7 +375,7 @@ export default function Navbar() {
             )}
 
             <style>{`
-                @media (max-width: 768px) {
+                @media (max-width: 1024px) {
                     .nav-desktop { display: none !important; }
                     .nav-mobile { display: block !important; }
                 }

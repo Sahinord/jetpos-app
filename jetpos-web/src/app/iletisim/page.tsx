@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { Phone, Mail, MapPin, Send, MessageSquare, Clock, Globe } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import Contact from "@/components/Contact";
+import SupportFormSection from "@/components/SupportFormSection";
 
 export default function ContactPage() {
     return (
@@ -84,9 +84,9 @@ export default function ContactPage() {
                 </div>
             </section>
 
-            {/* Reuse existing Contact component for the form */}
-            <div style={{ paddingBottom: "8rem" }}>
-                <Contact />
+            {/* Use the new SupportFormSection for the form */}
+            <div style={{ paddingBottom: "0" }}>
+                <SupportFormSection />
             </div>
 
             <style>{`

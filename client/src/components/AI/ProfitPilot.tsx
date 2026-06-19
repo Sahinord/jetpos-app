@@ -158,9 +158,9 @@ export default function ProfitPilot() {
             {/* KPI Summary Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-card border border-border p-6 rounded-2xl relative overflow-hidden group hover:border-primary/30 transition-all">
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">GİZLİ KÂR POTANSİYELİ</p>
-                    <h2 className="text-2xl font-bold text-white tracking-tight">₺{analysis.potentialProfit.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}</h2>
-                    <p className="text-[10px] font-medium text-slate-600 mt-2 italic">Mevcut envanterdeki kâr marjı toplamı.</p>
+                    <p className="text-[10px] font-bold text-secondary uppercase tracking-widest mb-1">GİZLİ KÂR POTANSİYELİ</p>
+                    <h2 className="text-2xl font-bold text-foreground tracking-tight">₺{analysis.potentialProfit.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}</h2>
+                    <p className="text-[10px] font-medium text-secondary mt-2 italic">Mevcut envanterdeki kâr marjı toplamı.</p>
                 </div>
                 <div className="bg-card border border-border p-6 rounded-2xl">
                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">DÜŞÜK MARJLI ÜRÜN</p>
@@ -177,7 +177,7 @@ export default function ProfitPilot() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Left: Strategies */}
                 <div className="lg:col-span-2 space-y-4">
-                    <h3 className="text-sm font-bold text-white uppercase tracking-widest px-1">STratejik analİZ SONUÇLARI</h3>
+                    <h3 className="text-sm font-bold text-foreground uppercase tracking-widest px-1">STratejik analİZ SONUÇLARI</h3>
                     <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-xl">
                         <table className="w-full text-left">
                             <thead className="bg-white/[0.02] border-b border-border">
@@ -190,15 +190,15 @@ export default function ProfitPilot() {
                             </thead>
                             <tbody className="divide-y divide-border">
                                 {analysis.lowMarginProducts.map((p: any, i: number) => (
-                                    <tr key={p.id} className="hover:bg-white/[0.01] transition-all group">
+                                    <tr key={p.id} className="hover:bg-muted/30 transition-all group">
                                         <td className="px-6 py-4">
-                                            <p className="font-bold text-white text-sm">{p.name}</p>
+                                            <p className="font-bold text-foreground text-sm">{p.name}</p>
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <span className="text-xs font-bold text-amber-500">%{p.margin}</span>
                                         </td>
-                                        <td className="px-6 py-4 text-center text-xs font-bold text-slate-400">{p.stock_quantity}</td>
-                                        <td className="px-6 py-4 text-right font-bold text-white text-sm">₺{p.sale_price.toLocaleString('tr-TR')}</td>
+                                        <td className="px-6 py-4 text-center text-xs font-bold text-secondary">{p.stock_quantity}</td>
+                                        <td className="px-6 py-4 text-right font-bold text-foreground text-sm">₺{p.sale_price.toLocaleString('tr-TR')}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -212,7 +212,7 @@ export default function ProfitPilot() {
                         <div className="absolute -right-12 -top-12 w-32 h-32 bg-primary/10 blur-[50px] rounded-full" />
                         <div className="flex items-center gap-3 mb-6">
                             <Brain className="text-primary w-6 h-6 animate-pulse" />
-                            <h3 className="text-sm font-bold text-white uppercase tracking-widest">JETPİLOT ÖNGÖRÜSÜ</h3>
+                            <h3 className="text-sm font-bold text-foreground uppercase tracking-widest">JETPİLOT ÖNGÖRÜSÜ</h3>
                         </div>
                         <p className="text-sm text-slate-300 font-bold leading-relaxed italic border-l-2 border-primary/30 pl-4 mb-8">
                             "Dükkanındaki {analysis.lowMarginProducts.length} ürünün kâr marjı sektör ortalamasının altında. Bu ürünler için akıllı bir fiyat artışı (markup) yaparak kârını anında stabilize edebiliriz."
@@ -227,7 +227,7 @@ export default function ProfitPilot() {
 
                     <div className="bg-card border border-border p-6 rounded-2xl">
                         <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-xs font-bold text-white uppercase tracking-widest">SATIŞ YOĞUNLUĞU</h3>
+                            <h3 className="text-xs font-bold text-foreground uppercase tracking-widest">SATIŞ YOĞUNLUĞU</h3>
                             <Activity className="text-primary w-4 h-4" />
                         </div>
                         <div className="grid grid-cols-12 gap-1 h-12">

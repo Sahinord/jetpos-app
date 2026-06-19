@@ -165,21 +165,21 @@ export default function SmartReports({ products }: any) {
             {/* Simple Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-white">İşletme Raporları</h1>
-                    <p className="text-sm text-slate-400">Verilerinizi net ve anlaşılır şekilde takip edin.</p>
+                    <h1 className="text-2xl font-bold text-foreground">İşletme Raporları</h1>
+                    <p className="text-sm text-secondary">Verilerinizi net ve anlaşılır şekilde takip edin.</p>
                 </div>
                 
                 <div className="flex items-center gap-3">
                     <div className="flex items-center bg-card border border-border rounded-xl p-1">
                         <button 
                             onClick={() => setActiveTab('daily')}
-                            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === 'daily' ? 'bg-primary text-white' : 'text-slate-400'}`}
+                            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === 'daily' ? 'bg-primary text-primary-foreground' : 'text-secondary hover:text-foreground'}`}
                         >
                             Günlük Özet
                         </button>
                         <button 
                             onClick={() => setActiveTab('financial')}
-                            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === 'financial' ? 'bg-primary text-white' : 'text-slate-400'}`}
+                            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === 'financial' ? 'bg-primary text-primary-foreground' : 'text-secondary hover:text-foreground'}`}
                         >
                             Mali Analiz
                         </button>
@@ -190,10 +190,10 @@ export default function SmartReports({ products }: any) {
             {/* Date Filters & Export */}
             <div className="bg-card/50 border border-border p-4 rounded-2xl flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-3 bg-background border border-border rounded-xl px-4 py-2">
-                    <CalendarIcon size={16} className="text-slate-500" />
+                    <CalendarIcon size={16} className="text-secondary" />
                     <input 
                         type="date" 
-                        className="bg-transparent text-xs font-bold text-white outline-none"
+                        className="bg-transparent text-xs font-bold text-foreground outline-none"
                         value={dateRange.start instanceof Date && !isNaN(dateRange.start.getTime()) ? dateRange.start.toISOString().split('T')[0] : ""}
                         onChange={(e) => {
                             const val = e.target.value;
@@ -203,10 +203,10 @@ export default function SmartReports({ products }: any) {
                             setDateRange(prev => ({ ...prev, start: new Date(d.setHours(0,0,0,0)) }));
                         }}
                     />
-                    <span className="text-slate-600">-</span>
+                    <span className="text-secondary">-</span>
                     <input 
                         type="date" 
-                        className="bg-transparent text-xs font-bold text-white outline-none"
+                        className="bg-transparent text-xs font-bold text-foreground outline-none"
                         value={dateRange.end instanceof Date && !isNaN(dateRange.end.getTime()) ? dateRange.end.toISOString().split('T')[0] : ""}
                         onChange={(e) => {
                             const val = e.target.value;
@@ -219,10 +219,10 @@ export default function SmartReports({ products }: any) {
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <button onClick={() => exportZReportExcel(stats, topProducts)} className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-border rounded-xl text-xs font-bold text-slate-300 transition-all">
+                    <button onClick={() => exportZReportExcel(stats, topProducts)} className="flex items-center gap-2 px-4 py-2 bg-muted/50 hover:bg-muted border border-border rounded-xl text-xs font-bold text-secondary transition-all">
                         <Download size={14} /> Excel
                     </button>
-                    <button onClick={() => generateZReportPDF(stats, topProducts)} className="flex items-center gap-2 px-6 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-primary/20">
+                    <button onClick={() => generateZReportPDF(stats, topProducts)} className="flex items-center gap-2 px-6 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-xs font-bold transition-all shadow-lg shadow-primary/20">
                         <FileText size={14} /> Z-Raporu Al
                     </button>
                 </div>
@@ -239,9 +239,9 @@ export default function SmartReports({ products }: any) {
                                         <div className={`p-2 rounded-lg ${s.bg} ${s.color}`}>
                                             <s.icon size={18} />
                                         </div>
-                                        <span className="text-xs font-bold text-slate-500 uppercase tracking-tight">{s.title}</span>
+                                        <span className="text-xs font-bold text-secondary uppercase tracking-tight">{s.title}</span>
                                     </div>
-                                    <h3 className="text-2xl font-bold text-white tracking-tight">{s.val}</h3>
+                                    <h3 className="text-2xl font-bold text-foreground tracking-tight">{s.val}</h3>
                                 </div>
                             ))}
                         </div>
@@ -250,10 +250,10 @@ export default function SmartReports({ products }: any) {
                             {/* Chart Area */}
                             <div className="lg:col-span-2 bg-card border border-border p-6 rounded-2xl space-y-6">
                                 <div className="flex items-center justify-between">
-                                    <h3 className="text-sm font-bold text-white uppercase flex items-center gap-2">
+                                    <h3 className="text-sm font-bold text-foreground uppercase flex items-center gap-2">
                                         <BarChart3 size={16} className="text-primary" /> Satış Grafiği
                                     </h3>
-                                    <span className="text-[10px] text-slate-500 font-bold">SAATLİK VERİ</span>
+                                    <span className="text-[10px] text-secondary font-bold">SAATLİK VERİ</span>
                                 </div>
                                 <div className="h-[300px] w-full">
                                     <ResponsiveContainer width="100%" height="100%">
@@ -276,17 +276,17 @@ export default function SmartReports({ products }: any) {
 
                             {/* Top Selling Products */}
                             <div className="bg-card border border-border p-6 rounded-2xl space-y-6">
-                                <h3 className="text-sm font-bold text-white uppercase flex items-center gap-2">
+                                <h3 className="text-sm font-bold text-foreground uppercase flex items-center gap-2">
                                     <Star size={16} className="text-amber-500" /> En Çok Satanlar
                                 </h3>
                                 <div className="space-y-3">
                                     {topProducts.length === 0 ? (
                                         <div className="py-12 text-center text-slate-600 text-xs font-bold italic">Veri bulunamadı.</div>
                                     ) : topProducts.map((p, i) => (
-                                        <div key={i} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
+                                        <div key={i} className="flex items-center justify-between p-3 bg-muted/20 rounded-xl border border-border">
                                             <div className="flex items-center gap-3">
                                                 <span className="w-6 h-6 bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center rounded-md">{i + 1}</span>
-                                                <p className="text-xs font-bold text-white truncate max-w-[120px]">{p.name}</p>
+                                                <p className="text-xs font-bold text-foreground truncate max-w-[120px]">{p.name}</p>
                                             </div>
                                             <p className="text-xs font-bold text-emerald-500">₺{p.totalRevenue.toLocaleString('tr-TR')}</p>
                                         </div>
@@ -299,8 +299,8 @@ export default function SmartReports({ products }: any) {
                         <div className="bg-indigo-500/5 border border-indigo-500/10 p-6 rounded-2xl flex items-start gap-4">
                             <Brain className="text-indigo-500 shrink-0 mt-1" size={24} />
                             <div>
-                                <h4 className="text-sm font-bold text-indigo-400 mb-1 uppercase tracking-tight">Akıllı Öneri</h4>
-                                <p className="text-sm text-slate-400 font-medium leading-relaxed italic">
+                                <h4 className="text-sm font-bold text-indigo-500 dark:text-indigo-400 mb-1 uppercase tracking-tight">Akıllı Öneri</h4>
+                                <p className="text-sm text-secondary font-medium leading-relaxed italic">
                                     {stats.totalSales > 0 
                                         ? "Bugünkü satış verilerinize göre akşam saatlerindeki hareketlilik kâr marjınızı %5 yukarı taşıyabilir." 
                                         : "Daha fazla analiz için satış verisi bekleniyor."}
@@ -311,15 +311,15 @@ export default function SmartReports({ products }: any) {
                 ) : (
                     <motion.div key="financial" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div className="bg-card border border-border p-8 rounded-2xl space-y-6">
-                            <h3 className="text-lg font-bold text-white flex items-center gap-3 border-b border-border pb-4 uppercase tracking-tight">
+                            <h3 className="text-lg font-bold text-foreground flex items-center gap-3 border-b border-border pb-4 uppercase tracking-tight">
                                 <Zap className="text-amber-500" size={20} /> KDV Detayları
                             </h3>
                             <div className="space-y-4">
                                 {Object.entries(stats.vatBreakdown).length > 0 ? (
                                     Object.entries(stats.vatBreakdown).map(([rate, amount]: any) => (
-                                        <div key={rate} className="flex items-center justify-between p-5 bg-white/5 rounded-2xl border border-white/5">
-                                            <span className="text-xs font-bold text-slate-400">%{rate} KDV</span>
-                                            <p className="text-xl font-bold text-white">₺{amount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</p>
+                                        <div key={rate} className="flex items-center justify-between p-5 bg-muted/20 rounded-2xl border border-border">
+                                            <span className="text-xs font-bold text-secondary">%{rate} KDV</span>
+                                            <p className="text-xl font-bold text-foreground">₺{amount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</p>
                                         </div>
                                     ))
                                 ) : (
@@ -329,16 +329,16 @@ export default function SmartReports({ products }: any) {
                         </div>
 
                         <div className="bg-card border border-border p-8 rounded-2xl space-y-6">
-                            <h3 className="text-lg font-bold text-white flex items-center gap-3 border-b border-border pb-4 uppercase tracking-tight">
+                            <h3 className="text-lg font-bold text-foreground flex items-center gap-3 border-b border-border pb-4 uppercase tracking-tight">
                                 <TrendingUp className="text-emerald-500" size={20} /> Kâr Analizi
                             </h3>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="p-6 bg-background rounded-2xl border border-border">
-                                    <span className="text-[10px] font-bold text-slate-500 uppercase">Toplam Ciro</span>
-                                    <p className="text-2xl font-bold text-white mt-1">₺{stats.totalSales.toLocaleString('tr-TR')}</p>
+                                    <span className="text-[10px] font-bold text-secondary uppercase">Toplam Ciro</span>
+                                    <p className="text-2xl font-bold text-foreground mt-1">₺{stats.totalSales.toLocaleString('tr-TR')}</p>
                                 </div>
                                 <div className="p-6 bg-background rounded-2xl border border-border">
-                                    <span className="text-[10px] font-bold text-slate-500 uppercase">Net Kâr</span>
+                                    <span className="text-[10px] font-bold text-secondary uppercase">Net Kâr</span>
                                     <p className="text-2xl font-bold text-emerald-500 mt-1">₺{stats.totalProfit.toLocaleString('tr-TR')}</p>
                                 </div>
                                 <div className="p-6 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl col-span-2 flex justify-between items-center">

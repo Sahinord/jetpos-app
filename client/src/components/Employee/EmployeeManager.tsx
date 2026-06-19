@@ -249,7 +249,7 @@ export default function EmployeeManager({ showToast }: any) {
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-xs font-bold text-secondary uppercase">Toplam Çalışan</p>
-                            <p className="text-3xl font-black text-white mt-2">{stats.total}</p>
+                            <p className="text-3xl font-black text-foreground mt-2">{stats.total}</p>
                         </div>
                         <Users className="text-primary w-10 h-10 opacity-20" />
                     </div>
@@ -296,7 +296,7 @@ export default function EmployeeManager({ showToast }: any) {
                             placeholder="Çalışan ara..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-12 pr-4 py-3 bg-background border border-border rounded-xl text-white placeholder-secondary focus:outline-none focus:border-primary transition-all"
+                            className="w-full pl-12 pr-4 py-3 bg-background border border-border rounded-xl text-foreground placeholder-secondary focus:outline-none focus:border-primary transition-all"
                         />
                     </div>
                     <div className="flex gap-2">
@@ -305,8 +305,8 @@ export default function EmployeeManager({ showToast }: any) {
                                 key={status}
                                 onClick={() => setFilterStatus(status)}
                                 className={`px-4 py-3 rounded-xl font-bold uppercase text-xs transition-all ${filterStatus === status
-                                    ? 'bg-primary text-white'
-                                    : 'bg-white/5 text-secondary hover:bg-white/10'
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-muted/50 text-secondary hover:bg-muted'
                                     }`}
                             >
                                 {status === 'all' ? 'Tümü' : status === 'active' ? 'Aktif' : status === 'on_leave' ? 'İzinli' : 'Pasif'}
@@ -320,7 +320,7 @@ export default function EmployeeManager({ showToast }: any) {
             <div className="glass-card overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full">
-                        <thead className="bg-white/5 border-b border-border">
+                        <thead className="bg-muted/50 border-b border-border">
                             <tr>
                                 <th className="px-6 py-4 text-left text-xs font-black uppercase text-secondary">Çalışan Kodu</th>
                                 <th className="px-6 py-4 text-left text-xs font-black uppercase text-secondary">Ad Soyad</th>
@@ -355,7 +355,7 @@ export default function EmployeeManager({ showToast }: any) {
                                         initial={{ opacity: 0, y: 20 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: index * 0.05 }}
-                                        className="border-b border-border hover:bg-white/5 transition-all"
+                                        className="border-b border-border hover:bg-muted/20 transition-all"
                                     >
                                         <td className="px-6 py-4">
                                             <span className="font-mono text-sm font-bold text-primary">{employee.employee_code}</span>
@@ -369,7 +369,7 @@ export default function EmployeeManager({ showToast }: any) {
                                                 </div>
                                                 <div>
                                                     <div className="flex items-center gap-2">
-                                                        <p className="font-bold text-white">{employee.first_name} {employee.last_name}</p>
+                                                        <p className="font-bold text-foreground">{employee.first_name} {employee.last_name}</p>
                                                         {isPatron(employee) && (
                                                             <span className="px-2 py-0.5 bg-amber-500/20 text-amber-500 text-[8px] font-black uppercase rounded border border-amber-500/20">Patron</span>
                                                         )}
@@ -438,11 +438,11 @@ export default function EmployeeManager({ showToast }: any) {
                         className="glass-card max-w-2xl w-full max-h-[90vh] overflow-y-auto"
                     >
                         <div className="flex items-center justify-between border-b border-border pb-4 mb-6">
-                            <h2 className="text-xl font-black uppercase flex items-center gap-2">
+                            <h2 className="text-xl font-black text-foreground uppercase flex items-center gap-2">
                                 <Users className="text-primary" />
                                 {editingEmployee ? 'Çalışan Düzenle' : 'Yeni Çalışan'}
                             </h2>
-                            <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-white/10 rounded-lg transition-all">
+                            <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-muted/50 text-foreground rounded-lg transition-all">
                                 <X size={20} />
                             </button>
                         </div>
@@ -453,9 +453,9 @@ export default function EmployeeManager({ showToast }: any) {
                                     <label className="block text-xs font-bold text-secondary uppercase mb-2">Ad *</label>
                                     <input
                                         type="text"
-                                        value={formData.first_name}
+                                        value={formData.first_name || ""}
                                         onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                                        className="w-full px-4 py-3 bg-background border border-border rounded-xl text-white focus:outline-none focus:border-primary transition-all"
+                                        className="w-full px-4 py-3 bg-background border border-border rounded-xl text-foreground focus:outline-none focus:border-primary transition-all"
                                         placeholder="Ahmet"
                                     />
                                 </div>
@@ -463,9 +463,9 @@ export default function EmployeeManager({ showToast }: any) {
                                     <label className="block text-xs font-bold text-secondary uppercase mb-2">Soyad *</label>
                                     <input
                                         type="text"
-                                        value={formData.last_name}
+                                        value={formData.last_name || ""}
                                         onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                                        className="w-full px-4 py-3 bg-background border border-border rounded-xl text-white focus:outline-none focus:border-primary transition-all"
+                                        className="w-full px-4 py-3 bg-background border border-border rounded-xl text-foreground focus:outline-none focus:border-primary transition-all"
                                         placeholder="Yılmaz"
                                     />
                                 </div>
@@ -476,9 +476,9 @@ export default function EmployeeManager({ showToast }: any) {
                                     <label className="block text-xs font-bold text-secondary uppercase mb-2">Çalışan Kodu</label>
                                     <input
                                         type="text"
-                                        value={formData.employee_code}
+                                        value={formData.employee_code || ""}
                                         onChange={(e) => setFormData({ ...formData, employee_code: e.target.value })}
-                                        className="w-full px-4 py-3 bg-background border border-border rounded-xl text-white font-mono focus:outline-none focus:border-primary transition-all"
+                                        className="w-full px-4 py-3 bg-background border border-border rounded-xl text-foreground font-mono focus:outline-none focus:border-primary transition-all"
                                         placeholder="ÇLŞ-001 (otomatik oluşturulur)"
                                     />
                                 </div>
@@ -486,7 +486,7 @@ export default function EmployeeManager({ showToast }: any) {
                                     <label className="block text-xs font-bold text-secondary uppercase mb-2">Pozisyon</label>
                                     <input
                                         type="text"
-                                        value={formData.position}
+                                        value={formData.position || ""}
                                         onChange={(e) => {
                                             const pos = e.target.value;
                                             const isPatronVal = pos.toLowerCase() === 'patron';
@@ -496,7 +496,7 @@ export default function EmployeeManager({ showToast }: any) {
                                                 permissions: isPatronVal ? Object.keys(formData.permissions).reduce((acc: any, key) => ({ ...acc, [key]: true }), {}) : formData.permissions
                                             });
                                         }}
-                                        className="w-full px-4 py-3 bg-background border border-border rounded-xl text-white focus:outline-none focus:border-primary transition-all"
+                                        className="w-full px-4 py-3 bg-background border border-border rounded-xl text-foreground focus:outline-none focus:border-primary transition-all"
                                         placeholder="Patron, Kasiyer, Müdür vb."
                                     />
                                 </div>
@@ -507,9 +507,9 @@ export default function EmployeeManager({ showToast }: any) {
                                     <label className="block text-xs font-bold text-secondary uppercase mb-2">E-posta</label>
                                     <input
                                         type="email"
-                                        value={formData.email}
+                                        value={formData.email || ""}
                                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                        className="w-full px-4 py-3 bg-background border border-border rounded-xl text-white focus:outline-none focus:border-primary transition-all"
+                                        className="w-full px-4 py-3 bg-background border border-border rounded-xl text-foreground focus:outline-none focus:border-primary transition-all"
                                         placeholder="ornek@email.com"
                                     />
                                 </div>
@@ -517,9 +517,9 @@ export default function EmployeeManager({ showToast }: any) {
                                     <label className="block text-xs font-bold text-secondary uppercase mb-2">Telefon</label>
                                     <input
                                         type="tel"
-                                        value={formData.phone}
+                                        value={formData.phone || ""}
                                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                        className="w-full px-4 py-3 bg-background border border-border rounded-xl text-white focus:outline-none focus:border-primary transition-all"
+                                        className="w-full px-4 py-3 bg-background border border-border rounded-xl text-foreground focus:outline-none focus:border-primary transition-all"
                                         placeholder="0555 123 4567"
                                     />
                                 </div>
@@ -531,9 +531,9 @@ export default function EmployeeManager({ showToast }: any) {
                                     <input
                                         type="number"
                                         step="0.01"
-                                        value={formData.hourly_wage}
+                                        value={formData.hourly_wage || ""}
                                         onChange={(e) => setFormData({ ...formData, hourly_wage: parseFloat(e.target.value) || 0 })}
-                                        className="w-full px-4 py-3 bg-background border border-border rounded-xl text-white focus:outline-none focus:border-primary transition-all"
+                                        className="w-full px-4 py-3 bg-background border border-border rounded-xl text-foreground focus:outline-none focus:border-primary transition-all"
                                     />
                                 </div>
                                 <div>
@@ -541,9 +541,9 @@ export default function EmployeeManager({ showToast }: any) {
                                     <input
                                         type="number"
                                         step="0.01"
-                                        value={formData.monthly_salary}
+                                        value={formData.monthly_salary || ""}
                                         onChange={(e) => setFormData({ ...formData, monthly_salary: parseFloat(e.target.value) || 0 })}
-                                        className="w-full px-4 py-3 bg-background border border-border rounded-xl text-white focus:outline-none focus:border-primary transition-all"
+                                        className="w-full px-4 py-3 bg-background border border-border rounded-xl text-foreground focus:outline-none focus:border-primary transition-all"
                                     />
                                 </div>
                             </div>
@@ -553,9 +553,9 @@ export default function EmployeeManager({ showToast }: any) {
                                     <label className="block text-xs font-bold text-secondary uppercase mb-2">İşe Başlama Tarihi</label>
                                     <input
                                         type="date"
-                                        value={formData.start_date}
+                                        value={formData.start_date || ""}
                                         onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                                        className="w-full px-4 py-3 bg-background border border-border rounded-xl text-white focus:outline-none focus:border-primary transition-all"
+                                        className="w-full px-4 py-3 bg-background border border-border rounded-xl text-foreground focus:outline-none focus:border-primary transition-all"
                                     />
                                 </div>
                                 <div>
@@ -563,9 +563,9 @@ export default function EmployeeManager({ showToast }: any) {
                                     <input
                                         type="text"
                                         maxLength={6}
-                                        value={formData.pin_code}
+                                        value={formData.pin_code || ""}
                                         onChange={(e) => setFormData({ ...formData, pin_code: e.target.value.replace(/\D/g, '') })}
-                                        className="w-full px-4 py-3 bg-background border border-border rounded-xl text-white font-mono focus:outline-none focus:border-primary transition-all"
+                                        className="w-full px-4 py-3 bg-background border border-border rounded-xl text-foreground font-mono focus:outline-none focus:border-primary transition-all"
                                         placeholder="1234"
                                     />
                                 </div>
@@ -585,7 +585,7 @@ export default function EmployeeManager({ showToast }: any) {
                                             onClick={() => setFormData({ ...formData, status: status.value as 'active' | 'inactive' | 'on_leave' })}
                                             className={`px-4 py-3 rounded-xl font-bold uppercase text-xs border-2 transition-all ${formData.status === status.value
                                                 ? status.color
-                                                : 'bg-white/5 text-secondary border-border hover:bg-white/10'
+                                                : 'bg-muted/50 text-secondary border-border hover:bg-muted'
                                                 }`}
                                         >
                                             {status.label}
@@ -624,17 +624,17 @@ export default function EmployeeManager({ showToast }: any) {
                                                             ...formData,
                                                             permissions: { ...formData.permissions, [perm.id]: e.target.checked }
                                                         })}
-                                                        className="w-5 h-5 rounded-lg border-2 border-white/10 bg-white/5 checked:bg-primary checked:border-primary transition-all appearance-none cursor-pointer"
+                                                        className="w-5 h-5 rounded-lg border-2 border-border bg-background checked:bg-primary checked:border-primary transition-all appearance-none cursor-pointer"
                                                     />
                                                     {!!(formData.permissions as any)[perm.id] && (
                                                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">
+                                                            <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">
                                                                 <path d="M5 13l4 4L19 7" />
                                                             </svg>
                                                         </div>
                                                     )}
                                                 </div>
-                                                <span className="text-sm font-medium text-slate-300 group-hover:text-white transition-colors">
+                                                <span className="text-sm font-medium text-secondary group-hover:text-foreground transition-colors">
                                                     {perm.label}
                                                 </span>
                                             </label>
@@ -647,7 +647,7 @@ export default function EmployeeManager({ showToast }: any) {
                         <div className="flex gap-3 mt-6 pt-6 border-t border-border">
                             <button
                                 onClick={() => setIsModalOpen(false)}
-                                className="flex-1 px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-black uppercase tracking-wider transition-all"
+                                className="flex-1 px-6 py-3 bg-muted/50 hover:bg-muted text-foreground rounded-xl font-black uppercase tracking-wider transition-all"
                             >
                                 İptal
                             </button>

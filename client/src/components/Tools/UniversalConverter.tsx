@@ -180,16 +180,16 @@ export default function UniversalConverter() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-4xl font-black text-white tracking-tight">Akıllı Dönüştürücü</h1>
-                    <p className="text-slate-400 mt-2">Görsel ve belgelerinizi tek bir yerden yönetin</p>
+                    <h1 className="text-4xl font-black text-foreground tracking-tight">Akıllı Dönüştürücü</h1>
+                    <p className="text-secondary mt-2">Görsel ve belgelerinizi tek bir yerden yönetin</p>
                 </div>
 
-                <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/5 backdrop-blur-md">
+                <div className="flex bg-muted/50 p-1.5 rounded-2xl border border-border backdrop-blur-md">
                     {(['image', 'pdf', 'word'] as ConverterMode[]).map((m) => (
                         <button
                             key={m}
                             onClick={() => resetFiles(m)}
-                            className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${mode === m ? 'bg-primary text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                            className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${mode === m ? 'bg-primary text-primary-foreground shadow-lg' : 'text-secondary hover:text-foreground hover:bg-muted'}`}
                         >
                             {m === 'image' && <ImageIcon size={14} />}
                             {m === 'pdf' && <FileText size={14} />}
@@ -204,7 +204,7 @@ export default function UniversalConverter() {
                 {/* Control Panel */}
                 <div className="space-y-6">
                     <div 
-                        className={`glass-card p-12 border-2 border-dashed transition-all text-center group cursor-pointer ${file ? 'border-primary/30 bg-primary/5' : 'border-white/10 hover:border-primary/30 hover:bg-primary/5'}`}
+                        className={`glass-card p-12 border-2 border-dashed transition-all text-center group cursor-pointer ${file ? 'border-primary/30 bg-primary/5' : 'border-border hover:border-primary/30 hover:bg-primary/5'}`}
                         onClick={() => fileInputRef.current?.click()}
                     >
                         <input 
@@ -216,22 +216,22 @@ export default function UniversalConverter() {
                         />
                         
                         <div className="relative inline-block mb-8">
-                            <div className={`w-24 h-24 rounded-[2.5rem] flex items-center justify-center transition-all ${file ? 'bg-primary text-white shadow-2xl rotate-3' : 'bg-white/5 text-slate-500 group-hover:scale-110'}`}>
+                            <div className={`w-24 h-24 rounded-[2.5rem] flex items-center justify-center transition-all ${file ? 'bg-primary text-primary-foreground shadow-2xl rotate-3' : 'bg-muted text-secondary group-hover:scale-110'}`}>
                                 {mode === 'image' ? <ImageIcon size={40} /> : <FileUp size={40} />}
                             </div>
                         </div>
 
                         {file ? (
                             <div className="space-y-2">
-                                <h3 className="text-xl font-bold text-white truncate max-w-xs mx-auto">{file.name}</h3>
+                                <h3 className="text-xl font-bold text-foreground truncate max-w-xs mx-auto">{file.name}</h3>
                                 <div className="flex items-center justify-center gap-2">
-                                    <span className="px-2 py-0.5 bg-white/10 rounded text-[10px] font-bold text-slate-400">{(file.size / 1024).toFixed(1)} KB</span>
+                                    <span className="px-2 py-0.5 bg-muted rounded text-[10px] font-bold text-secondary">{(file.size / 1024).toFixed(1)} KB</span>
                                     <span className="px-2 py-0.5 bg-primary/20 rounded text-[10px] font-bold text-primary">{file.name.split('.').pop()?.toUpperCase()}</span>
                                 </div>
                             </div>
                         ) : (
                             <div className="space-y-2">
-                                <h3 className="text-xl font-bold text-white">Dosya Seçin</h3>
+                                <h3 className="text-xl font-bold text-foreground">Dosya Seçin</h3>
                                 <p className="text-xs text-secondary leading-relaxed px-10">
                                     {mode === 'image' ? 'PNG, JPG, WEBP destekler.' : mode === 'pdf' ? 'PDF dosyalarını görsele çevirir.' : 'DOCX dosyalarını PDF yapar.'}
                                 </p>
@@ -245,13 +245,13 @@ export default function UniversalConverter() {
                                 {mode === 'image' && (
                                     <div className="space-y-6">
                                         <div className="space-y-4">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Hedef Format</label>
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-secondary">Hedef Format</label>
                                             <div className="grid grid-cols-3 gap-3">
                                                 {(['png', 'jpeg', 'webp'] as ImageFormat[]).map((f) => (
                                                     <button
                                                         key={f}
                                                         onClick={() => setTargetFormat(f)}
-                                                        className={`py-3 rounded-xl border-2 transition-all font-black text-[10px] ${targetFormat === f ? 'border-primary bg-primary/10 text-white shadow-lg' : 'border-white/5 text-slate-500'}`}
+                                                        className={`py-3 rounded-xl border-2 transition-all font-black text-[10px] ${targetFormat === f ? 'border-primary bg-primary/10 text-primary-foreground shadow-lg' : 'border-border text-secondary'}`}
                                                     >
                                                         {f === 'jpeg' ? 'JPG' : f.toUpperCase()}
                                                     </button>
@@ -260,11 +260,11 @@ export default function UniversalConverter() {
                                         </div>
                                         {targetFormat !== 'png' && (
                                             <div className="space-y-3">
-                                                <div className="flex justify-between items-center text-[10px] font-black text-slate-500">
+                                                <div className="flex justify-between items-center text-[10px] font-black text-secondary">
                                                     <span>KALİTE</span>
                                                     <span className="text-primary">%{Math.round(quality * 100)}</span>
                                                 </div>
-                                                <input type="range" min="0.1" max="1" step="0.05" value={quality} onChange={(e) => setQuality(parseFloat(e.target.value))} className="w-full h-1.5 bg-white/5 rounded-lg appearance-none cursor-pointer accent-primary" />
+                                                <input type="range" min="0.1" max="1" step="0.05" value={quality} onChange={(e) => setQuality(parseFloat(e.target.value))} className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-primary" />
                                             </div>
                                         )}
                                     </div>
@@ -273,18 +273,18 @@ export default function UniversalConverter() {
                                 <button
                                     onClick={startConversion}
                                     disabled={converting}
-                                    className="w-full py-5 bg-primary hover:bg-primary/90 text-white rounded-2xl font-black shadow-xl shadow-primary/40 transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
+                                    className="w-full py-5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl font-black shadow-xl shadow-primary/40 transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
                                 >
                                     {converting ? <RefreshCw className="w-5 h-5 animate-spin" /> : <><RefreshCw className="w-5 h-5" /> Dönüştür</>}
                                 </button>
 
                                 {converting && progress > 0 && (
                                     <div className="space-y-2">
-                                        <div className="flex justify-between text-[10px] font-black text-slate-500">
+                                        <div className="flex justify-between text-[10px] font-black text-secondary">
                                             <span>İşleniyor...</span>
                                             <span>%{progress}</span>
                                         </div>
-                                        <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                        <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                                             <div className="h-full bg-primary" style={{ width: `${progress}%` }} />
                                         </div>
                                     </div>
@@ -298,23 +298,23 @@ export default function UniversalConverter() {
                 <div className="space-y-6">
                     <div className="glass-card p-6 h-full flex flex-col min-h-[400px]">
                         <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2">
+                            <h3 className="text-[10px] font-black text-foreground uppercase tracking-widest flex items-center gap-2">
                                 <Layers className="w-4 h-4 text-primary" />
                                 {results.length > 0 ? `${results.length} SONUÇ` : 'ÖNİZLEME'}
                             </h3>
                             {results.length > 0 && <Check className="text-emerald-500 w-4 h-4" />}
                         </div>
 
-                        <div className="flex-1 bg-black/40 rounded-[2rem] border border-white/5 overflow-y-auto custom-scrollbar p-6 space-y-4">
+                        <div className="flex-1 bg-background/40 rounded-[2rem] border border-border overflow-y-auto custom-scrollbar p-6 space-y-4">
                             {results.length > 0 ? (
                                 results.map((data, i) => (
-                                    <div key={i} className="group relative bg-white/5 rounded-2xl p-2 border border-white/5 overflow-hidden">
+                                    <div key={i} className="group relative bg-muted rounded-2xl p-2 border border-border overflow-hidden">
                                         {(mode === 'image' || mode === 'pdf') ? (
                                             <img src={data} alt="Result" className="w-full h-auto rounded-xl" />
                                         ) : (
                                             <div className="py-20 text-center space-y-3">
                                                 <FileText className="w-12 h-12 text-primary mx-auto opacity-50" />
-                                                <p className="text-[10px] font-black text-white uppercase tracking-widest">PDF HAZIR</p>
+                                                <p className="text-[10px] font-black text-foreground uppercase tracking-widest">PDF HAZIR</p>
                                             </div>
                                         )}
                                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center">
@@ -325,7 +325,7 @@ export default function UniversalConverter() {
                                                     link.href = data;
                                                     link.click();
                                                 }}
-                                                className="p-3 bg-primary text-white rounded-xl shadow-2xl scale-75 group-hover:scale-100 transition-all"
+                                                className="p-3 bg-primary text-primary-foreground rounded-xl shadow-2xl scale-75 group-hover:scale-100 transition-all"
                                             >
                                                 <Download size={20} />
                                             </button>
@@ -336,8 +336,8 @@ export default function UniversalConverter() {
                                 <img src={preview} alt="Preview" className="w-full h-auto rounded-[1.5rem] opacity-50" />
                             ) : (
                                 <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-20">
-                                    <Layers size={60} className="text-slate-500" />
-                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Henüz bir dosya işlenmedi</p>
+                                    <Layers size={60} className="text-secondary" />
+                                    <p className="text-[10px] font-black text-secondary uppercase tracking-widest">Henüz bir dosya işlenmedi</p>
                                 </div>
                             )}
                         </div>

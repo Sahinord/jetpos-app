@@ -66,6 +66,7 @@ import EmployeePinLogin from "@/components/Auth/EmployeePinLogin";
 import { offlineDB } from "@/lib/offline-db";
 import { SyncService } from "@/lib/sync-service";
 import SetupWizard from "@/components/Setup/SetupWizard";
+import { apiFetch } from "@/lib/api";
 
 export default function Home() {
   const { currentTenant, loading: tenantLoading, activeWarehouse, activeEmployee } = useTenant();
@@ -173,6 +174,42 @@ export default function Home() {
   useEffect(() => {
     SyncService.initAutoSync();
   }, []);
+
+  // Background Trendyol Order Sync on Tenant Load
+  useEffect(() => {
+    if (tenantLoading || !currentTenant?.id) return;
+
+    const syncTrendyolOrders = async () => {
+      try {
+        // 1. Check if integration is configured and active
+        const { data: integration } = await supabase
+          .from('integration_settings')
+          .select('is_active')
+          .eq('tenant_id', currentTenant.id)
+          .or('type.eq.trendyol_go,platform.eq.trendyol')
+          .maybeSingle();
+
+        if (integration?.is_active) {
+          console.log('[Trendyol Auto-Sync] Active integration found. Starting background sync...');
+          const res = await apiFetch(`/api/trendyol/sync-orders?tenantId=${currentTenant.id}&days=30`, {
+            method: 'POST'
+          });
+          console.log('[Trendyol Auto-Sync] Completed:', res);
+          
+          // 2. If sync succeeded and added orders, refresh page data so dashboard updates immediately
+          if (res?.success && res?.count > 0) {
+            console.log('[Trendyol Auto-Sync] New orders synced. Refreshing data...');
+            fetchData();
+          }
+        }
+      } catch (err) {
+        console.warn('[Trendyol Auto-Sync] Background sync failed or skipped:', err);
+      }
+    };
+
+    // Run sync asynchronously to not block initial page rendering
+    syncTrendyolOrders();
+  }, [tenantLoading, currentTenant?.id]);
 
   useEffect(() => {
     if (!tenantLoading && currentTenant) {

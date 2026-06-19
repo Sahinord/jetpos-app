@@ -621,7 +621,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                         {searchQuery && (
                             <button
                                 onClick={() => setSearchQuery("")}
-                                className="absolute right-3 p-1 hover:bg-white/10 rounded-lg text-[var(--color-muted)] hover:text-primary transition-all"
+                                className="absolute right-3 p-1 hover:bg-muted/50 rounded-lg text-[var(--color-muted)] hover:text-primary transition-all"
                             >
                                 <X className="w-3 h-3" />
                             </button>
@@ -790,7 +790,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                                                                                                     e.stopPropagation();
                                                                                                     toggleFavorite(item.id);
                                                                                                 }}
-                                                                                                className={`p-1 rounded-lg transition-all hover:bg-white/10 ${isItemFavorite
+                                                                                                className={`p-1 rounded-lg transition-all hover:bg-muted/50 ${isItemFavorite
                                                                                                     ? 'text-yellow-500 opacity-100'
                                                                                                     : 'text-secondary/40 hover:text-yellow-500 opacity-0 group-hover/item:opacity-100'
                                                                                                     }`}
@@ -887,9 +887,9 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                                     key={item.id}
                                     className="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/5 border border-border opacity-50 cursor-not-allowed"
                                 >
-                                    <item.icon className="w-4 h-4 text-secondary" />
-                                    <span className="text-xs font-medium text-secondary flex-1">{item.label}</span>
-                                    <Lock className="w-3 h-3 text-secondary" />
+                                    <item.icon className="w-4 h-4 text-muted-foreground" />
+                                    <span className="text-xs font-medium text-muted-foreground flex-1">{item.label}</span>
+                                    <Lock className="w-3 h-3 text-muted-foreground" />
                                 </div>
                             ))}
                             {allLockedItems.length > 3 && (
@@ -944,7 +944,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                                         </div>
                                         <button
                                             onClick={logoutEmployee}
-                                            className="p-2 hover:bg-rose-500/10 text-slate-400 hover:text-rose-500 rounded-lg transition-all"
+                                            className="p-2 hover:bg-rose-500/10 text-secondary hover:text-rose-500 rounded-lg transition-all"
                                             title="Çalışan Çıkış"
                                         >
                                             <LogOut className="w-4 h-4" />
@@ -974,23 +974,23 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                                                 // Local state for dropdown if needed, or just show a small list
                                                 // For now, let's just make it a simple list if clicked, or a fixed selector
                                             }}
-                                            className="w-full flex items-center justify-between gap-3 p-2 bg-indigo-500/10 border border-indigo-500/20 rounded-xl hover:bg-indigo-500/20 transition-all text-left"
+                                            className="w-full flex items-center justify-between gap-3 p-2 bg-primary/10 border border-primary/20 rounded-xl hover:bg-primary/20 transition-all text-left"
                                         >
                                             <div className="flex items-center gap-2 min-w-0">
-                                                <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
-                                                    {activeWarehouse?.type === 'virtual' ? <ShoppingBag className="w-4 h-4 text-indigo-400" /> : <Store className="w-4 h-4 text-indigo-400" />}
+                                                <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
+                                                    {activeWarehouse?.type === 'virtual' ? <ShoppingBag className="w-4 h-4 text-primary" /> : <Store className="w-4 h-4 text-primary" />}
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <p className="text-[10px] font-black text-indigo-400/70 uppercase tracking-widest leading-none mb-1">Aktif Mağaza</p>
-                                                    <p className="text-xs font-bold text-white truncate">{activeWarehouse?.name || 'Seçilmedi'}</p>
+                                                    <p className="text-[10px] font-black text-primary/70 uppercase tracking-widest leading-none mb-1">Aktif Mağaza</p>
+                                                    <p className="text-xs font-bold text-foreground truncate">{activeWarehouse?.name || 'Seçilmedi'}</p>
                                                 </div>
                                             </div>
-                                            <ArrowLeftRight className="w-3.5 h-3.5 text-indigo-400/50" />
+                                            <ArrowLeftRight className="w-3.5 h-3.5 text-primary/50" />
                                         </button>
 
                                         {/* Simple Dropdown on Hover/Click - Let's use a simple absolute menu */}
-                                        <div className="absolute bottom-full left-0 w-64 mb-2 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl opacity-0 invisible group-hover/store:opacity-100 group-hover/store:visible transition-all z-[100] p-2 space-y-1">
-                                            <p className="text-[10px] font-black text-secondary/50 uppercase tracking-widest p-2 border-b border-white/5 mb-1">Mağaza Değiştir</p>
+                                        <div className="absolute bottom-full left-0 w-64 mb-2 bg-card border border-border rounded-2xl shadow-2xl opacity-0 invisible group-hover/store:opacity-100 group-hover/store:visible transition-all z-[100] p-2 space-y-1">
+                                            <p className="text-[10px] font-black text-secondary uppercase tracking-widest p-2 border-b border-border mb-1">Mağaza Değiştir</p>
                                             <div className="max-h-48 overflow-y-auto custom-scrollbar space-y-1">
                                                 {warehouses.map(w => (
                                                     <button
@@ -1001,7 +1001,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                                                                 showToast(`${w.name} mağazasına geçildi.`, "success");
                                                             }
                                                         }}
-                                                        className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all text-left ${activeWarehouse?.id === w.id ? 'bg-indigo-500/20 text-white' : 'hover:bg-white/5 text-secondary hover:text-white'}`}
+                                                        className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all text-left ${activeWarehouse?.id === w.id ? 'bg-primary/20 text-foreground' : 'hover:bg-primary/5 text-secondary hover:text-foreground'}`}
                                                     >
                                                         {w.type === 'virtual' ? <ShoppingBag className="w-3.5 h-3.5" /> : <Store className="w-3.5 h-3.5" />}
                                                         <span className="text-xs font-bold truncate">{w.name}</span>

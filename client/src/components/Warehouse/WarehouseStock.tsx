@@ -146,15 +146,15 @@ export default function WarehouseStock({ warehouses, isPriceSyncEnabled = false 
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         placeholder="Ürün adı veya barkod ile ara..."
-                        className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-indigo-500 transition-all"
+                        className="w-full pl-12 pr-4 py-3 bg-muted/30 border border-border rounded-xl text-foreground focus:outline-none focus:border-primary transition-all"
                     />
                 </div>
                 
-                <div className="flex items-center gap-2 bg-white/5 p-1 rounded-xl border border-white/10">
+                <div className="flex items-center gap-2 bg-muted/30 p-1 rounded-xl border border-border">
                     <button
                         onClick={() => setSelectedWarehouse('all')}
                         className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                            selectedWarehouse === 'all' ? 'bg-white/10 text-white' : 'text-secondary hover:text-white'
+                            selectedWarehouse === 'all' ? 'bg-primary/10 text-primary' : 'text-secondary hover:text-foreground'
                         }`}
                     >
                         Tüm Depolar
@@ -164,7 +164,7 @@ export default function WarehouseStock({ warehouses, isPriceSyncEnabled = false 
                             key={wh.id}
                             onClick={() => setSelectedWarehouse(wh.id)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                                selectedWarehouse === wh.id ? 'bg-indigo-500 text-white' : 'text-secondary hover:text-white'
+                                selectedWarehouse === wh.id ? 'bg-primary text-primary-foreground' : 'text-secondary hover:text-foreground'
                             }`}
                         >
                             {wh.type === 'virtual' ? <Globe className="w-3 h-3" /> : <Store className="w-3 h-3" />}
@@ -175,9 +175,9 @@ export default function WarehouseStock({ warehouses, isPriceSyncEnabled = false 
             </div>
 
             {/* Hint */}
-            <div className="px-4 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-lg flex items-center gap-2">
-                <Tag className="w-4 h-4 text-indigo-400" />
-                <p className="text-xs text-indigo-200">
+            <div className="px-4 py-2 bg-primary/10 border border-primary/20 rounded-lg flex items-center gap-2">
+                <Tag className="w-4 h-4 text-primary" />
+                <p className="text-xs text-primary/80">
                     {selectedWarehouse === 'all' 
                         ? 'Tüm depoların toplam stoğunu görüntülüyorsunuz. Fiyat güncellemek için yukarıdan bir mağaza seçin.' 
                         : `Şu an seçili mağazaya (${warehouses.find(w => w.id === selectedWarehouse)?.name}) özel fiyatları yönetiyorsunuz.`}
@@ -189,18 +189,18 @@ export default function WarehouseStock({ warehouses, isPriceSyncEnabled = false 
                 <div className="overflow-x-auto">
                     <table className="w-full">
                         <thead>
-                            <tr className="border-b border-white/10 bg-white/5">
+                            <tr className="border-b border-border bg-muted/20">
                                 <th className="text-left py-4 px-6 text-[10px] font-bold text-secondary uppercase tracking-widest">Ürün Bilgisi</th>
                                 <th className="text-right py-4 px-6 text-[10px] font-bold text-secondary uppercase tracking-widest">Alış Fiyatı</th>
                                 <th className="text-right py-4 px-6 text-[10px] font-bold text-secondary uppercase tracking-widest">Satış Fiyatı</th>
                                 <th className="text-right py-4 px-6 text-[10px] font-bold text-secondary uppercase tracking-widest">Stok Miktarı</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/5">
+                        <tbody className="divide-y divide-border/50">
                             {loading ? (
                                 <tr>
                                     <td colSpan={4} className="py-20 text-center">
-                                        <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto" />
+                                        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
                                     </td>
                                 </tr>
                             ) : stockData.length === 0 ? (
@@ -208,14 +208,14 @@ export default function WarehouseStock({ warehouses, isPriceSyncEnabled = false 
                                     <td colSpan={4} className="py-20 text-center text-secondary">Ürün bulunamadı.</td>
                                 </tr>
                             ) : stockData.map(product => (
-                                <tr key={product.id} className="hover:bg-white/5 transition-colors group">
+                                <tr key={product.id} className="hover:bg-muted/30 transition-colors group">
                                     <td className="py-4 px-6">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-white/5 rounded-lg flex items-center justify-center">
-                                                <Package className="w-5 h-5 text-indigo-400/50" />
+                                            <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
+                                                <Package className="w-5 h-5 text-primary/50" />
                                             </div>
                                             <div>
-                                                <p className="font-bold text-white group-hover:text-indigo-400 transition-colors uppercase text-sm">{product.name}</p>
+                                                <p className="font-bold text-foreground group-hover:text-primary transition-colors uppercase text-sm">{product.name}</p>
                                                 <p className="text-xs text-secondary font-mono italic">{product.barcode || 'Barkodsuz'}</p>
                                             </div>
                                         </div>
@@ -235,7 +235,7 @@ export default function WarehouseStock({ warehouses, isPriceSyncEnabled = false 
                                                             handleUpdatePrice(product.id, product.current_ws?.id, 'purchase', parseFloat(editingPrice.value));
                                                         }
                                                     }}
-                                                    className="w-24 px-2 py-1 bg-white/10 border border-indigo-500 rounded text-right text-white text-sm"
+                                                    className="w-24 px-2 py-1 bg-background border border-primary rounded text-right text-foreground text-sm"
                                                 />
                                                 <button onClick={() => setEditingPrice(null)}><X className="w-4 h-4 text-red-500" /></button>
                                             </div>
@@ -243,11 +243,11 @@ export default function WarehouseStock({ warehouses, isPriceSyncEnabled = false 
                                             <button 
                                                 disabled={selectedWarehouse === 'all'}
                                                 onClick={() => setEditingPrice({ id: product.id, type: 'purchase', value: product.display_purchase?.toString() || '0' })}
-                                                className={`text-sm font-bold flex items-center justify-end gap-2 ml-auto ${selectedWarehouse === 'all' ? 'text-secondary' : 'text-indigo-300 hover:text-white'}`}
+                                                className={`text-sm font-bold flex items-center justify-end gap-2 ml-auto ${selectedWarehouse === 'all' ? 'text-secondary' : 'text-primary/70 hover:text-primary'}`}
                                             >
                                                 {product.display_purchase?.toFixed(2)} ₺
                                                 {selectedWarehouse !== 'all' && <Edit2 className="w-3 h-3 opacity-0 group-hover:opacity-100" />}
-                                                {product.current_ws?.purchase_price && <span className="text-[10px] bg-green-500/20 text-green-400 px-1.5 rounded ml-1">Özel</span>}
+                                                {product.current_ws?.purchase_price && <span className="text-[10px] bg-green-500/20 text-green-600 dark:text-green-400 px-1.5 rounded ml-1">Özel</span>}
                                             </button>
                                         )}
                                     </td>
@@ -266,7 +266,7 @@ export default function WarehouseStock({ warehouses, isPriceSyncEnabled = false 
                                                             handleUpdatePrice(product.id, product.current_ws?.id, 'sale', parseFloat(editingPrice.value));
                                                         }
                                                     }}
-                                                    className="w-24 px-2 py-1 bg-white/10 border border-indigo-500 rounded text-right text-white text-sm"
+                                                    className="w-24 px-2 py-1 bg-background border border-primary rounded text-right text-foreground text-sm"
                                                 />
                                                 <button onClick={() => setEditingPrice(null)}><X className="w-4 h-4 text-red-500" /></button>
                                             </div>
@@ -274,18 +274,18 @@ export default function WarehouseStock({ warehouses, isPriceSyncEnabled = false 
                                             <button 
                                                 disabled={selectedWarehouse === 'all'}
                                                 onClick={() => setEditingPrice({ id: product.id, type: 'sale', value: product.display_sale?.toString() || '0' })}
-                                                className={`text-lg font-black flex items-center justify-end gap-2 ml-auto ${selectedWarehouse === 'all' ? 'text-secondary' : 'text-white hover:text-indigo-400'}`}
+                                                className={`text-lg font-black flex items-center justify-end gap-2 ml-auto ${selectedWarehouse === 'all' ? 'text-secondary' : 'text-foreground hover:text-primary'}`}
                                             >
                                                 {product.display_sale?.toFixed(2)} ₺
                                                 {selectedWarehouse !== 'all' && <Edit2 className="w-3 h-3 opacity-0 group-hover:opacity-100" />}
-                                                {product.current_ws?.sale_price && <span className="text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 rounded ml-1">Özel</span>}
+                                                {product.current_ws?.sale_price && <span className="text-[10px] bg-primary/20 text-primary px-1.5 rounded ml-1">Özel</span>}
                                             </button>
                                         )}
                                     </td>
                                     
                                     <td className="py-4 px-6 text-right">
                                         <div className="flex items-center justify-end gap-2">
-                                            <span className={`text-sm font-bold ${product.display_qty <= 0 ? 'text-red-400' : 'text-indigo-400'}`}>
+                                            <span className={`text-sm font-bold ${product.display_qty <= 0 ? 'text-red-500' : 'text-primary'}`}>
                                                 {product.display_qty}
                                             </span>
                                             <span className="text-[10px] text-secondary font-bold uppercase">{product.unit || 'ADET'}</span>

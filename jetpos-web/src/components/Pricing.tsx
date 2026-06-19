@@ -80,91 +80,48 @@ export default function Pricing() {
     const [yearly, setYearly] = useState(true);
 
     return (
-        <section 
-            id="pricing" 
-            style={{
-                padding: "6.5rem 0",
-                position: "relative",
-                backgroundColor: "#FAFBFC",
-            }}
+        <section
+            id="pricing"
+            className="relative py-28 bg-[#F8FAFC] overflow-hidden"
         >
             {/* Subtle Radial Glow Spot at the top */}
-            <div style={{
-                position: "absolute",
-                top: "-150px",
-                left: "50%",
-                transform: "translateX(-50%)",
-                width: "800px",
-                height: "300px",
-                background: "radial-gradient(circle at center, rgba(120, 134, 199, 0.04) 0%, transparent 70%)",
-                pointerEvents: "none",
-                zIndex: 1,
-            }} />
-            <div className="site-container">
+            <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[800px] h-[300px] pointer-events-none z-0"
+                style={{ background: "radial-gradient(circle at center, rgba(120, 134, 199, 0.08) 0%, transparent 70%)" }} 
+            />
+            
+            <div className="max-w-[1400px] mx-auto px-6 lg:px-8 relative z-10">
                 {/* Header */}
                 <motion.div
-                    initial={{ opacity: 0, y: 30 }}
+                    initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    transition={{ duration: 0.6 }}
-                    style={{ textAlign: "center", marginBottom: "4rem" }}
+                    transition={{ duration: 0.5 }}
+                    className="text-center mb-16"
                 >
-                    <span className="badge" style={{ marginBottom: "1.25rem", display: "inline-flex" }}>
+                    <span className="inline-block px-4 py-1.5 rounded-full bg-[#7886C7]/10 text-[#7886C7] text-sm font-bold tracking-wide mb-6">
                         Şeffaf Fiyatlandırma
                     </span>
-                    <h2 style={{
-                        fontSize: "clamp(2rem, 5vw, 3.25rem)",
-                        fontWeight: 800,
-                        color: "#111827",
-                        marginBottom: "1rem",
-                        lineHeight: 1.2
-                    }}>
-                        İşletmenize Uygun{" "}
-                        <span className="holographic-text">Planı Seçin</span>
+                    <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-[#111827] tracking-tight mb-6 leading-tight">
+                        İşletmenize Uygun <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#7886C7] to-[#9AA7DF]">Planı Seçin</span>
                     </h2>
-                    <p style={{ color: "#4B5563", fontSize: "1.125rem", maxWidth: "560px", margin: "0 auto 2rem" }}>
-                        14 gün ücretsiz deneyin. Kredi kartı gerekmez, istediğiniz zaman iptal edin.
+                    <p className="text-[#4B5563] text-lg md:text-xl max-w-2xl mx-auto mb-10 font-medium">
+                        İşletmeniz büyüdükçe sizinle birlikte ölçeklenen esnek fiyatlandırma. 14 gün ücretsiz deneyin, kredi kartı gerekmez.
                     </p>
 
                     {/* Toggle */}
-                    <div style={{ display: "inline-flex", alignItems: "center", gap: "0.75rem", background: "#F1F5F9", border: "1px solid rgba(120, 134, 199, 0.15)", borderRadius: "9999px", padding: "0.375rem" }}>
+                    <div className="inline-flex items-center gap-2 p-1.5 bg-white border border-[#E5E7EB] rounded-full shadow-sm">
                         <button
                             onClick={() => setYearly(false)}
-                            style={{
-                                padding: "0.5rem 1.25rem",
-                                borderRadius: "9999px",
-                                border: "none",
-                                cursor: "pointer",
-                                fontWeight: 600,
-                                fontSize: "0.875rem",
-                                fontFamily: "inherit",
-                                transition: "all 0.3s",
-                                background: !yearly ? "linear-gradient(135deg, #7886C7, #5A659F)" : "transparent",
-                                color: !yearly ? "white" : "rgba(17, 24, 39, 0.5)",
-                            }}
+                            className={`px-6 py-2.5 rounded-full font-bold text-sm transition-all duration-300 ${!yearly ? 'bg-[#111827] text-white shadow-md' : 'text-[#4B5563] hover:text-[#111827]'}`}
                         >
-                            Aylık
+                            Aylık Ödeme
                         </button>
                         <button
                             onClick={() => setYearly(true)}
-                            style={{
-                                padding: "0.5rem 1.25rem",
-                                borderRadius: "9999px",
-                                border: "none",
-                                cursor: "pointer",
-                                fontWeight: 600,
-                                fontSize: "0.875rem",
-                                fontFamily: "inherit",
-                                transition: "all 0.3s",
-                                background: yearly ? "linear-gradient(135deg, #7886C7, #5A659F)" : "transparent",
-                                color: yearly ? "white" : "rgba(17, 24, 39, 0.5)",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "0.5rem"
-                            }}
+                            className={`flex items-center gap-2 px-6 py-2.5 rounded-full font-bold text-sm transition-all duration-300 ${yearly ? 'bg-[#111827] text-white shadow-md' : 'text-[#4B5563] hover:text-[#111827]'}`}
                         >
-                            Yıllık
-                            <span style={{ background: "#7886C7", color: "white", fontSize: "0.7rem", padding: "0.1rem 0.4rem", borderRadius: "9999px", fontWeight: 700 }}>
+                            Yıllık Ödeme
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider ${yearly ? 'bg-[#7886C7]/20 text-[#9AA7DF]' : 'bg-[#7886C7] text-white'}`}>
                                 %20+ İndirim
                             </span>
                         </button>
@@ -172,7 +129,7 @@ export default function Pricing() {
                 </motion.div>
 
                 {/* Plans Grid */}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "1.5rem", maxWidth: "1100px", margin: "0 auto" }}>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
                     {plans.map((plan, index) => (
                         <motion.div
                             key={plan.name}
@@ -180,267 +137,150 @@ export default function Pricing() {
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ duration: 0.5, delay: index * 0.1 }}
-                            style={{ position: "relative" }}
+                            className={`relative flex flex-col bg-white rounded-[24px] p-8 transition-all duration-300 hover:-translate-y-2 group
+                                ${plan.popular ? 'border-2 border-[#8b5cf6] shadow-xl shadow-[#8b5cf6]/10' : 'border border-[#E5E7EB] hover:border-[#9AA7DF]/50 hover:shadow-2xl hover:shadow-[#7886C7]/10'}
+                            `}
                         >
                             {/* Popular Badge */}
                             {plan.tag && (
-                                <div style={{
-                                    position: "absolute",
-                                    top: "-1px",
-                                    left: "50%",
-                                    transform: "translateX(-50%)",
-                                    background: plan.popular
-                                        ? "linear-gradient(135deg, #8b5cf6, #a78bfa)"
-                                        : "linear-gradient(135deg, #7886C7, #9AA7DF)",
-                                    color: "white",
-                                    fontSize: "0.7rem",
-                                    fontWeight: 700,
-                                    padding: "0.35rem 1.25rem",
-                                    borderRadius: "0 0 0.75rem 0.75rem",
-                                    letterSpacing: "0.08em",
-                                    zIndex: 10,
-                                    whiteSpace: "nowrap"
-                                }}>
+                                <div className={`absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-black text-white tracking-widest whitespace-nowrap shadow-md
+                                    ${plan.popular ? 'bg-gradient-to-r from-[#8b5cf6] to-[#a78bfa]' : 'bg-gradient-to-r from-[#7886C7] to-[#9AA7DF]'}
+                                `}>
                                     {plan.tag === "EN İYİ DEĞER" ? "⚡ EN İYİ DEĞER" : `⭐ ${plan.tag}`}
                                 </div>
                             )}
 
-                            <div style={{
-                                background: plan.popular ? "rgba(120, 134, 199, 0.04)" : "#ffffff",
-                                border: `1px solid ${plan.popular ? "rgba(120, 134, 199, 0.4)" : plan.name === "Pro" ? "rgba(120, 134, 199, 0.3)" : "#E5E7EB"}`,
-                                borderRadius: "1.5rem",
-                                padding: "2.25rem",
-                                height: "100%",
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: "1.5rem",
-                                transition: "all 0.3s ease",
-                                boxShadow: plan.popular ? "0 4px 24px rgba(120, 134, 199, 0.06)" : "none",
-                            }}
-                                onMouseEnter={e => {
-                                    (e.currentTarget as HTMLDivElement).style.transform = "translateY(-6px)";
-                                    (e.currentTarget as HTMLDivElement).style.boxShadow = `0 20px 48px rgba(120, 134, 199, 0.08), 0 0 20px ${plan.color}22`;
-                                    if (plan.popular) {
-                                        (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(139, 92, 246, 0.6)";
-                                    } else {
-                                        (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(120, 134, 199, 0.4)";
+                            {/* Plan Header */}
+                            <div className="mb-6">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-[#F8FAFC] border border-[#E5E7EB] group-hover:bg-[#7886C7]/5 group-hover:border-[#7886C7]/20 transition-colors">
+                                        <plan.icon className="w-6 h-6" style={{ color: plan.color }} />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-2xl font-black text-[#111827]">{plan.name}</h3>
+                                        <p className="text-xs font-bold uppercase tracking-wider" style={{ color: plan.color }}>{plan.period}</p>
+                                    </div>
+                                </div>
+                                <p className="text-[#4B5563] text-sm leading-relaxed">{plan.description}</p>
+                            </div>
+
+                            {/* Price */}
+                            <div className="mb-8">
+                                <div className="flex items-baseline gap-1">
+                                    <span className="text-lg font-bold text-[#4B5563]">₺</span>
+                                    <span className="text-5xl font-black text-[#111827] tracking-tight">
+                                        {yearly ? plan.price.yearly : plan.price.monthly}
+                                    </span>
+                                    <span className="text-sm font-medium text-[#6B7280]">/ay</span>
+                                </div>
+                                {yearly && (
+                                    <p className="text-sm font-bold text-[#7886C7] mt-2">
+                                        Yıllık ödemede ₺{((plan.price.monthly - plan.price.yearly) * 12).toLocaleString("tr-TR")} tasarruf
+                                    </p>
+                                )}
+                                {plan.badge && (
+                                    <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 bg-[#7886C7]/10 border border-[#7886C7]/20 rounded-full text-xs font-bold text-[#7886C7]">
+                                        🎁 {plan.badge}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* CTA Button */}
+                            <Link 
+                                href="/demo" 
+                                className={`w-full py-4 rounded-xl font-bold text-center transition-all duration-300 mb-8 flex items-center justify-center gap-2
+                                    ${plan.popular 
+                                        ? 'bg-[#8b5cf6] hover:bg-[#7c3aed] text-white shadow-lg shadow-[#8b5cf6]/25 hover:shadow-xl hover:shadow-[#8b5cf6]/40' 
+                                        : plan.name === 'Pro' 
+                                            ? 'bg-[#111827] hover:bg-black text-white shadow-lg shadow-black/10 hover:shadow-xl'
+                                            : 'bg-[#F8FAFC] hover:bg-[#E5E7EB] text-[#111827] border border-[#E5E7EB]'
                                     }
-                                }}
-                                onMouseLeave={e => {
-                                    (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
-                                    (e.currentTarget as HTMLDivElement).style.boxShadow = plan.popular ? "0 4px 24px rgba(120, 134, 199, 0.06)" : "none";
-                                    (e.currentTarget as HTMLDivElement).style.borderColor = plan.popular ? "rgba(120, 134, 199, 0.4)" : plan.name === "Pro" ? "rgba(120, 134, 199, 0.3)" : "#E5E7EB";
-                                }}
+                                `}
                             >
-                                {/* Plan header */}
-                                <div>
-                                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.75rem" }}>
-                                        <div style={{
-                                            width: "2.75rem", height: "2.75rem", borderRadius: "0.75rem",
-                                            background: `${plan.color}20`,
-                                            border: `1px solid ${plan.color}40`,
-                                            display: "flex", alignItems: "center", justifyContent: "center"
-                                        }}>
-                                            <plan.icon style={{ width: "1.25rem", height: "1.25rem", color: plan.color }} />
+                                {plan.cta}
+                            </Link>
+
+                            {/* Divider */}
+                            <div className="h-px bg-gradient-to-r from-transparent via-[#E5E7EB] to-transparent mb-8" />
+
+                            {/* Features */}
+                            <div className="flex flex-col gap-4 flex-1">
+                                {plan.features.map((feature, i) => (
+                                    <div key={i} className="flex items-start gap-3">
+                                        <div className="mt-0.5 w-5 h-5 rounded-full bg-[#7886C7]/10 flex items-center justify-center flex-shrink-0">
+                                            <Check className="w-3 h-3 text-[#7886C7]" />
                                         </div>
-                                        <div>
-                                            <span style={{ fontSize: "1.25rem", fontWeight: 700, color: "#111827", display: "block" }}>{plan.name}</span>
-                                            <span style={{ fontSize: "0.7rem", color: plan.color, fontWeight: 600, opacity: 0.9 }}>{plan.period}</span>
-                                        </div>
+                                        <span className="text-[#374151] text-sm font-medium leading-snug">{feature}</span>
                                     </div>
-                                    <p style={{ fontSize: "0.875rem", color: "#4B5563", lineHeight: 1.5 }}>{plan.description}</p>
-                                </div>
-
-                                {/* Price */}
-                                <div>
-                                    <div style={{ display: "flex", alignItems: "baseline", gap: "0.25rem" }}>
-                                        <span style={{ fontSize: "1rem", color: "#4B5563", fontWeight: 700 }}>₺</span>
-                                        <span style={{ fontSize: "3rem", fontWeight: 800, color: "#111827", lineHeight: 1 }}>
-                                            {yearly ? plan.price.yearly : plan.price.monthly}
-                                        </span>
-                                        <span style={{ color: "#6B7280", fontSize: "0.9rem" }}>/ay</span>
+                                ))}
+                                {plan.notIncluded.map((feature, i) => (
+                                    <div key={i} className="flex items-start gap-3 opacity-50">
+                                        <div className="mt-0.5 w-5 h-5 rounded-full bg-[#E5E7EB] flex items-center justify-center flex-shrink-0">
+                                            <span className="text-[10px] font-black text-[#6B7280]">✕</span>
+                                        </div>
+                                        <span className="text-[#6B7280] text-sm font-medium line-through leading-snug">{feature}</span>
                                     </div>
-                                    {yearly && (
-                                        <p style={{ fontSize: "0.8rem", color: "#7886C7", marginTop: "0.35rem", fontWeight: 600 }}>
-                                            Yıllık ödemede ₺{((plan.price.monthly - plan.price.yearly) * 12).toLocaleString("tr-TR")} tasarruf
-                                        </p>
-                                    )}
-                                    {plan.badge && (
-                                        <div style={{
-                                            marginTop: "0.75rem",
-                                            display: "inline-flex",
-                                            alignItems: "center",
-                                            gap: "0.35rem",
-                                            background: "rgba(120, 134, 199, 0.1)",
-                                            border: "1px solid rgba(120, 134, 199, 0.25)",
-                                            borderRadius: "9999px",
-                                            padding: "0.25rem 0.75rem",
-                                            fontSize: "0.7rem",
-                                            color: "#7886C7",
-                                            fontWeight: 700
-                                        }}>
-                                            🎁 {plan.badge}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* CTA */}
-                                <Link href="/demo" style={{
-                                    display: "block",
-                                    width: "100%",
-                                    padding: "0.875rem",
-                                    borderRadius: "0.875rem",
-                                    border: plan.popular ? "none" : plan.name === "Pro" ? "none" : "1px solid #E5E7EB",
-                                    background: plan.popular
-                                        ? "linear-gradient(135deg, #8b5cf6, #7c3aed)"
-                                        : plan.name === "Pro"
-                                            ? "linear-gradient(135deg, #7886C7, #5A659F)"
-                                            : "rgba(120, 134, 199, 0.05)",
-                                    color: plan.popular || plan.name === "Pro" ? "white" : "#111827",
-                                    fontWeight: 600,
-                                    fontSize: "0.95rem",
-                                    cursor: "pointer",
-                                    transition: "all 0.3s",
-                                    textAlign: "center",
-                                    textDecoration: "none",
-                                    boxShadow: plan.popular ? "0 4px 20px rgba(139,92,246,0.3)" : plan.name === "Pro" ? "0 4px 16px rgba(120,134,199,0.3)" : "none"
-                                }}>
-                                    {plan.cta}
-                                </Link>
-
-                                {/* Divider */}
-                                <div style={{ height: "1px", background: "#E5E7EB" }} />
-
-                                {/* Features */}
-                                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", flex: 1 }}>
-                                    {plan.features.map((f, i) => (
-                                        <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
-                                            <div style={{
-                                                width: "1.25rem", height: "1.25rem", borderRadius: "50%",
-                                                background: `${plan.color}20`,
-                                                display: "flex", alignItems: "center", justifyContent: "center",
-                                                flexShrink: 0
-                                            }}>
-                                                <Check style={{ width: "0.75rem", height: "0.75rem", color: plan.color }} />
-                                            </div>
-                                            <span style={{ fontSize: "0.875rem", color: "#374151" }}>{f}</span>
-                                        </div>
-                                    ))}
-                                    {plan.notIncluded.map((f, i) => (
-                                        <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.625rem", opacity: 0.45 }}>
-                                            <div style={{
-                                                width: "1.25rem", height: "1.25rem", borderRadius: "50%",
-                                                background: "rgba(120, 134, 199, 0.08)",
-                                                display: "flex", alignItems: "center", justifyContent: "center",
-                                                flexShrink: 0
-                                            }}>
-                                                <span style={{ fontSize: "0.625rem", color: "#6B7280", fontWeight: 700 }}>✕</span>
-                                            </div>
-                                            <span style={{ fontSize: "0.875rem", color: "#6B7280", textDecoration: "line-through" }}>{f}</span>
-                                        </div>
-                                    ))}
-                                </div>
+                                ))}
                             </div>
                         </motion.div>
                     ))}
                 </div>
-                
+
                 {/* Custom Package CTA */}
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true }}
-                    transition={{ duration: 0.6, delay: 0.3 }}
-                    style={{
-                        marginTop: "4rem",
-                        maxWidth: "1100px",
-                        margin: "4rem auto 0",
-                        padding: "2rem",
-                        borderRadius: "1.5rem",
-                        background: "rgba(120, 134, 199, 0.05)",
-                        border: "1px dashed rgba(120, 134, 199, 0.3)",
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        textAlign: "center",
-                        gap: "1.5rem"
-                    }}
+                    transition={{ duration: 0.5, delay: 0.3 }}
+                    className="max-w-4xl mx-auto mt-20"
                 >
-                    <div>
-                        <h3 style={{ fontSize: "1.5rem", fontWeight: 800, color: "#111827", marginBottom: "0.5rem" }}>
-                            Aradığınız paketi bulamadınız mı?
-                        </h3>
-                        <p style={{ color: "#4B5563", fontSize: "0.95rem" }}>
-                            İhtiyacın olan özellikleri kendin seç, sana özel paketi oluştur ve anında teklif al.
-                        </p>
+                    <div className="bg-white border border-[#E5E7EB] rounded-[24px] p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl shadow-[#7886C7]/5 relative overflow-hidden group">
+                        {/* Decorative background element */}
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-[#7886C7]/10 to-transparent rounded-bl-full pointer-events-none group-hover:scale-110 transition-transform duration-700" />
+                        
+                        <div className="relative z-10 text-center md:text-left flex-1">
+                            <h3 className="text-2xl md:text-3xl font-black text-[#111827] mb-3">
+                                Aradığınız paketi bulamadınız mı?
+                            </h3>
+                            <p className="text-[#4B5563] text-lg font-medium">
+                                İhtiyacın olan özellikleri kendin seç, sana özel paketi oluştur ve anında teklif al.
+                            </p>
+                        </div>
+                        <div className="relative z-10 shrink-0">
+                            <Link href="/paket-olustur" 
+                                className="inline-flex items-center gap-3 bg-[#7886C7] hover:bg-[#5A659F] text-white px-8 py-4 rounded-xl font-bold transition-all duration-300 shadow-lg shadow-[#7886C7]/25 hover:shadow-xl hover:-translate-y-1"
+                            >
+                                <Zap className="w-5 h-5" />
+                                Kendi Paketini Oluştur
+                            </Link>
+                        </div>
                     </div>
-                    <Link href="/paket-olustur" style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "0.75rem",
-                        background: "#7886C7",
-                        color: "white",
-                        padding: "0.875rem 2rem",
-                        borderRadius: "1rem",
-                        fontWeight: 700,
-                        textDecoration: "none",
-                        transition: "all 0.3s"
-                    }}
-                    onMouseEnter={e => {
-                        e.currentTarget.style.transform = "scale(1.05)";
-                        e.currentTarget.style.boxShadow = "0 10px 30px rgba(120, 134, 199, 0.4)";
-                    }}
-                    onMouseLeave={e => {
-                        e.currentTarget.style.transform = "scale(1)";
-                        e.currentTarget.style.boxShadow = "none";
-                    }}
-                    >
-                        <Zap style={{ width: "1.25rem", height: "1.25rem" }} />
-                        Kendi Paketini Oluştur
-                    </Link>
                 </motion.div>
 
-                {/* All plans link */}
+                {/* Footer notes */}
                 <motion.div
                     initial={{ opacity: 0 }}
                     whileInView={{ opacity: 1 }}
                     viewport={{ once: true }}
                     transition={{ delay: 0.4 }}
-                    style={{ textAlign: "center", marginTop: "2.5rem" }}
+                    className="text-center mt-16 pb-8"
                 >
-                    <Link href="/fiyatlandirma" style={{
-                        display: "inline-flex", alignItems: "center", gap: "0.5rem",
-                        color: "#6B7280", fontSize: "0.875rem",
-                        textDecoration: "none", transition: "color 0.2s",
-                        fontWeight: 500
-                    }}
-                        onMouseEnter={e => (e.currentTarget.style.color = "#111827")}
-                        onMouseLeave={e => (e.currentTarget.style.color = "#6B7280")}
-                    >
+                    <Link href="/fiyatlandirma" className="inline-flex items-center gap-2 text-[#6B7280] hover:text-[#111827] font-bold text-sm transition-colors mb-6 group">
                         Tüm plan karşılaştırmasını gör
-                        <ArrowRight style={{ width: "0.875rem", height: "0.875rem" }} />
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     </Link>
-                    <p style={{ color: "#9CA3AF", fontSize: "0.8rem", marginTop: "0.75rem", lineHeight: 1.75 }}>
+                    <p className="text-[#9CA3AF] text-sm font-medium">
                         Tüm fiyatlara KDV dahil değildir. İstediğiniz zaman iptal edebilirsiniz.
                         <br />
-                        <span style={{ color: "#9CA3AF", opacity: 0.8 }}>
+                        <span className="opacity-80 mt-2 inline-block">
                             * Yapay zeka özellikleri (stok tahmini, satış analizi vb.) kullanım bazlı token ücretlendirmesine tabidir ve plan fiyatlarına dahil değildir.
                         </span>
                     </p>
                 </motion.div>
             </div>
-
-            {/* Gradient transition to Contact section (#FFFFFF) */}
-            <div style={{
-                position: "absolute",
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: "180px",
-                background: "linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,1) 100%)",
-                pointerEvents: "none",
-                zIndex: 10,
-            }} />
+            
+            {/* Gradient transition at bottom */}
+            <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-white to-transparent pointer-events-none z-10" />
         </section>
     );
 }

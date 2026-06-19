@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-
 import Link from "next/link";
 import { Zap, ArrowLeft, Home, PhoneCall } from "lucide-react";
 
@@ -14,13 +13,14 @@ export default function NotFound() {
                 minHeight: "100vh",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 padding: "2rem",
+                backgroundColor: "#F8FAFC"
             }}>
                 {/* Glow */}
                 <div style={{
                     position: "absolute", top: "50%", left: "50%",
                     transform: "translate(-50%, -50%)",
                     width: "600px", height: "400px",
-                    backgroundImage: "radial-gradient(ellipse, rgba(120, 134, 199, 0.08) 0%, transparent 70%)",
+                    backgroundImage: "radial-gradient(ellipse, rgba(120, 134, 199, 0.15) 0%, transparent 70%)",
                     pointerEvents: "none",
                 }} />
 
@@ -36,7 +36,7 @@ export default function NotFound() {
                         }}>
                             <Zap style={{ width: "1.25rem", height: "1.25rem", color: "white", fill: "white" }} />
                         </div>
-                        <span style={{ fontSize: "1.5rem", fontWeight: 800, color: "white" }}>
+                        <span style={{ fontSize: "1.5rem", fontWeight: 800, color: "#111827" }}>
                             Jet<span style={{ color: "#7886C7" }}>POS</span>
                         </span>
                     </Link>
@@ -46,7 +46,7 @@ export default function NotFound() {
                         fontSize: "clamp(6rem, 20vw, 10rem)",
                         fontWeight: 900,
                         lineHeight: 1,
-                        backgroundImage: "linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.04))",
+                        backgroundImage: "linear-gradient(135deg, rgba(120, 134, 199, 0.8), rgba(120, 134, 199, 0.2))",
                         WebkitBackgroundClip: "text",
                         WebkitTextFillColor: "transparent",
                         marginBottom: "1.5rem",
@@ -56,13 +56,13 @@ export default function NotFound() {
                     </div>
 
                     <h1 style={{
-                        fontSize: "1.75rem", fontWeight: 800, color: "white",
+                        fontSize: "1.75rem", fontWeight: 800, color: "#111827",
                         marginBottom: "1rem", lineHeight: 1.2,
                     }}>
                         Sayfa Bulunamadı
                     </h1>
                     <p style={{
-                        color: "rgba(255,255,255,0.5)", fontSize: "1rem",
+                        color: "#6B7280", fontSize: "1rem",
                         lineHeight: 1.7, marginBottom: "2.5rem",
                     }}>
                         Aradığınız sayfa taşınmış, silinmiş ya da hiç oluşturulmamış olabilir. Ana sayfaya dönüp devam edebilirsiniz.
@@ -83,10 +83,11 @@ export default function NotFound() {
                         <Link href="/#contact" style={{
                             display: "inline-flex", alignItems: "center", gap: "0.5rem",
                             padding: "0.875rem 1.75rem", borderRadius: "9999px",
-                            border: "1px solid rgba(255,255,255,0.15)",
-                            background: "rgba(255,255,255,0.04)",
-                            color: "rgba(255,255,255,0.8)", fontWeight: 600, fontSize: "0.95rem",
+                            border: "1px solid #E5E7EB",
+                            background: "#FFFFFF",
+                            color: "#111827", fontWeight: 600, fontSize: "0.95rem",
                             textDecoration: "none", transition: "all 0.2s",
+                            boxShadow: "0 2px 4px rgba(0,0,0,0.02)"
                         }}>
                             <PhoneCall style={{ width: "1rem", height: "1rem" }} />
                             İletişim
@@ -100,11 +101,11 @@ export default function NotFound() {
                             { label: "Gizlilik", href: "/gizlilik" },
                         ].map(({ label, href }) => (
                             <Link key={href} href={href} style={{
-                                color: "rgba(255,255,255,0.35)", fontSize: "0.875rem",
+                                color: "#9CA3AF", fontSize: "0.875rem",
                                 textDecoration: "none", transition: "color 0.2s",
                             }}
-                                onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.7)")}
-                                onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.35)")}
+                                onMouseEnter={e => (e.currentTarget.style.color = "#7886C7")}
+                                onMouseLeave={e => (e.currentTarget.style.color = "#9CA3AF")}
                             >
                                 {label}
                             </Link>

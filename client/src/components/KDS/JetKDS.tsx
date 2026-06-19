@@ -353,9 +353,9 @@ export default function JetKDS({ showToast }: any) {
     };
 
     return (
-        <div className="flex flex-col h-[calc(100vh-100px)] gap-4 overflow-hidden text-white bg-slate-950 p-4 rounded-3xl border border-white/5 shadow-2xl">
+        <div className="flex flex-col h-[calc(100vh-100px)] gap-4 overflow-hidden text-foreground bg-background p-4 rounded-3xl border border-border shadow-2xl">
             {/* Top Toolbar */}
-            <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-900/40 p-4 rounded-2xl border border-white/5 backdrop-blur-xl">
+            <div className="flex flex-wrap items-center justify-between gap-4 bg-card/40 p-4 rounded-2xl border border-border backdrop-blur-xl">
                 <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-primary/10 border border-primary/20 rounded-xl flex items-center justify-center text-primary">
                         <ChefHat size={24} />
@@ -368,13 +368,13 @@ export default function JetKDS({ showToast }: any) {
 
                 <div className="flex items-center gap-2">
                     {/* Station Tabs */}
-                    <div className="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-xl border border-white/5">
+                    <div className="flex items-center gap-1.5 bg-muted p-1.5 rounded-xl border border-border">
                         <button
                             onClick={() => setSelectedStation("all")}
                             className={`px-4 py-2 rounded-lg text-xs font-black transition-all ${
                                 selectedStation === "all"
-                                ? "bg-primary text-white shadow-lg shadow-primary/20"
-                                : "text-slate-400 hover:bg-white/5 hover:text-white"
+                                ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                                : "text-secondary hover:bg-muted/50 hover:text-foreground"
                             }`}
                         >
                             TÜMÜ
@@ -385,8 +385,8 @@ export default function JetKDS({ showToast }: any) {
                                 onClick={() => setSelectedStation(st.id)}
                                 className={`px-4 py-2 rounded-lg text-xs font-black transition-all uppercase ${
                                     selectedStation === st.id
-                                    ? "text-white shadow-lg"
-                                    : "text-slate-400 hover:bg-white/5 hover:text-white"
+                                    ? "text-primary-foreground shadow-lg"
+                                    : "text-secondary hover:bg-muted/50 hover:text-foreground"
                                 }`}
                                 style={{ backgroundColor: selectedStation === st.id ? st.color || '#3b82f6' : undefined }}
                             >
@@ -411,7 +411,7 @@ export default function JetKDS({ showToast }: any) {
                     {/* Manual Refresh */}
                     <button
                         onClick={fetchOrders}
-                        className="p-3 bg-slate-900 hover:bg-slate-800 border border-white/5 rounded-xl text-slate-300"
+                        className="p-3 bg-card hover:bg-muted border border-border rounded-xl text-secondary"
                         title="Yenile"
                     >
                         <RefreshCw size={16} />
@@ -435,17 +435,17 @@ export default function JetKDS({ showToast }: any) {
                     ].map(col => {
                         const Icon = col.actionIcon;
                         return (
-                            <div key={col.key} className="flex flex-col h-full bg-slate-900/20 border border-white/5 rounded-2xl min-h-0">
+                            <div key={col.key} className="flex flex-col h-full bg-card/20 border border-border rounded-2xl min-h-0 shadow-sm">
                                 {/* Column Header */}
-                                <div className={`px-4 py-3.5 border-b border-white/5 flex items-center justify-between rounded-t-2xl bg-slate-900/50`}>
+                                <div className={`px-4 py-3.5 border-b border-border flex items-center justify-between rounded-t-2xl bg-muted/30`}>
                                     <div className="flex items-center gap-2">
                                         <div className={`w-2.5 h-2.5 rounded-full ${
                                             col.key === 'new' ? 'bg-blue-500' :
                                             col.key === 'preparing' ? 'bg-orange-500' : 'bg-emerald-500'
                                         }`} />
-                                        <span className="text-xs font-black tracking-widest text-slate-300">{col.title}</span>
+                                        <span className="text-xs font-black tracking-widest text-secondary">{col.title}</span>
                                     </div>
-                                    <span className="text-xs font-black bg-white/5 px-2 py-0.5 rounded-md text-slate-400">
+                                    <span className="text-xs font-black bg-background px-2 py-0.5 rounded-md text-foreground">
                                         {col.list.length}
                                     </span>
                                 </div>
@@ -459,25 +459,25 @@ export default function JetKDS({ showToast }: any) {
                                                 initial={{ opacity: 0, scale: 0.95 }}
                                                 animate={{ opacity: 1, scale: 1 }}
                                                 exit={{ opacity: 0, x: 20 }}
-                                                className={`p-4 rounded-xl border border-white/5 bg-slate-900/80 shadow-lg relative group ${
+                                                className={`p-4 rounded-xl border border-border bg-card shadow-lg relative group ${
                                                     order.priority > 0 ? "ring-2 ring-red-500/50 bg-red-500/5" : ""
                                                 }`}
                                             >
                                                 {/* Card Header */}
                                                 <div className="flex items-start justify-between gap-3">
                                                     <div>
-                                                        <h3 className="font-black text-sm text-white uppercase tracking-tight">
+                                                        <h3 className="font-black text-sm text-foreground uppercase tracking-tight">
                                                             {order.table_name || 'MASA'}
                                                         </h3>
-                                                        <p className="text-[10px] text-slate-400 font-bold mt-0.5">
+                                                        <p className="text-[10px] text-secondary font-bold mt-0.5">
                                                             🤵 {order.waiter_name || 'Garson'}
                                                         </p>
                                                     </div>
                                                     <div className="flex flex-col items-end gap-1 shrink-0">
-                                                        <span className="px-2 py-0.5 rounded bg-white/5 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                                        <span className="px-2 py-0.5 rounded bg-muted text-[9px] font-black text-secondary uppercase tracking-widest">
                                                             {order.station_name}
                                                         </span>
-                                                        <div className="flex items-center gap-1 text-[9px] font-bold text-slate-500 mt-1">
+                                                        <div className="flex items-center gap-1 text-[9px] font-bold text-secondary mt-1">
                                                             <Clock size={10} />
                                                             <span>{getElapsedTime(order.created_at)}</span>
                                                         </div>
@@ -492,11 +492,11 @@ export default function JetKDS({ showToast }: any) {
                                                 )}
 
                                                 {/* Items list */}
-                                                <div className="mt-3 border-t border-white/5 pt-3 space-y-2">
+                                                <div className="mt-3 border-t border-border pt-3 space-y-2">
                                                     {order.items?.map(item => {
                                                         const isCancelled = !!item.cancelled_at;
                                                         return (
-                                                            <div key={item.id} className={`flex flex-col text-xs font-semibold ${isCancelled ? 'line-through opacity-40 text-rose-400' : 'text-slate-200'}`}>
+                                                            <div key={item.id} className={`flex flex-col text-xs font-semibold ${isCancelled ? 'line-through opacity-40 text-rose-500' : 'text-foreground/80'}`}>
                                                                 <div className="flex items-center justify-between gap-2">
                                                                     <span>
                                                                         <strong className={`${isCancelled ? 'text-rose-500' : 'text-primary'} font-black text-sm`}>{item.quantity}</strong> x {item.product_name}
@@ -523,10 +523,10 @@ export default function JetKDS({ showToast }: any) {
                                                 </div>
 
                                                 {/* Card Footer Actions */}
-                                                <div className="mt-4 border-t border-white/5 pt-3 flex gap-2">
+                                                <div className="mt-4 border-t border-border pt-3 flex gap-2">
                                                     <button
                                                         onClick={() => updateOrderStatus(order.id, order.status)}
-                                                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-primary text-white text-xs font-black uppercase rounded-lg shadow-lg active:scale-95 transition-all"
+                                                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-primary text-primary-foreground text-xs font-black uppercase rounded-lg shadow-lg active:scale-95 transition-all"
                                                     >
                                                         <Icon size={12} />
                                                         <span>{col.actionLabel}</span>

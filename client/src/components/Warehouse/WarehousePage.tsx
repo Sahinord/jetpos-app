@@ -56,24 +56,24 @@ export default function WarehousePage({ isPriceSyncEnabled = false }: { isPriceS
             {/* Header / Tabs */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center">
-                        <Building2 className="w-6 h-6 text-indigo-400" />
+                    <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center">
+                        <Building2 className="w-6 h-6 text-primary" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-white uppercase tracking-tight">Depo Yönetimi</h1>
+                        <h1 className="text-2xl font-bold text-foreground uppercase tracking-tight">Depo Yönetimi</h1>
                         <p className="text-sm text-secondary">Lokasyon bazlı stok ve fiyat yönetimi</p>
                     </div>
                 </div>
 
-                <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
+                <div className="flex bg-muted/50 p-1 rounded-xl border border-border">
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id as any)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
                                 activeTab === tab.id 
-                                ? 'bg-indigo-500 text-white shadow-lg' 
-                                : 'text-secondary hover:text-white hover:bg-white/5'
+                                ? 'bg-primary text-primary-foreground shadow-lg' 
+                                : 'text-secondary hover:text-foreground hover:bg-muted'
                             }`}
                         >
                             <tab.icon className="w-4 h-4" />

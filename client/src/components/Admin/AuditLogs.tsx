@@ -233,7 +233,7 @@ export default function AuditLogs() {
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-2xl font-black text-white flex items-center gap-3">
+                    <h2 className="text-2xl font-black text-foreground flex items-center gap-3">
                         <History className="text-primary" />
                         Sistem İşlem Kayıtları
                     </h2>
@@ -249,31 +249,31 @@ export default function AuditLogs() {
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && fetchLogs(true)}
-                            className="w-full pl-11 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-primary/50 transition-all text-sm"
+                            className="w-full pl-11 pr-4 py-2.5 bg-background border border-border rounded-xl text-foreground outline-none focus:border-primary/50 transition-all text-sm"
                         />
                     </div>
                     <select
                         value={filterType}
                         onChange={(e) => setFilterType(e.target.value)}
-                        className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white outline-none cursor-pointer hover:bg-white/10 transition-all"
+                        className="bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground outline-none cursor-pointer hover:bg-muted/50 transition-all"
                     >
-                        <option value="all" className="bg-slate-900">Tüm İşlemler</option>
-                        <option value="STOCK_CHANGE" className="bg-slate-900">Stok Değişimi</option>
-                        <option value="PRICE_CHANGE" className="bg-slate-900">Fiyat Değişimi</option>
-                        <option value="PRODUCT_DELETE" className="bg-slate-900">Ürün Silme</option>
-                        <option value="PRODUCT_RESTORE" className="bg-slate-900">Ürün Geri Yükleme</option>
-                        <option value="DATABASE_RESET" className="bg-slate-900">Veritabanı Sıfırlama</option>
-                        <option value="LOGIN" className="bg-slate-900">Girişler</option>
-                        <option value="CASH_DRAWER_OPEN" className="bg-slate-900">Çekmece Açma</option>
+                        <option value="all" className="bg-background">Tüm İşlemler</option>
+                        <option value="STOCK_CHANGE" className="bg-background">Stok Değişimi</option>
+                        <option value="PRICE_CHANGE" className="bg-background">Fiyat Değişimi</option>
+                        <option value="PRODUCT_DELETE" className="bg-background">Ürün Silme</option>
+                        <option value="PRODUCT_RESTORE" className="bg-background">Ürün Geri Yükleme</option>
+                        <option value="DATABASE_RESET" className="bg-background">Veritabanı Sıfırlama</option>
+                        <option value="LOGIN" className="bg-background">Girişler</option>
+                        <option value="CASH_DRAWER_OPEN" className="bg-background">Çekmece Açma</option>
                     </select>
                 </div>
             </div>
 
-            <div className="glass-card !p-0 overflow-hidden border border-white/5 shadow-2xl">
+            <div className="glass-card !p-0 overflow-hidden border border-border shadow-2xl">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="bg-white/5 border-b border-white/5">
+                            <tr className="bg-muted/50 border-b border-border">
                                 <th className="p-4 text-[10px] font-black text-secondary uppercase tracking-widest">Tarih / Saat</th>
                                 <th className="p-4 text-[10px] font-black text-secondary uppercase tracking-widest">İşlem Türü</th>
                                 <th className="p-4 text-[10px] font-black text-secondary uppercase tracking-widest">Açıklama</th>
@@ -281,7 +281,7 @@ export default function AuditLogs() {
                                 <th className="p-4 text-[10px] font-black text-secondary uppercase tracking-widest text-right">Aksiyon</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/5">
+                        <tbody className="divide-y divide-border">
                             {logs.map((log, index) => (
                                 <motion.tr 
                                     key={log.id}
@@ -301,7 +301,7 @@ export default function AuditLogs() {
                                     <td className="p-4">
                                         <div className="flex items-center gap-2">
                                             {getIcon(log.event_type)}
-                                            <span className="text-xs font-bold text-white uppercase tracking-tighter">
+                                            <span className="text-xs font-bold text-foreground uppercase tracking-tighter">
                                                 {log.event_type.replace(/_/g, ' ')}
                                             </span>
                                         </div>
@@ -326,7 +326,7 @@ export default function AuditLogs() {
                                                 onClick={() => handleUndo(log)}
                                                 className={`px-3 py-1.5 rounded-xl text-[10px] font-black tracking-widest transition-all ${
                                                     log.metadata?.is_undone
-                                                        ? 'bg-white/5 text-secondary/30 cursor-not-allowed border border-white/5'
+                                                        ? 'bg-muted/50 text-secondary/30 cursor-not-allowed border border-border'
                                                         : 'bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white border border-rose-500/20 active:scale-95'
                                                 }`}
                                                 disabled={log.metadata?.is_undone}
@@ -349,11 +349,11 @@ export default function AuditLogs() {
                 )}
 
                 {hasMore && (
-                    <div className="p-6 border-t border-white/5 text-center">
+                    <div className="p-6 border-t border-border text-center">
                         <button 
                             onClick={() => fetchLogs()}
                             disabled={loading}
-                            className="px-8 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-white transition-all disabled:opacity-50"
+                            className="px-8 py-2.5 bg-muted/50 hover:bg-muted border border-border rounded-xl text-xs font-bold text-foreground transition-all disabled:opacity-50"
                         >
                             {loading ? 'Yükleniyor...' : 'Daha Fazla Göster'}
                         </button>

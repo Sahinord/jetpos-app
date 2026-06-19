@@ -232,8 +232,8 @@ function PlanCard({ plan, yearly }: { plan: typeof plans[0]; yearly: boolean }) 
             )}
 
             <div style={{
-                background: plan.highlight ? "rgba(5,150,105,0.07)" : "rgba(255,255,255,0.02)",
-                border: `1px solid ${plan.highlight ? "rgba(52,211,153,0.3)" : plan.badge === "⭐ En Popüler" ? "rgba(139,92,246,0.3)" : "rgba(255,255,255,0.06)"}`,
+                background: plan.highlight ? "rgba(5,150,105,0.02)" : "white",
+                border: `1px solid ${plan.highlight ? "rgba(52,211,153,0.3)" : plan.badge === "⭐ En Popüler" ? "rgba(139,92,246,0.3)" : "rgba(120,134,199,0.15)"}`,
                 borderRadius: "1rem",
                 padding: "1.25rem",
                 display: "flex", flexDirection: "column", gap: "1rem",
@@ -243,7 +243,7 @@ function PlanCard({ plan, yearly }: { plan: typeof plans[0]; yearly: boolean }) 
                 {/* Header */}
                 <div>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.25rem" }}>
-                        <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "white", margin: 0 }}>
+                        <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "#111827", margin: 0 }}>
                             {plan.name}
                         </h3>
                         <span style={{
@@ -257,7 +257,7 @@ function PlanCard({ plan, yearly }: { plan: typeof plans[0]; yearly: boolean }) 
                     <p style={{ fontSize: "0.7rem", color: plan.color, fontWeight: 600, marginBottom: "0.5rem" }}>
                         {plan.period}
                     </p>
-                    <p style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.5)", lineHeight: 1.5 }}>
+                    <p style={{ fontSize: "0.85rem", color: "#4B5563", lineHeight: 1.5 }}>
                         {plan.subtitle}
                     </p>
                 </div>
@@ -265,23 +265,23 @@ function PlanCard({ plan, yearly }: { plan: typeof plans[0]; yearly: boolean }) 
                 {/* Price */}
                 <div>
                     {(plan as any).originalYearly && (
-                        <div style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.3)", textDecoration: "line-through", marginBottom: "0.25rem" }}>
+                        <div style={{ fontSize: "0.78rem", color: "#9CA3AF", textDecoration: "line-through", marginBottom: "0.25rem" }}>
                             ₺{(plan as any).originalYearly.toLocaleString("tr-TR")} +KDV
                         </div>
                     )}
                     {isCustom ? (
                         <div>
-                            <span style={{ fontSize: "1.5rem", fontWeight: 800, color: "white" }}>Teklif Bazlı</span>
+                            <span style={{ fontSize: "1.5rem", fontWeight: 800, color: "#111827" }}>Teklif Bazlı</span>
                             <p style={{ fontSize: "0.8rem", color: plan.color, fontWeight: 600, marginTop: "0.25rem" }}>İşletmenize özel fiyat</p>
                         </div>
                     ) : (
                         <>
                             <div style={{ display: "flex", alignItems: "baseline", gap: "0.2rem" }}>
-                                <span style={{ fontSize: "1rem", color: "rgba(255,255,255,0.6)", fontWeight: 700 }}>₺</span>
-                                <span style={{ fontSize: "3rem", fontWeight: 900, color: "white", lineHeight: 1 }}>
+                                <span style={{ fontSize: "1rem", color: "#4B5563", fontWeight: 700 }}>₺</span>
+                                <span style={{ fontSize: "3rem", fontWeight: 900, color: "#111827", lineHeight: 1 }}>
                                     {price?.toLocaleString("tr-TR")}
                                 </span>
-                                <span style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.4)" }}>+KDV/ay</span>
+                                <span style={{ fontSize: "0.85rem", color: "#6B7280" }}>+KDV/ay</span>
                             </div>
                             {yearly && plan.monthlyPrice > 0 && (
                                 <p style={{ fontSize: "0.75rem", color: "#4ade80", marginTop: "0.3rem" }}>
@@ -307,7 +307,7 @@ function PlanCard({ plan, yearly }: { plan: typeof plans[0]; yearly: boolean }) 
                                 : isCustom
                                     ? "linear-gradient(135deg, #be185d, #ec4899)"
                                     : "rgba(255,255,255,0.07)",
-                        color: "white", fontWeight: 700, fontSize: "0.95rem",
+                        color: (plan.highlight || plan.badge === "⭐ En Popüler" || isCustom) ? "white" : "#7886C7", fontWeight: 700, fontSize: "0.95rem",
                         cursor: "pointer", textDecoration: "none",
                         boxShadow: plan.highlight ? "0 4px 16px rgba(52,211,153,0.3)" : plan.badge === "⭐ En Popüler" ? "0 4px 16px rgba(124,58,237,0.35)" : "none",
                         border2: plan.highlight || plan.badge === "⭐ En Popüler" || isCustom ? "none" : "1px solid rgba(255,255,255,0.12)",
@@ -323,7 +323,7 @@ function PlanCard({ plan, yearly }: { plan: typeof plans[0]; yearly: boolean }) 
                     {visibleFeatures.map((f: any, i: number) => (
                         <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                             <Check style={{ width: "0.875rem", height: "0.875rem", color: plan.color, flexShrink: 0 }} />
-                            <span style={{ fontSize: "0.83rem", color: "rgba(255,255,255,0.75)", flex: 1 }}>{f.text}</span>
+                            <span style={{ fontSize: "0.83rem", color: "#374151", flex: 1 }}>{f.text}</span>
                             {f.tag && (
                                 <span style={{
                                     fontSize: "0.6rem", fontWeight: 800,
@@ -339,8 +339,8 @@ function PlanCard({ plan, yearly }: { plan: typeof plans[0]; yearly: boolean }) 
                     ))}
                     {(plan as any).notIncluded?.map((f: string, i: number) => (
                         <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.5rem", opacity: 0.3 }}>
-                            <span style={{ width: "0.875rem", height: "0.875rem", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: "0.7rem", color: "rgba(255,255,255,0.4)" }}>✕</span>
-                            <span style={{ fontSize: "0.83rem", color: "rgba(255,255,255,0.4)", textDecoration: "line-through" }}>{f}</span>
+                            <span style={{ width: "0.875rem", height: "0.875rem", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: "0.7rem", color: "#6B7280" }}>✕</span>
+                            <span style={{ fontSize: "0.83rem", color: "#6B7280", textDecoration: "line-through" }}>{f}</span>
                         </div>
                     ))}
                 </div>
@@ -351,9 +351,9 @@ function PlanCard({ plan, yearly }: { plan: typeof plans[0]; yearly: boolean }) 
                         onClick={() => setExpanded(!expanded)}
                         style={{
                             display: "flex", alignItems: "center", justifyContent: "center", gap: "0.375rem",
-                            background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
+                            background: "white", border: "1px solid rgba(120, 134, 199, 0.15)",
                             cursor: "pointer", borderRadius: "0.5rem",
-                            color: "rgba(255,255,255,0.4)", fontSize: "0.78rem", fontWeight: 600,
+                            color: "#6B7280", fontSize: "0.78rem", fontWeight: 600,
                             fontFamily: "inherit", padding: "0.5rem 1rem",
                         }}
                     >
@@ -367,7 +367,7 @@ function PlanCard({ plan, yearly }: { plan: typeof plans[0]; yearly: boolean }) 
                 )}
 
                 {(plan as any).footnote && (
-                    <p style={{ fontSize: "0.68rem", color: "rgba(255,255,255,0.3)", textAlign: "center" }}>
+                    <p style={{ fontSize: "0.68rem", color: "#9CA3AF", textAlign: "center" }}>
                         {(plan as any).footnote}
                     </p>
                 )}
@@ -387,9 +387,9 @@ function ComparisonTable() {
                 onClick={() => setOpen(!open)}
                 style={{
                     display: "flex", alignItems: "center", gap: "0.625rem",
-                    margin: "0 auto", background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.75rem",
-                    padding: "0.75rem 1.75rem", color: "rgba(255,255,255,0.7)", fontWeight: 600,
+                    margin: "0 auto", background: "white",
+                    border: "1px solid rgba(120, 134, 199, 0.2)", borderRadius: "0.75rem",
+                    padding: "0.75rem 1.75rem", color: "#374151", fontWeight: 600,
                     fontSize: "0.9rem", cursor: "pointer", fontFamily: "inherit",
                     transition: "all 0.2s"
                 }}
@@ -408,18 +408,18 @@ function ComparisonTable() {
                         style={{ overflow: "hidden", marginTop: "2rem" }}
                     >
                         <div style={{
-                            background: "rgba(255,255,255,0.02)",
-                            border: "1px solid rgba(255,255,255,0.07)",
+                            background: "white",
+                            border: "1px solid rgba(120, 134, 199, 0.15)",
                             borderRadius: "1.25rem", overflow: "auto"
                         }}>
                             {/* Header */}
                             <div style={{
                                 display: "grid", gridTemplateColumns: "2.5fr 1fr 1fr 1fr 1fr",
-                                background: "rgba(255,255,255,0.03)",
-                                borderBottom: "1px solid rgba(255,255,255,0.07)",
+                                background: "white",
+                                borderBottom: "1px solid rgba(120, 134, 199, 0.15)",
                                 padding: "1rem 1.5rem", gap: "0.5rem", minWidth: "600px"
                             }}>
-                                <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.35)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>Özellik</div>
+                                <div style={{ fontSize: "0.75rem", color: "#4B5563", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>Özellik</div>
                                 {plans.map(p => (
                                     <div key={p.id} style={{ fontSize: "0.78rem", fontWeight: 800, color: p.color, textAlign: "center" }}>
                                         {p.name}
@@ -432,12 +432,12 @@ function ComparisonTable() {
                                     <div style={{
                                         display: "flex", alignItems: "center", gap: "0.5rem",
                                         padding: "0.625rem 1.5rem",
-                                        background: "rgba(255,255,255,0.015)",
-                                        borderTop: ci > 0 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                                        background: "#F8FAFC",
+                                        borderTop: ci > 0 ? "1px solid rgba(120, 134, 199, 0.1)" : "none",
                                         minWidth: "600px"
                                     }}>
-                                        <cat.icon style={{ width: "0.8rem", height: "0.8rem", color: "rgba(255,255,255,0.35)" }} />
-                                        <span style={{ fontSize: "0.7rem", fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                                        <cat.icon style={{ width: "0.8rem", height: "0.8rem", color: "#4B5563" }} />
+                                        <span style={{ fontSize: "0.7rem", fontWeight: 700, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.08em" }}>
                                             {cat.title}
                                         </span>
                                     </div>
@@ -446,16 +446,16 @@ function ComparisonTable() {
                                         <div key={fi} style={{
                                             display: "grid", gridTemplateColumns: "2.5fr 1fr 1fr 1fr 1fr",
                                             padding: "0.6rem 1.5rem", gap: "0.5rem",
-                                            borderTop: "1px solid rgba(255,255,255,0.035)",
+                                            borderTop: "1px solid rgba(120, 134, 199, 0.1)",
                                             alignItems: "center", minWidth: "600px",
                                         }}>
-                                            <span style={{ fontSize: "0.82rem", color: "rgba(255,255,255,0.65)" }}>{feat.name}</span>
+                                            <span style={{ fontSize: "0.82rem", color: "#4B5563" }}>{feat.name}</span>
                                             {feat.plans.map((val, pi) => (
                                                 <div key={pi} style={{ display: "flex", justifyContent: "center" }}>
                                                     {val === true ? (
                                                         <Check style={{ width: "0.9rem", height: "0.9rem", color: planColors[pi] }} />
                                                     ) : val === false ? (
-                                                        <span style={{ color: "rgba(255,255,255,0.12)", fontSize: "0.8rem" }}>—</span>
+                                                        <span style={{ color: "#D1D5DB", fontSize: "0.8rem" }}>—</span>
                                                     ) : (
                                                         <span style={{
                                                             fontSize: "0.6rem", fontWeight: 700,
@@ -635,24 +635,24 @@ function FiyatlandirmaContent() {
 
                         {/* Header */}
                         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} style={{ textAlign: "center", marginBottom: "4rem" }}>
-                            <div style={{ display: "inline-flex", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "100px", padding: "0.25rem", marginBottom: "2.5rem" }}>
-                                <button onClick={() => setViewMode("plans")} style={{ padding: "0.5rem 1.5rem", borderRadius: "100px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: "0.85rem", background: viewMode === "plans" ? "#7886C7" : "transparent", color: viewMode === "plans" ? "white" : "rgba(255,255,255,0.4)" }}>Standart</button>
-                                <button onClick={() => setViewMode("custom")} style={{ padding: "0.5rem 1.5rem", borderRadius: "100px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: "0.85rem", background: viewMode === "custom" ? "#7886C7" : "transparent", color: viewMode === "custom" ? "white" : "rgba(255,255,255,0.4)" }}>Özel Paket</button>
+                            <div style={{ display: "inline-flex", background: "white", border: "1px solid rgba(120, 134, 199, 0.15)", borderRadius: "100px", padding: "0.25rem", marginBottom: "2.5rem" }}>
+                                <button onClick={() => setViewMode("plans")} style={{ padding: "0.5rem 1.5rem", borderRadius: "100px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: "0.85rem", background: viewMode === "plans" ? "#7886C7" : "transparent", color: viewMode === "plans" ? "white" : "#6B7280" }}>Standart</button>
+                                <button onClick={() => setViewMode("custom")} style={{ padding: "0.5rem 1.5rem", borderRadius: "100px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: "0.85rem", background: viewMode === "custom" ? "#7886C7" : "transparent", color: viewMode === "custom" ? "white" : "#6B7280" }}>Özel Paket</button>
                             </div>
 
-                            <h1 style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", fontWeight: 900, color: "white", marginBottom: "1rem", letterSpacing: "-0.03em" }}>
+                            <h1 style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", fontWeight: 900, color: "#111827", marginBottom: "1rem", letterSpacing: "-0.03em" }}>
                                 {viewMode === "plans" ? "Hızınıza Hız Katın" : "Sadece Gerekeni Seçin"}
                             </h1>
-                            <p style={{ color: "rgba(255,255,255,0.35)", fontSize: "1rem", maxWidth: "550px", margin: "0 auto 2rem" }}>
+                            <p style={{ color: "#4B5563", fontSize: "1rem", maxWidth: "550px", margin: "0 auto 2rem" }}>
                                 {viewMode === "plans" 
                                     ? "Hazır paketlerimizden birini seçerek anında başlayın."
                                     : "İhtiyacın olmayan özelliklere para ödeme, kendi paketini yap."}
                             </p>
 
                             {viewMode === "plans" && (
-                                <div style={{ display: "inline-flex", alignItems: "center", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "100px", padding: "0.2rem" }}>
-                                    <button onClick={() => setYearly(false)} style={{ padding: "0.4rem 1.25rem", borderRadius: "100px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: "0.75rem", background: !yearly ? "white" : "transparent", color: !yearly ? "black" : "rgba(255,255,255,0.3)" }}>Aylık</button>
-                                    <button onClick={() => setYearly(true)} style={{ padding: "0.4rem 1.25rem", borderRadius: "100px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: "0.75rem", background: yearly ? "white" : "transparent", color: yearly ? "black" : "rgba(255,255,255,0.3)" }}>Yıllık</button>
+                                <div style={{ display: "inline-flex", alignItems: "center", background: "white", border: "1px solid rgba(120, 134, 199, 0.15)", borderRadius: "100px", padding: "0.2rem" }}>
+                                    <button onClick={() => setYearly(false)} style={{ padding: "0.4rem 1.25rem", borderRadius: "100px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: "0.75rem", background: !yearly ? "#7886C7" : "transparent", color: !yearly ? "white" : "#6B7280" }}>Aylık</button>
+                                    <button onClick={() => setYearly(true)} style={{ padding: "0.4rem 1.25rem", borderRadius: "100px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: "0.75rem", background: yearly ? "#7886C7" : "transparent", color: yearly ? "white" : "#6B7280" }}>Yıllık</button>
                                 </div>
                             )}
                         </motion.div>
@@ -680,17 +680,17 @@ function FiyatlandirmaContent() {
                                                     const isExpanded = expandedDetails.includes(f.id);
                                                     return (
                                                         <motion.div key={f.id} layout style={{
-                                                            background: active ? "rgba(120, 134, 199, 0.08)" : "rgba(255,255,255,0.015)",
-                                                            border: `1px solid ${active ? "rgba(120, 134, 199, 0.3)" : "rgba(255,255,255,0.04)"}`,
+                                                            background: active ? "rgba(120, 134, 199, 0.08)" : "white",
+                                                            border: `1px solid ${active ? "rgba(120, 134, 199, 0.5)" : "rgba(120, 134, 199, 0.15)"}`,
                                                             borderRadius: "1.25rem", padding: "1.25rem", position: "relative", transition: "all 0.3s ease",
                                                             cursor: "pointer"
                                                         }} onClick={() => toggleFeature(f.id)}>
                                                             <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                                                                <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "0.75rem", background: active ? "#7886C7" : "rgba(255,255,255,0.03)", display: "flex", alignItems: "center", justifyContent: "center", color: active ? "white" : "rgba(255,255,255,0.25)", transition: "all 0.3s" }}>
+                                                                <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "0.75rem", background: active ? "#7886C7" : "rgba(120, 134, 199, 0.05)", display: "flex", alignItems: "center", justifyContent: "center", color: active ? "#111827" : "#9CA3AF", transition: "all 0.3s" }}>
                                                                     <f.icon style={{ width: "1.1rem", height: "1.1rem" }} />
                                                                 </div>
                                                                 <div style={{ flex: 1 }}>
-                                                                    <h3 style={{ fontSize: "0.95rem", fontWeight: 800, color: "white", marginBottom: "0.15rem" }}>{f.label}</h3>
+                                                                    <h3 style={{ fontSize: "0.95rem", fontWeight: 800, color: "#111827", marginBottom: "0.15rem" }}>{f.label}</h3>
                                                                     <button 
                                                                         onClick={(e) => toggleDetail(f.id, e)}
                                                                         style={{ 
@@ -713,11 +713,11 @@ function FiyatlandirmaContent() {
                                                             <AnimatePresence>
                                                                 {isExpanded && (
                                                                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} style={{ overflow: "hidden" }}>
-                                                                        <div style={{ paddingTop: "1rem", marginTop: "1rem", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                                                                            <p style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.5)", lineHeight: 1.5, marginBottom: "0.75rem" }}>{f.detailed}</p>
+                                                                        <div style={{ paddingTop: "1rem", marginTop: "1rem", borderTop: "1px solid rgba(120, 134, 199, 0.1)" }}>
+                                                                            <p style={{ fontSize: "0.8rem", color: "#4B5563", lineHeight: 1.5, marginBottom: "0.75rem" }}>{f.detailed}</p>
                                                                             <div style={{ background: "rgba(34,197,94,0.05)", border: "1px solid rgba(34,197,94,0.1)", borderRadius: "0.75rem", padding: "0.75rem" }}>
                                                                                 <div style={{ color: "#4ade80", fontSize: "0.65rem", fontWeight: 800, marginBottom: "0.2rem" }}>FAYDA:</div>
-                                                                                <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.8)", fontStyle: "italic" }}>"{f.benefit}"</div>
+                                                                                <div style={{ fontSize: "0.75rem", color: "#374151", fontStyle: "italic" }}>"{f.benefit}"</div>
                                                                             </div>
                                                                         </div>
                                                                     </motion.div>
@@ -744,11 +744,11 @@ function FiyatlandirmaContent() {
                                     <div style={{ display: "flex", alignItems: "center", gap: "1.25rem" }}>
                                         <div style={{ width: "3.25rem", height: "3.25rem", borderRadius: "50%", backgroundImage: "linear-gradient(135deg, #7886C7, #B0BAE6)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: "1.35rem", color: "white", boxShadow: "0 0 20px rgba(120, 134, 199, 0.4)" }}>{selectedFeatures.length}</div>
                                         <div style={{ display: "flex", flexDirection: "column" }}>
-                                            <span style={{ fontWeight: 900, fontSize: "1.1rem", color: "white" }}>Harika Bir Paket!</span>
-                                            <span style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.45)" }}>Sizin için en uygun teklifi hazırlayalım</span>
+                                            <span style={{ fontWeight: 900, fontSize: "1.1rem", color: "#111827" }}>Harika Bir Paket!</span>
+                                            <span style={{ fontSize: "0.8rem", color: "#6B7280" }}>Sizin için en uygun teklifi hazırlayalım</span>
                                         </div>
                                     </div>
-                                    <button onClick={() => setShowForm(true)} style={{ background: "#7886C7", color: "white", border: "none", padding: "1rem 3.5rem", borderRadius: "100px", fontWeight: 900, fontSize: "1rem", cursor: "pointer", transition: "all 0.3s", boxShadow: "0 8px 25px rgba(120, 134, 199, 0.5)" }}>Teklifi İncele →</button>
+                                    <button onClick={() => setShowForm(true)} style={{ background: "#7886C7", color: "#111827", border: "none", padding: "1rem 3.5rem", borderRadius: "100px", fontWeight: 900, fontSize: "1rem", cursor: "pointer", transition: "all 0.3s", boxShadow: "0 8px 25px rgba(120, 134, 199, 0.5)" }}>Teklifi İncele →</button>
                                 </motion.div>
                             )}
                         </AnimatePresence>
@@ -758,34 +758,34 @@ function FiyatlandirmaContent() {
                             {showForm && (
                                 <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.9)", backdropFilter: "blur(16px)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem" }}>
                                     <motion.div initial={{ y: 50, scale: 0.9, opacity: 0 }} animate={{ y: 0, scale: 1, opacity: 1 }} exit={{ y: 50, scale: 0.9, opacity: 0 }} style={{ background: "#0a0c10", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "3rem", padding: "4rem", width: "100%", maxWidth: "600px", position: "relative", boxShadow: "0 40px 100px rgba(0,0,0,0.8)" }}>
-                                        <button onClick={() => setShowForm(false)} style={{ position: "absolute", top: "2rem", right: "2rem", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "50%", width: "3.5rem", height: "3.5rem", color: "white", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><X style={{ width: "1.5rem" }} /></button>
+                                        <button onClick={() => setShowForm(false)} style={{ position: "absolute", top: "2rem", right: "2rem", background: "white", border: "1px solid rgba(120, 134, 199, 0.2)", borderRadius: "50%", width: "3.5rem", height: "3.5rem", color: "#111827", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><X style={{ width: "1.5rem" }} /></button>
                                         
                                         <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
                                             <div style={{ width: "4rem", height: "4rem", background: "rgba(120, 134, 199, 0.15)", borderRadius: "1.5rem", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1.5rem" }}><Zap style={{ color: "#7886C7", width: "2rem" }} /></div>
-                                            <h2 style={{ fontSize: "2.5rem", fontWeight: 950, marginBottom: "0.75rem", color: "white", letterSpacing: "-0.04em" }}>Neredeyse Bitti!</h2>
-                                            <p style={{ color: "rgba(255,255,255,0.45)", fontSize: "1.1rem" }}>{selectedFeatures.length} modül içeren size özel yapılandırma için bir adım kaldı.</p>
+                                            <h2 style={{ fontSize: "2.5rem", fontWeight: 950, marginBottom: "0.75rem", color: "#111827", letterSpacing: "-0.04em" }}>Neredeyse Bitti!</h2>
+                                            <p style={{ color: "#6B7280", fontSize: "1.1rem" }}>{selectedFeatures.length} modül içeren size özel yapılandırma için bir adım kaldı.</p>
                                         </div>
 
                                         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
                                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
                                                 <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                                                    <label style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.3)", fontWeight: 800, paddingLeft: "1rem" }}>AD SOYAD</label>
-                                                    <input required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} style={{ padding: "1.25rem", borderRadius: "1.25rem", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)", color: "white", fontSize: "1rem" }} />
+                                                    <label style={{ fontSize: "0.75rem", color: "#9CA3AF", fontWeight: 800, paddingLeft: "1rem" }}>AD SOYAD</label>
+                                                    <input required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} style={{ padding: "1.25rem", borderRadius: "1.25rem", background: "white", border: "1px solid rgba(255,255,255,0.08)", color: "#111827", fontSize: "1rem" }} />
                                                 </div>
                                                 <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                                                    <label style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.3)", fontWeight: 800, paddingLeft: "1rem" }}>TELEFON NO</label>
-                                                    <input required value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} style={{ padding: "1.25rem", borderRadius: "1.25rem", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)", color: "white", fontSize: "1rem" }} />
+                                                    <label style={{ fontSize: "0.75rem", color: "#9CA3AF", fontWeight: 800, paddingLeft: "1rem" }}>TELEFON NO</label>
+                                                    <input required value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} style={{ padding: "1.25rem", borderRadius: "1.25rem", background: "white", border: "1px solid rgba(255,255,255,0.08)", color: "#111827", fontSize: "1rem" }} />
                                                 </div>
                                             </div>
                                             <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                                                <label style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.3)", fontWeight: 800, paddingLeft: "1rem" }}>İŞLETME ADI</label>
-                                                <input required value={formData.company} onChange={e => setFormData({ ...formData, company: e.target.value })} style={{ padding: "1.25rem", borderRadius: "1.25rem", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)", color: "white", fontSize: "1rem" }} />
+                                                <label style={{ fontSize: "0.75rem", color: "#9CA3AF", fontWeight: 800, paddingLeft: "1rem" }}>İŞLETME ADI</label>
+                                                <input required value={formData.company} onChange={e => setFormData({ ...formData, company: e.target.value })} style={{ padding: "1.25rem", borderRadius: "1.25rem", background: "white", border: "1px solid rgba(255,255,255,0.08)", color: "#111827", fontSize: "1rem" }} />
                                             </div>
                                             <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                                                <label style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.3)", fontWeight: 800, paddingLeft: "1rem" }}>E-POSTA</label>
-                                                <input type="email" required value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} style={{ padding: "1.25rem", borderRadius: "1.25rem", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)", color: "white", fontSize: "1rem" }} />
+                                                <label style={{ fontSize: "0.75rem", color: "#9CA3AF", fontWeight: 800, paddingLeft: "1rem" }}>E-POSTA</label>
+                                                <input type="email" required value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} style={{ padding: "1.25rem", borderRadius: "1.25rem", background: "white", border: "1px solid rgba(255,255,255,0.08)", color: "#111827", fontSize: "1rem" }} />
                                             </div>
-                                            <button disabled={loading} style={{ marginTop: "1rem", background: "#7886C7", color: "white", border: "none", padding: "1.5rem", borderRadius: "1.5rem", fontWeight: 900, fontSize: "1.2rem", cursor: "pointer", transition: "all 0.3s", boxShadow: "0 10px 30px rgba(120, 134, 199,0.3)" }}>{loading ? "GÖNDERİLİYOR..." : "ÖZEL TEKLİFİMİ İLET"}</button>
+                                            <button disabled={loading} style={{ marginTop: "1rem", background: "#7886C7", color: "#111827", border: "none", padding: "1.5rem", borderRadius: "1.5rem", fontWeight: 900, fontSize: "1.2rem", cursor: "pointer", transition: "all 0.3s", boxShadow: "0 10px 30px rgba(120, 134, 199,0.3)" }}>{loading ? "GÖNDERİLİYOR..." : "ÖZEL TEKLİFİMİ İLET"}</button>
                                         </form>
                                     </motion.div>
                                 </div>
@@ -801,7 +801,7 @@ function FiyatlandirmaContent() {
                 </div>
                 <Footer />
             </main>
-            {success && <motion.div initial={{ y: -100 }} animate={{ y: 20 }} style={{ position: "fixed", top: 0, left: "50%", transform: "translateX(-50%)", background: "#10b981", color: "white", padding: "1.25rem 3.5rem", borderRadius: "5rem", fontWeight: 900, fontSize: "1.1rem", zIndex: 10000, boxShadow: "0 20px 50px rgba(16,185,129,0.4)" }}>🚀 Harika! Talebiniz Alındı. <button onClick={() => setSuccess(false)} style={{ background: "none", border: "none", color: "white", marginLeft: "1.5rem", cursor: "pointer", fontSize: "1.25rem" }}>✕</button></motion.div>}
+            {success && <motion.div initial={{ y: -100 }} animate={{ y: 20 }} style={{ position: "fixed", top: 0, left: "50%", transform: "translateX(-50%)", background: "#10b981", color: "#111827", padding: "1.25rem 3.5rem", borderRadius: "5rem", fontWeight: 900, fontSize: "1.1rem", zIndex: 10000, boxShadow: "0 20px 50px rgba(16,185,129,0.4)" }}>🚀 Harika! Talebiniz Alındı. <button onClick={() => setSuccess(false)} style={{ background: "none", border: "none", color: "#111827", marginLeft: "1.5rem", cursor: "pointer", fontSize: "1.25rem" }}>✕</button></motion.div>}
         </>
     );
 }

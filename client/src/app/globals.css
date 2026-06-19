@@ -26,21 +26,27 @@
 
 :root:has(.theme-light),
 .theme-light {
-  --color-background: #f8fafc;
-  --color-foreground: #020617;
-  --color-card: #ffffff;
-  --color-card-foreground: #020617;
-  --color-border: #e2e8f0;
-  --color-primary: #2563eb;
-  --color-secondary: #64748b;
-  --color-accent: #10b981;
-  --color-sidebar: #ffffff;
-  --color-sidebar-foreground: #0f172a;
+  /* JetPOS Premium Design System - Light Theme */
+  --color-background: #F8FAFC;
+  --color-foreground: #111827;
+  --color-card: #FFFFFF;
+  --color-card-foreground: #111827;
+  --color-border: #E5E7EB;
+  --color-primary: #7886C7;
+  --color-secondary: #4B5563;
+  --color-accent: #7886C7;
+  --color-sidebar: #FFFFFF;
+  --color-sidebar-foreground: #111827;
   --color-sidebar-muted: #64748b;
-  --color-input-bg: #ffffff;
-  --color-input-border: #e2e8f0;
-  --color-muted: #94a3b8;
-  --color-faded: #f1f5f9;
+  --color-input-bg: #FFFFFF;
+  --color-input-border: #E5E7EB;
+  --color-muted: #9CA3AF;
+  --color-faded: #F1F5F9;
+  
+  /* Cyber aesthetics adapted to light theme */
+  --color-neon-cyan: #7886C7;
+  --color-neon-pink: #8b5cf6;
+  --color-neon-blue: #9AA7DF;
 }
 
 /* Dark mode (default) variable refinements */
@@ -180,10 +186,10 @@
   }
 
   .theme-light .glass-card {
-    background: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
-    border: 1px solid #f1f5f9;
-  }
+  background: #ffffff !important;
+  border-color: #E5E7EB !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02) !important;
+}
 
   .glass-card:hover {
     border-color: color-mix(in srgb, var(--color-primary), transparent 60%);
@@ -218,9 +224,10 @@
   }
 
   .theme-light .sidebar-item-active {
-    background: #eff6ff;
-    color: #2563eb;
-  }
+  background: #7886C7 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(120, 134, 199, 0.25);
+}
 
   /* Responsive fixes for cards */
   @media (max-width: 768px) {
@@ -360,11 +367,11 @@
 }
 
 .theme-light ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: linear-gradient(180deg, #7886C7, #9AA7DF);
 }
 
 .theme-light ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #5A659F;
 }
 
 /* Firefox Support */
@@ -374,7 +381,7 @@
 }
 
 .theme-light {
-  scrollbar-color: #cbd5e1 transparent;
+  scrollbar-color: #7886C7 transparent;
 }
 
 /* Form Styles */
@@ -425,8 +432,37 @@ textarea:focus {
 }
 
 /* Specific light mode fixes for invisibile text and backgrounds */
-.theme-light .text-white {
-  color: #0f172a !important;
+/* Fix text colors ONLY for elements where we overrode the background to white */
+.theme-light .bg-white\/5 .text-white,
+.theme-light .bg-primary\/5 .text-white,
+.theme-light .bg-slate-900\/50 .text-white,
+.theme-light .bg-\[\#020617\] .text-white,
+.theme-light .bg-\[\#0f172a\] .text-white,
+.theme-light .bg-\[\#1e293b\] .text-white,
+.theme-light .bg-\[\#0d1b2e\] .text-white,
+.theme-light .bg-\[\#0a1628\] .text-white,
+.theme-light .bg-\[\#0a0f1e\] .text-white,
+.theme-light .bg-\[\#0c1222\] .text-white,
+.theme-light .bg-card\/40 .text-white,
+.theme-light .bg-card\/50 .text-white,
+.theme-light .glass-card .text-white {
+  color: #111827 !important;
+}
+
+.theme-light .bg-white\/5.text-white,
+.theme-light .bg-primary\/5.text-white,
+.theme-light .bg-slate-900\/50.text-white,
+.theme-light .bg-\[\#020617\].text-white,
+.theme-light .bg-\[\#0f172a\].text-white,
+.theme-light .bg-\[\#1e293b\].text-white,
+.theme-light .bg-\[\#0d1b2e\].text-white,
+.theme-light .bg-\[\#0a1628\].text-white,
+.theme-light .bg-\[\#0a0f1e\].text-white,
+.theme-light .bg-\[\#0c1222\].text-white,
+.theme-light .bg-card\/40.text-white,
+.theme-light .bg-card\/50.text-white,
+.theme-light .glass-card.text-white {
+  color: #111827 !important;
 }
 
 .theme-light .bg-white\/5,
@@ -434,27 +470,54 @@ textarea:focus {
 .theme-light .bg-slate-900\/50,
 .theme-light .bg-\[\#020617\],
 .theme-light .bg-\[\#0f172a\],
+.theme-light .bg-\[\#1e293b\],
+.theme-light .bg-\[\#0d1b2e\],
+.theme-light .bg-\[\#0a1628\],
+.theme-light .bg-\[\#0a0f1e\],
+.theme-light .bg-\[\#0c1222\],
 .theme-light .bg-card\/40,
 .theme-light .bg-card\/50 {
-  background-color: #f1f5f9 !important;
+  background-color: #FFFFFF !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
+}
+
+/* For elements that explicitly used dark bg with opacity, use a soft slate in light mode */
+.theme-light .bg-\[\#020617\]\/40,
+.theme-light .bg-\[\#020617\]\/60,
+.theme-light .bg-\[\#020617\]\/85,
+.theme-light .bg-\[\#020617\]\/95,
+.theme-light .bg-\[\#020617\]\/98,
+.theme-light .bg-\[\#0a1628\]\/40,
+.theme-light .bg-\[\#0d1b2e\]\/40,
+.theme-light .bg-\[\#0c1222\]\/40,
+.theme-light .bg-\[\#0a0f1e\]\/40,
+.theme-light .bg-\[\#1e293b\]\/40 {
+  background-color: rgba(255, 255, 255, 0.9) !important;
 }
 
 .theme-light .border-white\/5,
-.theme-light .border-border\/40,
-.theme-light .border-white\/10 {
-  border-color: #cbd5e1 !important;
+.theme-light .border-white\/10,
+.theme-light .border-white\/20,
+.theme-light .border-border\/40 {
+  border-color: #E5E7EB !important;
 }
 
 .theme-light .text-secondary\/40,
 .theme-light .text-secondary\/30,
+.theme-light .text-secondary\/20,
+.theme-light .text-secondary\/10,
 .theme-light .text-secondary\/60,
 .theme-light .text-slate-500 {
-  color: #475569 !important;
+  color: #6B7280 !important;
 }
 
-.theme-light .text-white\/90,
-.theme-light .text-slate-200 {
-  color: #1e293b !important;
+
+
+/* Fix input placeholders */
+.theme-light .placeholder\:text-secondary\/10::placeholder,
+.theme-light .placeholder\:text-secondary\/20::placeholder,
+.theme-light .placeholder\:text-secondary\/30::placeholder {
+  color: #9CA3AF !important;
 }
 
 /* Utility to force visibility in light mode */
@@ -464,14 +527,14 @@ textarea:focus {
 
 .theme-light .glass-card {
   background: #ffffff !important;
-  border-color: #e2e8f0 !important;
+  border-color: #E5E7EB !important;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02) !important;
 }
 
 .theme-light .sidebar-item-active {
-  background: #2563eb !important;
+  background: #7886C7 !important;
   color: #ffffff !important;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+  box-shadow: 0 4px 12px rgba(120, 134, 199, 0.25);
 }
 
 .theme-light .text-secondary {
