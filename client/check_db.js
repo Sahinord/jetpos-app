@@ -5,11 +5,14 @@ dotenv.config({ path: '.env.local' });
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 async function check() {
-  const { data, error } = await supabase.rpc('execute_sql', { sql: 'SELECT * FROM pg_policies WHERE tablename = \'cari_hareketler\'' });
-  if (error) {
-    console.log("RPC Error:", error);
-  } else {
-    console.log("Policies:", data);
+  const { data, error } = await supabase
+    .from('information_schema.tables')
+    .select('table_name')
+    .eq('table_schema', 'public');
+  console.log("Error:", error);
+  if (data) {
+    const tables = data.map(d => d.table_name);
+    console.log("Tables:", tables);
   }
 }
 check();

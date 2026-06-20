@@ -37,7 +37,11 @@ DECLARE
         'inventory_counts', 'licenses', 'warehouse_transfers', 'qr_menu_settings', 
         'warehouses', 'warehouse_stock', 'table_orders', 'restaurant_tables', 
         'tenant_invoices', 'financial_calendar_events', 'loyalty_settings', 
-        'loyalty_points', 'employees', 'sales'
+        'loyalty_points', 'employees', 'sales', 'cari_hesaplar', 'cari_hareketler',
+        'kasa_fisleri', 'kasa_fis_satirlari', 'kasa_hareketleri', 'faturalar',
+        'fatura_satirlari', 'irsaliyeler', 'irsaliye_satirlari', 'siparisler',
+        'siparis_satirlari', 'stok_hareketleri', 'banka_fisleri', 'banka_fis_satirlari',
+        'kredi_kartlari', 'pos_cihazlari', 'taksitler', 'cek_senetler'
     ];
     p_record RECORD;
 BEGIN
@@ -104,6 +108,7 @@ BEGIN
                      );';
             RAISE NOTICE 'Tablo RLS politikası güncellendi: %', t_name;
         ELSE
+            EXECUTE format('DROP POLICY IF EXISTS "Auth Only Policy" ON public.%I', t_name);
             EXECUTE 'CREATE POLICY "Auth Only Policy" ON public.' || quote_ident(t_name) || ' 
                      FOR ALL TO authenticated 
                      USING (true) 

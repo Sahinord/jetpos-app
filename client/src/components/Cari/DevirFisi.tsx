@@ -158,6 +158,103 @@ export default function DevirFisi({ showToast }: DevirFisiProps) {
         setKalemler([]);
     };
 
+    // YAZDIR
+    const handlePrint = () => {
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) return;
+
+        const tableRows = kalemler.map((kalem, i) => `
+            <tr>
+                <td>${kalem.cariKodu}</td>
+                <td>${kalem.unvani}</td>
+                <td>${kalem.aciklama}</td>
+                <td style="text-align: right; color: #dc2626;">${(kalem.borcTutari || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</td>
+                <td style="text-align: right; color: #16a34a;">${(kalem.alacakTutari || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</td>
+            </tr>
+        `).join('');
+
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Devir Fişi - ${formData.fisNo}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 40px; color: #000; }
+                        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+                        .title { font-size: 24px; font-weight: bold; margin-bottom: 5px; }
+                        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+                        .info-box { border: 1px solid #ccc; padding: 15px; border-radius: 5px; }
+                        .info-row { margin-bottom: 8px; display: flex; }
+                        .info-label { width: 120px; font-weight: bold; }
+                        .table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        .table th, .table td { border: 1px solid #000; padding: 10px; text-align: left; }
+                        .table th { background: #f0f0f0; }
+                        .total-row { font-weight: bold; background: #f9f9f9; }
+                        .signatures { display: grid; grid-template-columns: 1fr 1fr; margin-top: 80px; text-align: center; }
+                        .sig-line { width: 200px; border-top: 1px solid #000; margin: 0 auto; margin-top: 60px; }
+                        @media print {
+                            body { -webkit-print-color-adjust: exact; padding: 0; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <div class="title">DEVİR FİŞİ</div>
+                    </div>
+                    
+                    <div class="info-grid">
+                        <div class="info-box">
+                            <div class="info-row"><div class="info-label">Şube:</div><div>${formData.subeKodu}</div></div>
+                            <div class="info-row"><div class="info-label">Fiş No:</div><div>${formData.fisNo}</div></div>
+                            <div class="info-row"><div class="info-label">Fiş Tarihi:</div><div>${new Date(formData.fisTarihi).toLocaleDateString('tr-TR')}</div></div>
+                        </div>
+                        <div class="info-box">
+                            <div class="info-row"><div class="info-label">Belge No:</div><div>${formData.belgeNo || '-'}</div></div>
+                            <div class="info-row"><div class="info-label">Belge Tipi:</div><div>${formData.belgeTipi || '-'}</div></div>
+                            <div class="info-row"><div class="info-label">Para Birimi:</div><div>${formData.paraBirimi}</div></div>
+                        </div>
+                    </div>
+
+                    ${formData.aciklama ? `<div style="margin-bottom: 20px;"><strong>Açıklama:</strong> ${formData.aciklama}</div>` : ''}
+
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Cari Kodu</th>
+                                <th>Ünvanı</th>
+                                <th>Açıklama</th>
+                                <th style="text-align: right;">Borç Tutarı</th>
+                                <th style="text-align: right;">Alacak Tutarı</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tableRows || '<tr><td colspan="5" style="text-align: center;">Kalem bulunamadı</td></tr>'}
+                            <tr class="total-row">
+                                <td colspan="3" style="text-align: right;">TOPLAM:</td>
+                                <td style="text-align: right; color: #dc2626;">${toplamBorc.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ${formData.paraBirimi}</td>
+                                <td style="text-align: right; color: #16a34a;">${toplamAlacak.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ${formData.paraBirimi}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="signatures">
+                        <div>
+                            <strong>Düzenleyen</strong>
+                            <div class="sig-line">İmza</div>
+                        </div>
+                        <div>
+                            <strong>Onaylayan</strong>
+                            <div class="sig-line">İmza</div>
+                        </div>
+                    </div>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+        setTimeout(() => {
+            printWindow.print();
+        }, 250);
+    };
+
     const tabs = [
         { id: 0, label: "1 - Fiş Kalem Bilgileri" },
         { id: 1, label: "2 - Diğer Bilgiler" },
@@ -186,7 +283,7 @@ export default function DevirFisi({ showToast }: DevirFisiProps) {
                             <span>Kopyala</span>
                         </button>
                         <div className="w-px h-6 bg-white/20 mx-1" />
-                        <button className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded text-sm font-medium transition-all">
+                        <button onClick={handlePrint} className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded text-sm font-medium transition-all">
                             <Printer className="w-4 h-4" />
                             <span>Yazdır</span>
                         </button>

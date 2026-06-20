@@ -17,6 +17,15 @@ import {
     Search,
     Users,
     MoreHorizontal,
+    Plus,
+    Phone,
+    MapPin,
+    Building2,
+    CreditCard,
+    User,
+    Landmark,
+    StickyNote,
+    ShieldCheck,
 } from "lucide-react";
 
 interface CariTanitimProps {
@@ -134,9 +143,19 @@ export default function CariTanitim({ showToast }: CariTanitimProps) {
     const [cariCount, setCariCount] = useState(0);
     const [showFihrist, setShowFihrist] = useState(false);
     const [showHareket, setShowHareket] = useState(false);
+    const [showHareketSearch, setShowHareketSearch] = useState(false);
+    const [hareketSearchQuery, setHareketSearchQuery] = useState('');
+    const [hareketSearchResults, setHareketSearchResults] = useState<any[]>([]);
+    const [hareketSearchLoading, setHareketSearchLoading] = useState(false);
+    const [selectedHareketCariId, setSelectedHareketCariId] = useState<string | null>(null);
+    const [selectedHareketCariName, setSelectedHareketCariName] = useState('');
     const [cariList, setCariList] = useState<any[]>([]);
     const [hareketList, setHareketList] = useState<any[]>([]);
     const [fihristLoading, setFihristLoading] = useState(false);
+
+    // İlgili Kişiler ve Banka listesi (alt tablolar)
+    const [ilgililer, setIlgililer] = useState<any[]>([]);
+    const [bankalar, setBankalar] = useState<any[]>([]);
 
     const [formData, setFormData] = useState({
         cariKodu: "",
@@ -195,6 +214,34 @@ export default function CariTanitim({ showToast }: CariTanitimProps) {
         webSitesi: "",
         email: "",
         referanslar: "",
+        // Tab 2: Adres ve İletişim
+        tel1: "",
+        tel2: "",
+        cepTel: "",
+        fax: "",
+        adres: "",
+        adres2: "",
+        il: "",
+        ilce: "",
+        postaKodu: "",
+        ulke: "Türkiye",
+        email2: "",
+        // Tab 3: Notlar
+        notlar: "",
+        // Tab 4: Kimlik Bilgileri
+        tcKimlikNo: "",
+        dogumTarihi: "",
+        dogumYeri: "",
+        babaAdi: "",
+        anneAdi: "",
+        uyruk: "T.C.",
+        cinsiyet: "",
+        medeniHal: "",
+        ehliyetNo: "",
+        pasaportNo: "",
+        ticaretSicilNo: "",
+        mersisNo: "",
+        kepAdresi: "",
     });
 
     const tabs = [
@@ -229,21 +276,130 @@ export default function CariTanitim({ showToast }: CariTanitimProps) {
     };
 
     // Hareket: Seçili carinin hareketleri
-    const handleHareket = async () => {
-        if (!editingId || !currentTenant) {
-            showToast?.('Önce bir cari seçin', 'warning');
-            return;
-        }
+    const loadHareketForCari = async (cariId: string) => {
         setFihristLoading(true);
         setShowHareket(true);
+        setShowHareketSearch(false);
         const { data } = await supabase
             .from('cari_hareketler')
             .select('*')
-            .eq('cari_id', editingId)
+            .eq('cari_id', cariId)
             .order('tarih', { ascending: false })
             .limit(100);
         setHareketList(data || []);
         setFihristLoading(false);
+    };
+
+    const handleHareket = async () => {
+        if (editingId) {
+            // Seçili cari varsa direkt hareketlerini göster
+            setSelectedHareketCariId(editingId);
+            setSelectedHareketCariName(formData.unvani || formData.cariKodu);
+            await loadHareketForCari(editingId);
+        } else {
+            // Seçili cari yoksa arama modalını aç
+            setHareketSearchQuery('');
+            setHareketSearchResults([]);
+            setShowHareketSearch(true);
+        }
+    };
+
+    // Hareket arama: Cari adı veya kodu ile arama
+    const handleHareketSearch = async (query: string) => {
+        setHareketSearchQuery(query);
+        if (!currentTenant || query.length < 1) {
+            setHareketSearchResults([]);
+            return;
+        }
+        setHareketSearchLoading(true);
+        const { data } = await supabase
+            .from('cari_hesaplar')
+            .select('id, cari_kodu, unvani, cari_tipi')
+            .eq('tenant_id', currentTenant.id)
+            .or(`unvani.ilike.%${query}%,cari_kodu.ilike.%${query}%`)
+            .order('unvani')
+            .limit(20);
+        setHareketSearchResults(data || []);
+        setHareketSearchLoading(false);
+    };
+
+    const handleSelectHareketCari = async (cari: any) => {
+        setSelectedHareketCariId(cari.id);
+        setSelectedHareketCariName(cari.unvani || cari.cari_kodu);
+        await loadHareketForCari(cari.id);
+    };
+
+    const handleDosya = () => {
+        if (!editingId) {
+            showToast?.('Lütfen dosya eklemek/görmek için bir cari seçin.', 'warning');
+            return;
+        }
+        showToast?.('Dosya modülü yakında kullanıma sunulacaktır.', 'info');
+    };
+
+    const handlePrintCari = () => {
+        // Form verilerinden yazdır (editingId olsun olmasın, ekrandaki formdan al)
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) return;
+
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Cari Kart - ${formData.unvani || formData.cariKodu}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 40px; color: #000; }
+                        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+                        .title { font-size: 24px; font-weight: bold; margin-bottom: 5px; }
+                        .subtitle { font-size: 14px; color: #666; }
+                        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+                        .info-row { display: flex; border-bottom: 1px solid #eee; padding: 6px 0; }
+                        .info-label { min-width: 160px; font-weight: bold; color: #555; font-size: 13px; }
+                        .info-value { font-size: 13px; }
+                        .section-title { font-size: 16px; font-weight: bold; margin-top: 25px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #333; }
+                        @media print {
+                            body { -webkit-print-color-adjust: exact; padding: 20px; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <div class="title">CARİ KART BİLGİSİ</div>
+                        <div class="subtitle">Tarih: ${new Date().toLocaleDateString('tr-TR')}</div>
+                    </div>
+                    
+                    <div class="section-title">Genel Bilgiler</div>
+                    <div class="info-grid">
+                        <div class="info-row"><div class="info-label">Cari Kodu:</div><div class="info-value">${formData.cariKodu || '-'}</div></div>
+                        <div class="info-row"><div class="info-label">Ünvanı:</div><div class="info-value">${formData.unvani || '-'}</div></div>
+                        <div class="info-row"><div class="info-label">Ünvanı 2:</div><div class="info-value">${formData.unvani2 || '-'}</div></div>
+                        <div class="info-row"><div class="info-label">Vergi Dairesi:</div><div class="info-value">${formData.vergiDairesi || '-'}</div></div>
+                        <div class="info-row"><div class="info-label">Vergi No:</div><div class="info-value">${formData.vergiNo || '-'}</div></div>
+                        <div class="info-row"><div class="info-label">Durum:</div><div class="info-value">${formData.durum || '-'}</div></div>
+                        <div class="info-row"><div class="info-label">Cari Tipi:</div><div class="info-value">${formData.cariTipi || '-'}</div></div>
+                        <div class="info-row"><div class="info-label">Para Birimi:</div><div class="info-value">${formData.paraBirimi || '-'}</div></div>
+                        <div class="info-row"><div class="info-label">Hesap Tipi:</div><div class="info-value">${formData.hesapTipi || '-'}</div></div>
+                    </div>
+
+                    <div class="section-title">İletişim</div>
+                    <div class="info-grid">
+                        <div class="info-row"><div class="info-label">Web Sitesi:</div><div class="info-value">${formData.webSitesi || '-'}</div></div>
+                        <div class="info-row"><div class="info-label">E-Posta:</div><div class="info-value">${formData.email || '-'}</div></div>
+                        <div class="info-row"><div class="info-label">Referanslar:</div><div class="info-value">${formData.referanslar || '-'}</div></div>
+                    </div>
+
+                    <div class="section-title">Mali Bilgiler</div>
+                    <div class="info-grid">
+                        <div class="info-row"><div class="info-label">İskonto Oranı:</div><div class="info-value">%${formData.iskontoOrani}</div></div>
+                        <div class="info-row"><div class="info-label">Vade Oranı:</div><div class="info-value">%${formData.vadeOrani}</div></div>
+                        <div class="info-row"><div class="info-label">Kredi Limiti:</div><div class="info-value">${Number(formData.krediLimiti).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</div></div>
+                        <div class="info-row"><div class="info-label">Risk Limiti:</div><div class="info-value">${Number(formData.riskLimiti).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</div></div>
+                        <div class="info-row"><div class="info-label">Teminat Tutarı:</div><div class="info-value">${Number(formData.teminatTutari).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</div></div>
+                    </div>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+        setTimeout(() => printWindow.print(), 250);
     };
 
     // Otomatik Cari Kodu üret (C001, C002, ...)
@@ -364,6 +520,34 @@ export default function CariTanitim({ showToast }: CariTanitimProps) {
         web_sitesi: formData.webSitesi,
         email: formData.email,
         referanslar: formData.referanslar,
+        // Adres ve İletişim
+        tel_1: formData.tel1,
+        tel_2: formData.tel2,
+        cep_tel: formData.cepTel,
+        fax: formData.fax,
+        adres: formData.adres,
+        adres_2: formData.adres2,
+        il: formData.il,
+        ilce: formData.ilce,
+        posta_kodu: formData.postaKodu,
+        ulke: formData.ulke,
+        email_2: formData.email2,
+        // Notlar
+        notlar: formData.notlar,
+        // Kimlik
+        tc_kimlik_no: formData.tcKimlikNo,
+        dogum_tarihi: formData.dogumTarihi || null,
+        dogum_yeri: formData.dogumYeri,
+        baba_adi: formData.babaAdi,
+        anne_adi: formData.anneAdi,
+        uyruk: formData.uyruk,
+        cinsiyet: formData.cinsiyet,
+        medeni_hal: formData.medeniHal,
+        ehliyet_no: formData.ehliyetNo,
+        pasaport_no: formData.pasaportNo,
+        ticaret_sicil_no: formData.ticaretSicilNo,
+        mersis_no: formData.mersisNo,
+        kep_adresi: formData.kepAdresi,
     });
 
     // KAYDET
@@ -515,7 +699,34 @@ export default function CariTanitim({ showToast }: CariTanitimProps) {
             webSitesi: "",
             email: "",
             referanslar: "",
+            tel1: "",
+            tel2: "",
+            cepTel: "",
+            fax: "",
+            adres: "",
+            adres2: "",
+            il: "",
+            ilce: "",
+            postaKodu: "",
+            ulke: "Türkiye",
+            email2: "",
+            notlar: "",
+            tcKimlikNo: "",
+            dogumTarihi: "",
+            dogumYeri: "",
+            babaAdi: "",
+            anneAdi: "",
+            uyruk: "T.C.",
+            cinsiyet: "",
+            medeniHal: "",
+            ehliyetNo: "",
+            pasaportNo: "",
+            ticaretSicilNo: "",
+            mersisNo: "",
+            kepAdresi: "",
         });
+        setIlgililer([]);
+        setBankalar([]);
     };
 
     // CARİ KODU İLE ARA
@@ -600,7 +811,46 @@ export default function CariTanitim({ showToast }: CariTanitimProps) {
                     webSitesi: data.web_sitesi || "",
                     email: data.email || "",
                     referanslar: data.referanslar || "",
+                    tel1: data.tel_1 || "",
+                    tel2: data.tel_2 || "",
+                    cepTel: data.cep_tel || "",
+                    fax: data.fax || "",
+                    adres: data.adres || "",
+                    adres2: data.adres_2 || "",
+                    il: data.il || "",
+                    ilce: data.ilce || "",
+                    postaKodu: data.posta_kodu || "",
+                    ulke: data.ulke || "Türkiye",
+                    email2: data.email_2 || "",
+                    notlar: data.notlar || "",
+                    tcKimlikNo: data.tc_kimlik_no || "",
+                    dogumTarihi: data.dogum_tarihi || "",
+                    dogumYeri: data.dogum_yeri || "",
+                    babaAdi: data.baba_adi || "",
+                    anneAdi: data.anne_adi || "",
+                    uyruk: data.uyruk || "T.C.",
+                    cinsiyet: data.cinsiyet || "",
+                    medeniHal: data.medeni_hal || "",
+                    ehliyetNo: data.ehliyet_no || "",
+                    pasaportNo: data.pasaport_no || "",
+                    ticaretSicilNo: data.ticaret_sicil_no || "",
+                    mersisNo: data.mersis_no || "",
+                    kepAdresi: data.kep_adresi || "",
                 });
+                // İlgili kişileri yükle
+                const { data: ilgData } = await supabase
+                    .from('cari_ilgililer')
+                    .select('*')
+                    .eq('cari_id', data.id)
+                    .order('created_at');
+                setIlgililer(ilgData || []);
+                // Banka bilgilerini yükle
+                const { data: bnkData } = await supabase
+                    .from('cari_bankalar')
+                    .select('*')
+                    .eq('cari_id', data.id)
+                    .order('created_at');
+                setBankalar(bnkData || []);
                 showToast?.("Cari yüklendi", "success");
             }
         } catch (err: any) {
@@ -641,11 +891,11 @@ export default function CariTanitim({ showToast }: CariTanitimProps) {
                             <FileText className="w-4 h-4" />
                             <span className="hidden lg:inline">Hareket</span>
                         </button>
-                        <button className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded text-sm font-medium transition-all">
+                        <button onClick={handleDosya} className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded text-sm font-medium transition-all">
                             <FolderOpen className="w-4 h-4" />
                             <span className="hidden lg:inline">Dosya</span>
                         </button>
-                        <button className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded text-sm font-medium transition-all">
+                        <button onClick={handlePrintCari} className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded text-sm font-medium transition-all">
                             <Printer className="w-4 h-4" />
                             <span className="hidden lg:inline">Yazdır</span>
                         </button>
@@ -851,27 +1101,277 @@ export default function CariTanitim({ showToast }: CariTanitimProps) {
                     </div>
                 )}
 
+                {/* TAB 2: ADRES VE İLGİLİLER */}
                 {activeTab === 1 && (
-                    <div className="text-center py-12">
-                        <FileText className="w-16 h-16 text-secondary/40 mx-auto mb-4" />
-                        <h3 className="text-xl font-bold text-white mb-2">Adres ve İlgililer</h3>
-                        <p className="text-secondary">Bu sekme yakında aktif olacak</p>
+                    <div className="space-y-6">
+                        {/* Adres Bilgileri */}
+                        <div>
+                            <h3 className="text-white font-semibold text-sm flex items-center gap-2 mb-3 pb-2 border-b border-white/10">
+                                <MapPin className="w-4 h-4 text-primary" /> Adres Bilgileri
+                            </h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
+                                <div className="sm:col-span-2 lg:col-span-3 space-y-1">
+                                    <label className="text-secondary text-xs font-medium">Adres</label>
+                                    <textarea
+                                        value={formData.adres}
+                                        onChange={(e) => updateField('adres', e.target.value)}
+                                        rows={2}
+                                        className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded px-3 py-1.5 text-[var(--color-foreground)] text-sm focus:border-primary focus:outline-none transition-colors resize-none"
+                                        placeholder="Adres satırı 1..."
+                                    />
+                                </div>
+                                <div className="sm:col-span-2 lg:col-span-3 space-y-1">
+                                    <label className="text-secondary text-xs font-medium">Adres 2</label>
+                                    <textarea
+                                        value={formData.adres2}
+                                        onChange={(e) => updateField('adres2', e.target.value)}
+                                        rows={2}
+                                        className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded px-3 py-1.5 text-[var(--color-foreground)] text-sm focus:border-primary focus:outline-none transition-colors resize-none"
+                                        placeholder="Adres satırı 2 (opsiyonel)..."
+                                    />
+                                </div>
+                                <FormInput label="İl" value={formData.il} onChange={(v) => updateField('il', v)} placeholder="İstanbul" />
+                                <FormInput label="İlçe" value={formData.ilce} onChange={(v) => updateField('ilce', v)} placeholder="Kadıköy" />
+                                <FormInput label="Posta Kodu" value={formData.postaKodu} onChange={(v) => updateField('postaKodu', v)} placeholder="34000" />
+                                <FormInput label="Ülke" value={formData.ulke} onChange={(v) => updateField('ulke', v)} />
+                            </div>
+                        </div>
+
+                        {/* Telefon Bilgileri */}
+                        <div>
+                            <h3 className="text-white font-semibold text-sm flex items-center gap-2 mb-3 pb-2 border-b border-white/10">
+                                <Phone className="w-4 h-4 text-emerald-400" /> Telefon ve E-Posta
+                            </h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-3">
+                                <FormInput label="Telefon 1" value={formData.tel1} onChange={(v) => updateField('tel1', v)} placeholder="0212 555 00 00" />
+                                <FormInput label="Telefon 2" value={formData.tel2} onChange={(v) => updateField('tel2', v)} placeholder="0216 555 00 00" />
+                                <FormInput label="Cep Telefonu" value={formData.cepTel} onChange={(v) => updateField('cepTel', v)} placeholder="0532 555 00 00" />
+                                <FormInput label="Fax" value={formData.fax} onChange={(v) => updateField('fax', v)} placeholder="0212 555 00 01" />
+                                <FormInput label="E-Posta 2" value={formData.email2} onChange={(v) => updateField('email2', v)} placeholder="muhasebe@firma.com" />
+                            </div>
+                        </div>
+
+                        {/* İlgili Kişiler */}
+                        <div>
+                            <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/10">
+                                <h3 className="text-white font-semibold text-sm flex items-center gap-2">
+                                    <Users className="w-4 h-4 text-blue-400" /> İlgili Kişiler
+                                </h3>
+                                <button
+                                    onClick={async () => {
+                                        if (!editingId) { showToast?.('Önce cariyi kaydedin.', 'warning'); return; }
+                                        const { data, error } = await supabase.from('cari_ilgililer').insert([{
+                                            cari_id: editingId, tenant_id: currentTenant?.id,
+                                            adi_soyadi: '', unvani: '', telefon_is: '', telefon_cep: '', telefon_fax: '', mail_adresi: ''
+                                        }]).select().single();
+                                        if (!error && data) setIlgililer(prev => [...prev, data]);
+                                    }}
+                                    className="flex items-center gap-1 px-2.5 py-1 bg-primary/20 hover:bg-primary/30 text-primary rounded text-xs font-medium transition-colors"
+                                >
+                                    <Plus className="w-3.5 h-3.5" /> Kişi Ekle
+                                </button>
+                            </div>
+                            {ilgililer.length === 0 ? (
+                                <div className="text-center py-6 text-secondary text-sm">
+                                    <Users className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                                    Henüz ilgili kişi eklenmedi
+                                </div>
+                            ) : (
+                                <div className="space-y-2">
+                                    {ilgililer.map((ilg, idx) => (
+                                        <div key={ilg.id || idx} className="bg-white/5 border border-white/10 rounded-lg p-3">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-xs text-primary font-medium">Kişi #{idx + 1}</span>
+                                                <button
+                                                    onClick={async () => {
+                                                        if (ilg.id) await supabase.from('cari_ilgililer').delete().eq('id', ilg.id);
+                                                        setIlgililer(prev => prev.filter((_, i) => i !== idx));
+                                                    }}
+                                                    className="p-1 hover:bg-red-500/20 rounded transition-colors text-red-400 hover:text-red-300"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
+                                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
+                                                <FormInput label="Adı Soyadı" value={ilg.adi_soyadi || ''} onChange={async (v) => {
+                                                    const updated = [...ilgililer]; updated[idx] = { ...updated[idx], adi_soyadi: v }; setIlgililer(updated);
+                                                    if (ilg.id) await supabase.from('cari_ilgililer').update({ adi_soyadi: v }).eq('id', ilg.id);
+                                                }} />
+                                                <FormInput label="Ünvanı/Görevi" value={ilg.unvani || ''} onChange={async (v) => {
+                                                    const updated = [...ilgililer]; updated[idx] = { ...updated[idx], unvani: v }; setIlgililer(updated);
+                                                    if (ilg.id) await supabase.from('cari_ilgililer').update({ unvani: v }).eq('id', ilg.id);
+                                                }} />
+                                                <FormInput label="İş Tel" value={ilg.telefon_is || ''} onChange={async (v) => {
+                                                    const updated = [...ilgililer]; updated[idx] = { ...updated[idx], telefon_is: v }; setIlgililer(updated);
+                                                    if (ilg.id) await supabase.from('cari_ilgililer').update({ telefon_is: v }).eq('id', ilg.id);
+                                                }} />
+                                                <FormInput label="Cep Tel" value={ilg.telefon_cep || ''} onChange={async (v) => {
+                                                    const updated = [...ilgililer]; updated[idx] = { ...updated[idx], telefon_cep: v }; setIlgililer(updated);
+                                                    if (ilg.id) await supabase.from('cari_ilgililer').update({ telefon_cep: v }).eq('id', ilg.id);
+                                                }} />
+                                                <FormInput label="Fax" value={ilg.telefon_fax || ''} onChange={async (v) => {
+                                                    const updated = [...ilgililer]; updated[idx] = { ...updated[idx], telefon_fax: v }; setIlgililer(updated);
+                                                    if (ilg.id) await supabase.from('cari_ilgililer').update({ telefon_fax: v }).eq('id', ilg.id);
+                                                }} />
+                                                <FormInput label="E-Posta" value={ilg.mail_adresi || ''} onChange={async (v) => {
+                                                    const updated = [...ilgililer]; updated[idx] = { ...updated[idx], mail_adresi: v }; setIlgililer(updated);
+                                                    if (ilg.id) await supabase.from('cari_ilgililer').update({ mail_adresi: v }).eq('id', ilg.id);
+                                                }} />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
 
+                {/* TAB 3: BANKALAR VE NOTLAR */}
                 {activeTab === 2 && (
-                    <div className="text-center py-12">
-                        <FileText className="w-16 h-16 text-secondary/40 mx-auto mb-4" />
-                        <h3 className="text-xl font-bold text-white mb-2">Bankalar ve Notlar</h3>
-                        <p className="text-secondary">Bu sekme yakında aktif olacak</p>
+                    <div className="space-y-6">
+                        {/* Banka Bilgileri */}
+                        <div>
+                            <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/10">
+                                <h3 className="text-white font-semibold text-sm flex items-center gap-2">
+                                    <Landmark className="w-4 h-4 text-amber-400" /> Banka Hesapları
+                                </h3>
+                                <button
+                                    onClick={async () => {
+                                        if (!editingId) { showToast?.('Önce cariyi kaydedin.', 'warning'); return; }
+                                        const { data, error } = await supabase.from('cari_bankalar').insert([{
+                                            cari_id: editingId, tenant_id: currentTenant?.id,
+                                            banka_adi: '', sube_adi: '', hesap_no: '', iban: '', para_birimi: 'TRY'
+                                        }]).select().single();
+                                        if (!error && data) setBankalar(prev => [...prev, data]);
+                                    }}
+                                    className="flex items-center gap-1 px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 rounded text-xs font-medium transition-colors"
+                                >
+                                    <Plus className="w-3.5 h-3.5" /> Banka Ekle
+                                </button>
+                            </div>
+                            {bankalar.length === 0 ? (
+                                <div className="text-center py-6 text-secondary text-sm">
+                                    <Landmark className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                                    Henüz banka hesabı eklenmedi
+                                </div>
+                            ) : (
+                                <div className="space-y-2">
+                                    {bankalar.map((bnk, idx) => (
+                                        <div key={bnk.id || idx} className="bg-white/5 border border-white/10 rounded-lg p-3">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-xs text-amber-400 font-medium flex items-center gap-1">
+                                                    <CreditCard className="w-3.5 h-3.5" /> Hesap #{idx + 1}
+                                                </span>
+                                                <button
+                                                    onClick={async () => {
+                                                        if (bnk.id) await supabase.from('cari_bankalar').delete().eq('id', bnk.id);
+                                                        setBankalar(prev => prev.filter((_, i) => i !== idx));
+                                                    }}
+                                                    className="p-1 hover:bg-red-500/20 rounded transition-colors text-red-400 hover:text-red-300"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
+                                            <div className="grid grid-cols-2 lg:grid-cols-5 gap-2">
+                                                <FormInput label="Banka Adı" value={bnk.banka_adi || ''} onChange={async (v) => {
+                                                    const updated = [...bankalar]; updated[idx] = { ...updated[idx], banka_adi: v }; setBankalar(updated);
+                                                    if (bnk.id) await supabase.from('cari_bankalar').update({ banka_adi: v }).eq('id', bnk.id);
+                                                }} />
+                                                <FormInput label="Şube Adı" value={bnk.sube_adi || ''} onChange={async (v) => {
+                                                    const updated = [...bankalar]; updated[idx] = { ...updated[idx], sube_adi: v }; setBankalar(updated);
+                                                    if (bnk.id) await supabase.from('cari_bankalar').update({ sube_adi: v }).eq('id', bnk.id);
+                                                }} />
+                                                <FormInput label="Hesap No" value={bnk.hesap_no || ''} onChange={async (v) => {
+                                                    const updated = [...bankalar]; updated[idx] = { ...updated[idx], hesap_no: v }; setBankalar(updated);
+                                                    if (bnk.id) await supabase.from('cari_bankalar').update({ hesap_no: v }).eq('id', bnk.id);
+                                                }} />
+                                                <FormInput label="IBAN" value={bnk.iban || ''} onChange={async (v) => {
+                                                    const updated = [...bankalar]; updated[idx] = { ...updated[idx], iban: v }; setBankalar(updated);
+                                                    if (bnk.id) await supabase.from('cari_bankalar').update({ iban: v }).eq('id', bnk.id);
+                                                }} placeholder="TR00 0000 0000 0000 0000 0000 00" />
+                                                <FormSelect label="Para Birimi" value={bnk.para_birimi || 'TRY'} onChange={async (v) => {
+                                                    const updated = [...bankalar]; updated[idx] = { ...updated[idx], para_birimi: v }; setBankalar(updated);
+                                                    if (bnk.id) await supabase.from('cari_bankalar').update({ para_birimi: v }).eq('id', bnk.id);
+                                                }} options={[
+                                                    { value: 'TRY', label: 'TRY' },
+                                                    { value: 'USD', label: 'USD' },
+                                                    { value: 'EUR', label: 'EUR' },
+                                                    { value: 'GBP', label: 'GBP' },
+                                                ]} />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Notlar */}
+                        <div>
+                            <h3 className="text-white font-semibold text-sm flex items-center gap-2 mb-3 pb-2 border-b border-white/10">
+                                <StickyNote className="w-4 h-4 text-violet-400" /> Notlar
+                            </h3>
+                            <textarea
+                                value={formData.notlar}
+                                onChange={(e) => updateField('notlar', e.target.value)}
+                                rows={8}
+                                className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded-lg px-4 py-3 text-[var(--color-foreground)] text-sm focus:border-primary focus:outline-none transition-colors resize-y placeholder:text-secondary/50"
+                                placeholder="Bu cari hakkında notlarınızı buraya yazabilirsiniz... (Örn: ödeme alışkanlıkları, özel anlaşmalar, iletişim notları)"
+                            />
+                        </div>
                     </div>
                 )}
 
+                {/* TAB 4: KİMLİK BİLGİLERİ */}
                 {activeTab === 3 && (
-                    <div className="text-center py-12">
-                        <FileText className="w-16 h-16 text-secondary/40 mx-auto mb-4" />
-                        <h3 className="text-xl font-bold text-white mb-2">Kimlik Bilgileri</h3>
-                        <p className="text-secondary">Bu sekme yakında aktif olacak</p>
+                    <div className="space-y-6">
+                        {/* TC Kimlik ve Kişisel */}
+                        <div>
+                            <h3 className="text-white font-semibold text-sm flex items-center gap-2 mb-3 pb-2 border-b border-white/10">
+                                <ShieldCheck className="w-4 h-4 text-primary" /> Kişisel Bilgiler
+                            </h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-3">
+                                <FormInput label="TC Kimlik No" value={formData.tcKimlikNo} onChange={(v) => updateField('tcKimlikNo', v)} placeholder="11111111111" />
+                                <FormInput label="Doğum Tarihi" value={formData.dogumTarihi} onChange={(v) => updateField('dogumTarihi', v)} type="date" />
+                                <FormInput label="Doğum Yeri" value={formData.dogumYeri} onChange={(v) => updateField('dogumYeri', v)} />
+                                <FormInput label="Uyruk" value={formData.uyruk} onChange={(v) => updateField('uyruk', v)} />
+                                <FormInput label="Baba Adı" value={formData.babaAdi} onChange={(v) => updateField('babaAdi', v)} />
+                                <FormInput label="Anne Adı" value={formData.anneAdi} onChange={(v) => updateField('anneAdi', v)} />
+                                <FormSelect label="Cinsiyet" value={formData.cinsiyet} onChange={(v) => updateField('cinsiyet', v)} options={[
+                                    { value: '', label: 'Seçiniz...' },
+                                    { value: 'Erkek', label: 'Erkek' },
+                                    { value: 'Kadın', label: 'Kadın' },
+                                ]} />
+                                <FormSelect label="Medeni Hal" value={formData.medeniHal} onChange={(v) => updateField('medeniHal', v)} options={[
+                                    { value: '', label: 'Seçiniz...' },
+                                    { value: 'Bekar', label: 'Bekar' },
+                                    { value: 'Evli', label: 'Evli' },
+                                    { value: 'Boşanmış', label: 'Boşanmış' },
+                                ]} />
+                            </div>
+                        </div>
+
+                        {/* Resmi Belge Bilgileri */}
+                        <div>
+                            <h3 className="text-white font-semibold text-sm flex items-center gap-2 mb-3 pb-2 border-b border-white/10">
+                                <FileText className="w-4 h-4 text-cyan-400" /> Resmi Belge Bilgileri
+                            </h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
+                                <FormInput label="Ehliyet No" value={formData.ehliyetNo} onChange={(v) => updateField('ehliyetNo', v)} />
+                                <FormInput label="Pasaport No" value={formData.pasaportNo} onChange={(v) => updateField('pasaportNo', v)} />
+                            </div>
+                        </div>
+
+                        {/* Ticari Bilgiler */}
+                        <div>
+                            <h3 className="text-white font-semibold text-sm flex items-center gap-2 mb-3 pb-2 border-b border-white/10">
+                                <Building2 className="w-4 h-4 text-orange-400" /> Ticari Bilgiler
+                            </h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
+                                <FormInput label="Ticaret Sicil No" value={formData.ticaretSicilNo} onChange={(v) => updateField('ticaretSicilNo', v)} />
+                                <FormInput label="MERSİS No" value={formData.mersisNo} onChange={(v) => updateField('mersisNo', v)} />
+                                <FormInput label="KEP Adresi" value={formData.kepAdresi} onChange={(v) => updateField('kepAdresi', v)} placeholder="firma@kep.tr" />
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>
@@ -931,26 +1431,103 @@ export default function CariTanitim({ showToast }: CariTanitimProps) {
                 </div>
             )}
 
+            {/* CARİ ARA (HAREKET İÇİN) MODAL */}
+            {showHareketSearch && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowHareketSearch(false)}>
+                    <div className="bg-[#0d1b2e] border border-white/10 rounded-xl shadow-2xl w-full max-w-lg mx-4 max-h-[70vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between p-4 border-b border-white/10">
+                            <h2 className="text-white font-bold text-lg flex items-center gap-2"><Search className="w-5 h-5 text-primary" /> Cari Ara - Hareket Görüntüle</h2>
+                            <button onClick={() => setShowHareketSearch(false)} className="p-1.5 hover:bg-white/10 rounded transition-colors text-secondary hover:text-white"><X className="w-5 h-5" /></button>
+                        </div>
+                        <div className="p-4 border-b border-white/10">
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary" />
+                                <input
+                                    type="text"
+                                    value={hareketSearchQuery}
+                                    onChange={(e) => handleHareketSearch(e.target.value)}
+                                    placeholder="Cari adı veya kodu yazın..."
+                                    className="w-full bg-[var(--color-input-bg)] border border-[var(--color-input-border)] rounded-lg pl-10 pr-4 py-2.5 text-[var(--color-foreground)] text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all"
+                                    autoFocus
+                                />
+                            </div>
+                            <p className="text-secondary text-xs mt-2">Hareketlerini görmek istediğiniz carinin adını veya kodunu yazın</p>
+                        </div>
+                        <div className="overflow-auto flex-1">
+                            {hareketSearchLoading ? (
+                                <div className="flex items-center justify-center h-24 text-secondary">
+                                    <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin mr-2" />
+                                    Aranıyor...
+                                </div>
+                            ) : hareketSearchQuery.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center h-32 text-secondary">
+                                    <Users className="w-8 h-8 mb-2 opacity-40" />
+                                    <span>Aramak için yazmaya başlayın</span>
+                                </div>
+                            ) : hareketSearchResults.length === 0 ? (
+                                <div className="flex items-center justify-center h-24 text-secondary">Sonuç bulunamadı</div>
+                            ) : (
+                                <div className="divide-y divide-white/5">
+                                    {hareketSearchResults.map((c: any) => (
+                                        <button
+                                            key={c.id}
+                                            onClick={() => handleSelectHareketCari(c)}
+                                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-left"
+                                        >
+                                            <div className="w-9 h-9 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
+                                                <Users className="w-4 h-4 text-primary" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="text-white text-sm font-medium truncate">{c.unvani}</div>
+                                                <div className="text-secondary text-xs">{c.cari_kodu} {c.cari_tipi ? `• ${c.cari_tipi}` : ''}</div>
+                                            </div>
+                                            <ChevronRight className="w-4 h-4 text-secondary flex-shrink-0" />
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                        <div className="px-4 py-3 border-t border-white/10 text-secondary text-xs">
+                            {hareketSearchResults.length > 0 ? `${hareketSearchResults.length} sonuç bulundu` : 'Cari adı veya kodunu girin'}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* HAREKET MODAL */}
             {showHareket && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowHareket(false)}>
                     <div className="bg-[#0d1b2e] border border-white/10 rounded-xl shadow-2xl w-full max-w-3xl mx-4 max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
                         <div className="flex items-center justify-between p-4 border-b border-white/10">
-                            <h2 className="text-white font-bold text-lg flex items-center gap-2"><FileText className="w-5 h-5 text-blue-400" /> Cari Hareketler</h2>
-                            <button onClick={() => setShowHareket(false)} className="p-1.5 hover:bg-white/10 rounded transition-colors text-secondary hover:text-white"><X className="w-5 h-5" /></button>
+                            <div>
+                                <h2 className="text-white font-bold text-lg flex items-center gap-2"><FileText className="w-5 h-5 text-blue-400" /> Cari Hareketler</h2>
+                                {selectedHareketCariName && <p className="text-primary text-sm mt-0.5">{selectedHareketCariName}</p>}
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button onClick={() => { setShowHareket(false); setShowHareketSearch(true); }} className="px-3 py-1.5 text-xs bg-white/10 hover:bg-white/20 text-white rounded transition-colors flex items-center gap-1">
+                                    <Search className="w-3.5 h-3.5" /> Başka Cari Ara
+                                </button>
+                                <button onClick={() => setShowHareket(false)} className="p-1.5 hover:bg-white/10 rounded transition-colors text-secondary hover:text-white"><X className="w-5 h-5" /></button>
+                            </div>
                         </div>
                         <div className="overflow-auto flex-1">
                             {fihristLoading ? (
-                                <div className="flex items-center justify-center h-32 text-secondary">Yukleniyor...</div>
+                                <div className="flex items-center justify-center h-32 text-secondary">
+                                    <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin mr-2" />
+                                    Yükleniyor...
+                                </div>
                             ) : hareketList.length === 0 ? (
-                                <div className="flex items-center justify-center h-32 text-secondary">Bu cariye ait hareket bulunamadi</div>
+                                <div className="flex flex-col items-center justify-center h-32 text-secondary">
+                                    <FileText className="w-8 h-8 mb-2 opacity-40" />
+                                    <span>Bu cariye ait hareket bulunamadı</span>
+                                </div>
                             ) : (
                                 <table className="w-full text-sm">
                                     <thead className="sticky top-0 bg-[#0a1628]">
                                         <tr>
                                             <th className="text-left px-4 py-2 text-secondary font-medium">Tarih</th>
-                                            <th className="text-left px-4 py-2 text-secondary font-medium">Aciklama</th>
-                                            <th className="text-right px-4 py-2 text-secondary font-medium">Borc</th>
+                                            <th className="text-left px-4 py-2 text-secondary font-medium">Açıklama</th>
+                                            <th className="text-right px-4 py-2 text-secondary font-medium">Borç</th>
                                             <th className="text-right px-4 py-2 text-secondary font-medium">Alacak</th>
                                             <th className="text-right px-4 py-2 text-secondary font-medium">Bakiye</th>
                                         </tr>
@@ -970,7 +1547,7 @@ export default function CariTanitim({ showToast }: CariTanitimProps) {
                             )}
                         </div>
                         <div className="px-4 py-3 border-t border-white/10 text-secondary text-xs">
-                            Son <span className="text-white font-bold">{hareketList.length}</span> hareket gosteriliyor
+                            Son <span className="text-white font-bold">{hareketList.length}</span> hareket gösteriliyor
                         </div>
                     </div>
                 </div>

@@ -60,7 +60,7 @@ export default function HareketRaporu({ showToast }: HareketRaporuProps) {
         try {
             let query = supabase
                 .from('cari_hareketler')
-                .select('*')
+                .select('*, cari_hesaplar(unvani)')
                 .eq('tenant_id', currentTenant.id)
                 .order('tarih', { ascending: false });
 
@@ -82,6 +82,7 @@ export default function HareketRaporu({ showToast }: HareketRaporuProps) {
             }
 
             const { data, error } = await query;
+            console.log("HareketRaporu query result:", { data, error, tenantId: currentTenant.id, filters });
 
             if (error) throw error;
             setHareketler(data || []);
@@ -351,6 +352,7 @@ export default function HareketRaporu({ showToast }: HareketRaporuProps) {
                             <thead className="bg-white/5 sticky top-0">
                                 <tr className="text-left text-secondary">
                                     <th className="px-3 py-2 w-28">Tarih</th>
+                                    <th className="px-3 py-2 w-48">Cari Hesap</th>
                                     <th className="px-3 py-2 w-32">Belge No</th>
                                     <th className="px-3 py-2 w-24">Tip</th>
                                     <th className="px-3 py-2">Açıklama</th>
@@ -367,7 +369,10 @@ export default function HareketRaporu({ showToast }: HareketRaporuProps) {
                                         <td className="px-3 py-2 text-white font-medium">
                                             {new Date(hareket.tarih).toLocaleDateString('tr-TR')}
                                         </td>
-                                        <td className="px-3 py-2 text-secondary font-mono text-xs">
+                                        <td className="px-3 py-2 text-white font-medium">
+                                            {hareket.cari_hesaplar?.unvani || '-'}
+                                        </td>
+                                        <td className="px-3 py-2 font-mono text-xs text-secondary">
                                             {hareket.belge_no || '-'}
                                         </td>
                                         <td className="px-3 py-2">
