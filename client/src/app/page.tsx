@@ -1357,6 +1357,8 @@ export default function Home() {
               }).reduce((sum, item) => sum + ((Number(item.quantity) * Number(item.unit_price)) || 0), 0)}
               criticalStockCount={products.filter((p: any) => Number(p.stock_quantity) <= lowStockThreshold).length}
               activeUsersCount={activeEmployee ? 1 : 1}
+              saleItems={saleItems}
+              products={products}
             />
           )}
 
