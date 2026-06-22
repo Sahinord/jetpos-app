@@ -4,17 +4,94 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useTranslation, Language } from "@/lib/i18n";
 import {
-    Volume2, VolumeX, Monitor,
-    Palette, CheckCircle2,
-    Shield, Bell, Database,
+    Monitor, Palette, CheckCircle2, Globe,
+    Shield, Database, HelpCircle, Volume2, VolumeX,
     Info, ExternalLink, Users, Tag, AlertTriangle,
-    BookOpen, PlayCircle, Zap, Printer, Phone, MapPin, FileText, Building
+    BookOpen, PlayCircle, Zap, Printer, Banknote, Receipt,
+    RefreshCw, Layers, DownloadCloud, Utensils, CalendarClock,
+    PanelLeft, PanelRight, type LucideIcon
 } from "lucide-react";
+import { getSidebarPosition, setSidebarPosition as persistSidebarPosition, type SidebarPosition } from "@/components/Common/Sidebar";
 
-export default function AppSettings({ 
-    theme, setTheme, 
-    isBeepEnabled, setIsBeepEnabled, 
-    showHelpIcons, setShowHelpIcons, 
+function SettingCard({ icon: Icon, title, children, delay = 0, className = "" }: { icon: LucideIcon; title: string; children: React.ReactNode; delay?: number; className?: string }) {
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay }}
+            className={`glass-card p-5 space-y-4 bg-white/[0.01] ${className}`}
+        >
+            <h2 className="text-[10px] font-bold text-primary uppercase tracking-[0.25em] flex items-center gap-2 border-b border-white/5 pb-3">
+                <Icon className="w-4 h-4" />
+                {title}
+            </h2>
+            <div className="space-y-3">{children}</div>
+        </motion.div>
+    );
+}
+
+function SettingToggle({ icon: Icon, iconClass, title, description, checked, onChange }: { icon: LucideIcon; iconClass: string; title: string; description: string; checked: boolean; onChange: () => void }) {
+    return (
+        <div className="flex items-center justify-between gap-4 p-3.5 rounded-xl border border-border bg-background/40">
+            <div className="flex items-center gap-3 min-w-0">
+                <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${iconClass}`}>
+                    <Icon className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">{title}</p>
+                    <p className="text-xs text-secondary/60 truncate">{description}</p>
+                </div>
+            </div>
+            <button
+                onClick={onChange}
+                className={`w-11 h-6 rounded-full relative transition-colors flex-shrink-0 ${checked ? 'bg-primary' : 'bg-border'}`}
+            >
+                <span className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all shadow ${checked ? 'left-6' : 'left-1'}`} />
+            </button>
+        </div>
+    );
+}
+
+function PrinterRow({ icon: Icon, iconClass, title, description, value, onChange, printers, placeholder, onTest, testChannel }: any) {
+    return (
+        <div className="p-3.5 rounded-xl border border-border bg-background/40 space-y-3">
+            <div className="flex items-center gap-3">
+                <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${iconClass}`}>
+                    <Icon className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">{title}</p>
+                    <p className="text-xs text-secondary/60 truncate">{description}</p>
+                </div>
+            </div>
+            <div className="flex items-center gap-2">
+                <select
+                    value={value || ""}
+                    onChange={(e) => onChange(e.target.value)}
+                    className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-xs font-medium text-foreground outline-none focus:border-primary"
+                >
+                    <option value="">{placeholder}</option>
+                    {printers.map((p: any) => (
+                        <option key={p.name} value={p.name}>{p.name}{p.isDefault ? ' ★' : ''}</option>
+                    ))}
+                </select>
+                {onTest && (
+                    <button
+                        onClick={() => onTest(value, testChannel)}
+                        className="px-3 py-2 bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-lg text-[10px] font-bold text-primary transition-all active:scale-95 flex-shrink-0"
+                    >
+                        Test Et
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+}
+
+export default function AppSettings({
+    theme, setTheme,
+    isBeepEnabled, setIsBeepEnabled,
+    showHelpIcons, setShowHelpIcons,
     isEmployeeModuleEnabled, setIsEmployeeModuleEnabled,
     isPriceSyncEnabled, setIsPriceSyncEnabled,
     isStockSyncEnabled, setIsStockSyncEnabled,
@@ -35,24 +112,46 @@ export default function AppSettings({
     setCfdSettings
 }: any) {
     const { language, setLanguage, t } = useTranslation();
-    const [systemPrinters, setSystemPrinters] = useState<{name: string; isDefault: boolean; status: number}[]>([]);
+    const [systemPrinters, setSystemPrinters] = useState<{ name: string; isDefault: boolean; status: number }[]>([]);
+    const [sidebarPos, setSidebarPos] = useState<SidebarPosition>('left');
 
     useEffect(() => {
         const electron = (window as any).electron;
         if (electron?.invoke) {
             electron.invoke('get-printers').then((printers: any[]) => {
                 setSystemPrinters(printers || []);
-            }).catch(() => {});
+            }).catch(() => { });
         }
+        setSidebarPos(getSidebarPosition());
     }, []);
 
+    const handleSidebarPositionChange = (pos: SidebarPosition) => {
+        persistSidebarPosition(pos);
+        setSidebarPos(pos);
+        showToast?.(pos === 'left' ? "Menü sola alındı" : "Menü sağa alındı");
+    };
+
+    const testPrinter = (printerName: string, channel: string) => {
+        if (!printerName) return showToast("Önce yazıcı seçiniz", "error");
+        const electron = (window as any).electron;
+        if (electron?.send) {
+            electron.send(channel, { printerName });
+            showToast("Test gönderildi: " + printerName, "info");
+        }
+    };
+
     const themes = [
-        { id: 'modern', name: 'MODERN DARK', color: 'bg-primary', desc: 'Sleek ve modern bir arayüz' },
-        { id: 'light', name: 'GÜNEŞ IŞIĞI', color: 'bg-white', desc: 'Aydınlık ve ferah çalışma alanı' },
-        { id: 'wood', name: 'KLASİK AHŞAP', color: 'bg-[#8b4513]', desc: 'Sıcak ve nostaljik hesap makinesi' },
-        { id: 'glass', name: 'CAM KABARCIK', color: 'bg-blue-400', desc: 'Yüksek derinlikli modern cam' }
+        { id: 'modern', name: 'Modern Dark', color: 'bg-primary', desc: 'Sleek ve modern bir arayüz' },
+        { id: 'light', name: 'Güneş Işığı', color: 'bg-white', desc: 'Aydınlık ve ferah çalışma alanı' },
+        { id: 'wood', name: 'Klasik Ahşap', color: 'bg-[#8b4513]', desc: 'Sıcak ve nostaljik hesap makinesi' },
+        { id: 'glass', name: 'Cam Kabarcık', color: 'bg-blue-400', desc: 'Yüksek derinlikli modern cam' }
     ];
 
+    const languageLabels: Record<Language, { flag: string; native: string; name: string }> = {
+        tr: { flag: '🇹🇷', native: 'Türkçe', name: 'Türkçe' },
+        en: { flag: '🇬🇧', native: 'English', name: 'English' },
+        ar: { flag: '🇸🇦', native: 'العربية', name: 'Arabic' },
+    };
 
     const hasAdisyonAccess = (() => {
         if (!currentTenant?.features) return false;
@@ -74,532 +173,281 @@ export default function AppSettings({
     })();
 
     return (
-        <div className="space-y-8 pb-10">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-4">
-                {/* Visual Settings */}
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card space-y-6">
-                    <div className="flex items-center gap-3 border-b border-border pb-4">
-                        <Palette className="text-primary" />
-                        <h2 className="font-black tracking-widest uppercase text-foreground">GÖRÜNÜM TEMA SEÇİMİ</h2>
-                    </div>
+        <div className="space-y-4 pb-10">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-2">
 
-                    <div className="grid grid-cols-1 gap-3">
-                        {themes.map((t) => (
-                            <button
-                                key={t.id}
-                                onClick={() => {
-                                    setTheme(t.id);
-                                    showToast(`${t.name} teması uygulandı`);
-                                }}
-                                className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${theme === t.id ? 'border-primary bg-primary/5' : 'border-border/50 hover:border-primary/30'}`}
-                            >
-                                <div className="flex items-center gap-4">
-                                    <div className={`w-12 h-12 rounded-xl ${t.color} flex items-center justify-center shadow-lg`}>
-                                        <Monitor className="text-white" />
-                                    </div>
-                                    <div className="text-left">
-                                        <div className="font-black text-sm uppercase tracking-wider text-foreground">{t.name}</div>
-                                        <div className="text-[10px] text-secondary font-bold">{t.desc}</div>
-                                    </div>
-                                </div>
-                                {theme === t.id && <CheckCircle2 className="text-primary w-6 h-6" />}
-                            </button>
-                        ))}
-                    </div>
-                </motion.div>
-
-                {/* Language Settings */}
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="glass-card space-y-6">
-                    <div className="flex items-center gap-3 border-b border-border pb-4">
-                        <span className="text-2xl">🌍</span>
-                        <div>
-                            <h2 className="font-black tracking-widest uppercase text-foreground">{t('settings.language')}</h2>
-                            <p className="text-[10px] text-secondary font-bold mt-0.5">{t('settings.language_desc')}</p>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                        {(['tr', 'en', 'ar'] as Language[]).map((lang) => {
-                            const labels: Record<Language, { flag: string; name: string; native: string }> = {
-                                tr: { flag: '🇹🇷', name: 'Türkçe', native: 'Türkçe' },
-                                en: { flag: '🇬🇧', name: 'English', native: 'English' },
-                                ar: { flag: '🇸🇦', name: 'Arabic', native: 'العربية' },
-                            };
-                            const l = labels[lang];
-                            const isActive = language === lang;
-                            return (
+                {/* Görünüm, Dil & Menü */}
+                <SettingCard icon={Palette} title="Görünüm, Dil ve Menü">
+                    <div>
+                        <p className="text-[10px] font-semibold text-secondary uppercase tracking-widest mb-2">Tema</p>
+                        <div className="grid grid-cols-1 gap-2">
+                            {themes.map((th) => (
                                 <button
-                                    key={lang}
-                                    onClick={() => {
-                                        setLanguage(lang);
-                                        showToast(`${l.native} ${lang === 'tr' ? 'dili seçildi' : lang === 'en' ? 'selected' : 'تم اختيار اللغة'}`);
-                                    }}
-                                    className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ${
-                                        isActive
-                                            ? 'border-primary bg-primary/10 shadow-lg shadow-primary/10'
-                                            : 'border-border/50 hover:border-primary/30 hover:bg-primary/5'
-                                    }`}
+                                    key={th.id}
+                                    onClick={() => { setTheme(th.id); showToast(`${th.name} teması uygulandı`); }}
+                                    className={`flex items-center justify-between p-3 rounded-xl border transition-all ${theme === th.id ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30'}`}
                                 >
-                                    <span className="text-3xl">{l.flag}</span>
-                                    <div className="text-left">
-                                        <div className="font-black text-sm uppercase tracking-wider text-foreground">{l.native}</div>
-                                        <div className="text-[10px] text-secondary font-bold">{l.name}</div>
-                                    </div>
-                                    {isActive && (
-                                        <CheckCircle2 className="text-primary w-5 h-5 ml-auto" />
-                                    )}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </motion.div>
-
-                {/* System Settings */}
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card space-y-6">
-                    <div className="flex items-center gap-3 border-b border-border pb-4">
-                        <Volume2 className="text-primary" />
-                        <h2 className="font-black tracking-widest uppercase text-foreground">SES VE BİLDİRİMLER</h2>
-                    </div>
-
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between p-4 bg-primary/5 rounded-2xl border border-border">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-amber-500/10 rounded-xl">
-                                    {isBeepEnabled ? <Volume2 className="text-amber-500" /> : <VolumeX className="text-secondary" />}
-                                </div>
-                                <div>
-                                    <div className="font-black text-sm uppercase tracking-wider text-foreground">KASA BİP SESİ</div>
-                                    <div className="text-[10px] text-secondary font-bold">Barkod okutulduğunda çıkan dijital ses</div>
-                                </div>
-                            </div>
-                            <button
-                                onClick={() => setIsBeepEnabled(!isBeepEnabled)}
-                                className={`w-16 h-8 rounded-full relative transition-all duration-300 ${isBeepEnabled ? 'bg-primary' : 'bg-primary/10'}`}
-                            >
-                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all duration-300 shadow-lg ${isBeepEnabled ? 'left-9' : 'left-1'}`} />
-                            </button>
-                        </div>
-
-                        <div className="flex items-center justify-between p-4 bg-primary/5 rounded-2xl border border-border">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-primary/10 rounded-xl">
-                                    <Info className="text-primary" />
-                                </div>
-                                <div>
-                                    <div className="font-black text-sm uppercase tracking-wider text-foreground">YARDIM İKONLARI</div>
-                                    <div className="text-[10px] text-secondary font-bold">Menü öğelerindeki (?) yardım butonlarını göster</div>
-                                </div>
-                            </div>
-                            <button
-                                onClick={() => setShowHelpIcons(!showHelpIcons)}
-                                className={`w-16 h-8 rounded-full relative transition-all duration-300 ${showHelpIcons ? 'bg-primary' : 'bg-primary/10'}`}
-                            >
-                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all duration-300 shadow-lg ${showHelpIcons ? 'left-9' : 'left-1'}`} />
-                            </button>
-                        </div>
-
-                        <div className="flex items-center justify-between p-4 bg-primary/5 rounded-2xl border border-border">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-emerald-500/10 rounded-xl">
-                                    <Users className="text-emerald-500" />
-                                </div>
-                                <div>
-                                    <div className="font-black text-sm uppercase tracking-wider text-foreground">ÇALIŞAN MODÜLÜ</div>
-                                    <div className="text-[10px] text-secondary font-bold">Vardiya takibi ve çalışan yönetimi</div>
-                                </div>
-                            </div>
-                            <button
-                                onClick={() => setIsEmployeeModuleEnabled(!isEmployeeModuleEnabled)}
-                                className={`w-16 h-8 rounded-full relative transition-all duration-300 ${isEmployeeModuleEnabled ? 'bg-emerald-500' : 'bg-primary/10'}`}
-                            >
-                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all duration-300 shadow-lg ${isEmployeeModuleEnabled ? 'left-9' : 'left-1'}`} />
-                            </button>
-                        </div>
-
-                        {/* Nakit Çekmece Ayarı */}
-                        <div className="space-y-4 pt-4 border-t border-border/20">
-                            <div className="flex items-center justify-between p-4 bg-primary/5 rounded-2xl border border-border">
-                                <div className="flex items-center gap-4">
-                                    <div className="p-3 bg-blue-500/10 rounded-xl">
-                                        <Database className="text-blue-500" />
-                                    </div>
-                                    <div>
-                                        <div className="font-black text-sm uppercase tracking-wider text-foreground">NAKİT ÇEKMECESİ</div>
-                                        <div className="text-[10px] text-secondary font-bold">Nakit satışlarda kasayı otomatik aç</div>
-                                    </div>
-                                </div>
-                                <button
-                                    onClick={() => setIsCashDrawerEnabled(!isCashDrawerEnabled)}
-                                    className={`w-16 h-8 rounded-full relative transition-all duration-300 ${isCashDrawerEnabled ? 'bg-blue-500' : 'bg-primary/10'}`}
-                                >
-                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all duration-300 shadow-lg ${isCashDrawerEnabled ? 'left-9' : 'left-1'}`} />
-                                </button>
-                            </div>
-
-                            {isCashDrawerEnabled && (
-                                <div className="p-4 bg-primary/5 rounded-2xl border border-border space-y-2">
-                                    <div className="flex items-center justify-between gap-4">
-                                        <div className="flex-1 space-y-2">
-                                            <label className="text-[10px] font-black text-secondary tracking-widest uppercase">YAZICI ADI (SİSTEMDEKİ ADI)</label>
-                                            <select 
-                                                value={cashDrawerPrinterName || ""}
-                                                onChange={(e) => setCashDrawerPrinterName(e.target.value)}
-                                                className="w-full bg-card border border-border rounded-xl px-4 py-3 text-xs font-bold text-foreground outline-none focus:border-primary transition-all"
-                                            >
-                                                <option value="">Yazıcı seçin...</option>
-                                                {systemPrinters.map(p => (
-                                                    <option key={p.name} value={p.name}>{p.name}{p.isDefault ? ' ⭐' : ''}</option>
-                                                ))}
-                                            </select>
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-9 h-9 rounded-lg ${th.color} flex items-center justify-center shadow-sm`}>
+                                            <Monitor className="w-4 h-4 text-white" />
                                         </div>
-                                        <button
-                                            onClick={() => {
-                                                if (!cashDrawerPrinterName) return showToast("Önce yazıcı seçiniz", "error");
-                                                const electron = (window as any).electron;
-                                                if (electron?.send) {
-                                                    electron.send('open-cash-drawer', { printerName: cashDrawerPrinterName });
-                                                    showToast("Kasa açma komutu gönderildi: " + cashDrawerPrinterName, "info");
-                                                }
-                                            }}
-                                            className="px-6 py-3 self-end bg-primary/10 hover:bg-primary/20 border border-primary/30 rounded-xl text-[10px] font-black text-primary transition-all active:scale-95"
-                                        >
-                                            TEST ET
-                                        </button>
+                                        <div className="text-left">
+                                            <p className="text-sm font-semibold text-foreground">{th.name}</p>
+                                            <p className="text-xs text-secondary/60">{th.desc}</p>
+                                        </div>
                                     </div>
-                                    <p className="text-[9px] text-secondary/60 italic mt-1 font-medium leading-relaxed uppercase">
-                                        * Kasayı açmak için ESC/POS destekli bir termal yazıcı gereklidir.
-                                    </p>
-                                </div>
-                            )}
-
-                            {/* FİŞ YAZICISI SEÇİMİ */}
-                            <div className="flex items-center justify-between p-4 bg-primary/5 rounded-2xl border border-border">
-                                <div className="flex items-center gap-4">
-                                    <div className="p-3 bg-emerald-500/10 rounded-xl">
-                                        <Printer className="text-emerald-500" />
-                                    </div>
-                                    <div>
-                                        <div className="font-black text-sm uppercase tracking-wider text-foreground">FİŞ YAZICISI</div>
-                                        <div className="text-[10px] text-secondary font-bold">Satış fişleri için kullanılacak yazıcı</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="p-4 bg-primary/5 rounded-2xl border border-border space-y-2">
-                                <div className="flex items-center justify-between gap-4">
-                                    <div className="flex-1 space-y-2">
-                                        <label className="text-[10px] font-black text-secondary tracking-widest uppercase">FİŞ YAZICI ADI</label>
-                                        <select
-                                            value={receiptPrinterName || ""}
-                                            onChange={(e) => setReceiptPrinterName(e.target.value)}
-                                            className="w-full bg-card border border-border rounded-xl px-4 py-3 text-xs font-bold text-foreground outline-none focus:border-primary transition-all"
-                                        >
-                                            <option value="">Yazıcı seçin...</option>
-                                            {systemPrinters.map(p => (
-                                                <option key={p.name} value={p.name}>{p.name}{p.isDefault ? ' ⭐' : ''}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <button
-                                        onClick={() => {
-                                            if (!receiptPrinterName) return showToast("Önce yazıcı seçiniz", "error");
-                                            const electron = (window as any).electron;
-                                            if (electron?.send) {
-                                                electron.send('test-receipt-printer', { printerName: receiptPrinterName });
-                                                showToast("Test fişi gönderildi: " + receiptPrinterName, "info");
-                                            }
-                                        }}
-                                        className="px-6 py-3 self-end bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 rounded-xl text-[10px] font-black text-emerald-500 transition-all active:scale-95"
-                                    >
-                                        TEST ET
-                                    </button>
-                                </div>
-                                <p className="text-[9px] text-secondary/60 italic mt-1 font-medium leading-relaxed uppercase">
-                                    * Fiş yazdırmak için sisteme tanımlı termal yazıcı adını girin (Windows Yazıcılar'daki isim).
-                                </p>
-                            </div>
-
-                            {/* ETİKET YAZICISI SEÇİMİ */}
-                            <div className="flex items-center justify-between p-4 bg-primary/5 rounded-2xl border border-border">
-                                <div className="flex items-center gap-4">
-                                    <div className="p-3 bg-amber-500/10 rounded-xl">
-                                        <Tag className="text-amber-500" />
-                                    </div>
-                                    <div>
-                                        <div className="font-black text-sm uppercase tracking-wider text-foreground">ETİKET YAZICISI</div>
-                                        <div className="text-[10px] text-secondary font-bold">Ürün barkod etiketleri için kullanılacak yazıcı</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="p-4 bg-primary/5 rounded-2xl border border-border space-y-2">
-                                <div className="flex items-center justify-between gap-4">
-                                    <div className="flex-1 space-y-2">
-                                        <label className="text-[10px] font-black text-secondary tracking-widest uppercase">ETİKET YAZICI ADI</label>
-                                        <select
-                                            value={labelPrinterName || ""}
-                                            onChange={(e) => setLabelPrinterName(e.target.value)}
-                                            className="w-full bg-card border border-border rounded-xl px-4 py-3 text-xs font-bold text-foreground outline-none focus:border-primary transition-all"
-                                        >
-                                            <option value="">Fiş yazıcısıyla aynı (boş bırak)</option>
-                                            {systemPrinters.map(p => (
-                                                <option key={p.name} value={p.name}>{p.name}{p.isDefault ? ' ⭐' : ''}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <button
-                                        onClick={() => {
-                                            if (!labelPrinterName) return showToast("Önce yazıcı seçiniz", "error");
-                                            const electron = (window as any).electron;
-                                            if (electron?.send) {
-                                                electron.send('test-receipt-printer', { printerName: labelPrinterName });
-                                                showToast("Test etiketi gönderildi: " + labelPrinterName, "info");
-                                            }
-                                        }}
-                                        className="px-6 py-3 self-end bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded-xl text-[10px] font-black text-amber-500 transition-all active:scale-95"
-                                    >
-                                        TEST ET
-                                    </button>
-                                </div>
-                                <p className="text-[9px] text-secondary/60 italic mt-1 font-medium leading-relaxed uppercase">
-                                    * Eğer fiş yazıcınızla aynıysa, burayı boş bırakabilirsiniz.
-                                </p>
-                            </div>
+                                    {theme === th.id && <CheckCircle2 className="text-primary w-5 h-5 flex-shrink-0" />}
+                                </button>
+                            ))}
                         </div>
-
                     </div>
-                </motion.div>
 
-                {/* Adisyon Ayarları */}
+                    <div>
+                        <p className="text-[10px] font-semibold text-secondary uppercase tracking-widest mb-2">Dil</p>
+                        <div className="grid grid-cols-3 gap-2">
+                            {(['tr', 'en', 'ar'] as Language[]).map((lang) => {
+                                const l = languageLabels[lang];
+                                const isActive = language === lang;
+                                return (
+                                    <button
+                                        key={lang}
+                                        onClick={() => { setLanguage(lang); showToast(l.native + (lang === 'tr' ? ' dili seçildi' : lang === 'en' ? ' selected' : ' تم اختيار اللغة')); }}
+                                        className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all ${isActive ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30'}`}
+                                    >
+                                        <span className="text-xl">{l.flag}</span>
+                                        <span className="text-xs font-semibold text-foreground">{l.native}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    <div>
+                        <p className="text-[10px] font-semibold text-secondary uppercase tracking-widest mb-2">Menü Konumu</p>
+                        <div className="grid grid-cols-2 gap-2">
+                            <button
+                                onClick={() => handleSidebarPositionChange('left')}
+                                className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border transition-all text-xs font-semibold ${sidebarPos === 'left' ? 'border-primary bg-primary/5 text-primary' : 'border-border text-secondary hover:border-primary/30'}`}
+                            >
+                                <PanelLeft className="w-4 h-4" /> Sol
+                            </button>
+                            <button
+                                onClick={() => handleSidebarPositionChange('right')}
+                                className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border transition-all text-xs font-semibold ${sidebarPos === 'right' ? 'border-primary bg-primary/5 text-primary' : 'border-border text-secondary hover:border-primary/30'}`}
+                            >
+                                <PanelRight className="w-4 h-4" /> Sağ
+                            </button>
+                        </div>
+                    </div>
+                </SettingCard>
+
+                {/* Genel Tercihler */}
+                <SettingCard icon={Volume2} title="Genel Tercihler" delay={0.05}>
+                    <SettingToggle
+                        icon={isBeepEnabled ? Volume2 : VolumeX}
+                        iconClass="bg-amber-500/10 text-amber-500"
+                        title="Kasa bip sesi"
+                        description="Barkod okutulduğunda çıkan dijital ses"
+                        checked={isBeepEnabled}
+                        onChange={() => setIsBeepEnabled(!isBeepEnabled)}
+                    />
+                    <SettingToggle
+                        icon={HelpCircle}
+                        iconClass="bg-blue-500/10 text-blue-500"
+                        title="Yardım ikonları"
+                        description="Menü öğelerindeki (?) yardım butonlarını göster"
+                        checked={showHelpIcons}
+                        onChange={() => setShowHelpIcons(!showHelpIcons)}
+                    />
+                    <SettingToggle
+                        icon={Users}
+                        iconClass="bg-emerald-500/10 text-emerald-500"
+                        title="Çalışan modülü"
+                        description="Vardiya takibi ve çalışan yönetimi"
+                        checked={isEmployeeModuleEnabled}
+                        onChange={() => setIsEmployeeModuleEnabled(!isEmployeeModuleEnabled)}
+                    />
+                </SettingCard>
+
+                {/* POS Donanımı / Yazıcılar */}
+                <SettingCard icon={Printer} title="POS Donanımı" delay={0.1}>
+                    <SettingToggle
+                        icon={Banknote}
+                        iconClass="bg-violet-500/10 text-violet-500"
+                        title="Nakit çekmecesi"
+                        description="Nakit satışlarda kasayı otomatik aç"
+                        checked={isCashDrawerEnabled}
+                        onChange={() => setIsCashDrawerEnabled(!isCashDrawerEnabled)}
+                    />
+                    {isCashDrawerEnabled && (
+                        <PrinterRow
+                            icon={Banknote}
+                            iconClass="bg-violet-500/10 text-violet-500"
+                            title="Çekmece yazıcısı"
+                            description="Çekmeceyi tetikleyen termal yazıcı"
+                            value={cashDrawerPrinterName}
+                            onChange={setCashDrawerPrinterName}
+                            printers={systemPrinters}
+                            placeholder="Yazıcı seçin..."
+                            onTest={(name: string) => testPrinter(name, 'open-cash-drawer')}
+                        />
+                    )}
+                    <PrinterRow
+                        icon={Receipt}
+                        iconClass="bg-emerald-500/10 text-emerald-500"
+                        title="Fiş yazıcısı"
+                        description="Satış fişleri için kullanılacak yazıcı"
+                        value={receiptPrinterName}
+                        onChange={setReceiptPrinterName}
+                        printers={systemPrinters}
+                        placeholder="Yazıcı seçin..."
+                        onTest={(name: string) => testPrinter(name, 'test-receipt-printer')}
+                    />
+                    <PrinterRow
+                        icon={Tag}
+                        iconClass="bg-amber-500/10 text-amber-500"
+                        title="Etiket yazıcısı"
+                        description="Boş bırakılırsa fiş yazıcısıyla aynı kabul edilir"
+                        value={labelPrinterName}
+                        onChange={setLabelPrinterName}
+                        printers={systemPrinters}
+                        placeholder="Fiş yazıcısıyla aynı (boş bırak)"
+                        onTest={(name: string) => testPrinter(name, 'test-receipt-printer')}
+                    />
+                </SettingCard>
+
+                {/* Mağaza ve Envanter */}
+                <SettingCard icon={Database} title="Mağaza ve Envanter" delay={0.15}>
+                    <SettingToggle
+                        icon={RefreshCw}
+                        iconClass="bg-indigo-500/10 text-indigo-500"
+                        title="Fiyat senkronizasyonu"
+                        description="Tüm mağazalarda fiyatları aynı tut"
+                        checked={isPriceSyncEnabled}
+                        onChange={() => { setIsPriceSyncEnabled(!isPriceSyncEnabled); showToast(isPriceSyncEnabled ? "Fiyat izolasyonu aktif" : "Fiyat eşitleme aktif"); }}
+                    />
+                    <SettingToggle
+                        icon={Layers}
+                        iconClass="bg-amber-500/10 text-amber-500"
+                        title="Aktif mağaza stok düşümü"
+                        description="Satışları seçili mağazanın stoğundan düş"
+                        checked={isWarehouseStockDeductionEnabled}
+                        onChange={() => { setIsWarehouseStockDeductionEnabled(!isWarehouseStockDeductionEnabled); showToast(isWarehouseStockDeductionEnabled ? "Global stok düşümü aktif" : "Mağaza bazlı stok düşümü aktif"); }}
+                    />
+                    <SettingToggle
+                        icon={RefreshCw}
+                        iconClass="bg-rose-500/10 text-rose-500"
+                        title="Stok senkronizasyonu"
+                        description="Tüm mağazalarda tek bir stok havuzu kullan"
+                        checked={isStockSyncEnabled}
+                        onChange={() => { setIsStockSyncEnabled(!isStockSyncEnabled); showToast(isStockSyncEnabled ? "Stoklar ayrıştırıldı" : "Stoklar eşitlendi"); }}
+                    />
+                    <div className="p-3.5 rounded-xl border border-border bg-background/40 space-y-2">
+                        <div className="flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-3 min-w-0">
+                                <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 bg-rose-500/10 text-rose-500">
+                                    <AlertTriangle className="w-4 h-4" />
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="text-sm font-semibold text-foreground">Stok uyarı sınırı</p>
+                                    <p className="text-xs text-secondary/60">Bu sayının altı &quot;kritik&quot; sayılır</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                                <input
+                                    type="number"
+                                    value={lowStockThreshold ?? 0}
+                                    onChange={(e) => setLowStockThreshold(parseInt(e.target.value) || 0)}
+                                    className="w-16 bg-background border border-border rounded-lg px-2 py-1.5 text-center text-sm font-semibold text-primary outline-none focus:border-primary"
+                                />
+                                <span className="text-xs text-secondary/60">adet</span>
+                            </div>
+                        </div>
+                    </div>
+                </SettingCard>
+
+                {/* Adisyon Sistemi */}
                 {hasAdisyonAccess && (
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }} className="glass-card space-y-6">
-                        <div className="flex items-center gap-3 border-b border-border pb-4">
-                            <span className="text-primary text-xl">🍽️</span>
-                            <h2 className="font-black tracking-widest uppercase text-foreground">ADİSYON SİSTEMİ</h2>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between p-4 bg-primary/5 rounded-2xl border border-border">
-                                <div className="flex items-center gap-4">
-                                    <div className="p-3 bg-purple-500/10 rounded-xl">
-                                        <Database className="text-purple-500" />
-                                    </div>
-                                    <div>
-                                        <div className="font-black text-sm uppercase tracking-wider text-foreground">ŞUBEYE ÖZEL MASALAR</div>
-                                        <div className="text-[10px] text-secondary font-bold">Masaları bulunduğun şubeye göre izole et</div>
-                                    </div>
-                                </div>
-                                <button
-                                    onClick={() => {
-                                        setIsAdisyonStoreSpecificEnabled(!isAdisyonStoreSpecificEnabled);
-                                        showToast(!isAdisyonStoreSpecificEnabled ? "Masalar şubelere ayrıldı" : "Tüm masalar ortak yapıldı");
-                                    }}
-                                    className={`w-16 h-8 rounded-full relative transition-all duration-300 ${isAdisyonStoreSpecificEnabled ? 'bg-purple-500' : 'bg-primary/10'}`}
-                                >
-                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all duration-300 shadow-lg ${isAdisyonStoreSpecificEnabled ? 'left-9' : 'left-1'}`} />
-                                </button>
-                            </div>
-
-                            <div className="flex items-center justify-between p-4 bg-primary/5 rounded-2xl border border-border">
-                                <div className="flex items-center gap-4">
-                                    <div className="p-3 bg-emerald-500/10 rounded-xl">
-                                        <CheckCircle2 className="text-emerald-500" />
-                                    </div>
-                                    <div>
-                                        <div className="font-black text-sm uppercase tracking-wider text-foreground">OTOMATİK REZERVASYON AÇILIŞI</div>
-                                        <div className="text-[10px] text-secondary font-bold">Saati gelen rezervasyonlarda masayı otomatik aç</div>
-                                    </div>
-                                </div>
-                                <button
-                                    onClick={() => {
-                                        setIsAdisyonAutoOpenReservationEnabled(!isAdisyonAutoOpenReservationEnabled);
-                                        showToast(!isAdisyonAutoOpenReservationEnabled ? "Otomatik açılış aktif" : "Otomatik açılış kapalı");
-                                    }}
-                                    className={`w-16 h-8 rounded-full relative transition-all duration-300 ${isAdisyonAutoOpenReservationEnabled ? 'bg-emerald-500' : 'bg-primary/10'}`}
-                                >
-                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all duration-300 shadow-lg ${isAdisyonAutoOpenReservationEnabled ? 'left-9' : 'left-1'}`} />
-                                </button>
-                            </div>
-                        </div>
-                    </motion.div>
+                    <SettingCard icon={Utensils} title="Adisyon Sistemi" delay={0.2}>
+                        <SettingToggle
+                            icon={Database}
+                            iconClass="bg-purple-500/10 text-purple-500"
+                            title="Şubeye özel masalar"
+                            description="Masaları bulunduğun şubeye göre izole et"
+                            checked={isAdisyonStoreSpecificEnabled}
+                            onChange={() => { setIsAdisyonStoreSpecificEnabled(!isAdisyonStoreSpecificEnabled); showToast(!isAdisyonStoreSpecificEnabled ? "Masalar şubelere ayrıldı" : "Tüm masalar ortak yapıldı"); }}
+                        />
+                        <SettingToggle
+                            icon={CalendarClock}
+                            iconClass="bg-emerald-500/10 text-emerald-500"
+                            title="Otomatik rezervasyon açılışı"
+                            description="Saati gelen rezervasyonlarda masayı otomatik aç"
+                            checked={isAdisyonAutoOpenReservationEnabled}
+                            onChange={() => { setIsAdisyonAutoOpenReservationEnabled(!isAdisyonAutoOpenReservationEnabled); showToast(!isAdisyonAutoOpenReservationEnabled ? "Otomatik açılış aktif" : "Otomatik açılış kapalı"); }}
+                        />
+                    </SettingCard>
                 )}
 
-                {/* Store Management Settings */}
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="glass-card space-y-6">
-                    <div className="flex items-center gap-3 border-b border-border pb-4">
-                        <Database className="text-primary" />
-                        <h2 className="font-black tracking-widest uppercase text-foreground">MAĞAZA VE ENVANTER</h2>
-                    </div>
-
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between p-4 bg-primary/5 rounded-2xl border border-border">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-indigo-500/10 rounded-xl">
-                                    <Tag className="text-indigo-500" />
-                                </div>
-                                <div>
-                                    <div className="font-black text-sm uppercase tracking-wider text-foreground">FİYAT SENKRONİZASYONU</div>
-                                    <div className="text-[10px] text-secondary font-bold">Tüm mağazalarda fiyatları aynı tut</div>
-                                </div>
-                            </div>
-                            <button
-                                onClick={() => {
-                                    setIsPriceSyncEnabled(!isPriceSyncEnabled);
-                                    showToast(isPriceSyncEnabled ? "Fiyat izolasyonu aktif" : "Fiyat eşitleme aktif");
-                                }}
-                                className={`w-16 h-8 rounded-full relative transition-all duration-300 ${isPriceSyncEnabled ? 'bg-indigo-500' : 'bg-primary/10'}`}
-                            >
-                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all duration-300 shadow-lg ${isPriceSyncEnabled ? 'left-9' : 'left-1'}`} />
-                            </button>
+                {/* Sistem ve Güvenlik */}
+                <SettingCard icon={Shield} title="Sistem ve Güvenlik" delay={0.25}>
+                    <div className="space-y-1">
+                        <div className="flex items-center justify-between px-1 py-2 text-sm">
+                            <span className="text-secondary/60">Versiyon</span>
+                            <span className="font-mono font-semibold text-foreground">v{process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0'} Pro</span>
                         </div>
-
-                        {/* Stok Düşüm Ayarı */}
-                        <div className="flex items-center justify-between p-4 bg-primary/5 rounded-2xl border border-border">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-amber-500/10 rounded-xl">
-                                    <Database className="text-amber-500" />
-                                </div>
-                                <div>
-                                    <div className="font-black text-sm uppercase tracking-wider text-foreground">AKTİF MAĞAZA STOK DÜŞÜMÜ</div>
-                                    <div className="text-[10px] text-secondary font-bold">Satışları seçili mağazanın stoğundan düş</div>
-                                </div>
-                            </div>
-                            <button
-                                onClick={() => {
-                                    setIsWarehouseStockDeductionEnabled(!isWarehouseStockDeductionEnabled);
-                                    showToast(isWarehouseStockDeductionEnabled ? "Global stok düşümü aktif" : "Mağaza bazlı stok düşümü aktif");
-                                }}
-                                className={`w-16 h-8 rounded-full relative transition-all duration-300 ${isWarehouseStockDeductionEnabled ? 'bg-amber-500' : 'bg-primary/10'}`}
-                            >
-                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all duration-300 shadow-lg ${isWarehouseStockDeductionEnabled ? 'left-9' : 'left-1'}`} />
-                            </button>
-                        </div>
-
-                        {/* Stok Senkronizasyon Ayarı */}
-                        <div className="flex items-center justify-between p-4 bg-primary/5 rounded-2xl border border-border">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-rose-500/10 rounded-xl">
-                                    <Database className="text-rose-500" />
-                                </div>
-                                <div>
-                                    <div className="font-black text-sm uppercase tracking-wider text-foreground">STOK SENKRONİZASYONU</div>
-                                    <div className="text-[10px] text-secondary font-bold">Tüm mağazalarda tek bir stok havuzu kullan</div>
-                                </div>
-                            </div>
-                            <button
-                                onClick={() => {
-                                    setIsStockSyncEnabled(!isStockSyncEnabled);
-                                    showToast(isStockSyncEnabled ? "Stoklar ayrıştırıldı" : "Stoklar eşitlendi");
-                                }}
-                                className={`w-16 h-8 rounded-full relative transition-all duration-300 ${isStockSyncEnabled ? 'bg-rose-500' : 'bg-primary/10'}`}
-                            >
-                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all duration-300 shadow-lg ${isStockSyncEnabled ? 'left-9' : 'left-1'}`} />
-                            </button>
-                        </div>
-
-                        {/* Stok Uyarı Sınırı */}
-                        <div className="p-4 bg-primary/5 rounded-2xl border border-border space-y-4">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                    <div className="p-3 bg-rose-500/10 rounded-xl">
-                                        <AlertTriangle className="text-rose-500" />
-                                    </div>
-                                    <div>
-                                        <div className="font-black text-sm uppercase tracking-wider text-foreground">STOK UYARI SINIRI</div>
-                                        <div className="text-[10px] text-secondary font-bold text-rose-500/70">Ürün bu sayının altına düşünce "tehlikeli" alanı yanar</div>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <input 
-                                        type="number"
-                                        value={lowStockThreshold ?? 0}
-                                        onChange={(e) => setLowStockThreshold(parseInt(e.target.value) || 0)}
-                                        className="w-20 bg-card border border-border rounded-xl px-3 py-2 text-center font-black text-primary outline-none focus:border-primary transition-all"
-                                    />
-                                    <span className="text-[10px] font-black text-secondary tracking-widest uppercase">ADET</span>
-                                </div>
-                            </div>
-                            <p className="text-[9px] text-secondary/60 italic font-medium leading-relaxed uppercase">
-                                * Bu ayar, ana ekrandaki "Kritik Stok" listesini ve ürün tablosundaki renkli uyarıları dinamik olarak değiştirir.
-                            </p>
-                        </div>
-                    </div>
-                </motion.div>
-
-                {/* Security & System Info */}
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card space-y-6">
-                    <div className="flex items-center gap-3 border-b border-border pb-4">
-                        <Shield className="text-primary" />
-                        <h2 className="font-black tracking-widest uppercase text-foreground">SİSTEM VE GÜVENLİK</h2>
-                    </div>
-
-                    <div className="space-y-3">
-                        <div className="flex items-center justify-between p-3 text-xs">
-                            <span className="text-secondary font-bold uppercase">Versiyon</span>
-                            <span className="font-black text-foreground px-3 py-1 bg-primary/5 rounded-lg border border-border">v{process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0'} PRO</span>
-                        </div>
-                        <div className="flex items-center justify-between p-3 text-xs">
-                            <span className="text-secondary font-bold uppercase">Veritabanı Durumu</span>
-                            <span className="flex items-center gap-2 text-emerald-600 font-black">
-                                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                                BAĞLI (SUPABASE)
+                        <div className="flex items-center justify-between px-1 py-2 text-sm border-t border-white/5">
+                            <span className="text-secondary/60">Veritabanı durumu</span>
+                            <span className="flex items-center gap-2 text-emerald-500 font-semibold">
+                                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                                Bağlı (Supabase)
                             </span>
                         </div>
-                        <div className="flex items-center justify-between p-3 text-xs">
-                            <span className="text-secondary font-bold uppercase">Terminal Kimliği</span>
-                            <span className="text-secondary font-mono">TR-KASAP-01-AF82</span>
+                        <div className="flex items-center justify-between px-1 py-2 text-sm border-t border-white/5">
+                            <span className="text-secondary/60">Terminal kimliği</span>
+                            <span className="text-secondary font-mono text-xs">TR-KASAP-01-AF82</span>
                         </div>
                     </div>
+                    <button className="w-full flex items-center justify-center gap-2 py-2.5 bg-primary/5 hover:bg-primary/10 rounded-xl text-xs font-semibold transition-all text-foreground border border-border">
+                        <DownloadCloud className="w-4 h-4 text-primary" /> Yedekleme ve Dışa Aktar
+                    </button>
+                </SettingCard>
 
-                    <div className="pt-4 border-t border-border flex flex-col gap-2">
-                        <button className="flex items-center justify-center gap-2 py-3 bg-primary/5 hover:bg-primary/10 rounded-xl text-xs font-black uppercase tracking-widest transition-all text-foreground border border-border">
-                            <Database size={14} className="text-primary" /> YEDEKLEME VE DIŞA AKTAR
-                        </button>
-                    </div>
-                </motion.div>
-
-                {/* Support/Info */}
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass-card space-y-6 bg-primary/5 border-primary/20">
-                    <div className="flex items-center gap-3 border-b border-primary/10 pb-4">
-                        <Info className="text-primary" />
-                        <h2 className="font-black tracking-widest uppercase text-primary">DESTEK VE AKADEMİ</h2>
-                    </div>
-
-                    <p className="text-[10px] font-black text-secondary leading-relaxed uppercase tracking-[0.2em]">
-                        JetPOS'u en verimli şekilde kullanmanız için hazırladığımız kılavuzlar ve eğitim materyallerine buradan ulaşabilirsiniz.
+                {/* Destek ve Akademi */}
+                <SettingCard icon={Info} title="Destek ve Akademi" delay={0.3}>
+                    <p className="text-xs text-secondary/60 leading-relaxed">
+                        JetPOS&apos;u en verimli şekilde kullanmanız için hazırladığımız kılavuzlar ve eğitim materyallerine buradan ulaşabilirsiniz.
                     </p>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <a href="https://jetpos.pro/kilavuzlar" target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-4 bg-card border border-border rounded-2xl group hover:border-primary/50 transition-all">
-                            <div className="flex items-center gap-3">
-                                <BookOpen size={18} className="text-primary" />
-                                <span className="text-xs font-black uppercase tracking-widest text-foreground">Kullanım Kılavuzları</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <a href="https://jetpos.pro/kilavuzlar" target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-3 bg-background/40 border border-border rounded-xl group hover:border-primary/40 transition-all">
+                            <div className="flex items-center gap-2.5">
+                                <BookOpen className="w-4 h-4 text-primary" />
+                                <span className="text-xs font-semibold text-foreground">Kullanım Kılavuzları</span>
                             </div>
-                            <ExternalLink size={14} className="group-hover:text-primary transition-colors" />
+                            <ExternalLink className="w-3.5 h-3.5 text-secondary/40 group-hover:text-primary transition-colors" />
                         </a>
-                        <a href="https://jetpos.pro/kilavuzlar#video" target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-4 bg-card border border-border rounded-2xl group hover:border-primary/50 transition-all text-purple-500">
-                            <div className="flex items-center gap-3">
-                                <PlayCircle size={18} />
-                                <span className="text-xs font-black uppercase tracking-widest">Video Eğitimler</span>
+                        <a href="https://jetpos.pro/kilavuzlar#video" target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-3 bg-background/40 border border-border rounded-xl group hover:border-purple-500/40 transition-all">
+                            <div className="flex items-center gap-2.5">
+                                <PlayCircle className="w-4 h-4 text-purple-500" />
+                                <span className="text-xs font-semibold text-foreground">Video Eğitimler</span>
                             </div>
-                            <ExternalLink size={14} className="group-hover:text-primary transition-colors" />
+                            <ExternalLink className="w-3.5 h-3.5 text-secondary/40 group-hover:text-purple-500 transition-colors" />
                         </a>
-                        <a href="#" onClick={(e) => { e.preventDefault(); showToast("Destek bileti modülü açılıyor..."); }} className="flex items-center justify-between p-4 bg-card border border-border rounded-2xl group hover:border-rose-500/50 transition-all text-rose-500">
-                            <div className="flex items-center gap-3">
-                                <AlertTriangle size={18} />
-                                <span className="text-xs font-black uppercase tracking-widest">Hata Bildirimi</span>
+                        <a href="#" onClick={(e) => { e.preventDefault(); showToast("Destek bileti modülü açılıyor..."); }} className="flex items-center justify-between p-3 bg-background/40 border border-border rounded-xl group hover:border-rose-500/40 transition-all">
+                            <div className="flex items-center gap-2.5">
+                                <AlertTriangle className="w-4 h-4 text-rose-500" />
+                                <span className="text-xs font-semibold text-foreground">Hata Bildirimi</span>
                             </div>
-                            <ExternalLink size={14} className="group-hover:text-primary transition-colors" />
+                            <ExternalLink className="w-3.5 h-3.5 text-secondary/40 group-hover:text-rose-500 transition-colors" />
                         </a>
-                        <a href="https://jetpos.pro/blog" target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-4 bg-card border border-border rounded-2xl group hover:border-indigo-500/50 transition-all text-indigo-500">
-                            <div className="flex items-center gap-3">
-                                <Zap size={18} />
-                                <span className="text-xs font-black uppercase tracking-widest">Yenilikler (v1.5)</span>
+                        <a href="https://jetpos.pro/blog" target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-3 bg-background/40 border border-border rounded-xl group hover:border-indigo-500/40 transition-all">
+                            <div className="flex items-center gap-2.5">
+                                <Zap className="w-4 h-4 text-indigo-500" />
+                                <span className="text-xs font-semibold text-foreground">Yenilikler (v1.5)</span>
                             </div>
-                            <ExternalLink size={14} className="group-hover:text-primary transition-colors" />
+                            <ExternalLink className="w-3.5 h-3.5 text-secondary/40 group-hover:text-indigo-500 transition-colors" />
                         </a>
                     </div>
-                </motion.div>
+                </SettingCard>
             </div>
         </div>
     );

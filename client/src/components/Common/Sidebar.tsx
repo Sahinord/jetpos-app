@@ -69,6 +69,8 @@ import {
     Coins,
     QrCode as QrCodeIcon,
     ChefHat,
+    PanelLeftClose,
+    PanelLeftOpen,
     type LucideIcon
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -102,15 +104,89 @@ interface SidebarProps {
     isMobileOpen?: boolean;
 }
 
+// --- Sidebar konum tercihi: localStorage + custom event ile senkronize edilir
+// (favoriler için kullanılan getFavorites/toggleFavorite deseniyle aynı mantık) ---
+export type SidebarPosition = "left" | "right";
+const SIDEBAR_POSITION_KEY = "jetpos_sidebar_position";
+const SIDEBAR_POSITION_EVENT = "sidebar-position-changed";
+
+export const getSidebarPosition = (): SidebarPosition => {
+    if (typeof window === "undefined") return "left";
+    return (localStorage.getItem(SIDEBAR_POSITION_KEY) as SidebarPosition) || "left";
+};
+
+export const setSidebarPosition = (position: SidebarPosition) => {
+    localStorage.setItem(SIDEBAR_POSITION_KEY, position);
+    window.dispatchEvent(new CustomEvent(SIDEBAR_POSITION_EVENT));
+};
+
+const SIDEBAR_COLLAPSED_KEY = "jetpos_sidebar_collapsed";
+const SIDEBAR_WIDTH_KEY = "jetpos_sidebar_width";
+const MIN_WIDTH = 220;
+const MAX_WIDTH = 400;
+const DEFAULT_WIDTH = 288;
+const COLLAPSED_WIDTH = 76;
+
 export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToast, isMobileOpen }: SidebarProps) {
     const { currentTenant, warehouses, activeWarehouse, setActiveWarehouse, activeEmployee, logoutEmployee, isAccountant, refreshWarehouses } = useTenant();
     const [isSyncingStores, setIsSyncingStores] = useState(false);
     const [openCategories, setOpenCategories] = useState<string[]>(["main", "sales", "products"]);
-    const [, setFavoritesVersion] = useState(0); 
-    const [isBottomPanelOpen, setIsBottomPanelOpen] = useState(true); 
+    const [, setFavoritesVersion] = useState(0);
+    const [isBottomPanelOpen, setIsBottomPanelOpen] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
+
+    // Daraltma / genişlik / konum tercihleri
+    const [isCollapsed, setIsCollapsed] = useState(false);
+    const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_WIDTH);
+    const [position, setPosition] = useState<SidebarPosition>("left");
+    const [isResizing, setIsResizing] = useState(false);
+    const asideRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        setIsCollapsed(localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1");
+        const savedWidth = parseInt(localStorage.getItem(SIDEBAR_WIDTH_KEY) || "", 10);
+        if (!isNaN(savedWidth)) setSidebarWidth(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, savedWidth)));
+        setPosition(getSidebarPosition());
+
+        const handlePositionChange = () => setPosition(getSidebarPosition());
+        window.addEventListener(SIDEBAR_POSITION_EVENT, handlePositionChange);
+        return () => window.removeEventListener(SIDEBAR_POSITION_EVENT, handlePositionChange);
+    }, []);
+
+    const toggleCollapsed = () => {
+        setIsCollapsed(prev => {
+            localStorage.setItem(SIDEBAR_COLLAPSED_KEY, prev ? "0" : "1");
+            return !prev;
+        });
+    };
+
+    // Kenardan sürükleyerek genişlik ayarlama
+    useEffect(() => {
+        if (!isResizing) return;
+
+        const handleMouseMove = (e: MouseEvent) => {
+            const delta = position === "left" ? e.clientX - (asideRef.current?.getBoundingClientRect().left || 0) : (asideRef.current?.getBoundingClientRect().right || 0) - e.clientX;
+            const next = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, delta));
+            setSidebarWidth(next);
+            if (next > MIN_WIDTH + 20 && isCollapsed) {
+                setIsCollapsed(false);
+                localStorage.setItem(SIDEBAR_COLLAPSED_KEY, "0");
+            }
+        };
+        const handleMouseUp = () => {
+            setIsResizing(false);
+            localStorage.setItem(SIDEBAR_WIDTH_KEY, String(sidebarWidth));
+        };
+
+        window.addEventListener("mousemove", handleMouseMove);
+        window.addEventListener("mouseup", handleMouseUp);
+        return () => {
+            window.removeEventListener("mousemove", handleMouseMove);
+            window.removeEventListener("mouseup", handleMouseUp);
+        };
+    }, [isResizing, position, sidebarWidth, isCollapsed]);
 
     // Keyboard shortcut for search (CTRL+K)
     useEffect(() => {
@@ -575,37 +651,97 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
     };
 
 
+    const effectiveWidth = isCollapsed ? COLLAPSED_WIDTH : sidebarWidth;
+    const sideClass = position === "left" ? "left-0 border-r" : "right-0 border-l";
+    const hiddenTranslate = position === "left" ? "-translate-x-full" : "translate-x-full";
+
     return (
-        <aside className={`w-72 premium-sidebar flex flex-col h-screen fixed lg:sticky top-0 left-0 bg-card z-50 overflow-hidden border-r transition-transform duration-300 ${isMobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0 shadow-none'}`}>
+        <aside
+            ref={asideRef}
+            style={{ width: effectiveWidth, order: position === "right" ? 1 : -1 }}
+            className={`premium-sidebar flex flex-col h-screen fixed lg:sticky top-0 ${sideClass} bg-card z-50 overflow-hidden ${isResizing ? '' : 'transition-[width,transform] duration-300'} ${isMobileOpen ? 'translate-x-0 shadow-2xl' : `${hiddenTranslate} lg:translate-x-0 shadow-none`}`}
+        >
+            {/* Genişlik sürükleme tutamacı */}
+            {!isCollapsed && (
+                <div
+                    onMouseDown={() => setIsResizing(true)}
+                    className={`hidden lg:flex absolute top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-primary/30 transition-colors z-[60] ${position === "left" ? "right-0" : "left-0"}`}
+                    title="Genişliği ayarlamak için sürükleyin"
+                />
+            )}
+
             {/* Logo / Firma Header */}
-            <div className="p-6 border-b border-border">
-                <div className="flex items-center justify-center space-x-3">
+            <div className={`p-6 border-b border-border ${isCollapsed ? 'px-3' : ''}`}>
+                <div className={`flex items-center ${isCollapsed ? 'flex-col gap-3' : 'justify-center space-x-3'}`}>
                     {currentTenant?.logo_url ? (
                         <img
                             src={currentTenant.logo_url}
                             alt={currentTenant.company_name}
-                            className="w-12 h-12 rounded-xl object-cover shadow-lg"
+                            className="w-12 h-12 rounded-xl object-cover shadow-lg flex-shrink-0"
                         />
                     ) : (
-                        <div className="w-12 h-12 bg-gradient-to-br from-primary to-blue-500 rounded-xl flex items-center justify-center shadow-lg">
+                        <div className="w-12 h-12 bg-gradient-to-br from-primary to-blue-500 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
                             <span className="text-white font-bold text-lg">
                                 {currentTenant?.company_name?.substring(0, 2).toUpperCase() || 'JP'}
                             </span>
                         </div>
                     )}
-                    <div className="flex-1 min-w-0">
-                        <h1 className="text-lg font-black text-[var(--color-sidebar-foreground)] truncate">
-                            {currentTenant?.company_name || 'JetPos'}
-                        </h1>
-                        <p className="text-xs text-[var(--color-sidebar-muted)] truncate">Yönetim Paneli</p>
-                    </div>
+                    {!isCollapsed && (
+                        <div className="flex-1 min-w-0">
+                            <h1 className="text-lg font-black text-[var(--color-sidebar-foreground)] truncate">
+                                {currentTenant?.company_name || 'JetPos'}
+                            </h1>
+                            <p className="text-xs text-[var(--color-sidebar-muted)] truncate">Yönetim Paneli</p>
+                        </div>
+                    )}
+                    <button
+                        onClick={toggleCollapsed}
+                        className="p-1.5 rounded-lg text-[var(--color-sidebar-muted)] hover:text-[var(--color-sidebar-foreground)] hover:bg-primary/10 transition-all flex-shrink-0"
+                        title={isCollapsed ? "Menüyü genişlet" : "Menüyü daralt"}
+                    >
+                        {isCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+                    </button>
                 </div>
             </div>
 
 
             <div className="flex-1 overflow-y-auto py-2 custom-scrollbar">
+                {/* Daraltılmış (sadece ikon) navigasyon */}
+                {isCollapsed && (
+                    <nav className="px-2 pt-2 space-y-1">
+                        {filteredMenuCategories.map((category) => {
+                            const filteredItems = getFilteredItems(category.items);
+                            const hasSubCategories = category.subCategories && category.subCategories.length > 0;
+                            const isCategoryEnabled = isFeatureEnabled(category.feature);
+                            if (!isCategoryEnabled) return null;
+                            if (filteredItems.length === 0 && !hasSubCategories) return null;
+
+                            const hasActiveItem = hasActiveItemInCategory(category);
+
+                            return (
+                                <button
+                                    key={category.id}
+                                    onClick={() => {
+                                        toggleCollapsed();
+                                        if (!openCategories.includes(category.id)) {
+                                            setOpenCategories(prev => [...prev, category.id]);
+                                        }
+                                    }}
+                                    title={category.label}
+                                    className={`w-full flex items-center justify-center p-3 rounded-xl transition-all ${hasActiveItem
+                                        ? 'sidebar-item-active'
+                                        : 'text-[var(--color-sidebar-muted)] hover:bg-primary/5 hover:text-[var(--color-sidebar-foreground)]'
+                                        }`}
+                                >
+                                    <category.icon className="w-5 h-5" />
+                                </button>
+                            );
+                        })}
+                    </nav>
+                )}
+
                 {/* Search Bar (Inside scrollable for hide-on-scroll) */}
-                <div className="px-4 mt-4 mb-6 relative">
+                <div className={isCollapsed ? "hidden" : "px-4 mt-4 mb-6 relative"}>
                     <div className={`relative flex items-center transition-all duration-300 ${isSearchFocused ? 'scale-[1.02]' : ''}`}>
                         <Search className={`absolute left-3 w-4 h-4 transition-colors ${isSearchFocused ? 'text-primary' : 'text-secondary/40'}`} />
                         <input
@@ -668,7 +804,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                     </AnimatePresence>
                 </div>
 
-                <nav className="px-3 space-y-1">
+                <nav className={isCollapsed ? "hidden" : "px-3 space-y-1"}>
                     {filteredMenuCategories.map((category) => {
                         const filteredItems = getFilteredItems(category.items);
                         const isOpen = openCategories.includes(category.id);
@@ -876,7 +1012,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                 </nav>
 
                 {/* Locked Features Section */}
-                {allLockedItems.length > 0 && (
+                {!isCollapsed && allLockedItems.length > 0 && (
                     <div className="px-6 pt-6 mt-4 border-t border-white/5">
                         <p className="text-xs font-bold text-secondary/50 uppercase tracking-wider mb-3">
                             Kilitli Özellikler
@@ -905,8 +1041,40 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                 )}
             </div>
 
+            {/* Daraltılmış mod: sade ikon aksiyonları */}
+            {isCollapsed && (
+                <div className="border-t border-border mt-auto bg-primary/5 py-3 flex flex-col items-center gap-1">
+                    <button
+                        onClick={() => handleTabChange('settings')}
+                        title="Ayarlar"
+                        className={`p-2.5 rounded-xl transition-all ${activeTab === 'settings' ? 'sidebar-item-active' : 'text-[var(--color-sidebar-muted)] hover:bg-primary/10 hover:text-[var(--color-sidebar-foreground)]'}`}
+                    >
+                        <Settings className="w-4.5 h-4.5" />
+                    </button>
+                    {activeEmployee && (
+                        <button
+                            onClick={logoutEmployee}
+                            title="Çalışan Çıkış"
+                            className="p-2.5 rounded-xl text-[var(--color-sidebar-muted)] hover:bg-rose-500/10 hover:text-rose-500 transition-all"
+                        >
+                            <User className="w-4.5 h-4.5" />
+                        </button>
+                    )}
+                    <button
+                        onClick={() => {
+                            localStorage.clear();
+                            window.location.reload();
+                        }}
+                        title="Çıkış Yap"
+                        className="p-2.5 rounded-xl text-rose-400 hover:bg-rose-500/10 transition-all"
+                    >
+                        <LogOut className="w-4.5 h-4.5" />
+                    </button>
+                </div>
+            )}
+
             {/* Bottom Section - User & Settings (Collapsible) */}
-            <div className="border-t border-border mt-auto bg-primary/5">
+            <div className={isCollapsed ? "hidden" : "border-t border-border mt-auto bg-primary/5"}>
                 {/* Toggle Button */}
                 <button
                     onClick={() => setIsBottomPanelOpen(!isBottomPanelOpen)}
