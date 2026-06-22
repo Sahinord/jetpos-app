@@ -7,6 +7,7 @@ import {
 import { motion } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import { useTenant } from '@/lib/tenant-context';
+import InvoiceDetailView, { GELEN_TYPES, TYPE_LABELS } from './InvoiceDetailView';
 
 interface Props {
     type: 'list' | 'analysis' | 'invoice_list';
@@ -21,6 +22,7 @@ export default function VATReports({ type }: Props) {
     const [filterType, setFilterType] = useState('Tümü');
     const [loading, setLoading] = useState(false);
     const [reportData, setReportData] = useState<any[]>([]);
+    const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
     const [analysis, setAnalysis] = useState({
         vat1: 0,
         vat10: 0,
@@ -43,9 +45,9 @@ export default function VATReports({ type }: Props) {
                 .lte('invoice_date', dateRange.end);
 
             if (filterType === 'Gelen Faturalar') {
-                query = query.in('invoice_type', ['alis', 'alinan_hizmet', 'purchase']);
+                query = query.in('invoice_type', GELEN_TYPES);
             } else if (filterType === 'Giden Faturalar') {
-                query = query.in('invoice_type', ['satis', 'perakende_satis', 'yapilan_hizmet']);
+                query = query.not('invoice_type', 'in', `(${GELEN_TYPES.join(',')})`);
             }
 
             const { data, error } = await query.order('invoice_date', { ascending: false });
@@ -96,6 +98,10 @@ export default function VATReports({ type }: Props) {
 
     const formatCurrency = (val: number) =>
         new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val || 0);
+
+    if (selectedInvoice) {
+        return <InvoiceDetailView invoice={selectedInvoice} onBack={() => setSelectedInvoice(null)} />;
+    }
 
     return (
         <div className="space-y-6 animate-in">
@@ -214,19 +220,23 @@ export default function VATReports({ type }: Props) {
                                 </tr>
                             ) : (
                                 reportData.map((inv: any, i: number) => (
-                                    <tr key={i} className="hover:bg-white/[0.02] transition-all">
+                                    <tr
+                                        key={i}
+                                        onClick={() => setSelectedInvoice(inv)}
+                                        className="hover:bg-white/[0.02] transition-all cursor-pointer"
+                                    >
                                         <td className="px-6 py-4 font-mono font-bold text-secondary text-[10px]">{inv.invoice_date}</td>
-                                        <td className="px-6 py-4 font-bold text-foreground text-[10px] underline decoration-primary/30 underline-offset-4">{inv.invoice_no}</td>
+                                        <td className="px-6 py-4 font-bold text-foreground text-[10px] underline decoration-primary/30 underline-offset-4">{inv.invoice_number}</td>
                                         <td className="px-4 py-4">
                                             <div className="text-[10px] font-black text-foreground truncate max-w-[200px]">{inv.cari_name || 'PERAKENDE MÜŞTERİ'}</div>
-                                            <div className="text-[9px] text-secondary/50 font-mono tracking-tighter lowercase">{inv.invoice_type}</div>
+                                            <div className="text-[9px] text-secondary/50 font-mono tracking-tighter">{TYPE_LABELS[inv.invoice_type] || inv.invoice_type}</div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className={`px-2 py-1 rounded-md text-[9px] font-black uppercase ${['alis', 'alinan_hizmet'].includes(inv.invoice_type)
+                                            <span className={`px-2 py-1 rounded-md text-[9px] font-black uppercase ${GELEN_TYPES.includes(inv.invoice_type)
                                                 ? 'bg-blue-500/10 text-blue-500'
                                                 : 'bg-emerald-500/10 text-emerald-500'
                                                 }`}>
-                                                {['alis', 'alinan_hizmet'].includes(inv.invoice_type) ? 'Gelen' : 'Giden'}
+                                                {GELEN_TYPES.includes(inv.invoice_type) ? 'Gelen' : 'Giden'}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right font-mono font-bold text-foreground text-[10px]">{formatCurrency(inv.subtotal)}</td>
@@ -235,8 +245,8 @@ export default function VATReports({ type }: Props) {
                                                 {inv.invoice_items?.[0]?.vat_rate ? `%${inv.invoice_items[0].vat_rate}` : 'Karma'}
                                             </td>
                                         )}
-                                        <td className="px-6 py-4 text-right font-mono font-bold text-primary text-[10px]">{formatCurrency(inv.vat_total)}</td>
-                                        <td className="px-6 py-4 text-right font-mono font-black text-foreground text-[10px]">{formatCurrency(inv.total_amount)}</td>
+                                        <td className="px-6 py-4 text-right font-mono font-bold text-primary text-[10px]">{formatCurrency(inv.total_vat)}</td>
+                                        <td className="px-6 py-4 text-right font-mono font-black text-foreground text-[10px]">{formatCurrency(inv.grand_total)}</td>
                                     </tr>
                                 ))
                             )}

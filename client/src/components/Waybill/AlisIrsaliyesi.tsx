@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
-    Package, Plus, Save, X, Search, Calendar, Building2,
-    Trash2, Calculator, FileText, Warehouse, TruckIcon
+    Package, Plus, Save, Search, Trash2, Calculator, Receipt
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useTenant } from '@/lib/tenant-context';
@@ -20,6 +19,7 @@ interface WaybillItem {
     vat_amount?: number;
     line_total_with_vat?: number;
     description?: string;
+    old_purchase_price?: number;
 }
 
 interface Waybill {
@@ -68,6 +68,7 @@ export default function AlisIrsaliyesi() {
     const [cariSearchTerm, setCariSearchTerm] = useState('');
     const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(null);
     const [productSearchTerm, setProductSearchTerm] = useState('');
+    const isSavingRef = useRef(false);
 
     useEffect(() => {
         if (currentTenant) {
@@ -80,7 +81,7 @@ export default function AlisIrsaliyesi() {
         const { data } = await supabase
             .from('cari_hesaplar')
             .select('*')
-            .eq('cari_tipi', 'Tedarikçi')
+            .eq('tenant_id', currentTenant?.id)
             .order('unvani');
         if (data) setCariList(data);
     };
@@ -131,7 +132,8 @@ export default function AlisIrsaliyesi() {
             product_id: product.id,
             product_name: product.name,
             product_code: product.barcode || '',
-            unit_price: product.purchase_price || 0
+            unit_price: product.purchase_price || 0,
+            old_purchase_price: product.purchase_price || 0
         };
         setWaybill(prev => ({ ...prev, items: newItems }));
         setSelectedItemIndex(null);
@@ -170,13 +172,18 @@ export default function AlisIrsaliyesi() {
     };
 
     const saveWaybill = async () => {
+        if (isSavingRef.current) return;
+        isSavingRef.current = true;
+
         if (!waybill.cari_id) {
             alert('Lütfen tedarikçi seçin!');
+            isSavingRef.current = false;
             return;
         }
 
         if (waybill.items.some(i => !i.product_name || i.quantity <= 0)) {
             alert('Lütfen tüm kalem bilgilerini doldurun!');
+            isSavingRef.current = false;
             return;
         }
 
@@ -244,11 +251,27 @@ export default function AlisIrsaliyesi() {
                         .from('products')
                         .update({ purchase_price: item.unit_price })
                         .eq('id', item.product_id);
+
+                    // Fiyat değişikliğini ürünün geçmişine yaz (Ürün Detayı > Son İşlemler'de görünür)
+                    if (item.old_purchase_price !== undefined && Number(item.old_purchase_price) !== Number(item.unit_price)) {
+                        await supabase.from('product_change_logs').insert({
+                            product_id: item.product_id,
+                            product_name: item.product_name,
+                            product_barcode: item.product_code || null,
+                            change_type: 'price',
+                            field_name: 'purchase_price',
+                            old_value: String(item.old_purchase_price),
+                            new_value: String(item.unit_price),
+                            change_source: 'invoice',
+                            changed_by: `Alış İrsaliyesi: ${nextNumber}`,
+                            tenant_id: currentTenant?.id
+                        });
+                    }
                 }
             }
 
             // Cari hesaba alacak yaz (Tedarikçi bizden alacaklı duruma geçer)
-            await supabase.from('cari_hareketler').insert({
+            const { error: cariError } = await supabase.from('cari_hareketler').insert({
                 tenant_id: currentTenant?.id,
                 cari_id: waybill.cari_id,
                 hareket_tipi: 'borclandirma',
@@ -256,9 +279,10 @@ export default function AlisIrsaliyesi() {
                 alacak: waybill.grand_total,
                 borc: 0,
                 tarih: waybill.waybill_date,
-                belge_no: nextNumber,
-                belge_tipi: 'Alış İrsaliyesi'
+                belge_no: nextNumber
             });
+
+            if (cariError) throw cariError;
 
             alert('✅ Alış irsaliyesi başarıyla kaydedildi!');
 
@@ -287,6 +311,7 @@ export default function AlisIrsaliyesi() {
             alert('❌ Hata: ' + error.message);
         } finally {
             setLoading(false);
+            isSavingRef.current = false;
         }
     };
 
@@ -304,34 +329,39 @@ export default function AlisIrsaliyesi() {
     );
 
     return (
-        <div className="space-y-4 max-w-[1800px] mx-auto p-4">
+        <div className="space-y-4 max-w-[1600px] mx-auto p-4">
             {/* Header / Actions */}
-            <div className="flex items-center justify-end">
-                <div className="flex gap-2">
-                    <button
-                        onClick={saveWaybill}
-                        disabled={loading}
-                        className="interactive-button bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg transition-all active:scale-95 disabled:opacity-50"
-                    >
-                        {loading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
-                        KAYDET
-                    </button>
-                </div>
+            <div className="flex items-center justify-end gap-2 pb-2 border-b border-white/5">
+                <button
+                    onClick={saveWaybill}
+                    disabled={loading}
+                    className="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg transition-all active:scale-95 disabled:opacity-50"
+                >
+                    {loading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
+                    FİŞİ KAYDET
+                </button>
             </div>
 
-            {/* Fiş Bilgileri */}
-            <div className="glass-card animate-in p-4">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    {/* Tedarikçi */}
+            {/* İrsaliye Bilgileri */}
+            <div className="glass-card p-5 space-y-5 bg-white/[0.01] relative z-50">
+                <h2 className="text-[10px] font-bold text-primary uppercase tracking-[0.25em] flex items-center gap-2 border-b border-white/5 pb-3">
+                    <Receipt className="w-4 h-4" />
+                    İrsaliye Bilgileri
+                </h2>
+
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+                    {/* Tedarikçi Seçimi */}
                     <div className="md:col-span-2 space-y-2">
-                        <label className="text-xs font-bold text-secondary uppercase">Tedarikçi (C/H Kodu) *</label>
+                        <label className="text-[10px] font-semibold text-secondary uppercase tracking-widest">Tedarikçi</label>
                         <div className="relative">
                             <button
                                 onClick={() => setShowCariSearch(true)}
-                                className="w-full bg-background border-2 border-blue-500/30 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-foreground hover:border-blue-500 transition-all flex items-center justify-between"
+                                className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-2.5 text-left text-sm font-medium text-white hover:border-primary/30 transition-all flex items-center justify-between shadow-sm"
                             >
-                                <span>{waybill.cari_name || '— Tedarikçi Seçin —'}</span>
-                                <Search className="w-4 h-4 text-blue-500" />
+                                <span className={waybill.cari_name ? 'text-white' : 'text-secondary/50'}>
+                                    {waybill.cari_name || 'Tedarikçi seçin...'}
+                                </span>
+                                <Search className="w-4 h-4 text-secondary/40" />
                             </button>
 
                             {showCariSearch && (
@@ -342,7 +372,7 @@ export default function AlisIrsaliyesi() {
                                             value={cariSearchTerm}
                                             onChange={(e) => setCariSearchTerm(e.target.value)}
                                             placeholder="Tedarikçi ara..."
-                                            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500"
+                                            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
                                             autoFocus
                                         />
                                     </div>
@@ -351,17 +381,20 @@ export default function AlisIrsaliyesi() {
                                             <button
                                                 key={cari.id}
                                                 onClick={() => selectCari(cari)}
-                                                className="w-full px-4 py-3 text-left hover:bg-blue-500/10 transition-colors border-b border-border/50 last:border-0"
+                                                className="w-full px-4 py-3 text-left hover:bg-primary/10 transition-colors border-b border-border/50 last:border-0"
                                             >
                                                 <div className="font-bold text-sm text-foreground">{cari.unvani}</div>
                                                 <div className="text-xs text-secondary">{cari.vergi_no}</div>
                                             </button>
                                         ))}
+                                        {filteredCariList.length === 0 && (
+                                            <div className="p-4 text-center text-secondary text-sm">Tedarikçi bulunamadı</div>
+                                        )}
                                     </div>
                                     <div className="sticky bottom-0 bg-card p-2 border-t border-border">
                                         <button
                                             onClick={() => setShowCariSearch(false)}
-                                            className="w-full px-3 py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 rounded-lg text-xs font-bold transition-all"
+                                            className="w-full px-3 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-xs font-bold transition-all"
                                         >
                                             Kapat
                                         </button>
@@ -378,7 +411,7 @@ export default function AlisIrsaliyesi() {
                             type="date"
                             value={waybill.waybill_date}
                             onChange={(e) => setWaybill(prev => ({ ...prev, waybill_date: e.target.value }))}
-                            className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm text-foreground outline-none focus:border-blue-500"
+                            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
                         />
                     </div>
 
@@ -390,7 +423,7 @@ export default function AlisIrsaliyesi() {
                             value={waybill.warehouse_code}
                             onChange={(e) => setWaybill(prev => ({ ...prev, warehouse_code: e.target.value }))}
                             placeholder="MERKEZ"
-                            className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm text-foreground outline-none focus:border-blue-500"
+                            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
                         />
                     </div>
 
@@ -402,7 +435,7 @@ export default function AlisIrsaliyesi() {
                             value={waybill.document_no}
                             onChange={(e) => setWaybill(prev => ({ ...prev, document_no: e.target.value }))}
                             placeholder="Opsiyonel"
-                            className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm text-foreground outline-none focus:border-blue-500"
+                            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
                         />
                     </div>
 
@@ -414,58 +447,81 @@ export default function AlisIrsaliyesi() {
                             value={waybill.delivery_address}
                             onChange={(e) => setWaybill(prev => ({ ...prev, delivery_address: e.target.value }))}
                             placeholder="Teslimat adresi..."
-                            className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm text-foreground outline-none focus:border-blue-500"
+                            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
                         />
                     </div>
                 </div>
             </div>
 
-            {/* Fiş Kalem Bilgileri */}
-            <div className="glass-card animate-in p-4 space-y-4" style={{ animationDelay: '0.1s' }}>
-                <div className="flex items-center justify-between border-b border-border pb-3">
-                    <h2 className="text-sm font-bold text-blue-500 uppercase tracking-wider flex items-center gap-2">
+            {/* Kalemler */}
+            <div className="glass-card p-5 space-y-5 bg-white/[0.01]">
+                <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                    <h2 className="text-[10px] font-bold text-primary uppercase tracking-[0.25em] flex items-center gap-2">
                         <Package className="w-4 h-4" />
-                        1 - Fiş Kalem Bilgileri
+                        İrsaliye Kalemleri
                     </h2>
                     <button
                         onClick={addItem}
-                        className="text-emerald-500 hover:text-emerald-400 text-xs font-bold flex items-center gap-1 transition-all"
+                        className="text-primary hover:text-primary/80 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition-all"
                     >
-                        <Plus className="w-4 h-4" />
-                        Kalem Ekle
+                        <Plus className="w-3.5 h-3.5" />
+                        Yeni Kalem Ekle
                     </button>
                 </div>
 
-                <div className="overflow-x-auto">
-                    <table className="w-full text-xs border-collapse">
-                        <thead className="bg-blue-500/10 text-secondary font-bold uppercase border-b-2 border-blue-500/30">
+                <div className="overflow-x-auto pb-48">
+                    <table className="w-full text-xs">
+                        <thead className="text-secondary/60 font-semibold uppercase tracking-wider text-[9px] border-b border-white/5">
                             <tr>
-                                <th className="px-3 py-3 text-left min-w-[300px]">Stok Kodu / Tanımı</th>
-                                <th className="px-3 py-3 text-center w-28">Miktar</th>
-                                <th className="px-3 py-3 text-center w-24">Birim</th>
-                                <th className="px-3 py-3 text-center w-32">Birim Fiyat</th>
-                                <th className="px-3 py-3 text-center w-24">KDV %</th>
-                                <th className="px-3 py-3 text-right w-36 bg-blue-500/10">Toplam</th>
-                                <th className="px-3 py-3 w-12"></th>
+                                <th className="px-4 py-3 text-left">Ürün/Hizmet Açıklaması</th>
+                                <th className="px-4 py-3 text-center w-24">Miktar</th>
+                                <th className="px-4 py-3 text-center w-24">Birim</th>
+                                <th className="px-4 py-3 text-right w-32">Birim Fiyat</th>
+                                <th className="px-4 py-3 text-center w-20">KDV %</th>
+                                <th className="px-4 py-3 text-right w-36 bg-white/[0.02]">Toplam</th>
+                                <th className="px-4 py-3 w-10"></th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-border/30">
+                        <tbody className="divide-y divide-white/5">
                             {waybill.items.map((item, index) => (
                                 <tr key={index} className="hover:bg-white/[0.02] group">
                                     {/* Ürün */}
-                                    <td className="p-2">
+                                    <td className="p-2 relative">
                                         <input
                                             type="text"
                                             value={item.product_name}
                                             onChange={(e) => {
                                                 updateItem(index, 'product_name', e.target.value);
                                                 setProductSearchTerm(e.target.value);
-                                                setSelectedItemIndex(index);
                                             }}
+                                            onFocus={() => {
+                                                setSelectedItemIndex(index);
+                                                setProductSearchTerm(item.product_name);
+                                            }}
+                                            onBlur={() => setTimeout(() => setSelectedItemIndex(null), 250)}
                                             placeholder="Ürün adı veya kodu..."
-                                            className="w-full bg-transparent border-none text-foreground font-medium outline-none px-2 py-1.5"
+                                            className="w-full bg-transparent border-none text-foreground font-medium outline-none"
                                         />
-                                        <div className="text-[10px] text-secondary px-2">{item.product_code}</div>
+                                        {selectedItemIndex === index && (
+                                            <div className="absolute z-40 top-full left-0 mt-1 w-80 bg-card border border-border rounded-xl shadow-2xl max-h-60 overflow-y-auto">
+                                                {filteredProductList.length === 0 ? (
+                                                    <div className="p-4 text-center text-sm text-secondary">
+                                                        Eşleşen ürün bulunamadı.
+                                                    </div>
+                                                ) : (
+                                                    filteredProductList.slice(0, 10).map(product => (
+                                                        <button
+                                                            key={product.id}
+                                                            onClick={() => selectProduct(product, index)}
+                                                            className="w-full px-3 py-2 text-left hover:bg-primary/10 transition-colors border-b border-border/50 last:border-0"
+                                                        >
+                                                            <div className="font-bold text-sm text-foreground">{product.name}</div>
+                                                            <div className="text-xs text-secondary">{product.barcode || 'Barkodsuz'} • {formatCurrency(product.purchase_price)}</div>
+                                                        </button>
+                                                    ))
+                                                )}
+                                            </div>
+                                        )}
                                     </td>
 
                                     {/* Miktar */}
@@ -475,7 +531,7 @@ export default function AlisIrsaliyesi() {
                                             step="0.001"
                                             value={item.quantity}
                                             onChange={(e) => updateItem(index, 'quantity', parseFloat(e.target.value) || 0)}
-                                            className="w-full bg-blue-500/10 border border-blue-500/30 rounded-lg px-2 py-2 text-blue-500 font-bold text-center outline-none focus:border-blue-500"
+                                            className="w-full bg-primary/10 border border-primary/20 rounded-lg px-2 py-1.5 text-primary font-bold text-center outline-none focus:border-primary"
                                         />
                                     </td>
 
@@ -484,7 +540,7 @@ export default function AlisIrsaliyesi() {
                                         <select
                                             value={item.unit}
                                             onChange={(e) => updateItem(index, 'unit', e.target.value)}
-                                            className="w-full bg-background border border-border rounded-lg px-2 py-2 text-foreground text-center text-xs outline-none focus:border-blue-500"
+                                            className="w-full bg-background border border-border rounded-lg px-1 py-1.5 text-foreground text-center text-xs"
                                         >
                                             <option>ADET</option>
                                             <option>KG</option>
@@ -502,7 +558,7 @@ export default function AlisIrsaliyesi() {
                                             step="0.01"
                                             value={item.unit_price}
                                             onChange={(e) => updateItem(index, 'unit_price', parseFloat(e.target.value) || 0)}
-                                            className="w-full bg-background border border-border rounded-lg px-2 py-2 text-foreground font-mono text-center outline-none focus:border-blue-500"
+                                            className="w-full bg-background border border-border rounded-lg px-2 py-1.5 text-foreground font-mono text-center outline-none focus:border-primary"
                                         />
                                     </td>
 
@@ -511,7 +567,7 @@ export default function AlisIrsaliyesi() {
                                         <select
                                             value={item.vat_rate}
                                             onChange={(e) => updateItem(index, 'vat_rate', parseFloat(e.target.value))}
-                                            className="w-full bg-background border border-border rounded-lg px-2 py-2 text-foreground text-center text-xs outline-none focus:border-blue-500"
+                                            className="w-full bg-background border border-border rounded-lg px-1 py-1.5 text-foreground text-center text-xs"
                                         >
                                             <option value="1">%1</option>
                                             <option value="10">%10</option>
@@ -520,7 +576,7 @@ export default function AlisIrsaliyesi() {
                                     </td>
 
                                     {/* Toplam */}
-                                    <td className="p-2 text-right font-black text-foreground bg-blue-500/5 font-mono">
+                                    <td className="p-2 text-right font-black text-foreground bg-primary/5 font-mono">
                                         {formatCurrency(itemsWithTotals[index]?.line_total_with_vat || 0)}
                                     </td>
 
@@ -542,42 +598,42 @@ export default function AlisIrsaliyesi() {
                 </div>
             </div>
 
-            {/* Alt Bölüm: Açıklama + Toplamlar */}
+            {/* Toplamlar ve Notlar */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Açıklama */}
-                <div className="glass-card animate-in p-4 space-y-2" style={{ animationDelay: '0.2s' }}>
-                    <label className="text-xs font-bold text-secondary uppercase">Açıklama / Notlar</label>
+                {/* Notlar */}
+                <div className="glass-card p-4 space-y-2">
+                    <label className="text-xs font-bold text-secondary uppercase">Notlar</label>
                     <textarea
                         value={waybill.notes}
                         onChange={(e) => setWaybill(prev => ({ ...prev, notes: e.target.value }))}
                         placeholder="İrsaliye ile ilgili notlarınız..."
-                        className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:border-blue-500 resize-none"
-                        rows={5}
+                        className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:border-primary resize-none"
+                        rows={4}
                     />
                 </div>
 
                 {/* Toplamlar */}
-                <div className="glass-card animate-in p-4 space-y-3 bg-gradient-to-br from-blue-500/5 to-transparent" style={{ animationDelay: '0.3s' }}>
-                    <h3 className="text-xs font-bold text-blue-500 uppercase flex items-center gap-2">
+                <div className="glass-card p-4 space-y-3">
+                    <h3 className="text-xs font-bold text-secondary uppercase flex items-center gap-2">
                         <Calculator className="w-4 h-4" />
-                        Genel Toplamlar
+                        İrsaliye Toplamları
                     </h3>
-                    <div className="space-y-3">
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="bg-background/50 rounded-lg p-3 border border-border">
-                                <div className="text-[10px] text-secondary uppercase font-bold mb-1">Mal Toplamı</div>
-                                <div className="text-lg font-black text-foreground font-mono">{formatCurrency(subtotal)}</div>
-                            </div>
-                            <div className="bg-background/50 rounded-lg p-3 border border-emerald-500/30">
-                                <div className="text-[10px] text-emerald-500 uppercase font-bold mb-1">KDV Toplamı</div>
-                                <div className="text-lg font-black text-emerald-500 font-mono">+{formatCurrency(total_vat)}</div>
-                            </div>
+                    <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                            <span className="text-xs text-secondary">Ara Toplam:</span>
+                            <span className="text-sm font-bold text-foreground font-mono">{formatCurrency(subtotal)}</span>
                         </div>
-
-                        <div className="bg-blue-500/20 rounded-xl border-2 border-blue-500/40 p-4">
-                            <div className="text-xs font-black text-blue-500 uppercase tracking-wider mb-2">GENEL TOPLAM</div>
-                            <div className="text-3xl font-black text-blue-500 font-mono tracking-tight">
-                                {formatCurrency(grand_total)}
+                        <div className="flex justify-between items-center">
+                            <span className="text-xs text-emerald-500">KDV Toplam:</span>
+                            <span className="text-sm font-bold text-emerald-500 font-mono">+{formatCurrency(total_vat)}</span>
+                        </div>
+                        <div className="border-t border-white/5 pt-4">
+                            <div className="bg-emerald-500/10 rounded-2xl border border-emerald-500/20 p-5 flex flex-col gap-1 items-end relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl group-hover:scale-150 transition-transform duration-700" />
+                                <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-[0.3em]">Genel Toplam (KDV DAHİL)</span>
+                                <span className="text-3xl font-bold text-emerald-500 font-mono tracking-tighter">
+                                    {formatCurrency(grand_total).replace('₺', '')} <span className="text-sm">₺</span>
+                                </span>
                             </div>
                         </div>
                     </div>

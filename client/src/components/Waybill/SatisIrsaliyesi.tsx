@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
-    Package, Plus, Save, Search, Trash2, Calculator, TruckIcon
+    Package, Plus, Save, Search, Trash2, Calculator, Receipt
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useTenant } from '@/lib/tenant-context';
@@ -62,6 +62,9 @@ export default function SatisIrsaliyesi() {
     const [loading, setLoading] = useState(false);
     const [showCariSearch, setShowCariSearch] = useState(false);
     const [cariSearchTerm, setCariSearchTerm] = useState('');
+    const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(null);
+    const [productSearchTerm, setProductSearchTerm] = useState('');
+    const isSavingRef = useRef(false);
 
     useEffect(() => {
         if (currentTenant) {
@@ -91,15 +94,15 @@ export default function SatisIrsaliyesi() {
         const { data } = await supabase
             .from('cari_hesaplar')
             .select('*')
-            .eq('cari_tipi', 'Müşteri')
-            .order('cari_unvan');
+            .eq('tenant_id', currentTenant?.id)
+            .order('unvani');
         if (data) setCariList(data);
     };
 
     const fetchProductList = async () => {
         const { data } = await supabase
             .from('products')
-            .select('id, name, barcode, price')
+            .select('id, name, barcode, sale_price')
             .order('name');
         if (data) setProductList(data);
     };
@@ -108,7 +111,7 @@ export default function SatisIrsaliyesi() {
         setWaybill(prev => ({
             ...prev,
             cari_id: cari.id,
-            cari_name: cari.cari_unvan,
+            cari_name: cari.unvani,
             cari_vkn: cari.vergi_no || '',
             cari_address: cari.adres || ''
         }));
@@ -123,7 +126,7 @@ export default function SatisIrsaliyesi() {
             product_id: product.id,
             product_name: product.name,
             product_code: product.barcode || '',
-            unit_price: product.price || 0
+            unit_price: product.sale_price || 0
         };
         setWaybill(prev => ({ ...prev, items: newItems }));
     };
@@ -157,8 +160,12 @@ export default function SatisIrsaliyesi() {
     };
 
     const saveWaybill = async () => {
+        if (isSavingRef.current) return;
+        isSavingRef.current = true;
+
         if (!waybill.cari_id) {
             alert('Lütfen müşteri seçin!');
+            isSavingRef.current = false;
             return;
         }
 
@@ -203,20 +210,21 @@ export default function SatisIrsaliyesi() {
                 vat_rate: item.vat_rate
             }));
 
-            await supabase.from('waybill_items').insert(itemsToInsert);
+            const { error: itemsError } = await supabase.from('waybill_items').insert(itemsToInsert);
+            if (itemsError) throw itemsError;
 
             // Stok Güncelleme (Satış irsaliyesi mal çıkışıdır)
             for (const item of waybill.items) {
                 if (item.product_id) {
                     await supabase.rpc('decrement_stock', {
-                        product_id: item.product_id,
-                        qty: item.quantity
+                        p_product_id: item.product_id,
+                        p_qty: item.quantity
                     });
                 }
             }
 
             // Cari hesaba borç yaz (Müşteri bize borçlu duruma geçer)
-            await supabase.from('cari_hareketler').insert({
+            const { error: cariError } = await supabase.from('cari_hareketler').insert({
                 tenant_id: currentTenant?.id,
                 cari_id: waybill.cari_id,
                 hareket_tipi: 'alacaklandirma',
@@ -224,9 +232,10 @@ export default function SatisIrsaliyesi() {
                 borc: grand_total,
                 alacak: 0,
                 tarih: waybill.waybill_date,
-                belge_no: nextNumber,
-                belge_tipi: 'Satış İrsaliyesi'
+                belge_no: nextNumber
             });
+
+            if (cariError) throw cariError;
 
             alert('✅ Satış irsaliyesi başarıyla kaydedildi!');
 
@@ -255,6 +264,7 @@ export default function SatisIrsaliyesi() {
             alert('❌ Hata: ' + error.message);
         } finally {
             setLoading(false);
+            isSavingRef.current = false;
         }
     };
 
@@ -262,36 +272,49 @@ export default function SatisIrsaliyesi() {
         new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val || 0);
 
     const filteredCariList = cariList.filter(c =>
-        c.cari_unvan.toLowerCase().includes(cariSearchTerm.toLowerCase()) ||
+        c.unvani.toLowerCase().includes(cariSearchTerm.toLowerCase()) ||
         (c.vergi_no || '').includes(cariSearchTerm)
     );
 
+    const filteredProductList = productList.filter(p =>
+        p.name.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
+        (p.barcode || '').includes(productSearchTerm)
+    );
+
     return (
-        <div className="space-y-4 max-w-[1800px] mx-auto p-4">
+        <div className="space-y-4 max-w-[1600px] mx-auto p-4">
             {/* Header / Actions */}
-            <div className="flex items-center justify-end">
+            <div className="flex items-center justify-end gap-2 pb-2 border-b border-white/5">
                 <button
                     onClick={saveWaybill}
                     disabled={loading}
-                    className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg transition-all active:scale-95 disabled:opacity-50"
+                    className="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg transition-all active:scale-95 disabled:opacity-50"
                 >
                     {loading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
-                    KAYDET
+                    FİŞİ KAYDET
                 </button>
             </div>
 
-            {/* Fiş Bilgileri */}
-            <div className="glass-card p-4">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* İrsaliye Bilgileri */}
+            <div className="glass-card p-5 space-y-5 bg-white/[0.01] relative z-50">
+                <h2 className="text-[10px] font-bold text-primary uppercase tracking-[0.25em] flex items-center gap-2 border-b border-white/5 pb-3">
+                    <Receipt className="w-4 h-4" />
+                    İrsaliye Bilgileri
+                </h2>
+
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+                    {/* Müşteri Seçimi */}
                     <div className="md:col-span-2 space-y-2">
-                        <label className="text-xs font-bold text-secondary uppercase">Müşteri (C/H Kodu) *</label>
+                        <label className="text-[10px] font-semibold text-secondary uppercase tracking-widest">Müşteri</label>
                         <div className="relative">
                             <button
                                 onClick={() => setShowCariSearch(true)}
-                                className="w-full bg-background border-2 border-emerald-500/30 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-foreground hover:border-emerald-500 transition-all flex items-center justify-between"
+                                className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-2.5 text-left text-sm font-medium text-white hover:border-primary/30 transition-all flex items-center justify-between shadow-sm"
                             >
-                                <span>{waybill.cari_name || '— Müşteri Seçin —'}</span>
-                                <Search className="w-4 h-4 text-emerald-500" />
+                                <span className={waybill.cari_name ? 'text-white' : 'text-secondary/50'}>
+                                    {waybill.cari_name || 'Müşteri seçin...'}
+                                </span>
+                                <Search className="w-4 h-4 text-secondary/40" />
                             </button>
 
                             {showCariSearch && (
@@ -302,7 +325,7 @@ export default function SatisIrsaliyesi() {
                                             value={cariSearchTerm}
                                             onChange={(e) => setCariSearchTerm(e.target.value)}
                                             placeholder="Müşteri ara..."
-                                            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-500"
+                                            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
                                             autoFocus
                                         />
                                     </div>
@@ -311,17 +334,20 @@ export default function SatisIrsaliyesi() {
                                             <button
                                                 key={cari.id}
                                                 onClick={() => selectCari(cari)}
-                                                className="w-full px-4 py-3 text-left hover:(bg-emerald-500/10 transition-colors border-b border-border/50 last:border-0"
+                                                className="w-full px-4 py-3 text-left hover:bg-primary/10 transition-colors border-b border-border/50 last:border-0"
                                             >
-                                                <div className="font-bold text-sm text-foreground">{cari.cari_unvan}</div>
+                                                <div className="font-bold text-sm text-foreground">{cari.unvani}</div>
                                                 <div className="text-xs text-secondary">{cari.vergi_no}</div>
                                             </button>
                                         ))}
+                                        {filteredCariList.length === 0 && (
+                                            <div className="p-4 text-center text-secondary text-sm">Müşteri bulunamadı</div>
+                                        )}
                                     </div>
                                     <div className="sticky bottom-0 bg-card p-2 border-t border-border">
                                         <button
                                             onClick={() => setShowCariSearch(false)}
-                                            className="w-full px-3 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 rounded-lg text-xs font-bold transition-all"
+                                            className="w-full px-3 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-xs font-bold transition-all"
                                         >
                                             Kapat
                                         </button>
@@ -331,132 +357,177 @@ export default function SatisIrsaliyesi() {
                         </div>
                     </div>
 
+                    {/* İrsaliye Tarihi */}
                     <div className="space-y-2">
                         <label className="text-xs font-bold text-secondary uppercase">İrsaliye Tarihi *</label>
                         <input
                             type="date"
                             value={waybill.waybill_date}
                             onChange={(e) => setWaybill(prev => ({ ...prev, waybill_date: e.target.value }))}
-                            className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm text-foreground outline-none focus:border-emerald-500"
+                            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
                         />
                     </div>
 
+                    {/* Depo Kodu */}
                     <div className="space-y-2">
                         <label className="text-xs font-bold text-secondary uppercase">Depo Kodu</label>
                         <input
                             type="text"
                             value={waybill.warehouse_code}
                             onChange={(e) => setWaybill(prev => ({ ...prev, warehouse_code: e.target.value }))}
-                            className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm text-foreground outline-none focus:border-emerald-500"
+                            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
                         />
                     </div>
 
+                    {/* Belge No */}
                     <div className="space-y-2">
                         <label className="text-xs font-bold text-secondary uppercase">Belge No</label>
                         <input
                             type="text"
                             value={waybill.document_no}
                             onChange={(e) => setWaybill(prev => ({ ...prev, document_no: e.target.value }))}
-                            className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm text-foreground outline-none focus:border-emerald-500"
+                            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
                         />
                     </div>
 
+                    {/* Sevk Adresi */}
                     <div className="md:col-span-3 space-y-2">
                         <label className="text-xs font-bold text-secondary uppercase">Sevk Adresi</label>
                         <input
                             type="text"
                             value={waybill.delivery_address}
                             onChange={(e) => setWaybill(prev => ({ ...prev, delivery_address: e.target.value }))}
-                            className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm text-foreground outline-none focus:border-emerald-500"
+                            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
                         />
                     </div>
                 </div>
             </div>
 
             {/* Kalemler */}
-            <div className="glass-card p-4 space-y-4">
-                <div className="flex items-center justify-between border-b border-border pb-3">
-                    <h2 className="text-sm font-bold text-emerald-500 uppercase tracking-wider flex items-center gap-2">
+            <div className="glass-card p-5 space-y-5 bg-white/[0.01]">
+                <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                    <h2 className="text-[10px] font-bold text-primary uppercase tracking-[0.25em] flex items-center gap-2">
                         <Package className="w-4 h-4" />
-                        1 - Fiş Kalem Bilgileri
+                        İrsaliye Kalemleri
                     </h2>
                     <button
                         onClick={addItem}
-                        className="text-emerald-500 hover:text-emerald-400 text-xs font-bold flex items-center gap-1 transition-all"
+                        className="text-primary hover:text-primary/80 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition-all"
                     >
-                        <Plus className="w-4 h-4" />
-                        Kalem Ekle
+                        <Plus className="w-3.5 h-3.5" />
+                        Yeni Kalem Ekle
                     </button>
                 </div>
 
-                <div className="overflow-x-auto">
-                    <table className="w-full text-xs border-collapse">
-                        <thead className="bg-emerald-500/10 text-secondary font-bold uppercase border-b-2 border-emerald-500/30">
+                <div className="overflow-x-auto pb-48">
+                    <table className="w-full text-xs">
+                        <thead className="text-secondary/60 font-semibold uppercase tracking-wider text-[9px] border-b border-white/5">
                             <tr>
-                                <th className="px-3 py-3 text-left min-w-[300px]">Stok Kodu / Tanımı</th>
-                                <th className="px-3 py-3 text-center w-28">Miktar</th>
-                                <th className="px-3 py-3 text-center w-24">Birim</th>
-                                <th className="px-3 py-3 text-center w-32">Birim Fiyat</th>
-                                <th className="px-3 py-3 text-center w-24">KDV %</th>
-                                <th className="px-3 py-3 text-right w-36 bg-emerald-500/10">Toplam</th>
-                                <th className="px-3 py-3 w-12"></th>
+                                <th className="px-4 py-3 text-left">Ürün/Hizmet Açıklaması</th>
+                                <th className="px-4 py-3 text-center w-24">Miktar</th>
+                                <th className="px-4 py-3 text-center w-24">Birim</th>
+                                <th className="px-4 py-3 text-right w-32">Birim Fiyat</th>
+                                <th className="px-4 py-3 text-center w-20">KDV %</th>
+                                <th className="px-4 py-3 text-right w-36 bg-white/[0.02]">Toplam</th>
+                                <th className="px-4 py-3 w-10"></th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-border/30">
+                        <tbody className="divide-y divide-white/5">
                             {waybill.items.map((item, index) => (
-                                <tr key={index} className="hover:bg-white/[0.02]">
-                                    <td className="p-2">
+                                <tr key={index} className="hover:bg-white/[0.02] group">
+                                    {/* Ürün */}
+                                    <td className="p-2 relative">
                                         <input
                                             type="text"
                                             value={item.product_name}
-                                            onChange={(e) => updateItem(index, 'product_name', e.target.value)}
-                                            className="w-full bg-transparent border-none text-foreground font-medium outline-none px-2 py-1.5"
+                                            onChange={(e) => {
+                                                updateItem(index, 'product_name', e.target.value);
+                                                setProductSearchTerm(e.target.value);
+                                            }}
+                                            onFocus={() => {
+                                                setSelectedItemIndex(index);
+                                                setProductSearchTerm(item.product_name);
+                                            }}
+                                            onBlur={() => setTimeout(() => setSelectedItemIndex(null), 250)}
+                                            placeholder="Ürün adı veya kodu..."
+                                            className="w-full bg-transparent border-none text-foreground font-medium outline-none"
                                         />
-                                        <div className="text-[10px] text-secondary px-2">{item.product_code}</div>
+                                        {selectedItemIndex === index && (
+                                            <div className="absolute z-40 top-full left-0 mt-1 w-80 bg-card border border-border rounded-xl shadow-2xl max-h-60 overflow-y-auto">
+                                                {filteredProductList.length === 0 ? (
+                                                    <div className="p-4 text-center text-sm text-secondary">
+                                                        Eşleşen ürün bulunamadı.
+                                                    </div>
+                                                ) : (
+                                                    filteredProductList.slice(0, 10).map(product => (
+                                                        <button
+                                                            key={product.id}
+                                                            onClick={() => selectProduct(product, index)}
+                                                            className="w-full px-3 py-2 text-left hover:bg-primary/10 transition-colors border-b border-border/50 last:border-0"
+                                                        >
+                                                            <div className="font-bold text-sm text-foreground">{product.name}</div>
+                                                            <div className="text-xs text-secondary">{product.barcode || 'Barkodsuz'} • {formatCurrency(product.sale_price)}</div>
+                                                        </button>
+                                                    ))
+                                                )}
+                                            </div>
+                                        )}
                                     </td>
+
+                                    {/* Miktar */}
                                     <td className="p-2">
                                         <input
                                             type="number"
                                             step="0.001"
                                             value={item.quantity}
                                             onChange={(e) => updateItem(index, 'quantity', parseFloat(e.target.value) || 0)}
-                                            className="w-full bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-2 py-2 text-emerald-500 font-bold text-center outline-none focus:border-emerald-500"
+                                            className="w-full bg-primary/10 border border-primary/20 rounded-lg px-2 py-1.5 text-primary font-bold text-center outline-none focus:border-primary"
                                         />
                                     </td>
+
+                                    {/* Birim */}
                                     <td className="p-2">
                                         <select
                                             value={item.unit}
                                             onChange={(e) => updateItem(index, 'unit', e.target.value)}
-                                            className="w-full bg-background border border-border rounded-lg px-2 py-2 text-foreground text-center text-xs outline-none"
+                                            className="w-full bg-background border border-border rounded-lg px-1 py-1.5 text-foreground text-center text-xs"
                                         >
                                             <option>ADET</option>
                                             <option>KG</option>
                                             <option>LT</option>
                                         </select>
                                     </td>
+
+                                    {/* Birim Fiyat */}
                                     <td className="p-2">
                                         <input
                                             type="number"
                                             step="0.01"
                                             value={item.unit_price}
                                             onChange={(e) => updateItem(index, 'unit_price', parseFloat(e.target.value) || 0)}
-                                            className="w-full bg-background border border-border rounded-lg px-2 py-2 text-foreground font-mono text-center outline-none"
+                                            className="w-full bg-background border border-border rounded-lg px-2 py-1.5 text-foreground font-mono text-center outline-none focus:border-primary"
                                         />
                                     </td>
+
+                                    {/* KDV */}
                                     <td className="p-2">
                                         <select
                                             value={item.vat_rate}
                                             onChange={(e) => updateItem(index, 'vat_rate', parseFloat(e.target.value))}
-                                            className="w-full bg-background border border-border rounded-lg px-2 py-2 text-foreground text-center text-xs"
+                                            className="w-full bg-background border border-border rounded-lg px-1 py-1.5 text-foreground text-center text-xs"
                                         >
                                             <option value="1">%1</option>
                                             <option value="10">%10</option>
                                             <option value="20">%20</option>
                                         </select>
                                     </td>
-                                    <td className="p-2 text-right font-black text-foreground bg-emerald-500/5 font-mono">
+
+                                    {/* Toplam */}
+                                    <td className="p-2 text-right font-black text-foreground bg-primary/5 font-mono">
                                         {formatCurrency(itemsWithTotals[index]?.line_total_with_vat || 0)}
                                     </td>
+
+                                    {/* Sil */}
                                     <td className="p-2 text-center">
                                         {waybill.items.length > 1 && (
                                             <button
@@ -474,39 +545,41 @@ export default function SatisIrsaliyesi() {
                 </div>
             </div>
 
-            {/* Toplamlar */}
+            {/* Toplamlar ve Notlar */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Notlar */}
                 <div className="glass-card p-4 space-y-2">
-                    <label className="text-xs font-bold text-secondary uppercase">Açıklama</label>
+                    <label className="text-xs font-bold text-secondary uppercase">Notlar</label>
                     <textarea
                         value={waybill.notes}
                         onChange={(e) => setWaybill(prev => ({ ...prev, notes: e.target.value }))}
-                        className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground outline-none resize-none"
-                        rows={5}
+                        className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:border-primary resize-none"
+                        rows={4}
                     />
                 </div>
 
-                <div className="glass-card p-4 space-y-3 bg-gradient-to-br from-emerald-500/5 to-transparent">
-                    <h3 className="text-xs font-bold text-emerald-500 uppercase flex items-center gap-2">
+                {/* Toplamlar */}
+                <div className="glass-card p-4 space-y-3">
+                    <h3 className="text-xs font-bold text-secondary uppercase flex items-center gap-2">
                         <Calculator className="w-4 h-4" />
-                        Genel Toplamlar
+                        İrsaliye Toplamları
                     </h3>
-                    <div className="space-y-3">
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="bg-background/50 rounded-lg p-3 border border-border">
-                                <div className="text-[10px] text-secondary uppercase font-bold mb-1">Mal Toplamı</div>
-                                <div className="text-lg font-black text-foreground font-mono">{formatCurrency(subtotal)}</div>
-                            </div>
-                            <div className="bg-background/50 rounded-lg p-3 border border-emerald-500/30">
-                                <div className="text-[10px] text-emerald-500 uppercase font-bold mb-1">KDV Toplamı</div>
-                                <div className="text-lg font-black text-emerald-500 font-mono">+{formatCurrency(total_vat)}</div>
-                            </div>
+                    <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                            <span className="text-xs text-secondary">Ara Toplam:</span>
+                            <span className="text-sm font-bold text-foreground font-mono">{formatCurrency(subtotal)}</span>
                         </div>
-
-                        <div className="bg-emerald-500/20 rounded-xl border-2 border-emerald-500/40 p-4">
-                            <div className="text-xs font-black text-emerald-500 uppercase tracking-wider mb-2">GENEL TOPLAM</div>
-                            <div className="text-3xl font-black text-emerald-500 font-mono tracking-tight">
-                                {formatCurrency(grand_total)}
+                        <div className="flex justify-between items-center">
+                            <span className="text-xs text-emerald-500">KDV Toplam:</span>
+                            <span className="text-sm font-bold text-emerald-500 font-mono">+{formatCurrency(total_vat)}</span>
+                        </div>
+                        <div className="border-t border-white/5 pt-4">
+                            <div className="bg-emerald-500/10 rounded-2xl border border-emerald-500/20 p-5 flex flex-col gap-1 items-end relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl group-hover:scale-150 transition-transform duration-700" />
+                                <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-[0.3em]">Genel Toplam (KDV DAHİL)</span>
+                                <span className="text-3xl font-bold text-emerald-500 font-mono tracking-tighter">
+                                    {formatCurrency(grand_total).replace('₺', '')} <span className="text-sm">₺</span>
+                                </span>
                             </div>
                         </div>
                     </div>

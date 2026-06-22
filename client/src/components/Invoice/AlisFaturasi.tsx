@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
     FileText, Plus, Save, X, Search, Calendar, Building2,
     Package, Trash2, Calculator, Receipt, AlertCircle, Check, Sparkles,
@@ -20,12 +20,41 @@ interface InvoiceItem {
     unit: string;
     unit_price: number;
     discount_rate: number;
+    discount_quantity?: number;
     vat_rate: number;
     line_total?: number;
+    discount_amount?: number;
     vat_amount?: number;
     line_total_with_vat?: number;
     suggested_sale_price?: number;
     old_purchase_price?: number;
+    old_sale_price?: number;
+}
+
+// İskonto oranı varsayılan olarak kalemin tüm miktarına uygulanır.
+// discount_quantity verilirse (örn. "5 adetin sadece 1.si %15 iskontolu"),
+// iskonto sadece o kadar adede uygulanır, kalan adetler tam fiyattan hesaplanır —
+// böylece iskonto oranı satırdaki tüm adetlere yayılıp sulandırılmaz.
+function calculateItemTotals(item: InvoiceItem) {
+    const qty = Number(item.quantity) || 0;
+    const price = Number(item.unit_price) || 0;
+    const discount = Number(item.discount_rate) || 0;
+    const vat = Number(item.vat_rate) || 0;
+    const discountQty = item.discount_quantity
+        ? Math.min(Number(item.discount_quantity) || 0, qty)
+        : qty;
+
+    const discountAmount = (discountQty * price * discount) / 100;
+    const line_total = (qty * price) - discountAmount;
+    const vat_amount = (line_total * vat) / 100;
+    const line_total_with_vat = line_total + vat_amount;
+
+    return {
+        discount_amount: Math.round(discountAmount * 100) / 100,
+        line_total: Math.round(line_total * 100) / 100,
+        vat_amount: Math.round(vat_amount * 100) / 100,
+        line_total_with_vat: Math.round(line_total_with_vat * 100) / 100
+    };
 }
 
 interface Invoice {
@@ -72,6 +101,7 @@ export default function AlisFaturasi() {
         ]
     });
     const [loading, setLoading] = useState(false);
+    const isSavingRef = useRef(false);
     const [showCariSearch, setShowCariSearch] = useState(false);
     const [cariSearchTerm, setCariSearchTerm] = useState('');
     const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(null);
@@ -155,24 +185,7 @@ export default function AlisFaturasi() {
     }, [currentTenant]);
 
     const enrichedItems = useMemo(() => {
-        return invoice.items.map(item => {
-            const qty = Number(item.quantity) || 0;
-            const price = Number(item.unit_price) || 0;
-            const discount = Number(item.discount_rate) || 0;
-            const vat = Number(item.vat_rate) || 0;
-
-            const discountAmount = (qty * price * discount) / 100;
-            const line_total = (qty * price) - discountAmount;
-            const vat_amount = (line_total * vat) / 100;
-            const line_total_with_vat = line_total + vat_amount;
-
-            return {
-                ...item,
-                line_total: Math.round(line_total * 100) / 100,
-                vat_amount: Math.round(vat_amount * 100) / 100,
-                line_total_with_vat: Math.round(line_total_with_vat * 100) / 100
-            };
-        });
+        return invoice.items.map(item => ({ ...item, ...calculateItemTotals(item) }));
     }, [invoice.items]);
 
     const totals = useMemo(() => {
@@ -203,7 +216,7 @@ export default function AlisFaturasi() {
     const fetchProductList = async () => {
         const { data } = await supabase
             .from('products')
-            .select('id, name, barcode, purchase_price')
+            .select('id, name, barcode, purchase_price, sale_price')
             .order('name');
         if (data) setProductList(data);
     };
@@ -230,7 +243,8 @@ export default function AlisFaturasi() {
             item_name: product.name,
             item_code: product.barcode || '',
             unit_price: 0,
-            old_purchase_price: product.purchase_price || 0
+            old_purchase_price: product.purchase_price || 0,
+            old_sale_price: product.sale_price || 0
         };
         setInvoice(prev => ({ ...prev, items: newItems }));
         setSelectedItemIndex(null);
@@ -270,13 +284,20 @@ export default function AlisFaturasi() {
     };
 
     const saveInvoice = async () => {
+        // Çift tıklama / aynı anda iki kayıt denemesini engelle — yoksa get_next_invoice_number
+        // ikisine de aynı "sıradaki numara"yı verip unique constraint hatası fırlatabilir.
+        if (isSavingRef.current) return;
+        isSavingRef.current = true;
+
         if (!invoice.cari_id) {
             alert('Lütfen tedarikçi seçin!');
+            isSavingRef.current = false;
             return;
         }
 
         if (invoice.items.some(i => !i.item_name || i.quantity <= 0 || i.unit_price <= 0)) {
             alert('Lütfen tüm kalem bilgilerini doldurun!');
+            isSavingRef.current = false;
             return;
         }
 
@@ -326,13 +347,15 @@ export default function AlisFaturasi() {
                     // İsimle tam eşleşen var mı kontrol et
                     const { data: existingProd } = await supabase
                         .from('products')
-                        .select('id')
+                        .select('id, purchase_price, sale_price')
                         .ilike('name', item.item_name.trim())
                         .eq('tenant_id', currentTenant?.id)
                         .maybeSingle();
 
                     if (existingProd) {
                         item.product_id = existingProd.id;
+                        item.old_purchase_price = existingProd.purchase_price || 0;
+                        item.old_sale_price = existingProd.sale_price || 0;
                     } else {
                         // Yeni ürün oluştur
                         const { data: newProd, error: newProdErr } = await supabase
@@ -359,18 +382,25 @@ export default function AlisFaturasi() {
             }
 
             // Kalemleri kaydet
-            const itemsToInsert = finalItems.map(item => ({
-                tenant_id: currentTenant?.id,
-                invoice_id: invoiceData.id,
-                product_id: item.product_id,
-                item_name: item.item_name,
-                item_code: item.item_code,
-                quantity: Number(item.quantity) || 0,
-                unit: item.unit,
-                unit_price: Number(item.unit_price) || 0,
-                discount_rate: Number(item.discount_rate) || 0,
-                vat_rate: Number(item.vat_rate) || 0
-            }));
+            const itemsToInsert = finalItems.map(item => {
+                const calc = calculateItemTotals(item);
+                return {
+                    tenant_id: currentTenant?.id,
+                    invoice_id: invoiceData.id,
+                    product_id: item.product_id,
+                    item_name: item.item_name,
+                    item_code: item.item_code,
+                    quantity: Number(item.quantity) || 0,
+                    unit: item.unit,
+                    unit_price: Number(item.unit_price) || 0,
+                    discount_rate: Number(item.discount_rate) || 0,
+                    discount_amount: calc.discount_amount,
+                    vat_rate: Number(item.vat_rate) || 0,
+                    vat_amount: calc.vat_amount,
+                    line_total: calc.line_total,
+                    line_total_with_vat: calc.line_total_with_vat
+                };
+            });
 
             const { error: itemsError } = await supabase
                 .from('invoice_items')
@@ -381,9 +411,16 @@ export default function AlisFaturasi() {
             // Stok ve Fiyat Güncelleme
             for (const item of finalItems) {
                 if (item.product_id) {
+                    const calc = calculateItemTotals(item);
+                    const qty = Number(item.quantity) || 0;
+                    // İskonto sonrası gerçek birim maliyet (kısmi iskonto varsa ortalamaya yedirilir)
+                    const effectivePurchasePrice = qty > 0
+                        ? Math.round((calc.line_total / qty) * 100) / 100
+                        : Number(item.unit_price) || 0;
+
                     // 1. Alış fiyatını ve (varsa) önerilen satış fiyatını güncelle
                     const updateData: any = {
-                        purchase_price: Number(item.unit_price) || 0
+                        purchase_price: effectivePurchasePrice
                     };
 
                     if (item.suggested_sale_price) {
@@ -398,14 +435,47 @@ export default function AlisFaturasi() {
                     // 2. Stoğu atomik olarak artır (RPC kullanarak)
                     await supabase.rpc('increment_stock', {
                         p_product_id: item.product_id,
-                        p_qty: Number(item.quantity) || 0
+                        p_qty: qty
                     });
+
+                    // 3. Fiyat değişikliğini ürünün geçmişine yaz (Ürün Detayı > Son İşlemler'de görünür)
+                    const priceLogs: any[] = [];
+                    if (item.old_purchase_price !== undefined && Number(item.old_purchase_price) !== effectivePurchasePrice) {
+                        priceLogs.push({
+                            product_id: item.product_id,
+                            product_name: item.item_name,
+                            product_barcode: item.item_code || null,
+                            change_type: 'price',
+                            field_name: 'purchase_price',
+                            old_value: String(item.old_purchase_price),
+                            new_value: String(effectivePurchasePrice),
+                            change_source: 'invoice',
+                            changed_by: `Alış Faturası: ${finalInvoiceNumber}${Number(item.discount_rate) > 0 ? ` (İsk. %${item.discount_rate})` : ''}`,
+                            tenant_id: currentTenant?.id
+                        });
+                    }
+                    if (item.suggested_sale_price && item.old_sale_price !== undefined && Number(item.old_sale_price) !== Number(item.suggested_sale_price)) {
+                        priceLogs.push({
+                            product_id: item.product_id,
+                            product_name: item.item_name,
+                            product_barcode: item.item_code || null,
+                            change_type: 'price',
+                            field_name: 'sale_price',
+                            old_value: String(item.old_sale_price),
+                            new_value: String(item.suggested_sale_price),
+                            change_source: 'invoice',
+                            changed_by: `Alış Faturası: ${finalInvoiceNumber}`,
+                            tenant_id: currentTenant?.id
+                        });
+                    }
+                    if (priceLogs.length > 0) {
+                        await supabase.from('product_change_logs').insert(priceLogs);
+                    }
                 }
             }
 
-            // Cari hesaba borç yaz
             // Cari hesaba alacak yaz (Tedarikçi bizden alacaklı duruma geçer)
-            await supabase.from('cari_hareketler').insert({
+            const { error: cariError } = await supabase.from('cari_hareketler').insert({
                 tenant_id: currentTenant?.id,
                 cari_id: invoice.cari_id,
                 hareket_tipi: 'borclandirma',
@@ -413,9 +483,10 @@ export default function AlisFaturasi() {
                 alacak: totals.grand_total,
                 borc: 0,
                 tarih: invoice.invoice_date,
-                belge_no: finalInvoiceNumber,
-                belge_tipi: 'Alış Faturası'
+                belge_no: finalInvoiceNumber
             });
+
+            if (cariError) throw cariError;
 
             alert('✅ Alış faturası başarıyla kaydedildi!');
 
@@ -442,9 +513,14 @@ export default function AlisFaturasi() {
             });
         } catch (error: any) {
             console.error(error);
-            alert('❌ Hata: ' + error.message);
+            if (error.code === '23505' && error.message?.includes('invoice_number')) {
+                alert('❌ Bu fatura numarası zaten kullanılıyor. Lütfen farklı bir numara girin veya numara alanını boş bırakıp otomatik numaralandırmayı kullanın.');
+            } else {
+                alert('❌ Hata: ' + error.message);
+            }
         } finally {
             setLoading(false);
+            isSavingRef.current = false;
         }
     };
 
@@ -656,7 +732,9 @@ export default function AlisFaturasi() {
                                         <th className="px-4 py-3 text-center w-24">Miktar</th>
                                         <th className="px-4 py-3 text-center w-24">Birim</th>
                                         <th className="px-4 py-3 text-right w-32">Birim Fiyat</th>
+                                        <th className="px-4 py-3 text-right w-32">Satış Fiyatı</th>
                                         <th className="px-4 py-3 text-center w-20">İsk. %</th>
+                                        <th className="px-4 py-3 text-center w-24">İsk. Adet</th>
                                         <th className="px-4 py-3 text-right w-36 bg-white/[0.02]">Toplam</th>
                                         <th className="px-4 py-3 w-10"></th>
                                     </tr>
@@ -753,6 +831,23 @@ export default function AlisFaturasi() {
                                                 />
                                             </td>
 
+                                            {/* Satış Fiyatı */}
+                                            <td className="p-2">
+                                                <input
+                                                    type="text"
+                                                    inputMode="decimal"
+                                                    value={item.suggested_sale_price === undefined || item.suggested_sale_price === 0 ? '' : item.suggested_sale_price}
+                                                    placeholder={item.old_sale_price ? `Eski: ${formatCurrency(item.old_sale_price)}` : 'Değişmesin'}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value.replace(',', '.').replace(/[^0-9.]/g, '');
+                                                        const parts = val.split('.');
+                                                        const cleaned = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : val;
+                                                        updateItem(index, 'suggested_sale_price', cleaned === '' ? undefined : cleaned);
+                                                    }}
+                                                    className="w-full bg-background border border-border rounded-lg px-2 py-1.5 text-foreground font-mono text-center outline-none focus:border-primary placeholder:text-secondary/50 placeholder:text-[10px]"
+                                                />
+                                            </td>
+
                                             {/* İskonto */}
                                             <td className="p-2">
                                                 <input
@@ -766,6 +861,24 @@ export default function AlisFaturasi() {
                                                         updateItem(index, 'discount_rate', cleaned);
                                                     }}
                                                     className="w-full bg-background border border-border rounded-lg px-2 py-1.5 text-foreground text-center outline-none focus:border-primary"
+                                                />
+                                            </td>
+
+                                            {/* İskonto Adedi */}
+                                            <td className="p-2">
+                                                <input
+                                                    type="text"
+                                                    inputMode="decimal"
+                                                    value={item.discount_quantity ?? ''}
+                                                    placeholder="Tümü"
+                                                    title="İskonto sadece bu kadar adede uygulanır. Boş bırakılırsa tüm miktara uygulanır."
+                                                    onChange={(e) => {
+                                                        const val = e.target.value.replace(',', '.').replace(/[^0-9.]/g, '');
+                                                        const parts = val.split('.');
+                                                        const cleaned = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : val;
+                                                        updateItem(index, 'discount_quantity', cleaned === '' ? undefined : cleaned);
+                                                    }}
+                                                    className="w-full bg-background border border-border rounded-lg px-2 py-1.5 text-foreground text-center outline-none focus:border-primary placeholder:text-secondary/50 placeholder:text-[10px]"
                                                 />
                                             </td>
 

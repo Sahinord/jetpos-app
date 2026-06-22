@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
-    RotateCcw, Plus, Save, Search, Trash2, AlertCircle
+    RotateCcw, Save, Search, Trash2, AlertCircle, Receipt, Package
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useTenant } from '@/lib/tenant-context';
@@ -35,6 +35,7 @@ export default function IadeFaturasi() {
     const [products, setProducts] = useState<any[]>([]);
 
     const [notes, setNotes] = useState('');
+    const isSavingRef = useRef(false);
 
     useEffect(() => {
         if (currentTenant) {
@@ -47,14 +48,14 @@ export default function IadeFaturasi() {
     const generateInvoiceNo = async () => {
         const { data } = await supabase
             .from('invoices')
-            .select('invoice_no')
+            .select('invoice_number')
             .eq('tenant_id', currentTenant?.id)
-            .eq('invoice_type', 'iade')
+            .eq('invoice_type', 'sales_return')
             .order('created_at', { ascending: false })
             .limit(1);
 
         if (data && data.length > 0) {
-            const lastNo = parseInt(data[0].invoice_no.replace('IF', ''));
+            const lastNo = parseInt(data[0].invoice_number.replace('IF', '')) || 0;
             setInvoiceNo(`IF${String(lastNo + 1).padStart(8, '0')}`);
         } else {
             setInvoiceNo(`IF${String(1).padStart(8, '0')}`);
@@ -66,7 +67,7 @@ export default function IadeFaturasi() {
             .from('cari_hesaplar')
             .select('*')
             .eq('tenant_id', currentTenant?.id)
-            .order('unvan');
+            .order('unvani');
         setCustomers(data || []);
     };
 
@@ -74,6 +75,7 @@ export default function IadeFaturasi() {
         const { data } = await supabase
             .from('products')
             .select('*')
+            .eq('tenant_id', currentTenant?.id)
             .order('name');
         setProducts(data || []);
     };
@@ -129,16 +131,22 @@ export default function IadeFaturasi() {
     };
 
     const handleSave = async () => {
+        if (isSavingRef.current) return;
+        isSavingRef.current = true;
+
         if (!selectedCustomer) {
             alert('Lütfen müşteri seçin!');
+            isSavingRef.current = false;
             return;
         }
         if (items.length === 0) {
             alert('Lütfen en az bir ürün ekleyin!');
+            isSavingRef.current = false;
             return;
         }
         if (!originalInvoiceNo) {
             alert('Lütfen orijinal fatura numarasını girin!');
+            isSavingRef.current = false;
             return;
         }
 
@@ -148,38 +156,46 @@ export default function IadeFaturasi() {
             .from('invoices')
             .insert({
                 tenant_id: currentTenant?.id,
-                invoice_type: 'iade',
-                invoice_no: invoiceNo,
+                invoice_type: 'sales_return',
+                invoice_number: invoiceNo,
                 invoice_date: invoiceDate,
                 cari_id: selectedCustomer.id,
-                cari_name: selectedCustomer.unvan,
+                cari_name: selectedCustomer.unvani,
                 subtotal: -totals.subtotal, // Negatif (İade)
-                vat_total: -totals.totalVat,
-                total_amount: -totals.total,
+                total_vat: -totals.totalVat,
+                grand_total: -totals.total,
                 payment_status: 'refunded',
-                notes: `İade - Orijinal Fatura: ${originalInvoiceNo}\n${notes}`,
-                original_invoice_no: originalInvoiceNo
+                notes: `İade - Orijinal Fatura: ${originalInvoiceNo}\n${notes}`
             })
             .select()
             .single();
 
         if (invoiceError) {
             alert('Hata: ' + invoiceError.message);
+            isSavingRef.current = false;
             return;
         }
 
-        const invoiceItems = items.map(item => ({
-            tenant_id: currentTenant?.id,
-            invoice_id: invoice.id,
-            product_id: item.product_id,
-            product_name: item.product_name,
-            quantity: -item.quantity, // Negatif miktar
-            unit_price: item.unit_price,
-            vat_rate: item.vat_rate,
-            vat_amount: -item.vat_amount,
-            total_amount: -item.total_amount,
-            notes: item.return_reason
-        }));
+        const invoiceItems = items.map(item => {
+            const qty = Number(item.quantity) || 0;
+            const lineTotal = item.unit_price * qty;
+            return {
+                tenant_id: currentTenant?.id,
+                invoice_id: invoice.id,
+                product_id: item.product_id,
+                item_name: item.product_name,
+                item_code: item.product_code || null,
+                quantity: -qty, // Negatif miktar
+                unit_price: item.unit_price,
+                discount_rate: 0,
+                discount_amount: 0,
+                vat_rate: item.vat_rate,
+                vat_amount: -item.vat_amount,
+                line_total: -(Math.round(lineTotal * 100) / 100),
+                line_total_with_vat: -item.total_amount,
+                description: item.return_reason
+            };
+        });
 
         const { error: itemsError } = await supabase
             .from('invoice_items')
@@ -187,20 +203,39 @@ export default function IadeFaturasi() {
 
         if (itemsError) {
             alert('Hata: ' + itemsError.message);
+            isSavingRef.current = false;
             return;
         }
 
+        // Stok Güncelleme (iade alınan mal stoğa geri döner)
+        for (const item of items) {
+            if (item.product_id) {
+                await supabase.rpc('increment_stock', {
+                    p_product_id: item.product_id,
+                    p_qty: Number(item.quantity) || 0
+                });
+            }
+        }
+
         // Cariye alacak kaydı (iade alıyoruz, borcunu azaltıyoruz)
-        await supabase.from('cari_hareketler').insert({
+        const { error: cariError } = await supabase.from('cari_hareketler').insert({
             tenant_id: currentTenant?.id,
             cari_id: selectedCustomer.id,
             hareket_tipi: 'iade_faturasi',
             aciklama: `İade Faturası - ${invoiceNo} (Org: ${originalInvoiceNo})`,
             borc: 0,
             alacak: totals.total, // Müşterinin borcunu azalt
-            tarih: invoiceDate
+            tarih: invoiceDate,
+            belge_no: invoiceNo
         });
 
+        if (cariError) {
+            alert('İade kaydedildi ama cari hesaba işlenemedi: ' + cariError.message);
+            isSavingRef.current = false;
+            return;
+        }
+
+        isSavingRef.current = false;
         alert('İade faturası kaydedildi!');
         resetForm();
     };
@@ -216,211 +251,268 @@ export default function IadeFaturasi() {
 
     const totals = calculateTotals();
 
+    const formatCurrency = (val: number) =>
+        new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val || 0);
+
     return (
-        <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Left - Customer & Details */}
+        <div className="space-y-4 max-w-[1600px] mx-auto p-4">
+            {/* Header / Actions */}
+            <div className="flex items-center justify-end gap-2 pb-2 border-b border-white/5">
+                <button
+                    onClick={handleSave}
+                    className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg transition-all active:scale-95"
+                >
+                    <Save className="w-4 h-4" />
+                    İADE FATURASINI KAYDET
+                </button>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {/* Left - Fatura Bilgileri */}
                 <div className="lg:col-span-1 space-y-4">
-                    <div className="glass-card p-6">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">Fatura Bilgileri</h3>
-                            <div className="text-right">
-                                <span className="text-[10px] text-secondary uppercase font-bold">Fatura No:</span>
-                                <span className="ml-2 text-xs font-bold text-orange-400 font-mono italic">{invoiceNo}</span>
-                            </div>
+                    <div className="glass-card p-5 space-y-5 bg-white/[0.01] relative z-50">
+                        <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                            <h2 className="text-[10px] font-bold text-orange-500 uppercase tracking-[0.25em] flex items-center gap-2">
+                                <Receipt className="w-4 h-4" />
+                                Fatura Bilgileri
+                            </h2>
+                            <span className="text-xs font-bold text-orange-500 font-mono">{invoiceNo}</span>
                         </div>
 
                         <div className="space-y-4">
-                            <div>
-                                <label className="block text-xs font-medium text-secondary mb-2">İade Tarihi</label>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-semibold text-secondary uppercase tracking-widest">İade Tarihi</label>
                                 <input
                                     type="date"
                                     value={invoiceDate}
                                     onChange={(e) => setInvoiceDate(e.target.value)}
-                                    className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-orange-500"
+                                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:border-orange-500"
                                 />
                             </div>
 
-                            <div>
-                                <label className="block text-xs font-medium text-secondary mb-2">Orijinal Fatura No*</label>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-semibold text-secondary uppercase tracking-widest">Orijinal Fatura No *</label>
                                 <input
                                     type="text"
                                     value={originalInvoiceNo}
                                     onChange={(e) => setOriginalInvoiceNo(e.target.value)}
                                     placeholder="SF00000001"
-                                    className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-orange-500"
+                                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:border-orange-500"
                                 />
                             </div>
 
-                            <div>
-                                <label className="block text-xs font-medium text-secondary mb-2">Müşteri</label>
+                            <div className="space-y-2 relative">
+                                <label className="text-[10px] font-semibold text-secondary uppercase tracking-widest">Müşteri</label>
                                 <button
-                                    onClick={() => setShowCustomerModal(true)}
-                                    className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-left hover:border-orange-500 transition-colors"
+                                    onClick={() => setShowCustomerModal(!showCustomerModal)}
+                                    className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-2.5 text-left text-sm font-medium text-white hover:border-orange-500/30 transition-all flex items-center justify-between shadow-sm"
                                 >
-                                    {selectedCustomer ? (
-                                        <span className="text-white font-medium">{selectedCustomer.unvan}</span>
-                                    ) : (
-                                        <span className="text-secondary">Müşteri Seç...</span>
-                                    )}
+                                    <span className={selectedCustomer ? 'text-white' : 'text-secondary/50'}>
+                                        {selectedCustomer?.unvani || 'Müşteri seçin...'}
+                                    </span>
+                                    <Search className="w-4 h-4 text-secondary/40" />
                                 </button>
+
+                                {showCustomerModal && (
+                                    <div className="absolute z-50 top-full mt-2 w-full bg-card border border-border rounded-xl shadow-2xl max-h-72 overflow-y-auto">
+                                        <div className="sticky top-0 bg-card p-3 border-b border-border">
+                                            <input
+                                                type="text"
+                                                value={customerSearch}
+                                                onChange={(e) => setCustomerSearch(e.target.value)}
+                                                placeholder="Müşteri ara..."
+                                                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-orange-500"
+                                                autoFocus
+                                            />
+                                        </div>
+                                        <div>
+                                            {customers
+                                                .filter(c => (c.unvani || '').toLowerCase().includes(customerSearch.toLowerCase()))
+                                                .map(customer => (
+                                                    <button
+                                                        key={customer.id}
+                                                        onClick={() => {
+                                                            setSelectedCustomer(customer);
+                                                            setShowCustomerModal(false);
+                                                            setCustomerSearch('');
+                                                        }}
+                                                        className="w-full px-4 py-3 text-left hover:bg-orange-500/10 transition-colors border-b border-border/50 last:border-0"
+                                                    >
+                                                        <div className="font-bold text-sm text-foreground">{customer.unvani}</div>
+                                                        <div className="text-xs text-secondary">{customer.vergi_no || customer.tc_no || 'Kimlik bilgisi yok'}</div>
+                                                    </button>
+                                                ))
+                                            }
+                                            {customers.filter(c => (c.unvani || '').toLowerCase().includes(customerSearch.toLowerCase())).length === 0 && (
+                                                <div className="p-4 text-center text-secondary text-sm">Müşteri bulunamadı</div>
+                                            )}
+                                        </div>
+                                        <div className="sticky bottom-0 bg-card p-2 border-t border-border">
+                                            <button
+                                                onClick={() => setShowCustomerModal(false)}
+                                                className="w-full px-3 py-2 bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 rounded-lg text-xs font-bold transition-all"
+                                            >
+                                                Kapat
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
-                            <div>
-                                <label className="block text-xs font-medium text-secondary mb-2">Notlar</label>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-semibold text-secondary uppercase tracking-widest">Notlar</label>
                                 <textarea
                                     value={notes}
                                     onChange={(e) => setNotes(e.target.value)}
                                     rows={3}
-                                    className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-orange-500 resize-none"
+                                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:border-orange-500 resize-none"
                                     placeholder="İade sebebi veya notlar..."
                                 />
                             </div>
                         </div>
                     </div>
 
-                    {/* Warning */}
-                    <div className="glass-card p-4 bg-orange-500/10 border border-orange-500/20">
+                    {/* Uyarı */}
+                    <div className="glass-card p-4 bg-orange-500/[0.04] border-orange-500/10">
                         <div className="flex items-start gap-3">
-                            <AlertCircle className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" />
-                            <div className="text-xs text-orange-200">
-                                <p className="font-bold mb-1">Dikkat!</p>
-                                <p>İade faturası, müşterinin borcunu azaltır ve stoku artırır.</p>
-                            </div>
+                            <AlertCircle className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
+                            <p className="text-xs text-secondary">
+                                İade faturası müşterinin borcunu azaltır ve iade alınan ürünleri stoğa geri ekler.
+                            </p>
                         </div>
                     </div>
 
-                    {/* Totals */}
-                    <div className="glass-card p-6 bg-gradient-to-br from-orange-500/10 to-red-500/10 border border-orange-500/20">
-                        <div className="space-y-3">
+                    {/* Toplamlar */}
+                    <div className="glass-card p-4 space-y-3">
+                        <div className="space-y-2">
                             <div className="flex justify-between items-center">
-                                <span className="text-sm text-secondary">İade Tutarı</span>
-                                <span className="text-lg font-bold text-white">-{totals.subtotal.toFixed(2)} ₺</span>
+                                <span className="text-xs text-secondary">İade Tutarı:</span>
+                                <span className="text-sm font-bold text-foreground font-mono">-{formatCurrency(totals.subtotal)}</span>
                             </div>
                             <div className="flex justify-between items-center">
-                                <span className="text-sm text-secondary">KDV</span>
-                                <span className="text-lg font-bold text-orange-400">-{totals.totalVat.toFixed(2)} ₺</span>
+                                <span className="text-xs text-orange-500">KDV:</span>
+                                <span className="text-sm font-bold text-orange-500 font-mono">-{formatCurrency(totals.totalVat)}</span>
                             </div>
-                            <div className="h-px bg-white/10" />
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm font-bold text-white">TOPLAM İADE</span>
-                                <span className="text-2xl font-black text-orange-400">-{totals.total.toFixed(2)} ₺</span>
+                            <div className="border-t border-white/5 pt-4">
+                                <div className="bg-orange-500/10 rounded-2xl border border-orange-500/20 p-5 flex flex-col gap-1 items-end relative overflow-hidden group">
+                                    <div className="absolute top-0 right-0 w-20 h-20 bg-orange-500/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl group-hover:scale-150 transition-transform duration-700" />
+                                    <span className="text-[10px] font-bold text-orange-500 uppercase tracking-[0.3em]">Toplam İade</span>
+                                    <span className="text-3xl font-bold text-orange-500 font-mono tracking-tighter">
+                                        -{formatCurrency(totals.total).replace('₺', '')} <span className="text-sm">₺</span>
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <button
-                        onClick={handleSave}
-                        className="w-full px-6 py-3.5 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 rounded-xl font-bold text-white transition-all flex items-center justify-center gap-2 shadow-lg"
-                    >
-                        <Save className="w-5 h-5" />
-                        İade Faturasını Kaydet
-                    </button>
-                </div >
-
-                {/* Right - Products */}
-                < div className="lg:col-span-2 space-y-4" >
-                    {/* Product Search */}
-                    < div className="glass-card p-4" >
+                {/* Right - Ürünler / İade Listesi */}
+                <div className="lg:col-span-2 space-y-4">
+                    {/* Ürün Arama */}
+                    <div className="glass-card p-4 relative z-40">
                         <div className="relative">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary/40" />
                             <input
                                 type="text"
                                 value={productSearch}
                                 onChange={(e) => setProductSearch(e.target.value)}
                                 placeholder="İade edilecek ürünü ara..."
-                                className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-orange-500"
+                                className="w-full bg-background border border-border rounded-lg pl-10 pr-3 py-2.5 text-sm text-foreground outline-none focus:border-orange-500"
                             />
                         </div>
 
-                        {
-                            productSearch && (
-                                <div className="mt-2 max-h-48 overflow-y-auto bg-card border border-border rounded-xl">
-                                    {products
-                                        .filter(p =>
-                                            p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
-                                            p.barcode?.includes(productSearch)
-                                        )
-                                        .slice(0, 10)
-                                        .map(product => (
-                                            <button
-                                                key={product.id}
-                                                onClick={() => addProduct(product)}
-                                                className="w-full px-4 py-3 hover:bg-white/5 text-left border-b border-border last:border-0 transition-colors"
-                                            >
-                                                <div className="flex justify-between items-center">
-                                                    <div>
-                                                        <p className="font-medium text-white">{product.name}</p>
-                                                        <p className="text-xs text-secondary">{product.barcode}</p>
-                                                    </div>
-                                                    <span className="text-orange-400 font-bold">{product.sale_price} ₺</span>
+                        {productSearch && (
+                            <div className="mt-2 max-h-48 overflow-y-auto bg-card border border-border rounded-xl shadow-2xl">
+                                {products
+                                    .filter(p =>
+                                        p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
+                                        p.barcode?.includes(productSearch)
+                                    )
+                                    .slice(0, 10)
+                                    .map(product => (
+                                        <button
+                                            key={product.id}
+                                            onClick={() => addProduct(product)}
+                                            className="w-full px-4 py-2.5 hover:bg-orange-500/10 text-left border-b border-border/50 last:border-0 transition-colors"
+                                        >
+                                            <div className="flex justify-between items-center">
+                                                <div>
+                                                    <p className="font-bold text-foreground text-sm">{product.name}</p>
+                                                    <p className="text-[10px] text-secondary font-mono uppercase">{product.barcode || 'Barkodsuz'}</p>
                                                 </div>
-                                            </button>
-                                        ))
-                                    }
-                                </div>
-                            )
-                        }
-                    </div >
+                                                <span className="text-orange-500 font-bold font-mono text-sm">{formatCurrency(product.sale_price)}</span>
+                                            </div>
+                                        </button>
+                                    ))
+                                }
+                                {products.filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase()) || p.barcode?.includes(productSearch)).length === 0 && (
+                                    <div className="p-4 text-center text-secondary text-sm">Ürün bulunamadı</div>
+                                )}
+                            </div>
+                        )}
+                    </div>
 
-                    {/* Items Table */}
-                    < div className="glass-card p-6" >
-                        <h3 className="text-sm font-bold text-white mb-4">İade Edilecek Ürünler</h3>
+                    {/* Kalemler */}
+                    <div className="glass-card p-5 space-y-5 bg-white/[0.01]">
+                        <h2 className="text-[10px] font-bold text-orange-500 uppercase tracking-[0.25em] flex items-center gap-2 border-b border-white/5 pb-3">
+                            <Package className="w-4 h-4" />
+                            İade Edilecek Ürünler
+                        </h2>
 
                         <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="border-b border-white/10">
-                                        <th className="text-left py-3 px-2 text-xs font-bold text-secondary">Ürün</th>
-                                        <th className="text-center py-3 px-2 text-xs font-bold text-secondary">Miktar</th>
-                                        <th className="text-right py-3 px-2 text-xs font-bold text-secondary">Fiyat</th>
-                                        <th className="text-right py-3 px-2 text-xs font-bold text-secondary">Toplam</th>
-                                        <th className="text-left py-3 px-2 text-xs font-bold text-secondary">İade Sebebi</th>
-                                        <th className="w-10"></th>
+                            <table className="w-full text-xs">
+                                <thead className="text-secondary/60 font-semibold uppercase tracking-wider text-[9px] border-b border-white/5">
+                                    <tr>
+                                        <th className="px-4 py-3 text-left">Ürün</th>
+                                        <th className="px-4 py-3 text-center w-24">Miktar</th>
+                                        <th className="px-4 py-3 text-right w-28">Fiyat</th>
+                                        <th className="px-4 py-3 text-right w-32 bg-white/[0.02]">Toplam</th>
+                                        <th className="px-4 py-3 text-left w-48">İade Sebebi</th>
+                                        <th className="px-4 py-3 w-10"></th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody className="divide-y divide-white/5">
                                     {items.length === 0 ? (
                                         <tr>
-                                            <td colSpan={6} className="py-12 text-center text-secondary">
-                                                <RotateCcw className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                                                <p className="text-sm">Henüz iade ürünü eklenmedi</p>
+                                            <td colSpan={6} className="py-20 text-center">
+                                                <RotateCcw className="w-10 h-10 mx-auto mb-3 opacity-10 text-foreground" />
+                                                <p className="text-xs font-bold text-secondary/40 uppercase tracking-widest">Henüz iade ürünü eklenmedi</p>
                                             </td>
                                         </tr>
                                     ) : (
                                         items.map(item => (
-                                            <tr key={item.id} className="border-b border-white/5 hover:bg-white/5">
-                                                <td className="py-3 px-2">
-                                                    <p className="font-medium text-white text-sm">{item.product_name}</p>
-                                                    <p className="text-xs text-secondary">{item.product_code}</p>
+                                            <tr key={item.id} className="hover:bg-white/[0.02] group">
+                                                <td className="p-2">
+                                                    <p className="font-medium text-foreground">{item.product_name}</p>
+                                                    <p className="text-[10px] text-secondary/50 font-mono">{item.product_code}</p>
                                                 </td>
-                                                <td className="py-3 px-2">
+                                                <td className="p-2">
                                                     <input
                                                         type="number"
                                                         value={item.quantity}
                                                         onChange={(e) => updateQuantity(item.id, parseFloat(e.target.value) || 0)}
-                                                        className="w-20 px-2 py-1 bg-white/5 border border-white/10 rounded text-center text-white"
+                                                        className="w-full bg-orange-500/10 border border-orange-500/20 rounded-lg px-2 py-1.5 text-orange-500 font-bold text-center outline-none focus:border-orange-500"
                                                         min="0"
                                                         step="0.01"
                                                     />
                                                 </td>
-                                                <td className="py-3 px-2 text-right text-white">{item.unit_price.toFixed(2)} ₺</td>
-                                                <td className="py-3 px-2 text-right font-bold text-orange-400">-{item.total_amount.toFixed(2)} ₺</td>
-                                                <td className="py-3 px-2">
+                                                <td className="p-2 text-right font-mono text-foreground">{formatCurrency(item.unit_price)}</td>
+                                                <td className="p-2 text-right font-black text-orange-500 bg-orange-500/5 font-mono">-{formatCurrency(item.total_amount)}</td>
+                                                <td className="p-2">
                                                     <input
                                                         type="text"
                                                         value={item.return_reason}
                                                         onChange={(e) => updateReturnReason(item.id, e.target.value)}
                                                         placeholder="Sebep..."
-                                                        className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-xs text-white"
+                                                        className="w-full bg-background border border-border rounded-lg px-2 py-1.5 text-foreground text-xs outline-none focus:border-orange-500"
                                                     />
                                                 </td>
-                                                <td className="py-3 px-2">
+                                                <td className="p-2 text-center">
                                                     <button
                                                         onClick={() => removeItem(item.id)}
-                                                        className="p-1.5 hover:bg-red-500/20 rounded-lg transition-colors"
+                                                        className="text-rose-500/50 hover:text-rose-500 transition-colors"
                                                     >
-                                                        <Trash2 className="w-4 h-4 text-red-400" />
+                                                        <Trash2 className="w-4 h-4" />
                                                     </button>
                                                 </td>
                                             </tr>
@@ -429,58 +521,9 @@ export default function IadeFaturasi() {
                                 </tbody>
                             </table>
                         </div>
-                    </div >
-                </div >
-            </div >
-
-            {/* Customer Modal */}
-            {
-                showCustomerModal && (
-                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                        <div className="bg-card border border-border rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
-                            <div className="p-6 border-b border-border">
-                                <h3 className="text-xl font-bold text-white">Müşteri Seç</h3>
-                            </div>
-                            <div className="p-4">
-                                <input
-                                    type="text"
-                                    value={customerSearch}
-                                    onChange={(e) => setCustomerSearch(e.target.value)}
-                                    placeholder="Müşteri ara..."
-                                    className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white mb-4"
-                                />
-                                <div className="max-h-96 overflow-y-auto">
-                                    {customers
-                                        .filter(c => c.unvan.toLowerCase().includes(customerSearch.toLowerCase()))
-                                        .map(customer => (
-                                            <button
-                                                key={customer.id}
-                                                onClick={() => {
-                                                    setSelectedCustomer(customer);
-                                                    setShowCustomerModal(false);
-                                                    setCustomerSearch('');
-                                                }}
-                                                className="w-full px-4 py-3 hover:bg-white/5 text-left border-b border-border last:border-0"
-                                            >
-                                                <p className="font-medium text-white">{customer.unvan}</p>
-                                                <p className="text-xs text-secondary">{customer.vergi_no || customer.tc_no}</p>
-                                            </button>
-                                        ))
-                                    }
-                                </div>
-                            </div>
-                            <div className="p-4 border-t border-border">
-                                <button
-                                    onClick={() => setShowCustomerModal(false)}
-                                    className="w-full px-4 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-white transition-colors"
-                                >
-                                    Kapat
-                                </button>
-                            </div>
-                        </div>
                     </div>
-                )
-            }
-        </div >
+                </div>
+            </div>
+        </div>
     );
 }

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
-    ShoppingBag, Plus, Save, Search, Trash2, Calculator, Receipt, X, Check
+    ShoppingBag, Save, Search, Trash2, Receipt, Package
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useTenant } from '@/lib/tenant-context';
@@ -36,6 +36,7 @@ export default function PerakendeSatisFaturasi() {
     const [notes, setNotes] = useState('');
     const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'transfer'>('cash');
     const [isPaid, setIsPaid] = useState(true);
+    const isSavingRef = useRef(false);
 
     useEffect(() => {
         if (currentTenant) {
@@ -48,14 +49,14 @@ export default function PerakendeSatisFaturasi() {
     const generateInvoiceNo = async () => {
         const { data } = await supabase
             .from('invoices')
-            .select('invoice_no')
+            .select('invoice_number')
             .eq('tenant_id', currentTenant?.id)
-            .eq('invoice_type', 'perakende_satis')
+            .eq('invoice_type', 'retail')
             .order('created_at', { ascending: false })
             .limit(1);
 
         if (data && data.length > 0) {
-            const lastNo = parseInt(data[0].invoice_no.replace('PER', ''));
+            const lastNo = parseInt(data[0].invoice_number.replace('PER', '')) || 0;
             setInvoiceNo(`PER${String(lastNo + 1).padStart(8, '0')}`);
         } else {
             setInvoiceNo(`PER${String(1).padStart(8, '0')}`);
@@ -75,6 +76,7 @@ export default function PerakendeSatisFaturasi() {
         const { data } = await supabase
             .from('products')
             .select('*')
+            .eq('tenant_id', currentTenant?.id)
             .eq('status', 'active')
             .order('name');
         setProducts(data || []);
@@ -83,7 +85,7 @@ export default function PerakendeSatisFaturasi() {
     const addProduct = (product: any) => {
         const existingItem = items.find(i => i.product_id === product.id);
         if (existingItem) {
-            updateQuantity(existingItem.id, existingItem.quantity + 1);
+            updateQuantity(existingItem.id, Number(existingItem.quantity) + 1);
         } else {
             const vatAmount = (product.sale_price * product.vat_rate) / 100;
             const newItem: InvoiceItem = {
@@ -131,53 +133,67 @@ export default function PerakendeSatisFaturasi() {
     };
 
     const handleSave = async () => {
+        if (isSavingRef.current) return;
+        isSavingRef.current = true;
+
         if (!selectedCustomer) {
             alert('Lütfen müşteri seçin!');
+            isSavingRef.current = false;
             return;
         }
         if (items.length === 0) {
             alert('Lütfen en az bir ürün ekleyin!');
+            isSavingRef.current = false;
             return;
         }
 
         const totals = calculateTotals();
+        const paymentLabel = { cash: 'Nakit', card: 'Kredi Kartı', transfer: 'Havale/EFT' }[paymentMethod];
 
         const { data: invoice, error: invoiceError } = await supabase
             .from('invoices')
             .insert({
                 tenant_id: currentTenant?.id,
-                invoice_type: 'perakende_satis',
-                invoice_no: invoiceNo,
+                invoice_type: 'retail',
+                invoice_number: invoiceNo,
                 invoice_date: invoiceDate,
                 cari_id: selectedCustomer.id,
                 cari_name: selectedCustomer.unvani,
                 subtotal: totals.subtotal,
-                vat_total: totals.totalVat,
-                total_amount: totals.total,
-                payment_method: paymentMethod,
-                payment_status: isPaid ? 'paid' : 'pending',
-                notes: notes
+                total_vat: totals.totalVat,
+                grand_total: totals.total,
+                payment_status: isPaid ? 'paid' : 'unpaid',
+                notes: notes ? `${notes}\nÖdeme Yöntemi: ${paymentLabel}` : `Ödeme Yöntemi: ${paymentLabel}`
             })
             .select()
             .single();
 
         if (invoiceError) {
             alert('Hata: ' + invoiceError.message);
+            isSavingRef.current = false;
             return;
         }
 
-        const invoiceItems = items.map(item => ({
-            tenant_id: currentTenant?.id,
-            invoice_id: invoice.id,
-            product_id: item.product_id,
-            product_name: item.product_name,
-            quantity: Number(item.quantity) || 0,
-            unit_price: item.unit_price,
-            vat_rate: item.vat_rate,
-            vat_amount: item.vat_amount,
-            total_amount: item.total_amount,
-            unit: item.unit
-        }));
+        const invoiceItems = items.map(item => {
+            const qty = Number(item.quantity) || 0;
+            const lineTotal = item.unit_price * qty;
+            return {
+                tenant_id: currentTenant?.id,
+                invoice_id: invoice.id,
+                product_id: item.product_id,
+                item_name: item.product_name,
+                item_code: item.product_code || null,
+                quantity: qty,
+                unit_price: item.unit_price,
+                discount_rate: 0,
+                discount_amount: 0,
+                vat_rate: item.vat_rate,
+                vat_amount: item.vat_amount,
+                line_total: Math.round(lineTotal * 100) / 100,
+                line_total_with_vat: item.total_amount,
+                unit: item.unit
+            };
+        });
 
         const { error: itemsError } = await supabase
             .from('invoice_items')
@@ -185,6 +201,7 @@ export default function PerakendeSatisFaturasi() {
 
         if (itemsError) {
             alert('Hata: ' + itemsError.message);
+            isSavingRef.current = false;
             return;
         }
 
@@ -192,23 +209,31 @@ export default function PerakendeSatisFaturasi() {
         for (const item of items) {
             if (item.product_id) {
                 await supabase.rpc('decrement_stock', {
-                    product_id: item.product_id,
-                    qty: Number(item.quantity) || 0
+                    p_product_id: item.product_id,
+                    p_qty: Number(item.quantity) || 0
                 });
             }
         }
 
         // Cari hesap hareketi oluştur
-        await supabase.from('cari_hareketler').insert({
+        const { error: cariError } = await supabase.from('cari_hareketler').insert({
             tenant_id: currentTenant?.id,
             cari_id: selectedCustomer.id,
             hareket_tipi: 'fatura',
             aciklama: `Perakende Satış Faturası - ${invoiceNo}`,
             borc: totals.total,
             alacak: 0,
-            tarih: invoiceDate
+            tarih: invoiceDate,
+            belge_no: invoiceNo
         });
 
+        if (cariError) {
+            alert('Fatura kaydedildi ama cari hesaba işlenemedi: ' + cariError.message);
+            isSavingRef.current = false;
+            return;
+        }
+
+        isSavingRef.current = false;
         alert('Perakende satış faturası kaydedildi!');
         resetForm();
     };
@@ -224,52 +249,109 @@ export default function PerakendeSatisFaturasi() {
 
     const totals = calculateTotals();
 
+    const formatCurrency = (val: number) =>
+        new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val || 0);
+
     return (
-        <div className="space-y-4 max-w-[1800px] mx-auto p-4">
-            {/* Form & Content */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Left - Customer & Details */}
+        <div className="space-y-4 max-w-[1600px] mx-auto p-4">
+            {/* Header / Actions */}
+            <div className="flex items-center justify-end gap-2 pb-2 border-b border-white/5">
+                <button
+                    onClick={handleSave}
+                    className="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg transition-all active:scale-95"
+                >
+                    <Save className="w-4 h-4" />
+                    FATURAYI KAYDET
+                </button>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {/* Left - Fatura Bilgileri */}
                 <div className="lg:col-span-1 space-y-4">
-                    <div className="glass-card p-6">
-                        <div className="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
-                            <h3 className="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">Fatura Bilgileri</h3>
-                            <div className="text-right">
-                                <span className="text-[10px] text-secondary uppercase font-bold">Fatura No:</span>
-                                <div className="text-sm font-bold text-emerald-400 font-mono italic">{invoiceNo}</div>
-                            </div>
+                    <div className="glass-card p-5 space-y-5 bg-white/[0.01] relative z-50">
+                        <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                            <h2 className="text-[10px] font-bold text-primary uppercase tracking-[0.25em] flex items-center gap-2">
+                                <Receipt className="w-4 h-4" />
+                                Fatura Bilgileri
+                            </h2>
+                            <span className="text-xs font-bold text-emerald-500 font-mono">{invoiceNo}</span>
                         </div>
 
                         <div className="space-y-4">
-                            <div>
-                                <label className="block text-[10px] font-bold text-secondary uppercase tracking-widest mb-2">Fatura Tarihi</label>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-semibold text-secondary uppercase tracking-widest">Fatura Tarihi</label>
                                 <input
                                     type="date"
                                     value={invoiceDate}
                                     onChange={(e) => setInvoiceDate(e.target.value)}
-                                    className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-emerald-500"
+                                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
                                 />
                             </div>
 
-                            <div>
-                                <label className="block text-[10px] font-bold text-secondary uppercase tracking-widest mb-2">Müşteri</label>
+                            <div className="space-y-2 relative">
+                                <label className="text-[10px] font-semibold text-secondary uppercase tracking-widest">Müşteri</label>
                                 <button
-                                    onClick={() => setShowCustomerModal(true)}
-                                    className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-left hover:border-emerald-500 transition-colors"
+                                    onClick={() => setShowCustomerModal(!showCustomerModal)}
+                                    className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-2.5 text-left text-sm font-medium text-white hover:border-primary/30 transition-all flex items-center justify-between shadow-sm"
                                 >
-                                    {selectedCustomer ? (
-                                        <span className="text-white font-medium">{selectedCustomer.unvani}</span>
-                                    ) : (
-                                        <span className="text-secondary text-sm">Müşteri Seç...</span>
-                                    )}
+                                    <span className={selectedCustomer ? 'text-white' : 'text-secondary/50'}>
+                                        {selectedCustomer?.unvani || 'Müşteri seçin...'}
+                                    </span>
+                                    <Search className="w-4 h-4 text-secondary/40" />
                                 </button>
+
+                                {showCustomerModal && (
+                                    <div className="absolute z-50 top-full mt-2 w-full bg-card border border-border rounded-xl shadow-2xl max-h-72 overflow-y-auto">
+                                        <div className="sticky top-0 bg-card p-3 border-b border-border">
+                                            <input
+                                                type="text"
+                                                value={customerSearch}
+                                                onChange={(e) => setCustomerSearch(e.target.value)}
+                                                placeholder="Müşteri ara..."
+                                                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
+                                                autoFocus
+                                            />
+                                        </div>
+                                        <div>
+                                            {customers
+                                                .filter(c => (c.unvani || '').toLowerCase().includes(customerSearch.toLowerCase()))
+                                                .map(customer => (
+                                                    <button
+                                                        key={customer.id}
+                                                        onClick={() => {
+                                                            setSelectedCustomer(customer);
+                                                            setShowCustomerModal(false);
+                                                            setCustomerSearch('');
+                                                        }}
+                                                        className="w-full px-4 py-3 text-left hover:bg-primary/10 transition-colors border-b border-border/50 last:border-0"
+                                                    >
+                                                        <div className="font-bold text-sm text-foreground">{customer.unvani}</div>
+                                                        <div className="text-xs text-secondary">{customer.vergi_no || customer.tc_no || 'Kimlik bilgisi yok'}</div>
+                                                    </button>
+                                                ))
+                                            }
+                                            {customers.filter(c => (c.unvani || '').toLowerCase().includes(customerSearch.toLowerCase())).length === 0 && (
+                                                <div className="p-4 text-center text-secondary text-sm">Müşteri bulunamadı</div>
+                                            )}
+                                        </div>
+                                        <div className="sticky bottom-0 bg-card p-2 border-t border-border">
+                                            <button
+                                                onClick={() => setShowCustomerModal(false)}
+                                                className="w-full px-3 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-xs font-bold transition-all"
+                                            >
+                                                Kapat
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
-                            <div>
-                                <label className="block text-[10px] font-bold text-secondary uppercase tracking-widest mb-2">Ödeme Yöntemi</label>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-semibold text-secondary uppercase tracking-widest">Ödeme Yöntemi</label>
                                 <select
                                     value={paymentMethod}
                                     onChange={(e) => setPaymentMethod(e.target.value as any)}
-                                    className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-emerald-500"
+                                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
                                 >
                                     <option value="cash">Nakit</option>
                                     <option value="card">Kredi Kartı</option>
@@ -277,77 +359,73 @@ export default function PerakendeSatisFaturasi() {
                                 </select>
                             </div>
 
-                            <div className="flex items-center gap-2 pt-2">
+                            <div className="flex items-center gap-2">
                                 <input
                                     type="checkbox"
                                     id="isPaid"
                                     checked={isPaid}
                                     onChange={(e) => setIsPaid(e.target.checked)}
-                                    className="w-4 h-4 rounded border-white/10 accent-emerald-500"
+                                    className="w-4 h-4 rounded border-border accent-primary"
                                 />
-                                <label htmlFor="isPaid" className="text-xs font-bold text-secondary uppercase tracking-widest cursor-pointer">
+                                <label htmlFor="isPaid" className="text-xs font-semibold text-secondary uppercase tracking-widest cursor-pointer">
                                     Ödeme Alındı
                                 </label>
                             </div>
 
-                            <div className="pt-2">
-                                <label className="block text-[10px] font-bold text-secondary uppercase tracking-widest mb-2">Notlar</label>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-semibold text-secondary uppercase tracking-widest">Notlar</label>
                                 <textarea
                                     value={notes}
                                     onChange={(e) => setNotes(e.target.value)}
                                     rows={3}
-                                    className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-emerald-500 resize-none text-sm"
+                                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:border-primary resize-none"
                                     placeholder="Fatura notu..."
                                 />
                             </div>
                         </div>
                     </div>
 
-                    {/* Totals */}
-                    <div className="glass-card p-6 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-500/20">
-                        <div className="space-y-3">
+                    {/* Toplamlar */}
+                    <div className="glass-card p-4 space-y-3">
+                        <div className="space-y-2">
                             <div className="flex justify-between items-center">
-                                <span className="text-xs font-bold text-secondary uppercase tracking-wider">Ara Toplam</span>
-                                <span className="text-lg font-bold text-white font-mono">{totals.subtotal.toFixed(2)} ₺</span>
+                                <span className="text-xs text-secondary">Ara Toplam:</span>
+                                <span className="text-sm font-bold text-foreground font-mono">{formatCurrency(totals.subtotal)}</span>
                             </div>
                             <div className="flex justify-between items-center">
-                                <span className="text-xs font-bold text-emerald-500 uppercase tracking-wider">KDV Toplamı</span>
-                                <span className="text-lg font-bold text-emerald-400 font-mono">+{totals.totalVat.toFixed(2)} ₺</span>
+                                <span className="text-xs text-emerald-500">KDV Toplam:</span>
+                                <span className="text-sm font-bold text-emerald-500 font-mono">+{formatCurrency(totals.totalVat)}</span>
                             </div>
-                            <div className="h-px bg-white/10 my-2" />
-                            <div className="flex justify-between items-center">
-                                <span className="text-[10px] font-black text-white uppercase tracking-[0.2em]">GENEL TOPLAM</span>
-                                <span className="text-3xl font-black text-emerald-400 font-mono tracking-tighter">{totals.total.toFixed(2)} <span className="text-xs ml-1">₺</span></span>
+                            <div className="border-t border-white/5 pt-4">
+                                <div className="bg-emerald-500/10 rounded-2xl border border-emerald-500/20 p-5 flex flex-col gap-1 items-end relative overflow-hidden group">
+                                    <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl group-hover:scale-150 transition-transform duration-700" />
+                                    <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-[0.3em]">Genel Toplam (KDV DAHİL)</span>
+                                    <span className="text-3xl font-bold text-emerald-500 font-mono tracking-tighter">
+                                        {formatCurrency(totals.total).replace('₺', '')} <span className="text-sm">₺</span>
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
-
-                    <button
-                        onClick={handleSave}
-                        className="w-full px-6 py-4 bg-emerald-500 hover:bg-emerald-600 rounded-xl font-bold text-white transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-95"
-                    >
-                        <Save className="w-5 h-5" />
-                        Faturayı Kaydet
-                    </button>
                 </div>
 
-                {/* Right - Products */}
+                {/* Right - Ürünler / Sepet */}
                 <div className="lg:col-span-2 space-y-4">
-                    {/* Product Search */}
-                    <div className="glass-card p-4">
+                    {/* Ürün Arama */}
+                    <div className="glass-card p-4 relative z-40">
                         <div className="relative">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary/40" />
                             <input
                                 type="text"
                                 value={productSearch}
                                 onChange={(e) => setProductSearch(e.target.value)}
                                 placeholder="Ürün ara (isim veya barkod)..."
-                                className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-emerald-500"
+                                className="w-full bg-background border border-border rounded-lg pl-10 pr-3 py-2.5 text-sm text-foreground outline-none focus:border-primary"
                             />
                         </div>
 
                         {productSearch && (
-                            <div className="mt-2 max-h-48 overflow-y-auto bg-card border border-border rounded-xl shadow-2xl z-50">
+                            <div className="mt-2 max-h-48 overflow-y-auto bg-card border border-border rounded-xl shadow-2xl">
                                 {products
                                     .filter(p =>
                                         p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
@@ -358,57 +436,60 @@ export default function PerakendeSatisFaturasi() {
                                         <button
                                             key={product.id}
                                             onClick={() => addProduct(product)}
-                                            className="w-full px-4 py-3 hover:bg-emerald-500/10 text-left border-b border-border/50 last:border-0 transition-colors"
+                                            className="w-full px-4 py-2.5 hover:bg-primary/10 text-left border-b border-border/50 last:border-0 transition-colors"
                                         >
                                             <div className="flex justify-between items-center">
                                                 <div>
-                                                    <p className="font-bold text-white text-sm">{product.name}</p>
-                                                    <p className="text-[10px] text-secondary font-mono tracking-widest uppercase">{product.barcode || 'Barkodsuz'}</p>
+                                                    <p className="font-bold text-foreground text-sm">{product.name}</p>
+                                                    <p className="text-[10px] text-secondary font-mono uppercase">{product.barcode || 'Barkodsuz'}</p>
                                                 </div>
-                                                <span className="text-emerald-400 font-black font-mono">{product.sale_price.toFixed(2)} ₺</span>
+                                                <span className="text-emerald-500 font-bold font-mono text-sm">{formatCurrency(product.sale_price)}</span>
                                             </div>
                                         </button>
                                     ))
                                 }
+                                {products.filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase()) || p.barcode?.includes(productSearch)).length === 0 && (
+                                    <div className="p-4 text-center text-secondary text-sm">Ürün bulunamadı</div>
+                                )}
                             </div>
                         )}
                     </div>
 
-                    {/* Items Table */}
-                    <div className="glass-card p-6 min-h-[400px] flex flex-col">
-                        <h3 className="text-[10px] font-bold text-emerald-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
-                            <Receipt className="w-4 h-4" />
+                    {/* Kalemler */}
+                    <div className="glass-card p-5 space-y-5 bg-white/[0.01]">
+                        <h2 className="text-[10px] font-bold text-primary uppercase tracking-[0.25em] flex items-center gap-2 border-b border-white/5 pb-3">
+                            <Package className="w-4 h-4" />
                             Fatura Kalemleri (Sepet)
-                        </h3>
+                        </h2>
 
-                        <div className="overflow-x-auto flex-1">
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="border-b border-white/5">
-                                        <th className="text-left py-3 px-2 text-[10px] font-bold text-secondary uppercase tracking-widest">Ürün Bilgisi</th>
-                                        <th className="text-center py-3 px-2 text-[10px] font-bold text-secondary uppercase tracking-widest w-24">Miktar</th>
-                                        <th className="text-right py-3 px-2 text-[10px] font-bold text-secondary uppercase tracking-widest w-28">Birim Fiyat</th>
-                                        <th className="text-center py-3 px-2 text-[10px] font-bold text-secondary uppercase tracking-widest w-20">KDV</th>
-                                        <th className="text-right py-3 px-2 text-[10px] font-bold text-secondary uppercase tracking-widest w-32">Satır Toplam</th>
-                                        <th className="w-10"></th>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-xs">
+                                <thead className="text-secondary/60 font-semibold uppercase tracking-wider text-[9px] border-b border-white/5">
+                                    <tr>
+                                        <th className="px-4 py-3 text-left">Ürün/Hizmet Açıklaması</th>
+                                        <th className="px-4 py-3 text-center w-24">Miktar</th>
+                                        <th className="px-4 py-3 text-right w-28">Birim Fiyat</th>
+                                        <th className="px-4 py-3 text-center w-20">KDV %</th>
+                                        <th className="px-4 py-3 text-right w-32 bg-white/[0.02]">Toplam</th>
+                                        <th className="px-4 py-3 w-10"></th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody className="divide-y divide-white/5">
                                     {items.length === 0 ? (
                                         <tr>
-                                            <td colSpan={6} className="py-24 text-center">
-                                                <ShoppingBag className="w-16 h-16 mx-auto mb-4 opacity-10 text-white" />
-                                                <p className="text-sm font-bold text-secondary uppercase tracking-widest">Henüz ürün eklenmedi</p>
+                                            <td colSpan={6} className="py-20 text-center">
+                                                <ShoppingBag className="w-10 h-10 mx-auto mb-3 opacity-10 text-foreground" />
+                                                <p className="text-xs font-bold text-secondary/40 uppercase tracking-widest">Henüz ürün eklenmedi</p>
                                             </td>
                                         </tr>
                                     ) : (
                                         items.map(item => (
-                                            <tr key={item.id} className="border-b border-white/5 hover:bg-white/[0.02] group transition-colors">
-                                                <td className="py-4 px-2">
-                                                    <p className="font-bold text-white text-sm">{item.product_name}</p>
-                                                    <p className="text-[10px] text-secondary font-mono">{item.product_code}</p>
+                                            <tr key={item.id} className="hover:bg-white/[0.02] group">
+                                                <td className="p-2">
+                                                    <p className="font-medium text-foreground">{item.product_name}</p>
+                                                    <p className="text-[10px] text-secondary/50 font-mono">{item.product_code}</p>
                                                 </td>
-                                                <td className="py-4 px-2">
+                                                <td className="p-2">
                                                     <input
                                                         type="text"
                                                         inputMode="decimal"
@@ -419,18 +500,18 @@ export default function PerakendeSatisFaturasi() {
                                                             const cleaned = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : val;
                                                             updateQuantity(item.id, cleaned);
                                                         }}
-                                                        className="w-full bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-2 py-1.5 text-center text-emerald-400 font-bold focus:border-emerald-500 outline-none"
+                                                        className="w-full bg-primary/10 border border-primary/20 rounded-lg px-2 py-1.5 text-primary font-bold text-center outline-none focus:border-primary"
                                                     />
                                                 </td>
-                                                <td className="py-4 px-2 text-right text-white font-mono text-xs">{item.unit_price.toFixed(2)} ₺</td>
-                                                <td className="py-4 px-2 text-center">
-                                                    <span className="text-[10px] font-bold text-emerald-500/70 bg-emerald-500/5 px-2 py-1 rounded">%{item.vat_rate}</span>
+                                                <td className="p-2 text-right font-mono text-foreground">{formatCurrency(item.unit_price)}</td>
+                                                <td className="p-2 text-center">
+                                                    <span className="text-secondary">%{item.vat_rate}</span>
                                                 </td>
-                                                <td className="py-4 px-2 text-right font-black text-white font-mono">{item.total_amount.toFixed(2)} ₺</td>
-                                                <td className="py-4 px-2 text-center">
+                                                <td className="p-2 text-right font-black text-foreground bg-primary/5 font-mono">{formatCurrency(item.total_amount)}</td>
+                                                <td className="p-2 text-center">
                                                     <button
                                                         onClick={() => removeItem(item.id)}
-                                                        className="p-2 text-rose-500/30 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all"
+                                                        className="text-rose-500/50 hover:text-rose-500 transition-colors"
                                                     >
                                                         <Trash2 className="w-4 h-4" />
                                                     </button>
@@ -444,59 +525,6 @@ export default function PerakendeSatisFaturasi() {
                     </div>
                 </div>
             </div>
-
-            {/* Customer Modal */}
-            {showCustomerModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
-                    <div className="bg-card border border-border rounded-3xl max-w-2xl w-full max-h-[80vh] overflow-hidden shadow-2xl flex flex-col">
-                        <div className="p-6 border-b border-white/5 flex items-center justify-between">
-                            <h3 className="text-xl font-black text-white tracking-tight uppercase">Müşteri Seçimi</h3>
-                            <button onClick={() => setShowCustomerModal(false)} className="p-2 hover:bg-white/5 rounded-full text-secondary hover:text-white transition-all">
-                                <X className="w-6 h-6" />
-                            </button>
-                        </div>
-                        <div className="p-6 overflow-hidden flex flex-col">
-                            <div className="relative mb-6">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary" />
-                                <input
-                                    type="text"
-                                    value={customerSearch}
-                                    onChange={(e) => setCustomerSearch(e.target.value)}
-                                    placeholder="Müşteri ara (isim, vkn, tckn)..."
-                                    className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-white outline-none focus:border-emerald-500 font-medium"
-                                    autoFocus
-                                />
-                            </div>
-                            <div className="overflow-y-auto flex-1 space-y-2 pr-2 custom-scrollbar">
-                                {customers
-                                    .filter(c => (c.unvani || '').toLowerCase().includes(customerSearch.toLowerCase()))
-                                    .map(customer => (
-                                        <button
-                                            key={customer.id}
-                                            onClick={() => {
-                                                setSelectedCustomer(customer);
-                                                setShowCustomerModal(false);
-                                                setCustomerSearch('');
-                                            }}
-                                            className="w-full px-5 py-4 bg-white/[0.02] hover:bg-emerald-500/10 border border-white/5 rounded-2xl text-left transition-all group"
-                                        >
-                                            <div className="flex justify-between items-center">
-                                                <div>
-                                                    <p className="font-bold text-white group-hover:text-emerald-400 transition-colors uppercase tracking-tight">{customer.unvani}</p>
-                                                    <p className="text-[10px] text-secondary font-mono mt-1 uppercase tracking-widest">{customer.vergi_no || customer.tc_no || 'Kimlik Bilgisi Yok'}</p>
-                                                </div>
-                                                <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
-                                                    <Check className="w-4 h-4 text-emerald-500" />
-                                                </div>
-                                            </div>
-                                        </button>
-                                    ))
-                                }
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
