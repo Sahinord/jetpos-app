@@ -45,6 +45,7 @@ export default function JetKDS({ showToast }: any) {
     const [stations, setStations] = useState<any[]>([]);
     const [selectedStation, setSelectedStation] = useState<string>("all");
     const [loading, setLoading] = useState(true);
+    const [fetchError, setFetchError] = useState<string | null>(null);
     const [soundEnabled, setSoundEnabled] = useState(true);
     const prevOrdersCountRef = useRef<number>(0);
 
@@ -179,6 +180,11 @@ export default function JetKDS({ showToast }: any) {
         }
     };
 
+    const describeError = (error: any): string => {
+        if (!error) return "Bilinmeyen hata";
+        return error.message || error.details || error.hint || error.code || JSON.stringify(error);
+    };
+
     const fetchStations = async () => {
         if (!currentTenant) return;
         try {
@@ -188,11 +194,10 @@ export default function JetKDS({ showToast }: any) {
                 .eq("tenant_id", currentTenant.id)
                 .eq("is_active", true)
                 .order("sort_order");
-            if (!error && data) {
-                setStations(data);
-            }
+            if (error) throw error;
+            if (data) setStations(data);
         } catch (e) {
-            console.error("Error fetching stations:", e);
+            console.error("Error fetching stations:", describeError(e));
         }
     };
 
@@ -240,8 +245,11 @@ export default function JetKDS({ showToast }: any) {
                 setOrders([]);
                 prevOrdersCountRef.current = 0;
             }
+            setFetchError(null);
         } catch (error: any) {
-            console.error("KDS Fetch Error:", error);
+            const message = describeError(error);
+            console.error("KDS Fetch Error:", message, error);
+            setFetchError(message);
         } finally {
             setLoading(false);
         }
@@ -418,6 +426,25 @@ export default function JetKDS({ showToast }: any) {
                     </button>
                 </div>
             </div>
+
+            {/* Fetch Error Banner */}
+            {fetchError && (
+                <div className="flex items-center justify-between gap-3 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-400">
+                    <div className="flex items-center gap-3">
+                        <AlertCircle size={18} className="flex-shrink-0" />
+                        <div>
+                            <p className="text-xs font-black uppercase tracking-wider">Siparişler yüklenemedi</p>
+                            <p className="text-xs opacity-80 mt-0.5">{fetchError}</p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={fetchOrders}
+                        className="px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 flex-shrink-0"
+                    >
+                        Tekrar Dene
+                    </button>
+                </div>
+            )}
 
             {/* Main process board */}
             {loading && orders.length === 0 ? (

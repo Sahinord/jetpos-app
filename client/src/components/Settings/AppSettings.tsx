@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useTranslation, Language } from "@/lib/i18n";
 import {
-    Monitor, Palette, CheckCircle2, Globe,
+    Monitor, Palette, CheckCircle2,
     Shield, Database, HelpCircle, Volume2, VolumeX,
     Info, ExternalLink, Users, Tag, AlertTriangle,
     BookOpen, PlayCircle, Zap, Printer, Banknote, Receipt,
@@ -111,7 +111,7 @@ export default function AppSettings({
     cfdSettings,
     setCfdSettings
 }: any) {
-    const { language, setLanguage, t } = useTranslation();
+    const { language, setLanguage } = useTranslation();
     const [systemPrinters, setSystemPrinters] = useState<{ name: string; isDefault: boolean; status: number }[]>([]);
     const [sidebarPos, setSidebarPos] = useState<SidebarPosition>('left');
 
