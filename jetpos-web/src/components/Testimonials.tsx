@@ -23,7 +23,7 @@ const stories = [
     },
     {
         id: 3,
-        name: "Zeynep Arslan",
+        name: "Caner Polat",
         type: "Pet Shop Sahibi",
         city: "İzmir",
         image: "/petshop.png",
@@ -31,7 +31,7 @@ const stories = [
     },
     {
         id: 4,
-        name: "Caner Polat",
+        name: "Zeynep Arslan",
         type: "Kafe Sahibi",
         city: "Antalya",
         image: "/kafe.png",

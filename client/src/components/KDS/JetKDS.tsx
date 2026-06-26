@@ -361,25 +361,25 @@ export default function JetKDS({ showToast }: any) {
     };
 
     return (
-        <div className="flex flex-col h-[calc(100vh-100px)] gap-4 overflow-hidden text-foreground bg-background p-4 rounded-3xl border border-border shadow-2xl">
+        <div className="flex flex-col min-h-[calc(100vh-100px)] md:h-[calc(100vh-100px)] gap-3 md:gap-4 md:overflow-hidden text-foreground bg-background p-2.5 md:p-4 rounded-2xl md:rounded-3xl border border-border shadow-2xl">
             {/* Top Toolbar */}
-            <div className="flex flex-wrap items-center justify-between gap-4 bg-card/40 p-4 rounded-2xl border border-border backdrop-blur-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-card/40 p-3 md:p-4 rounded-2xl border border-border backdrop-blur-xl">
                 <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-primary/10 border border-primary/20 rounded-xl flex items-center justify-center text-primary">
-                        <ChefHat size={24} />
+                    <div className="w-10 h-10 md:w-12 md:h-12 bg-primary/10 border border-primary/20 rounded-xl flex items-center justify-center text-primary flex-shrink-0">
+                        <ChefHat size={22} />
                     </div>
-                    <div>
-                        <h1 className="text-lg font-black uppercase tracking-wider">JetKDS (Mutfak Ekranı)</h1>
-                        <p className="text-xs text-secondary font-bold">Gerçek Zamanlı Mutfak Yönetim Paneli</p>
+                    <div className="min-w-0">
+                        <h1 className="text-sm md:text-lg font-black uppercase tracking-wider truncate">JetKDS (Mutfak Ekranı)</h1>
+                        <p className="text-[10px] md:text-xs text-secondary font-bold truncate">Gerçek Zamanlı Mutfak Yönetim Paneli</p>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-2">
                     {/* Station Tabs */}
-                    <div className="flex items-center gap-1.5 bg-muted p-1.5 rounded-xl border border-border">
+                    <div className="flex items-center gap-1.5 bg-muted p-1.5 rounded-xl border border-border overflow-x-auto custom-scrollbar flex-1 sm:flex-initial">
                         <button
                             onClick={() => setSelectedStation("all")}
-                            className={`px-4 py-2 rounded-lg text-xs font-black transition-all ${
+                            className={`px-3 md:px-4 py-2 rounded-lg text-xs font-black transition-all flex-shrink-0 ${
                                 selectedStation === "all"
                                 ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
                                 : "text-secondary hover:bg-muted/50 hover:text-foreground"
@@ -391,7 +391,7 @@ export default function JetKDS({ showToast }: any) {
                             <button
                                 key={st.id}
                                 onClick={() => setSelectedStation(st.id)}
-                                className={`px-4 py-2 rounded-lg text-xs font-black transition-all uppercase ${
+                                className={`px-3 md:px-4 py-2 rounded-lg text-xs font-black transition-all uppercase flex-shrink-0 whitespace-nowrap ${
                                     selectedStation === st.id
                                     ? "text-primary-foreground shadow-lg"
                                     : "text-secondary hover:bg-muted/50 hover:text-foreground"
@@ -406,7 +406,7 @@ export default function JetKDS({ showToast }: any) {
                     {/* Sound Switcher */}
                     <button
                         onClick={() => setSoundEnabled(!soundEnabled)}
-                        className={`p-3 rounded-xl border transition-all ${
+                        className={`p-2.5 md:p-3 rounded-xl border transition-all flex-shrink-0 ${
                             soundEnabled
                             ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
                             : "bg-rose-500/10 border-rose-500/20 text-rose-400"
@@ -419,7 +419,7 @@ export default function JetKDS({ showToast }: any) {
                     {/* Manual Refresh */}
                     <button
                         onClick={fetchOrders}
-                        className="p-3 bg-card hover:bg-muted border border-border rounded-xl text-secondary"
+                        className="p-2.5 md:p-3 bg-card hover:bg-muted border border-border rounded-xl text-secondary flex-shrink-0"
                         title="Yenile"
                     >
                         <RefreshCw size={16} />
@@ -429,17 +429,17 @@ export default function JetKDS({ showToast }: any) {
 
             {/* Fetch Error Banner */}
             {fetchError && (
-                <div className="flex items-center justify-between gap-3 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-400">
-                    <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 md:p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-400">
+                    <div className="flex items-center gap-3 min-w-0">
                         <AlertCircle size={18} className="flex-shrink-0" />
-                        <div>
+                        <div className="min-w-0">
                             <p className="text-xs font-black uppercase tracking-wider">Siparişler yüklenemedi</p>
-                            <p className="text-xs opacity-80 mt-0.5">{fetchError}</p>
+                            <p className="text-xs opacity-80 mt-0.5 break-words">{fetchError}</p>
                         </div>
                     </div>
                     <button
                         onClick={fetchOrders}
-                        className="px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 flex-shrink-0"
+                        className="px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 flex-shrink-0 self-start sm:self-auto"
                     >
                         Tekrar Dene
                     </button>
@@ -448,12 +448,12 @@ export default function JetKDS({ showToast }: any) {
 
             {/* Main process board */}
             {loading && orders.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center">
+                <div className="flex-1 flex items-center justify-center py-16">
                     <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
                 </div>
             ) : (
-                <div className="flex-1 grid grid-cols-3 gap-4 min-h-0">
-                    
+                <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 min-h-0">
+
                     {/* Columns grid mapping */}
                     {[
                         { key: "new", title: "YENİ SİPARİŞLER", color: "border-blue-500/30 bg-blue-500/5 text-blue-400", list: columns.new, actionIcon: Play, actionLabel: "HAZIRLA" },
@@ -462,17 +462,17 @@ export default function JetKDS({ showToast }: any) {
                     ].map(col => {
                         const Icon = col.actionIcon;
                         return (
-                            <div key={col.key} className="flex flex-col h-full bg-card/20 border border-border rounded-2xl min-h-0 shadow-sm">
+                            <div key={col.key} className="flex flex-col h-[70vh] md:h-full bg-card/20 border border-border rounded-2xl min-h-0 shadow-sm">
                                 {/* Column Header */}
                                 <div className={`px-4 py-3.5 border-b border-border flex items-center justify-between rounded-t-2xl bg-muted/30`}>
                                     <div className="flex items-center gap-2">
-                                        <div className={`w-2.5 h-2.5 rounded-full ${
+                                        <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
                                             col.key === 'new' ? 'bg-blue-500' :
                                             col.key === 'preparing' ? 'bg-orange-500' : 'bg-emerald-500'
                                         }`} />
-                                        <span className="text-xs font-black tracking-widest text-secondary">{col.title}</span>
+                                        <span className="text-[11px] md:text-xs font-black tracking-widest text-secondary">{col.title}</span>
                                     </div>
-                                    <span className="text-xs font-black bg-background px-2 py-0.5 rounded-md text-foreground">
+                                    <span className="text-xs font-black bg-background px-2 py-0.5 rounded-md text-foreground flex-shrink-0">
                                         {col.list.length}
                                     </span>
                                 </div>

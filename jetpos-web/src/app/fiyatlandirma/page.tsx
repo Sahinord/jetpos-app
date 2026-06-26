@@ -54,14 +54,14 @@ const plans = [
         yearlyPrice: 679,
         highlight: false,
         badge: "⭐ En Popüler",
-        badgeColor: "#a78bfa",
-        color: "#a78bfa",
+        badgeColor: "#8b5cf6",
+        color: "#8b5cf6",
         cta: "14 Gün Ücretsiz Dene",
         users: "3 Kullanıcı",
         features: [
             { text: "Tüm Starter özellikleri" },
-            { text: "E-Fatura & E-Arşiv", tag: "Dahil", tagColor: "#a78bfa" },
-            { text: "Yapay Zeka Analizleri", tag: "Dahil", tagColor: "#a78bfa" },
+            { text: "E-Fatura & E-Arşiv", tag: "Dahil", tagColor: "#8b5cf6" },
+            { text: "Yapay Zeka Analizleri", tag: "Dahil", tagColor: "#8b5cf6" },
             { text: "Depo Yönetimi" },
             { text: "Cari Hesap Yönetimi" },
             { text: "Personel Takibi" },
@@ -86,8 +86,8 @@ const plans = [
         originalYearly: 21255,
         highlight: true,
         badge: "⚡ En İyi Değer",
-        badgeColor: "#059669",
-        color: "#34d399",
+        badgeColor: "#5A659F",
+        color: "#5A659F",
         cta: "Bu Planı Seç",
         users: "Sınırsız",
         features: [
@@ -96,7 +96,7 @@ const plans = [
             { text: "Çoklu Şube (3'e kadar)" },
             { text: "KDV & Mizan Raporları" },
             { text: "Trendyol Entegrasyonu", tag: "Hediye", tagColor: "#22c55e" },
-            { text: "İkas Entegrasyonu", tag: "Hediye", tagColor: "#22c55e" },
+            { text: "Yazarkasa POS Entegrasyonu", tag: "Hediye", tagColor: "#22c55e" },
             { text: "Özel Barkod Yazdırma" },
             { text: "Ücretsiz Kurulum & Geçiş", tag: "Hediye", tagColor: "#22c55e" },
             { text: "Barkod Okuyucu", tag: "Hediye", tagColor: "#22c55e" },
@@ -114,8 +114,8 @@ const plans = [
         yearlyPrice: 0,
         highlight: false,
         badge: "Teklif Al",
-        badgeColor: "#ec4899",
-        color: "#ec4899",
+        badgeColor: "#9AA7DF",
+        color: "#9AA7DF",
         isCustom: true,
         cta: "Bize Ulaşın",
         users: "Sınırsız",
@@ -209,8 +209,7 @@ function PlanCard({ plan, yearly }: { plan: typeof plans[0]; yearly: boolean }) 
     return (
         <motion.div
             initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             style={{ position: "relative", display: "flex", flexDirection: "column" }}
         >
@@ -219,9 +218,9 @@ function PlanCard({ plan, yearly }: { plan: typeof plans[0]; yearly: boolean }) 
                 <div style={{
                     position: "absolute", top: "-1px", left: "50%", transform: "translateX(-50%)",
                     background: plan.highlight
-                        ? "linear-gradient(135deg, #047857, #059669)"
+                        ? "linear-gradient(135deg, #5A659F, #7886C7)"
                         : plan.badge === "⭐ En Popüler"
-                            ? "linear-gradient(135deg, #6d28d9, #7c3aed)"
+                            ? "linear-gradient(135deg, #8b5cf6, #a78bfa)"
                             : plan.badgeColor,
                     color: "white", fontSize: "0.68rem", fontWeight: 700,
                     padding: "0.3rem 1rem", borderRadius: "0 0 0.625rem 0.625rem",
@@ -232,8 +231,8 @@ function PlanCard({ plan, yearly }: { plan: typeof plans[0]; yearly: boolean }) 
             )}
 
             <div style={{
-                background: plan.highlight ? "rgba(5,150,105,0.02)" : "white",
-                border: `1px solid ${plan.highlight ? "rgba(52,211,153,0.3)" : plan.badge === "⭐ En Popüler" ? "rgba(139,92,246,0.3)" : "rgba(120,134,199,0.15)"}`,
+                background: plan.highlight ? "rgba(120,134,199,0.04)" : "white",
+                border: `1px solid ${plan.highlight ? "rgba(90,101,159,0.3)" : plan.badge === "⭐ En Popüler" ? "rgba(139,92,246,0.3)" : "rgba(120,134,199,0.15)"}`,
                 borderRadius: "1rem",
                 padding: "1.25rem",
                 display: "flex", flexDirection: "column", gap: "1rem",
@@ -299,24 +298,23 @@ function PlanCard({ plan, yearly }: { plan: typeof plans[0]; yearly: boolean }) 
                         display: "block", textAlign: "center",
                         width: "100%", padding: "0.9rem",
                         borderRadius: "0.875rem",
-                        border: "none",
+                        border: plan.highlight || plan.badge === "⭐ En Popüler" || isCustom ? "none" : "1px solid rgba(120, 134, 199, 0.3)",
                         background: plan.highlight
-                            ? "linear-gradient(135deg, #059669, #34d399)"
+                            ? "linear-gradient(135deg, #5A659F, #7886C7)"
                             : plan.badge === "⭐ En Popüler"
-                                ? "linear-gradient(135deg, #6d28d9, #7c3aed)"
+                                ? "linear-gradient(135deg, #8b5cf6, #a78bfa)"
                                 : isCustom
-                                    ? "linear-gradient(135deg, #be185d, #ec4899)"
-                                    : "rgba(255,255,255,0.07)",
+                                    ? "linear-gradient(135deg, #7886C7, #9AA7DF)"
+                                    : "rgba(120, 134, 199, 0.08)",
                         color: (plan.highlight || plan.badge === "⭐ En Popüler" || isCustom) ? "white" : "#7886C7", fontWeight: 700, fontSize: "0.95rem",
                         cursor: "pointer", textDecoration: "none",
-                        boxShadow: plan.highlight ? "0 4px 16px rgba(52,211,153,0.3)" : plan.badge === "⭐ En Popüler" ? "0 4px 16px rgba(124,58,237,0.35)" : "none",
-                        border2: plan.highlight || plan.badge === "⭐ En Popüler" || isCustom ? "none" : "1px solid rgba(255,255,255,0.12)",
-                    } as any}
+                        boxShadow: plan.highlight ? "0 4px 16px rgba(90,101,159,0.3)" : plan.badge === "⭐ En Popüler" ? "0 4px 16px rgba(139,92,246,0.35)" : "none",
+                    }}
                 >
                     {plan.cta}
                 </Link>
 
-                <div style={{ height: "1px", background: "rgba(255,255,255,0.06)" }} />
+                <div style={{ height: "1px", background: "rgba(120, 134, 199, 0.12)" }} />
 
                 {/* Features */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem", flex: 1 }}>
@@ -744,11 +742,11 @@ function FiyatlandirmaContent() {
                                     <div style={{ display: "flex", alignItems: "center", gap: "1.25rem" }}>
                                         <div style={{ width: "3.25rem", height: "3.25rem", borderRadius: "50%", backgroundImage: "linear-gradient(135deg, #7886C7, #B0BAE6)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: "1.35rem", color: "white", boxShadow: "0 0 20px rgba(120, 134, 199, 0.4)" }}>{selectedFeatures.length}</div>
                                         <div style={{ display: "flex", flexDirection: "column" }}>
-                                            <span style={{ fontWeight: 900, fontSize: "1.1rem", color: "#111827" }}>Harika Bir Paket!</span>
-                                            <span style={{ fontSize: "0.8rem", color: "#6B7280" }}>Sizin için en uygun teklifi hazırlayalım</span>
+                                            <span style={{ fontWeight: 900, fontSize: "1.1rem", color: "white" }}>Harika Bir Paket!</span>
+                                            <span style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.6)" }}>Sizin için en uygun teklifi hazırlayalım</span>
                                         </div>
                                     </div>
-                                    <button onClick={() => setShowForm(true)} style={{ background: "#7886C7", color: "#111827", border: "none", padding: "1rem 3.5rem", borderRadius: "100px", fontWeight: 900, fontSize: "1rem", cursor: "pointer", transition: "all 0.3s", boxShadow: "0 8px 25px rgba(120, 134, 199, 0.5)" }}>Teklifi İncele →</button>
+                                    <button onClick={() => setShowForm(true)} style={{ background: "#7886C7", color: "white", border: "none", padding: "1rem 3.5rem", borderRadius: "100px", fontWeight: 900, fontSize: "1rem", cursor: "pointer", transition: "all 0.3s", boxShadow: "0 8px 25px rgba(120, 134, 199, 0.5)" }}>Teklifi İncele →</button>
                                 </motion.div>
                             )}
                         </AnimatePresence>
@@ -757,7 +755,7 @@ function FiyatlandirmaContent() {
                         <AnimatePresence>
                             {showForm && (
                                 <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.9)", backdropFilter: "blur(16px)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem" }}>
-                                    <motion.div initial={{ y: 50, scale: 0.9, opacity: 0 }} animate={{ y: 0, scale: 1, opacity: 1 }} exit={{ y: 50, scale: 0.9, opacity: 0 }} style={{ background: "#0a0c10", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "3rem", padding: "4rem", width: "100%", maxWidth: "600px", position: "relative", boxShadow: "0 40px 100px rgba(0,0,0,0.8)" }}>
+                                    <motion.div initial={{ y: 50, scale: 0.9, opacity: 0 }} animate={{ y: 0, scale: 1, opacity: 1 }} exit={{ y: 50, scale: 0.9, opacity: 0 }} style={{ background: "white", border: "1px solid rgba(120, 134, 199, 0.15)", borderRadius: "3rem", padding: "4rem", width: "100%", maxWidth: "600px", position: "relative", boxShadow: "0 40px 100px rgba(0,0,0,0.25)" }}>
                                         <button onClick={() => setShowForm(false)} style={{ position: "absolute", top: "2rem", right: "2rem", background: "white", border: "1px solid rgba(120, 134, 199, 0.2)", borderRadius: "50%", width: "3.5rem", height: "3.5rem", color: "#111827", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><X style={{ width: "1.5rem" }} /></button>
                                         
                                         <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
@@ -770,32 +768,32 @@ function FiyatlandirmaContent() {
                                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
                                                 <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                                                     <label style={{ fontSize: "0.75rem", color: "#9CA3AF", fontWeight: 800, paddingLeft: "1rem" }}>AD SOYAD</label>
-                                                    <input required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} style={{ padding: "1.25rem", borderRadius: "1.25rem", background: "white", border: "1px solid rgba(255,255,255,0.08)", color: "#111827", fontSize: "1rem" }} />
+                                                    <input required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} style={{ padding: "1.25rem", borderRadius: "1.25rem", background: "white", border: "1px solid rgba(120, 134, 199, 0.25)", color: "#111827", fontSize: "1rem" }} />
                                                 </div>
                                                 <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                                                     <label style={{ fontSize: "0.75rem", color: "#9CA3AF", fontWeight: 800, paddingLeft: "1rem" }}>TELEFON NO</label>
-                                                    <input required value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} style={{ padding: "1.25rem", borderRadius: "1.25rem", background: "white", border: "1px solid rgba(255,255,255,0.08)", color: "#111827", fontSize: "1rem" }} />
+                                                    <input required value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} style={{ padding: "1.25rem", borderRadius: "1.25rem", background: "white", border: "1px solid rgba(120, 134, 199, 0.25)", color: "#111827", fontSize: "1rem" }} />
                                                 </div>
                                             </div>
                                             <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                                                 <label style={{ fontSize: "0.75rem", color: "#9CA3AF", fontWeight: 800, paddingLeft: "1rem" }}>İŞLETME ADI</label>
-                                                <input required value={formData.company} onChange={e => setFormData({ ...formData, company: e.target.value })} style={{ padding: "1.25rem", borderRadius: "1.25rem", background: "white", border: "1px solid rgba(255,255,255,0.08)", color: "#111827", fontSize: "1rem" }} />
+                                                <input required value={formData.company} onChange={e => setFormData({ ...formData, company: e.target.value })} style={{ padding: "1.25rem", borderRadius: "1.25rem", background: "white", border: "1px solid rgba(120, 134, 199, 0.25)", color: "#111827", fontSize: "1rem" }} />
                                             </div>
                                             <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                                                 <label style={{ fontSize: "0.75rem", color: "#9CA3AF", fontWeight: 800, paddingLeft: "1rem" }}>E-POSTA</label>
-                                                <input type="email" required value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} style={{ padding: "1.25rem", borderRadius: "1.25rem", background: "white", border: "1px solid rgba(255,255,255,0.08)", color: "#111827", fontSize: "1rem" }} />
+                                                <input type="email" required value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} style={{ padding: "1.25rem", borderRadius: "1.25rem", background: "white", border: "1px solid rgba(120, 134, 199, 0.25)", color: "#111827", fontSize: "1rem" }} />
                                             </div>
-                                            <button disabled={loading} style={{ marginTop: "1rem", background: "#7886C7", color: "#111827", border: "none", padding: "1.5rem", borderRadius: "1.5rem", fontWeight: 900, fontSize: "1.2rem", cursor: "pointer", transition: "all 0.3s", boxShadow: "0 10px 30px rgba(120, 134, 199,0.3)" }}>{loading ? "GÖNDERİLİYOR..." : "ÖZEL TEKLİFİMİ İLET"}</button>
+                                            <button disabled={loading} style={{ marginTop: "1rem", background: "#7886C7", color: "white", border: "none", padding: "1.5rem", borderRadius: "1.5rem", fontWeight: 900, fontSize: "1.2rem", cursor: "pointer", transition: "all 0.3s", boxShadow: "0 10px 30px rgba(120, 134, 199,0.3)" }}>{loading ? "GÖNDERİLİYOR..." : "ÖZEL TEKLİFİMİ İLET"}</button>
                                         </form>
                                     </motion.div>
                                 </div>
                             )}
                         </AnimatePresence>
 
-                        <div style={{ marginTop: "7rem", textAlign: "center", color: "rgba(255,255,255,0.15)", fontSize: "0.9rem", lineHeight: 2 }}>
+                        <div style={{ marginTop: "7rem", textAlign: "center", color: "#9CA3AF", fontSize: "0.9rem", lineHeight: 2 }}>
                             © 2026 JetPOS Teknolojileri A.Ş. Tüm hakları saklıdır.
                             <br />
-                            <span style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.1)" }}>Donanım gereksinimleri ve entegrasyon detayları için lütfen kullanım koşullarını inceleyin.</span>
+                            <span style={{ fontSize: "0.75rem", color: "#D1D5DB" }}>Donanım gereksinimleri ve entegrasyon detayları için lütfen kullanım koşullarını inceleyin.</span>
                         </div>
                     </div>
                 </div>
