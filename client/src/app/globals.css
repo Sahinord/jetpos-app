@@ -6,8 +6,10 @@
   --color-card: #0f172a;
   --color-card-foreground: #f8fafc;
   --color-primary: #6366f1;
+  --color-primary-foreground: #ffffff;
   --color-secondary: #94a3b8;
   --color-accent: #10b981;
+  --color-accent-foreground: #ffffff;
   --color-destructive: #ef4444;
   --color-border: rgba(99, 102, 241, 0.08);
   --color-sidebar: #0f172a;
@@ -47,6 +49,33 @@
   --color-neon-cyan: #7886C7;
   --color-neon-pink: #8b5cf6;
   --color-neon-blue: #9AA7DF;
+}
+
+:root:has(.theme-mavi),
+.theme-mavi {
+  /* JetPOS - Main Mavi Test Tema */
+  --color-background: #F8FAFC;
+  --color-foreground: #111827;
+  --color-card: #FFFFFF;
+  --color-card-foreground: #111827;
+  --color-border: #D9E0FF;
+  --color-primary: #7886C7;
+  --color-primary-foreground: #FFFFFF;
+  --color-secondary: #4B5563;
+  --color-accent: #7886C7;
+  --color-accent-foreground: #FFFFFF;
+  --color-sidebar: #FFFFFF;
+  --color-sidebar-foreground: #111827;
+  --color-sidebar-muted: #64748b;
+  --color-input-bg: #FFFFFF;
+  --color-input-border: #D9E0FF;
+  --color-muted: #9CA3AF;
+  --color-faded: #F1F5F9;
+
+  /* Vurgu rengi: Soft Mavi */
+  --color-neon-cyan: #7886C7;
+  --color-neon-pink: #8b5cf6;
+  --color-neon-blue: #7886C7;
 }
 
 /* Dark mode (default) variable refinements */
@@ -191,6 +220,12 @@
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02) !important;
 }
 
+  .theme-mavi .glass-card {
+  background: #ffffff !important;
+  border-color: #D9E0FF !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02) !important;
+}
+
   .glass-card:hover {
     border-color: color-mix(in srgb, var(--color-primary), transparent 60%);
     transform: translateY(-2px);
@@ -224,6 +259,12 @@
   }
 
   .theme-light .sidebar-item-active {
+  background: #7886C7 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(120, 134, 199, 0.25);
+}
+
+  .theme-mavi .sidebar-item-active {
   background: #7886C7 !important;
   color: #ffffff !important;
   box-shadow: 0 4px 12px rgba(120, 134, 199, 0.25);
@@ -374,6 +415,14 @@
   background: #5A659F;
 }
 
+.theme-mavi ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #7886C7, #9AA7DF);
+}
+
+.theme-mavi ::-webkit-scrollbar-thumb:hover {
+  background: #5A659F;
+}
+
 /* Firefox Support */
 * {
   scrollbar-width: thin;
@@ -381,6 +430,10 @@
 }
 
 .theme-light {
+  scrollbar-color: #7886C7 transparent;
+}
+
+.theme-mavi {
   scrollbar-color: #7886C7 transparent;
 }
 
@@ -562,5 +615,126 @@ textarea:focus {
 }
 
 .theme-light .bg-purple-500\/10 {
+  background-color: #f3e8ff !important;
+}
+/* Main Mavi Test Tema - ayni acik tema kontrast duzeltmeleri */
+/* Fix text colors ONLY for elements where we overrode the background to white */
+.theme-mavi .bg-white\/5 .text-white,
+.theme-mavi .bg-primary\/5 .text-white,
+.theme-mavi .bg-slate-900\/50 .text-white,
+.theme-mavi .bg-\[\#020617\] .text-white,
+.theme-mavi .bg-\[\#0f172a\] .text-white,
+.theme-mavi .bg-\[\#1e293b\] .text-white,
+.theme-mavi .bg-\[\#0d1b2e\] .text-white,
+.theme-mavi .bg-\[\#0a1628\] .text-white,
+.theme-mavi .bg-\[\#0a0f1e\] .text-white,
+.theme-mavi .bg-\[\#0c1222\] .text-white,
+.theme-mavi .bg-card\/40 .text-white,
+.theme-mavi .bg-card\/50 .text-white,
+.theme-mavi .glass-card .text-white {
+  color: #111827 !important;
+}
+
+.theme-mavi .bg-white\/5.text-white,
+.theme-mavi .bg-primary\/5.text-white,
+.theme-mavi .bg-slate-900\/50.text-white,
+.theme-mavi .bg-\[\#020617\].text-white,
+.theme-mavi .bg-\[\#0f172a\].text-white,
+.theme-mavi .bg-\[\#1e293b\].text-white,
+.theme-mavi .bg-\[\#0d1b2e\].text-white,
+.theme-mavi .bg-\[\#0a1628\].text-white,
+.theme-mavi .bg-\[\#0a0f1e\].text-white,
+.theme-mavi .bg-\[\#0c1222\].text-white,
+.theme-mavi .bg-card\/40.text-white,
+.theme-mavi .bg-card\/50.text-white,
+.theme-mavi .glass-card.text-white {
+  color: #111827 !important;
+}
+
+.theme-mavi .bg-white\/5,
+.theme-mavi .bg-primary\/5,
+.theme-mavi .bg-slate-900\/50,
+.theme-mavi .bg-\[\#020617\],
+.theme-mavi .bg-\[\#0f172a\],
+.theme-mavi .bg-\[\#1e293b\],
+.theme-mavi .bg-\[\#0d1b2e\],
+.theme-mavi .bg-\[\#0a1628\],
+.theme-mavi .bg-\[\#0a0f1e\],
+.theme-mavi .bg-\[\#0c1222\],
+.theme-mavi .bg-card\/40,
+.theme-mavi .bg-card\/50 {
+  background-color: #FFFFFF !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
+}
+
+/* For elements that explicitly used dark bg with opacity, use a soft slate in light mode */
+.theme-mavi .bg-\[\#020617\]\/40,
+.theme-mavi .bg-\[\#020617\]\/60,
+.theme-mavi .bg-\[\#020617\]\/85,
+.theme-mavi .bg-\[\#020617\]\/95,
+.theme-mavi .bg-\[\#020617\]\/98,
+.theme-mavi .bg-\[\#0a1628\]\/40,
+.theme-mavi .bg-\[\#0d1b2e\]\/40,
+.theme-mavi .bg-\[\#0c1222\]\/40,
+.theme-mavi .bg-\[\#0a0f1e\]\/40,
+.theme-mavi .bg-\[\#1e293b\]\/40 {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.theme-mavi .border-white\/5,
+.theme-mavi .border-white\/10,
+.theme-mavi .border-white\/20,
+.theme-mavi .border-border\/40 {
+  border-color: #D9E0FF !important;
+}
+
+.theme-mavi .text-secondary\/40,
+.theme-mavi .text-secondary\/30,
+.theme-mavi .text-secondary\/20,
+.theme-mavi .text-secondary\/10,
+.theme-mavi .text-secondary\/60,
+.theme-mavi .text-slate-500 {
+  color: #6B7280 !important;
+}
+
+
+
+/* Fix input placeholders */
+.theme-mavi .placeholder\:text-secondary\/10::placeholder,
+.theme-mavi .placeholder\:text-secondary\/20::placeholder,
+.theme-mavi .placeholder\:text-secondary\/30::placeholder {
+  color: #9CA3AF !important;
+}
+
+/* Utility to force visibility in light mode */
+.theme-mavi .force-visible {
+  color: #020617 !important;
+}
+
+.theme-mavi .text-secondary {
+  color: #475569 !important;
+}
+
+.theme-mavi .bg-primary\/10 {
+  background-color: #dbeafe !important;
+}
+
+.theme-mavi .bg-emerald-500\/10 {
+  background-color: #dcfce7 !important;
+}
+
+.theme-mavi .bg-rose-500\/10 {
+  background-color: #fee2e2 !important;
+}
+
+.theme-mavi .bg-amber-500\/10 {
+  background-color: #fef3c7 !important;
+}
+
+.theme-mavi .bg-indigo-500\/10 {
+  background-color: #e0e7ff !important;
+}
+
+.theme-mavi .bg-purple-500\/10 {
   background-color: #f3e8ff !important;
 }

@@ -85,7 +85,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [campaignRate, setCampaignRate] = useState(1.15); // Default %15
-  const [theme, setTheme] = useState<'modern' | 'light' | 'wood' | 'glass'>('modern');
+  const [theme, setTheme] = useState<'modern' | 'light' | 'wood' | 'glass' | 'mavi'>('modern');
   const [isBeepEnabled, setIsBeepEnabled] = useState(true);
   const [showHelpIcons, setShowHelpIcons] = useState(false);
   const [isEmployeeModuleEnabled, setIsEmployeeModuleEnabled] = useState(true);

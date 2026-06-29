@@ -11,7 +11,7 @@ interface TrendyolGoSettings {
     isStockSyncActive: boolean;
 }
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { apiFetch } from '@/lib/api';
 import {
     Package,
@@ -78,6 +78,10 @@ export default function TrendyolGOWidget({ activeSubTab = 'overview' }: { active
 
     const [orders, setOrders] = useState<any[]>([]);
     const [newOrderNotification, setNewOrderNotification] = useState<any | null>(null);
+
+    // Otomatik senkronizasyon icin spam koruması: art arda/cok sik tetiklemeleri engeller
+    const lastSyncAtRef = useRef<number>(0);
+    const AUTO_SYNC_INTERVAL_MS = 3 * 60 * 1000; // 3 dakika
 
     // Bildirim sesini çal
     const playNotificationSound = useCallback(() => {
@@ -312,6 +316,7 @@ export default function TrendyolGOWidget({ activeSubTab = 'overview' }: { active
 
     const handleSyncOrders = async (days: number = 30) => {
         if (!isConfigured || !currentTenant?.id) return;
+        lastSyncAtRef.current = Date.now();
         setSyncing(true);
         try {
             const result = await apiFetch(`/api/trendyol/sync-orders?tenantId=${currentTenant.id}&days=${days}`, {
@@ -333,6 +338,23 @@ export default function TrendyolGOWidget({ activeSubTab = 'overview' }: { active
             setSyncing(false);
         }
     };
+
+    // 🔄 Otomatik senkronizasyon: ekrana her girişte ve periyodik olarak Trendyol'dan
+    // siparişleri ceker, boylece istatistikler manuel "Siparişleri Çek" tıklanmadan da
+    // guncel kalir. lastSyncAtRef ile spam korumasi: cok sik tetiklenmeyi engeller.
+    useEffect(() => {
+        if (!currentTenant?.id || !isConfigured) return;
+
+        const tick = () => {
+            const elapsed = Date.now() - lastSyncAtRef.current;
+            if (elapsed < AUTO_SYNC_INTERVAL_MS) return;
+            handleSyncOrders(syncDays);
+        };
+
+        tick();
+        const interval = setInterval(tick, AUTO_SYNC_INTERVAL_MS);
+        return () => clearInterval(interval);
+    }, [currentTenant?.id, isConfigured]);
 
     const handleSyncStock = async () => {
         if (!isConfigured || !currentTenant?.id) return;

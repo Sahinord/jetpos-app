@@ -63,7 +63,7 @@ export default function AdminPage() {
     const [authed, setAuthed] = useState(false);
     const [password, setPassword] = useState("");
     const [passwordError, setPasswordError] = useState(false);
-    const [activeTab, setActiveTab] = useState<"dashboard" | "requests" | "licenses" | "blog" | "guides" | "about" | "tickets" | "announcements" | "crm">("dashboard");
+    const [activeTab, setActiveTab] = useState<"dashboard" | "requests" | "licenses" | "blog" | "guides" | "about" | "tickets" | "announcements" | "crm" | "early-access">("dashboard");
     const [blogPosts, setBlogPosts] = useState<any[]>([]);
     const [aboutContent, setAboutContent] = useState<Record<string, any>>({});
     const [showNewPost, setShowNewPost] = useState(false);
@@ -72,6 +72,7 @@ export default function AdminPage() {
     const [savingPost, setSavingPost] = useState(false);
     const [savingAbout, setSavingAbout] = useState(false);
     const [requests, setRequests] = useState<DemoRequest[]>([]);
+    const [earlyAccessSignups, setEarlyAccessSignups] = useState<{ id: string; email: string; created_at: string }[]>([]);
     const [licenses, setLicenses] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState("");
@@ -143,6 +144,7 @@ export default function AdminPage() {
 
     const loadAll = () => {
         loadRequests();
+        loadEarlyAccessSignups();
         loadLicenses();
         loadBlogPosts();
         loadAboutContent();
@@ -150,6 +152,14 @@ export default function AdminPage() {
         loadTickets();
         loadAnnouncements();
         loadCrmStats();
+    };
+
+    const loadEarlyAccessSignups = async () => {
+        try {
+            const res = await adminFetch("/api/admin/early-access");
+            if (res.ok) setEarlyAccessSignups(await res.json());
+            else if (res.status === 401) showToast("Yetki hatası", "error");
+        } catch (e) { console.error(e); }
     };
 
     const loadGuides = async () => {
@@ -489,6 +499,7 @@ export default function AdminPage() {
                 {[
                     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
                     { id: "requests", label: "Yeni Talepler", icon: PhoneCall },
+                    { id: "early-access", label: "Erken Erişim", icon: Mail },
                     { id: "licenses", label: "Lisans YÃ¶netimi", icon: ShieldCheck },
                     { id: "tickets", label: "Destek Talepleri", icon: MessageSquare },
                     { id: "announcements", label: "Duyurular", icon: Bell },
@@ -702,6 +713,45 @@ export default function AdminPage() {
                                 </motion.div>
                             )}
                         </div>
+                    </>
+                )}
+
+                {activeTab === "early-access" && (
+                    <>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
+                            <div>
+                                <h2 style={{ fontSize: "1.75rem", fontWeight: 900, marginBottom: "0.25rem", color: "white" }}>Erken Erişim Kayıtları</h2>
+                                <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.875rem" }}>jetpos.shop &ldquo;çok yakında&rdquo; sayfasından bırakılan e-postalar — {earlyAccessSignups.length} kayıt</p>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    navigator.clipboard.writeText(earlyAccessSignups.map(s => s.email).join("\n"));
+                                    showToast("Tüm e-postalar panoya kopyalandı");
+                                }}
+                                disabled={earlyAccessSignups.length === 0}
+                                style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.7rem 1.25rem", borderRadius: "0.75rem", border: "1px solid rgba(120,134,199,0.3)", background: "rgba(120,134,199,0.1)", color: "#7886C7", fontWeight: 700, fontSize: "0.85rem", cursor: earlyAccessSignups.length === 0 ? "default" : "pointer", opacity: earlyAccessSignups.length === 0 ? 0.5 : 1 }}
+                            >
+                                <Mail style={{ width: "1rem" }} /> Tümünü Kopyala
+                            </button>
+                        </div>
+
+                        {earlyAccessSignups.length === 0 ? (
+                            <div style={{ textAlign: "center", padding: "4rem 0", color: "rgba(255,255,255,0.3)" }}>Henüz kayıt yok.</div>
+                        ) : (
+                            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                                {earlyAccessSignups.map((signup) => (
+                                    <div key={signup.id} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "1rem", padding: "1.1rem 1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: "0.85rem" }}>
+                                            <div style={{ width: "2.25rem", height: "2.25rem", borderRadius: "0.65rem", backgroundImage: "linear-gradient(135deg, #7886C7, #B0BAE6)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                                <Mail style={{ width: "1rem", color: "white" }} />
+                                            </div>
+                                            <span style={{ fontWeight: 700, fontSize: "0.9rem" }}>{signup.email}</span>
+                                        </div>
+                                        <span style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.35)", whiteSpace: "nowrap" }}>{timeAgo(signup.created_at)}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </>
                 )}
 

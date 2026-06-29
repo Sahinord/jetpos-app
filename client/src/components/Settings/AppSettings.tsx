@@ -144,7 +144,8 @@ export default function AppSettings({
         { id: 'modern', name: 'Modern Dark', color: 'bg-primary', desc: 'Sleek ve modern bir arayüz' },
         { id: 'light', name: 'Güneş Işığı', color: 'bg-white', desc: 'Aydınlık ve ferah çalışma alanı' },
         { id: 'wood', name: 'Klasik Ahşap', color: 'bg-[#8b4513]', desc: 'Sıcak ve nostaljik hesap makinesi' },
-        { id: 'glass', name: 'Cam Kabarcık', color: 'bg-blue-400', desc: 'Yüksek derinlikli modern cam' }
+        { id: 'glass', name: 'Cam Kabarcık', color: 'bg-blue-400', desc: 'Yüksek derinlikli modern cam' },
+        { id: 'mavi', name: 'Main Mavi Test Tema', color: 'bg-gradient-to-br from-[#7886C7] to-[#00D4FF]', desc: 'Soft mavi zemin, neon cyan vurgularla yeni nesil görünüm' }
     ];
 
     const languageLabels: Record<Language, { flag: string; native: string; name: string }> = {

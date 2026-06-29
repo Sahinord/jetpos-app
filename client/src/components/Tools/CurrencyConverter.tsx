@@ -140,13 +140,13 @@ export default function CurrencyConverter({ theme }: any) {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <div className={`flex items-center gap-2 px-4 py-2 ${theme === 'light' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'} border rounded-full`}>
+                    <div className={`flex items-center gap-2 px-4 py-2 ${(theme === 'light' || theme === 'mavi') ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'} border rounded-full`}>
                         <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
                         <span className="text-[10px] font-black uppercase tracking-widest ">CANLI PİYASA AKIŞI</span>
                     </div>
                     <button 
                         onClick={() => { fetchRates(); fetchMainRates(); }}
-                        className={`p-2.5 ${theme === 'light' ? 'bg-white border-slate-200 text-slate-600' : 'bg-white/5 border-white/10 text-white'} border rounded-xl hover:scale-110 active:scale-95 transition-all shadow-lg`}
+                        className={`p-2.5 ${(theme === 'light' || theme === 'mavi') ? 'bg-white border-slate-200 text-slate-600' : 'bg-white/5 border-white/10 text-white'} border rounded-xl hover:scale-110 active:scale-95 transition-all shadow-lg`}
                     >
                         <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
                     </button>
@@ -212,7 +212,7 @@ export default function CurrencyConverter({ theme }: any) {
                                         type="number"
                                         value={amount}
                                         onChange={(e) => setAmount(Number(e.target.value))}
-                                        className={`w-full ${theme === 'light' ? 'bg-white border-primary/20 text-slate-900 shadow-inner' : 'bg-white/5 border-white/10 text-white shadow-inner'} border-2 focus:border-primary rounded-3xl p-8 text-5xl font-black outline-none transition-all placeholder:text-slate-700`}
+                                        className={`w-full ${(theme === 'light' || theme === 'mavi') ? 'bg-white border-primary/20 text-slate-900 shadow-inner' : 'bg-white/5 border-white/10 text-white shadow-inner'} border-2 focus:border-primary rounded-3xl p-8 text-5xl font-black outline-none transition-all placeholder:text-slate-700`}
                                     />
                                     <div className="absolute right-8 top-1/2 -translate-y-1/2 text-3xl font-black text-primary/50 group-focus-within:text-primary transition-colors">
                                         {CURRENCIES.find(c => c.code === fromCurrency)?.symbol}
@@ -228,10 +228,10 @@ export default function CurrencyConverter({ theme }: any) {
                                         <select 
                                             value={fromCurrency}
                                             onChange={(e) => setFromCurrency(e.target.value)}
-                                            className={`w-full ${theme === 'light' ? 'bg-white border-primary/20 text-slate-900' : 'bg-slate-900 border-white/10 text-white'} border rounded-2xl p-5 font-black text-lg outline-none focus:ring-2 focus:ring-primary/30 appearance-none cursor-pointer shadow-xl`}
+                                            className={`w-full ${(theme === 'light' || theme === 'mavi') ? 'bg-white border-primary/20 text-slate-900' : 'bg-slate-900 border-white/10 text-white'} border rounded-2xl p-5 font-black text-lg outline-none focus:ring-2 focus:ring-primary/30 appearance-none cursor-pointer shadow-xl`}
                                         >
                                             {CURRENCIES.map(c => (
-                                                <option key={c.code} value={c.code} className={theme === 'light' ? 'bg-white text-slate-900' : 'bg-slate-900 text-white'}>{c.flag} {c.code} - {c.name}</option>
+                                                <option key={c.code} value={c.code} className={(theme === 'light' || theme === 'mavi') ? 'bg-white text-slate-900' : 'bg-slate-900 text-white'}>{c.flag} {c.code} - {c.name}</option>
                                             ))}
                                         </select>
                                         <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
@@ -253,10 +253,10 @@ export default function CurrencyConverter({ theme }: any) {
                                         <select 
                                             value={toCurrency}
                                             onChange={(e) => setToCurrency(e.target.value)}
-                                            className={`w-full ${theme === 'light' ? 'bg-white border-primary/20 text-slate-900' : 'bg-slate-900 border-white/10 text-white'} border rounded-2xl p-5 font-black text-lg outline-none focus:ring-2 focus:ring-primary/30 appearance-none cursor-pointer shadow-xl`}
+                                            className={`w-full ${(theme === 'light' || theme === 'mavi') ? 'bg-white border-primary/20 text-slate-900' : 'bg-slate-900 border-white/10 text-white'} border rounded-2xl p-5 font-black text-lg outline-none focus:ring-2 focus:ring-primary/30 appearance-none cursor-pointer shadow-xl`}
                                         >
                                             {CURRENCIES.map(c => (
-                                                <option key={c.code} value={c.code} className={theme === 'light' ? 'bg-white text-slate-900' : 'bg-slate-900 text-white'}>{c.flag} {c.code} - {c.name}</option>
+                                                <option key={c.code} value={c.code} className={(theme === 'light' || theme === 'mavi') ? 'bg-white text-slate-900' : 'bg-slate-900 text-white'}>{c.flag} {c.code} - {c.name}</option>
                                             ))}
                                         </select>
                                         <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
@@ -269,7 +269,7 @@ export default function CurrencyConverter({ theme }: any) {
                     </div>
 
                     {/* Result Card */}
-                    <div className={`glass-card p-12 ${theme === 'light' ? 'bg-white border-primary/30' : 'bg-gradient-to-br from-primary/10 to-transparent border-primary/20'} shadow-[0_20px_50px_rgba(0,0,0,0.1)] relative overflow-hidden`}>
+                    <div className={`glass-card p-12 ${(theme === 'light' || theme === 'mavi') ? 'bg-white border-primary/30' : 'bg-gradient-to-br from-primary/10 to-transparent border-primary/20'} shadow-[0_20px_50px_rgba(0,0,0,0.1)] relative overflow-hidden`}>
                         <div className="absolute -left-20 -top-20 w-60 h-60 bg-primary/5 rounded-full blur-3xl" />
                         
                         <div className="flex items-center justify-between mb-4 relative z-10">
@@ -287,7 +287,7 @@ export default function CurrencyConverter({ theme }: any) {
                             <span className="text-4xl font-bold text-primary animate-pulse">{toCurrency}</span>
                         </div>
                         
-                        <div className={`mt-10 p-6 ${theme === 'light' ? 'bg-slate-50 border-slate-200' : 'bg-black/40 border-white/5'} rounded-[2rem] border-2 flex items-center justify-between shadow-2xl relative z-10`}>
+                        <div className={`mt-10 p-6 ${(theme === 'light' || theme === 'mavi') ? 'bg-slate-50 border-slate-200' : 'bg-black/40 border-white/5'} rounded-[2rem] border-2 flex items-center justify-between shadow-2xl relative z-10`}>
                             <div className="flex items-center gap-4">
                                 <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shadow-inner border border-primary/20">
                                     <TrendingUp className="w-7 h-7" />
@@ -315,7 +315,7 @@ export default function CurrencyConverter({ theme }: any) {
                         </h3>
                         <div className="space-y-5">
                             {['USD', 'EUR', 'GBP'].map(code => (
-                                <div key={code} className={`p-5 ${theme === 'light' ? 'bg-white border-slate-100 hover:border-primary/40' : 'bg-white/[0.03] border-white/5 hover:border-primary/40'} border-2 rounded-3xl flex items-center justify-between transition-all duration-300 group cursor-default shadow-sm hover:shadow-xl hover:translate-x-1`}>
+                                <div key={code} className={`p-5 ${(theme === 'light' || theme === 'mavi') ? 'bg-white border-slate-100 hover:border-primary/40' : 'bg-white/[0.03] border-white/5 hover:border-primary/40'} border-2 rounded-3xl flex items-center justify-between transition-all duration-300 group cursor-default shadow-sm hover:shadow-xl hover:translate-x-1`}>
                                     <div className="flex items-center gap-4">
                                         <span className="text-3xl group-hover:rotate-[360deg] transition-transform duration-700">{CURRENCIES.find(c => c.code === code)?.flag}</span>
                                         <div>

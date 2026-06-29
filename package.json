@@ -3,12 +3,14 @@
     "version": "1.0.0",
     "scripts": {
         "dev": "npm run electron-dev --prefix client",
-        "install-all": "npm install --prefix client && npm install --prefix jetpos-web && npm install --prefix jetpos-mobile",
+        "install-all": "npm install --prefix client && npm install --prefix jetpos-web && npm install --prefix jetpos-mobile && npm install --prefix jetpos-shop",
         "build": "npm run build:all",
         "build:client": "npm run electron-build --prefix client",
         "build:web": "npm run build --prefix jetpos-web",
         "build:mobile": "npm run build --prefix jetpos-mobile",
-        "build:all": "npm run build:client && npm run build:web && npm run build:mobile",
+        "build:shop": "npm run build --prefix jetpos-shop",
+        "build:all": "npm run build:client && npm run build:web && npm run build:mobile && npm run build:shop",
+        "dev:shop": "npm run dev --prefix jetpos-shop",
         "electron-dev": "npm run electron-dev --prefix client",
         "electron-build": "npm run electron-build --prefix client",
         "publish:client": "npm run electron-publish --prefix client"
