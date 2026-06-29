@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, Package, ScanLine, Wallet, ClipboardCheck, Menu, X, Utensils, LogOut, ArrowLeftRight, Users, CreditCard, Calculator, Zap, Globe, ChefHat } from 'lucide-react';
+import { LayoutDashboard, Package, ScanLine, Wallet, ClipboardCheck, Menu, X, Utensils, LogOut, ArrowLeftRight, Users, CreditCard, Calculator, Zap, Globe, ChefHat, Receipt } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
@@ -73,6 +73,7 @@ export default function BottomNav() {
         { name: 'Kasa İşlemleri', icon: Calculator, path: '/kasa', show: true },
         { name: 'Envanter Sayımı', icon: ClipboardCheck, path: '/inventory-count', show: true },
         { name: 'Depo Transferi', icon: ArrowLeftRight, path: '/warehouse-transfer', show: true },
+        { name: 'Alış Faturası (AI)', icon: Receipt, path: '/alis-faturasi', show: true },
         { 
             name: 'Adisyon Sistemi', 
             icon: Utensils, 

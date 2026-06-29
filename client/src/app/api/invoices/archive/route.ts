@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { verifyTenantAccess } from '@/lib/server-tenant-auth';
 
 export async function GET(request: Request) {
     try {
@@ -7,6 +8,11 @@ export async function GET(request: Request) {
 
         if (!tenantId) {
             return NextResponse.json({ success: false, error: 'tenantId gerekli' }, { status: 400 });
+        }
+
+        const auth = await verifyTenantAccess(request, tenantId);
+        if (!auth.ok) {
+            return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
         }
 
         const { supabaseAdmin } = await import('@/lib/supabase-admin');
@@ -38,7 +44,25 @@ export async function DELETE(request: Request) {
             return NextResponse.json({ success: false, error: 'id gerekli' }, { status: 400 });
         }
 
+        // tenantId istekte gelmiyor — önce faturanın gerçek sahibini bul,
+        // sonra o tenant'ın kimliğini doğrula (id tahmin ederek başka
+        // tenant'ın faturasını silmeyi engeller).
         const { supabaseAdmin } = await import('@/lib/supabase-admin');
+        const { data: invoice, error: lookupError } = await supabaseAdmin
+            .from('invoices')
+            .select('tenant_id')
+            .eq('id', id)
+            .maybeSingle();
+
+        if (lookupError || !invoice) {
+            return NextResponse.json({ success: false, error: 'Fatura bulunamadı' }, { status: 404 });
+        }
+
+        const auth = await verifyTenantAccess(request, invoice.tenant_id);
+        if (!auth.ok) {
+            return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
+        }
+
         const { error } = await supabaseAdmin
             .from('invoices')
             .delete()

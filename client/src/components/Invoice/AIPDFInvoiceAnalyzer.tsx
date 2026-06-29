@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from 'react';
-import { Upload, Sparkles, X, FileText, Loader2, Check } from 'lucide-react';
+import { Upload, Sparkles, X, FileText, Loader2, Check, Camera, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useTenant } from '@/lib/tenant-context';
+import { apiFetch } from '@/lib/api';
 
 interface AnalyzedInvoiceItem {
     product_name: string;
@@ -43,10 +44,10 @@ export default function AIPDFInvoiceAnalyzer({ onAnalyzed, onClose }: Props) {
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const selectedFile = e.target.files[0];
-            if (selectedFile.type === 'application/pdf') {
+            if (selectedFile.type === 'application/pdf' || selectedFile.type.startsWith('image/')) {
                 setFile(selectedFile);
             } else {
-                alert('Lütfen PDF dosyası seçin!');
+                alert('Lütfen PDF veya fotoğraf (JPEG/PNG) seçin!');
             }
         }
     };
@@ -73,18 +74,21 @@ export default function AIPDFInvoiceAnalyzer({ onAnalyzed, onClose }: Props) {
         }
     };
 
-    const analyzePDF = async () => {
+    const analyzeFile = async () => {
         if (!file) {
-            alert('Lütfen bir PDF dosyası seçin!');
+            alert('Lütfen bir PDF dosyası veya fotoğraf seçin!');
             return;
         }
 
+        const isImage = file.type.startsWith('image/');
+
         setAnalyzing(true);
         try {
-            // Step 1: Upload PDF to Supabase Storage
-            setProgress({ stage: 'PDF yükleniyor...', percent: 20 });
-            const fileName = `invoice_${Date.now()}.pdf`;
-            const { data: uploadData, error: uploadError } = await supabase.storage
+            // Step 1: Dosyayı Supabase Storage'a yükle
+            setProgress({ stage: isImage ? 'Fotoğraf yükleniyor...' : 'PDF yükleniyor...', percent: 20 });
+            const ext = isImage ? (file.name.split('.').pop() || 'jpg') : 'pdf';
+            const fileName = `invoice_${Date.now()}.${ext}`;
+            const { error: uploadError } = await supabase.storage
                 .from('invoices')
                 .upload(fileName, file);
 
@@ -95,24 +99,17 @@ export default function AIPDFInvoiceAnalyzer({ onAnalyzed, onClose }: Props) {
                 .from('invoices')
                 .getPublicUrl(fileName);
 
-            // Step 2: Send to Gemini AI for analysis
+            // Step 2: AI analizine gönder — görselse gpt-4o-mini, PDF ise DeepSeek
             setProgress({ stage: 'AI ile analiz ediliyor...', percent: 50 });
 
-            const response = await fetch('/api/analyze-invoice', {
+            const aiResult: AnalyzedInvoice = await apiFetch('/api/analyze-invoice', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    pdf_url: publicUrl,
+                    ...(isImage ? { image_url: publicUrl } : { pdf_url: publicUrl }),
                     tenant_id: currentTenant?.id
                 })
             });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'AI analizi başarısız oldu');
-            }
-
-            const aiResult: AnalyzedInvoice = await response.json();
 
             // Step 3: Calculate profit margins and sale prices
             setProgress({ stage: 'Kar marjleri hesaplanıyor...', percent: 75 });
@@ -291,7 +288,9 @@ export default function AIPDFInvoiceAnalyzer({ onAnalyzed, onClose }: Props) {
                         </div>
                         <div>
                             <h2 className="text-base font-bold text-white">JetPos AI Analiz</h2>
-                            <p className="text-[10px] text-secondary uppercase tracking-widest font-medium">DeepSeek-V3 Engine</p>
+                            <p className="text-[10px] text-secondary uppercase tracking-widest font-medium">
+                                {file?.type.startsWith('image/') ? 'GPT-4o-mini Vision Engine' : 'DeepSeek V4 Flash Engine'}
+                            </p>
                         </div>
                     </div>
                     <button
@@ -306,29 +305,52 @@ export default function AIPDFInvoiceAnalyzer({ onAnalyzed, onClose }: Props) {
                 <div className="p-5 space-y-5">
                     {/* File Upload */}
                     <div className="space-y-2">
-                        <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider">Fatura PDF'i</label>
+                        <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider">Fatura PDF'i veya Fotoğrafı</label>
 
                         {!file ? (
-                            <label className="group relative block w-full h-32 border-2 border-dashed border-white/5 hover:border-primary/50 rounded-xl cursor-pointer transition-all overflow-hidden bg-white/[0.02]">
-                                <input
-                                    type="file"
-                                    accept="application/pdf"
-                                    onChange={handleFileSelect}
-                                    className="hidden"
-                                />
-                                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 group-hover:bg-primary/5 transition-colors">
-                                    <Upload className="w-8 h-8 text-secondary group-hover:text-primary transition-colors" />
-                                    <div className="text-center">
-                                        <p className="text-sm font-medium text-white">Faturayı buraya yükle</p>
-                                        <p className="text-[10px] text-secondary">PDF formatında dosya seçin</p>
+                            <div className="grid grid-cols-2 gap-3">
+                                <label className="group relative block w-full h-32 border-2 border-dashed border-white/5 hover:border-primary/50 rounded-xl cursor-pointer transition-all overflow-hidden bg-white/[0.02]">
+                                    <input
+                                        type="file"
+                                        accept="application/pdf"
+                                        onChange={handleFileSelect}
+                                        className="hidden"
+                                    />
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 group-hover:bg-primary/5 transition-colors">
+                                        <Upload className="w-7 h-7 text-secondary group-hover:text-primary transition-colors" />
+                                        <div className="text-center">
+                                            <p className="text-sm font-medium text-white">PDF Yükle</p>
+                                            <p className="text-[10px] text-secondary">Dosyadan seç</p>
+                                        </div>
                                     </div>
-                                </div>
-                            </label>
+                                </label>
+
+                                <label className="group relative block w-full h-32 border-2 border-dashed border-white/5 hover:border-primary/50 rounded-xl cursor-pointer transition-all overflow-hidden bg-white/[0.02]">
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        capture="environment"
+                                        onChange={handleFileSelect}
+                                        className="hidden"
+                                    />
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 group-hover:bg-primary/5 transition-colors">
+                                        <Camera className="w-7 h-7 text-secondary group-hover:text-primary transition-colors" />
+                                        <div className="text-center">
+                                            <p className="text-sm font-medium text-white">Fotoğraf Çek/Yükle</p>
+                                            <p className="text-[10px] text-secondary">Kamera veya galeri</p>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
                         ) : (
                             <div className="flex items-center justify-between p-3 bg-primary/5 border border-primary/20 rounded-xl">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                                        <FileText className="w-5 h-5 text-primary" />
+                                        {file.type.startsWith('image/') ? (
+                                            <ImageIcon className="w-5 h-5 text-primary" />
+                                        ) : (
+                                            <FileText className="w-5 h-5 text-primary" />
+                                        )}
                                     </div>
                                     <div>
                                         <p className="text-sm font-semibold text-white truncate max-w-[200px]">{file.name}</p>
@@ -403,7 +425,7 @@ export default function AIPDFInvoiceAnalyzer({ onAnalyzed, onClose }: Props) {
                         İptal
                     </button>
                     <button
-                        onClick={analyzePDF}
+                        onClick={analyzeFile}
                         disabled={!file || analyzing}
                         className="flex-[2] px-4 py-2 bg-primary hover:bg-primary/90 rounded-xl font-bold text-white transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/10 disabled:opacity-50 text-xs"
                     >

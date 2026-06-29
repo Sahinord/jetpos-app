@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createTrendyolGoClient } from '@/lib/trendyol-go-client';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getTenantSettings } from '@/lib/tenant-settings';
+import { verifyTenantAccess } from '@/lib/server-tenant-auth';
 
 /**
  * Trendyol GO Stock Sync API (v1.3.8)
@@ -15,6 +16,11 @@ export async function POST(req: NextRequest) {
 
         if (!tenantId) {
             return NextResponse.json({ success: false, error: 'tenantId is required' }, { status: 400 });
+        }
+
+        const auth = await verifyTenantAccess(req, tenantId);
+        if (!auth.ok) {
+            return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
         }
 
         // 1. Get Tenant Trendyol Settings

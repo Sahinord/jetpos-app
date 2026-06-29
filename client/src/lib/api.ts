@@ -38,13 +38,28 @@ function getDeviceId(): string {
 export async function apiFetch(path: string, options: RequestInit = {}) {
     let url = path;
 
+    // Tenant kimliği: backend route'ları (service-role key ile RLS bypass eden
+    // /api/invoices/archive, /api/trendyol/* vb.) bu header'lar olmadan body/query
+    // içindeki tenantId'ye asla güvenmemeli — bkz. lib/server-tenant-auth.ts.
+    if (typeof window !== 'undefined' && path.startsWith('/api/')) {
+        const tenantId = localStorage.getItem('currentTenantId');
+        const licenseKey = localStorage.getItem('licenseKey');
+        if (tenantId && licenseKey) {
+            options.headers = {
+                ...options.headers,
+                'x-tenant-id': tenantId,
+                'x-license-key': licenseKey
+            };
+        }
+    }
+
     // Electron environment specific logic
     if (IS_ELECTRON && path.startsWith('/api/')) {
         url = `${API_BASE}${path}`;
-        
+
         const timestamp = Date.now().toString();
         const deviceId = getDeviceId();
-        
+
         // Digital Signature Formulation: Path + Timestamp + DeviceID + Secret
         const message = `${path}${timestamp}${deviceId}`;
         const signature = CryptoJS.HmacSHA256(message, APP_SECRET).toString();

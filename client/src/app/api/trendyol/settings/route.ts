@@ -1,7 +1,13 @@
 
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyTenantAccess } from '@/lib/server-tenant-auth';
 
 export async function GET(req: NextRequest) {
+    const auth = await verifyTenantAccess(req);
+    if (!auth.ok) {
+        return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
     const isSystemConfigured = !!(
         process.env.TRENDYOL_GO_SELLER_ID &&
         process.env.TRENDYOL_GO_API_KEY &&

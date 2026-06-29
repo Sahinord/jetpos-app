@@ -1,7 +1,16 @@
 const { createClient } = require('@supabase/supabase-js');
 
-const supabaseUrl = 'https://grlwmcuxobbgubphovhd.supabase.co';
-const supabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdybHdtY3V4b2JiZ3VicGhvdmhkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODA3MzUzMCwiZXhwIjoyMDgzNjQ5NTMwfQ.V2ZjiEm8S0d84hBeQIlb14gNTusduDHcn2MkOiK9NsA';
+const fs = require('fs');
+const path = require('path');
+const envContent = fs.readFileSync(path.join(__dirname, '.env.local'), 'utf-8');
+const env = {};
+envContent.split('\n').forEach(line => {
+  const idx = line.indexOf('=');
+  if (idx === -1) return;
+  env[line.slice(0, idx).trim()] = line.slice(idx + 1).trim();
+});
+const supabaseUrl = env['NEXT_PUBLIC_SUPABASE_URL'];
+const supabaseServiceKey = env['SUPABASE_SERVICE_ROLE_KEY'];
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 

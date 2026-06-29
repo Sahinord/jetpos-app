@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createTrendyolGoClient } from '@/lib/trendyol-go-client';
 import { supabase } from '@/lib/supabase';
+import { verifyTenantAccess } from '@/lib/server-tenant-auth';
 
 // export const dynamic = 'force-dynamic';
 
@@ -19,6 +20,11 @@ export async function GET(req: NextRequest) {
 
         if (!tenantId) {
             return NextResponse.json({ success: false, error: 'tenantId is required' }, { status: 400 });
+        }
+
+        const auth = await verifyTenantAccess(req, tenantId);
+        if (!auth.ok) {
+            return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
         }
 
         const { supabaseAdmin } = await import('@/lib/supabase-admin');

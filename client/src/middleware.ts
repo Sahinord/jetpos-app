@@ -47,15 +47,18 @@ export function middleware(request: NextRequest) {
 
         /**
          * WEB CLIENT FALLBACK
-         * If no signature, check for Supabase session cookies
-         * (This allows you to use the dashboard in a browser)
+         * JetPos Supabase Auth kullanmıyor — kimlik license_key + tenant_id ile
+         * doğrulanıyor (bkz. lib/tenant-context.tsx). Bu yüzden gerçek doğrulama
+         * burada DEĞİL, route handler'larda lib/server-tenant-auth.ts ile yapılıyor
+         * (bu katman DB'ye bakabiliyor, edge middleware her istekte bakmasın diye
+         * burada sadece "şekli doğru mu" kontrolü var). Önceden burada SADECE bir
+         * Authorization header'ının VAR OLMASI yetiyordu (değeri hiç kontrol
+         * edilmiyordu) — bu trivial bir bypass'tı, kaldırıldı.
          */
-        const hasSession = request.cookies.get('sb-access-token') || 
-                          request.cookies.has('supabase-auth-token') ||
-                          request.headers.get('Authorization');
+        const hasTenantHeaders = request.headers.get('x-tenant-id') && request.headers.get('x-license-key');
 
-        if (hasSession) {
-            return NextResponse.next(); // Authenticated Web User Verified! ✅
+        if (hasTenantHeaders) {
+            return NextResponse.next(); // Şekli doğru — asıl doğrulama route handler'da
         }
 
         // NO ACCESS

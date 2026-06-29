@@ -10,20 +10,19 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY || 'no_key_for_build'
 );
 
-// Helper function to extract text from PDF buffer using pdfreader
 async function extractTextFromPdf(buffer: Buffer): Promise<string> {
     return new Promise((resolve, reject) => {
         let text = "";
         new PdfReader({}).parseBuffer(buffer, (err, item) => {
             if (err) reject(err);
-            else if (!item) resolve(text); // End of file
+            else if (!item) resolve(text);
             else if (item.text) text += item.text + " ";
         });
     });
 }
 
 export async function POST(request: NextRequest) {
-    console.log('🚀 AI Invoice Analysis started (v2)...');
+    console.log('🚀 [Mobile] AI Invoice Analysis started...');
 
     try {
         const body = await request.json().catch(() => ({}));
@@ -38,18 +37,6 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: auth.error }, { status: auth.status });
         }
 
-        // Get tenant information
-        const { data: tenant, error: tenantError } = await supabase
-            .from('tenants')
-            .select('*')
-            .eq('id', tenant_id)
-            .single();
-
-        if (tenantError || !tenant) {
-            return NextResponse.json({ error: 'Mağaza bilgisi bulunamadı' }, { status: 404 });
-        }
-
-        // 🔍 API KEY LOOKUP
         const { data: openRouterIntegration } = await supabase
             .from('integration_settings')
             .select('settings')
@@ -63,7 +50,6 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'AI Analiz anahtarı (OpenRouter) bulunamadı.' }, { status: 404 });
         }
 
-        // Her iki modda da istenen JSON şeması ortak.
         const jsonSchemaInstruction = `Bu bir alış faturasıdır. Lütfen aşağıdaki bilgileri JSON formatında çıkar:
 
 {
@@ -96,8 +82,7 @@ Sadece saf JSON döndür.`;
         let messages: ChatMessage[];
 
         if (image_url) {
-            // 📷 FOTOĞRAF MODU: gpt-4o-mini görseli direkt okuyor, ayrı bir
-            // metin çıkarma (OCR) adımına gerek yok. DeepSeek vision desteklemiyor.
+            // 📷 FOTOĞRAF MODU: gpt-4o-mini görseli direkt okuyor.
             model = "openai/gpt-4o-mini";
             messages = [{
                 role: "user",
@@ -107,8 +92,7 @@ Sadece saf JSON döndür.`;
                 ]
             }];
         } else {
-            // 📥 PDF MODU: metni pdfreader ile çıkar, ucuz/hızlı bir metin
-            // modeline (DeepSeek V4 Flash) gönder.
+            // 📥 PDF MODU: metni pdfreader ile çıkar, DeepSeek V4 Flash'a gönder.
             const pdfResponse = await fetch(pdf_url);
             if (!pdfResponse.ok) {
                 return NextResponse.json({ error: `PDF dosyası indirilemedi: ${pdfResponse.statusText}` }, { status: 400 });
@@ -119,9 +103,10 @@ Sadece saf JSON döndür.`;
             let pdfText = "";
             try {
                 pdfText = await extractTextFromPdf(pdfBuffer);
-            } catch (err: any) {
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : 'Bilinmeyen hata';
                 console.error("❌ PDF Read Error:", err);
-                return NextResponse.json({ error: "PDF içeriği okunurken bir hata oluştu: " + err.message }, { status: 500 });
+                return NextResponse.json({ error: "PDF içeriği okunurken bir hata oluştu: " + message }, { status: 500 });
             }
 
             if (!pdfText || !pdfText.trim()) {
@@ -135,14 +120,13 @@ Sadece saf JSON döndür.`;
             }];
         }
 
-        // 🧠 AI ANALYSIS
         const aiResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: "POST",
             headers: {
                 "Authorization": `Bearer ${openRouterKey}`,
                 "Content-Type": "application/json",
                 "HTTP-Referer": "https://jetpos.app",
-                "X-Title": "JetPos AI"
+                "X-Title": "JetPos Mobile AI"
             },
             body: JSON.stringify({ model, messages })
         });
@@ -157,7 +141,6 @@ Sadece saf JSON döndür.`;
 
         if (!responseText) throw new Error('AI cevap vermedi.');
 
-        // Extract JSON
         let jsonText = responseText;
         const firstBrace = responseText.indexOf('{');
         const lastBrace = responseText.lastIndexOf('}');
@@ -168,10 +151,11 @@ Sadece saf JSON döndür.`;
         const analyzedData = JSON.parse(jsonText);
         return NextResponse.json(analyzedData);
 
-    } catch (error: any) {
-        console.error('❌ API Error:', error);
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Bilinmeyen hata';
+        console.error('❌ [Mobile] API Error:', error);
         return NextResponse.json(
-            { error: 'Analiz başarısız: ' + error.message },
+            { error: 'Analiz başarısız: ' + message },
             { status: 500 }
         );
     }

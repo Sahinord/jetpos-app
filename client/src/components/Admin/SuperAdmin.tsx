@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Building2, Key, Check, X, Save, Edit, Trash2, Plus, MessageSquare, Bell, LifeBuoy, Send, User, Users, Trash, Sparkles, FileText, Home, MapPin, Store, Heart, Search, Globe, Shield } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { apiFetch } from '@/lib/api';
 
 interface Tenant {
     id: string;
@@ -242,19 +243,20 @@ export default function SuperAdmin() {
                 fixed_warehouses: editingTenant.fixed_warehouses || []
             };
 
-            // API route üzerinden service role ile kaydet (RLS bypass)
-            const res = await fetch('/api/admin/save-tenant', {
+            // API route üzerinden service role ile kaydet (RLS bypass).
+            // apiFetch, localStorage'daki gerçek tenant_id/license_key'i
+            // x-tenant-id / x-license-key header'ı olarak otomatik ekliyor —
+            // route bunu DB'ye karşı doğrulayıp admin tenant mı diye kontrol ediyor.
+            const result = await apiFetch('/api/admin/save-tenant', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     tenantId: editingTenant.id,
-                    updateData,
-                    adminPassword: 'ADM257SA67'
+                    updateData
                 })
             });
 
-            const result = await res.json();
-            if (!res.ok || result.error) throw new Error(result.error || 'Kaydetme hatası');
+            if (result.error) throw new Error(result.error || 'Kaydetme hatası');
 
             // Automatically insert notification for license update
             await supabase
