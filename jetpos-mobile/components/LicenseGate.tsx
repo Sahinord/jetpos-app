@@ -24,12 +24,11 @@ export default function LicenseGate({ onSuccess }: LicenseGateProps) {
         setLoading(true);
 
         try {
-            const { data, error } = await supabase
-                .from('tenants')
-                .select('id, company_name, status')
-                .eq('license_key', license.trim())
-                .eq('status', 'active')
-                .single();
+            // SECURITY DEFINER RPC — anon'a doğrudan tenants tablosu okuma
+            // izni vermeden, sadece geçerli lisans için minimal alanları döner.
+            const { data, error } = await supabase.rpc('find_tenant_by_license', {
+                p_license_key: license.trim()
+            });
 
             if (error || !data) {
                 toast.error('Geçersiz lisans anahtarı!');

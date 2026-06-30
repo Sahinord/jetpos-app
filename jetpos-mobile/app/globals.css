@@ -15,6 +15,68 @@
   --glass-border: rgba(45, 107, 255, 0.15);
 }
 
+/* JetPos masaüstü uygulamasındaki tema setiyle aynı 5 tema — bkz. client/src/app/globals.css */
+
+.theme-light {
+  --background: #F8FAFC;
+  --foreground: #111827;
+  --primary: #7886C7;
+  --primary-glow: #9AA7DF;
+  --primary-highlight: #5A659F;
+  --primary-soft: #9AA7DF;
+  --card-bg: #FFFFFF;
+  --border-glow: #7886C7;
+  --cyan-glow: #7886C7;
+  --secondary: #4B5563;
+  --accent: #7886C7;
+  --glass-border: rgba(120, 134, 199, 0.18);
+}
+
+.theme-wood {
+  --background: #4a3728;
+  --foreground: #fffaf0;
+  --primary: #8b4513;
+  --primary-glow: #d4a017;
+  --primary-highlight: #a0522d;
+  --primary-soft: #cd853f;
+  --card-bg: #3d2b1f;
+  --border-glow: #8b4513;
+  --cyan-glow: #d4a017;
+  --secondary: #a1887f;
+  --accent: #d4a017;
+  --glass-border: rgba(139, 69, 19, 0.3);
+}
+
+.theme-glass {
+  --background: #f0f9ff;
+  --foreground: #0c4a6e;
+  --primary: #0284c7;
+  --primary-glow: #38bdf8;
+  --primary-highlight: #0369a1;
+  --primary-soft: #7dd3fc;
+  --card-bg: rgba(255, 255, 255, 0.7);
+  --border-glow: #0284c7;
+  --cyan-glow: #38bdf8;
+  --secondary: #64748b;
+  --accent: #059669;
+  --glass-border: rgba(2, 132, 199, 0.25);
+}
+
+.theme-mavi {
+  --background: #F8FAFC;
+  --foreground: #111827;
+  --primary: #7886C7;
+  --primary-glow: #9AA7DF;
+  --primary-highlight: #5A659F;
+  --primary-soft: #9AA7DF;
+  --card-bg: #FFFFFF;
+  --border-glow: #7886C7;
+  --cyan-glow: #7886C7;
+  --secondary: #4B5563;
+  --accent: #7886C7;
+  --glass-border: rgba(217, 224, 255, 0.7);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -22,6 +84,9 @@
   --color-secondary: var(--secondary);
   --color-accent: var(--accent);
   --color-card: var(--card-bg);
+  --color-border-glow: var(--border-glow);
+  --color-cyan-glow: var(--cyan-glow);
+  --color-primary-glow: var(--primary-glow);
 }
 
 * {
@@ -52,19 +117,19 @@ body {
 
 /* Glassmorphism & Neon Utilities */
 .glass {
-  background: rgba(11, 19, 40, 0.7);
+  background: color-mix(in srgb, var(--card-bg), transparent 30%);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--glass-border);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
 }
 
 .glass-dark {
   background: var(--card-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(45, 107, 255, 0.2);
-  box-shadow: inset 0 0 20px rgba(37, 99, 255, 0.05);
+  border: 1px solid color-mix(in srgb, var(--border-glow), transparent 80%);
+  box-shadow: inset 0 0 20px color-mix(in srgb, var(--primary), transparent 95%);
 }
 
 .neon-border {
@@ -100,6 +165,45 @@ body {
   filter: blur(80px);
   pointer-events: none;
   z-index: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   Açık zemin temaları (Güneş Işığı / Cam Kabarcık / Mavi) için kontrast
+   düzeltmesi. Sayfalarda yer yer "text-white", "bg-white/5", "bg-slate-900"
+   gibi koyu-tema-varsayan sabit class'lar kullanılıyor — bunlar CSS
+   değişkenlerine bağlı değil, bu yüzden açık bir tema seçildiğinde aynen
+   client/'taki .theme-light düzeltmesi gibi burada da genel bir override
+   gerekiyor (tek tek her sayfayı düzeltmek yerine).
+   ───────────────────────────────────────────────────────────────────── */
+:is(.theme-light, .theme-glass, .theme-mavi) .text-white {
+  color: var(--foreground) !important;
+}
+
+:is(.theme-light, .theme-glass, .theme-mavi) .bg-white\/5,
+:is(.theme-light, .theme-glass, .theme-mavi) .bg-white\/10 {
+  background-color: var(--card-bg) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+:is(.theme-light, .theme-glass, .theme-mavi) .border-white\/5,
+:is(.theme-light, .theme-glass, .theme-mavi) .border-white\/10,
+:is(.theme-light, .theme-glass, .theme-mavi) .border-white\/20 {
+  border-color: var(--glass-border) !important;
+}
+
+:is(.theme-light, .theme-glass, .theme-mavi) .bg-slate-900,
+:is(.theme-light, .theme-glass, .theme-mavi) .bg-slate-950 {
+  background-color: var(--card-bg) !important;
+}
+
+:is(.theme-light, .theme-glass, .theme-mavi) .text-slate-400,
+:is(.theme-light, .theme-glass, .theme-mavi) .text-slate-500,
+:is(.theme-light, .theme-glass, .theme-mavi) .text-slate-600 {
+  color: var(--secondary) !important;
+}
+
+:is(.theme-light, .theme-glass, .theme-mavi) ::placeholder {
+  color: color-mix(in srgb, var(--secondary), transparent 30%);
 }
 
 .no-scrollbar::-webkit-scrollbar { display: none; }

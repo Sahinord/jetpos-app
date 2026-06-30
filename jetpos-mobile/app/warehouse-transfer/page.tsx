@@ -120,7 +120,7 @@ export default function TransfersPage() {
     }
 
     return (
-        <div className="min-h-screen bg-slate-950 pb-24">
+        <div className="min-h-screen bg-background pb-24">
             <header className="sticky top-0 z-50 glass border-b border-white/5 p-6 flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <button onClick={() => router.back()} className="p-2 glass-dark rounded-xl border border-white/5">

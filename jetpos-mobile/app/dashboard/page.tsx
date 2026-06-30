@@ -12,6 +12,8 @@ import {
 import { toast } from 'sonner';
 import BottomNav from '@/components/BottomNav';
 import { motion } from 'framer-motion';
+import { clearOfflineTenantData } from '@/lib/offline-db';
+import { SyncService } from '@/lib/sync-service';
 
 interface DashboardStats {
     activeProducts: number;
@@ -177,7 +179,16 @@ export default function DashboardPage() {
                             <Bell size={16} />
                         </button>
                         <button 
-                            onClick={() => { if(confirm('Çıkış yapılsın mı?')) { localStorage.clear(); window.location.href='/'; } }}
+                            onClick={async () => {
+                                if (!confirm('Çıkış yapılsın mı?')) return;
+                                await SyncService.pushPendingSales().catch(() => {});
+                                const { lostPendingSales } = await clearOfflineTenantData();
+                                if (lostPendingSales > 0) {
+                                    toast.error(`${lostPendingSales} senkronize edilmemiş satış cihazdan silindi (çevrimdışıydı).`);
+                                }
+                                localStorage.clear();
+                                window.location.href = '/';
+                            }}
                             className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 active:scale-95 transition-all"
                         >
                             <LogOut size={16} />

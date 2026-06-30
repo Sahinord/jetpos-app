@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import PWARegister from "@/components/PWARegister";
+import ThemeApplier from "@/components/ThemeApplier";
+import SessionGuard from "@/components/SessionGuard";
 
 import { Toaster } from "sonner";
 
@@ -38,6 +40,8 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body className="antialiased">
+        <ThemeApplier />
+        <SessionGuard />
         <PWARegister />
         <Toaster position="top-center" richColors theme="dark" />
         {children}

@@ -355,7 +355,7 @@ export default function AlisFaturasiPage() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-950 pb-24">
+        <div className="min-h-screen bg-background pb-24">
             <header className="sticky top-0 z-50 glass border-b border-white/5 p-6 flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <button onClick={() => router.back()} className="p-2 glass-dark rounded-xl border border-white/5">
@@ -363,11 +363,11 @@ export default function AlisFaturasiPage() {
                     </button>
                     <div>
                         <h1 className="text-xl font-black text-white tracking-tight leading-none uppercase">Alış Faturası</h1>
-                        <p className="text-[10px] font-black text-[#6FD3FF] tracking-[2px] uppercase mt-1">AI ile Oku</p>
+                        <p className="text-[10px] font-black text-cyan-glow tracking-[2px] uppercase mt-1">AI ile Oku</p>
                     </div>
                 </div>
                 <div className="w-11 h-11 rounded-2xl glass border border-white/10 flex items-center justify-center">
-                    <Receipt className="w-6 h-6 text-[#6FD3FF]" />
+                    <Receipt className="w-6 h-6 text-cyan-glow" />
                 </div>
             </header>
 
@@ -375,7 +375,7 @@ export default function AlisFaturasiPage() {
                 {step === 'upload' && (
                     <>
                         <div className="grid grid-cols-2 gap-4">
-                            <label className="group relative block w-full h-36 border-2 border-dashed border-white/10 active:border-[#2563FF]/60 rounded-3xl cursor-pointer transition-all overflow-hidden glass-dark">
+                            <label className="group relative block w-full h-36 border-2 border-dashed border-white/10 active:border-primary/60 rounded-3xl cursor-pointer transition-all overflow-hidden glass-dark">
                                 <input
                                     type="file"
                                     accept="application/pdf"
@@ -383,13 +383,13 @@ export default function AlisFaturasiPage() {
                                     onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
                                 />
                                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                                    <Upload className="w-8 h-8 text-[#6FD3FF]" />
+                                    <Upload className="w-8 h-8 text-cyan-glow" />
                                     <p className="text-sm font-black text-white">PDF Yükle</p>
                                     <p className="text-[10px] text-secondary">Dosyadan seç</p>
                                 </div>
                             </label>
 
-                            <label className="group relative block w-full h-36 border-2 border-dashed border-white/10 active:border-[#2563FF]/60 rounded-3xl cursor-pointer transition-all overflow-hidden glass-dark">
+                            <label className="group relative block w-full h-36 border-2 border-dashed border-white/10 active:border-primary/60 rounded-3xl cursor-pointer transition-all overflow-hidden glass-dark">
                                 <input
                                     type="file"
                                     accept="image/*"
@@ -398,7 +398,7 @@ export default function AlisFaturasiPage() {
                                     onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
                                 />
                                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                                    <Camera className="w-8 h-8 text-[#6FD3FF]" />
+                                    <Camera className="w-8 h-8 text-cyan-glow" />
                                     <p className="text-sm font-black text-white">Fotoğraf Çek</p>
                                     <p className="text-[10px] text-secondary">Kamera / galeri</p>
                                 </div>
@@ -406,7 +406,7 @@ export default function AlisFaturasiPage() {
                         </div>
 
                         <div className="glass-dark border border-white/10 rounded-3xl p-5">
-                            <h3 className="text-[10px] font-black text-[#6FD3FF] mb-3 flex items-center gap-2 uppercase tracking-[2px]">
+                            <h3 className="text-[10px] font-black text-cyan-glow mb-3 flex items-center gap-2 uppercase tracking-[2px]">
                                 <Sparkles className="w-3.5 h-3.5" />
                                 JetPos AI Ne Yapar?
                             </h3>
@@ -421,7 +421,7 @@ export default function AlisFaturasiPage() {
 
                 {step === 'analyzing' && (
                     <div className="flex flex-col items-center justify-center py-24 gap-4">
-                        <Loader2 className="w-10 h-10 text-[#6FD3FF] animate-spin" />
+                        <Loader2 className="w-10 h-10 text-cyan-glow animate-spin" />
                         <p className="text-sm font-black text-white">{progressText}</p>
                     </div>
                 )}
@@ -435,8 +435,8 @@ export default function AlisFaturasiPage() {
                                 onClick={() => setShowCariSearch(true)}
                                 className="w-full glass-dark border border-white/10 rounded-2xl p-4 flex items-center gap-3 text-left"
                             >
-                                <div className="w-9 h-9 rounded-xl bg-[#2563FF]/10 border border-[#2563FF]/20 flex items-center justify-center shrink-0">
-                                    <Building2 className="w-4 h-4 text-[#6FD3FF]" />
+                                <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                                    <Building2 className="w-4 h-4 text-cyan-glow" />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-black text-white truncate">{cariName || 'Tedarikçi seçin'}</p>
@@ -474,7 +474,7 @@ export default function AlisFaturasiPage() {
                                 <p className="text-[10px] font-black text-secondary tracking-[3px] uppercase">Ürün Kalemleri</p>
                                 <button
                                     onClick={() => setItems(prev => [...prev, emptyItem()])}
-                                    className="flex items-center gap-1 text-[10px] font-black text-[#6FD3FF] uppercase"
+                                    className="flex items-center gap-1 text-[10px] font-black text-cyan-glow uppercase"
                                 >
                                     <Plus size={14} /> Ekle
                                 </button>
@@ -541,16 +541,16 @@ export default function AlisFaturasiPage() {
                         </div>
 
                         {/* Toplamlar */}
-                        <div className="glass-dark border border-[#2D6BFF]/20 rounded-2xl p-5 space-y-2">
+                        <div className="glass-dark border border-border-glow/20 rounded-2xl p-5 space-y-2">
                             <div className="flex justify-between text-xs"><span className="text-secondary font-bold">Ara Toplam</span><span className="text-white font-bold">{totals.subtotal.toFixed(2)} ₺</span></div>
                             <div className="flex justify-between text-xs"><span className="text-secondary font-bold">KDV</span><span className="text-white font-bold">{totals.total_vat.toFixed(2)} ₺</span></div>
-                            <div className="flex justify-between text-base pt-2 border-t border-white/10"><span className="text-[#6FD3FF] font-black uppercase">Genel Toplam</span><span className="text-emerald-400 font-black">{totals.grand_total.toFixed(2)} ₺</span></div>
+                            <div className="flex justify-between text-base pt-2 border-t border-white/10"><span className="text-cyan-glow font-black uppercase">Genel Toplam</span><span className="text-emerald-400 font-black">{totals.grand_total.toFixed(2)} ₺</span></div>
                         </div>
 
                         <button
                             onClick={handleSave}
                             disabled={saving}
-                            className="w-full py-4 bg-[#2563FF] text-white font-black rounded-2xl shadow-lg shadow-[#2563FF]/30 active:scale-95 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-50"
+                            className="w-full py-4 bg-primary text-white font-black rounded-2xl shadow-lg shadow-primary/30 active:scale-95 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-50"
                         >
                             {saving ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
                             {saving ? 'Kaydediliyor...' : 'Faturayı Kaydet ve Stoğu Güncelle'}
@@ -571,7 +571,7 @@ export default function AlisFaturasiPage() {
                             <button onClick={resetFlow} className="flex-1 py-3.5 glass-dark border border-white/10 rounded-2xl font-black text-white text-xs">
                                 Yeni Fatura
                             </button>
-                            <button onClick={() => router.push('/dashboard')} className="flex-1 py-3.5 bg-[#2563FF] rounded-2xl font-black text-white text-xs">
+                            <button onClick={() => router.push('/dashboard')} className="flex-1 py-3.5 bg-primary rounded-2xl font-black text-white text-xs">
                                 Panele Dön
                             </button>
                         </div>
@@ -582,7 +582,7 @@ export default function AlisFaturasiPage() {
             {/* Cari Search Modal */}
             {showCariSearch && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[200] flex items-end">
-                    <div className="w-full bg-[#050B1A] border-t border-[#2D6BFF]/20 rounded-t-[2rem] max-h-[80vh] flex flex-col">
+                    <div className="w-full bg-background border-t border-border-glow/20 rounded-t-[2rem] max-h-[80vh] flex flex-col">
                         <div className="p-5 border-b border-white/5 flex items-center gap-3">
                             <Search className="w-4 h-4 text-secondary shrink-0" />
                             <input
@@ -603,8 +603,8 @@ export default function AlisFaturasiPage() {
                                     onClick={() => selectCari(c)}
                                     className="w-full flex items-center gap-3 p-4 rounded-2xl hover:bg-white/5 active:bg-white/10 transition-all text-left"
                                 >
-                                    <div className="w-9 h-9 rounded-xl bg-[#2563FF]/10 border border-[#2563FF]/20 flex items-center justify-center shrink-0">
-                                        <Building2 className="w-4 h-4 text-[#6FD3FF]" />
+                                    <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                                        <Building2 className="w-4 h-4 text-cyan-glow" />
                                     </div>
                                     <div className="min-w-0">
                                         <p className="text-sm font-bold text-white truncate">{c.unvani}</p>

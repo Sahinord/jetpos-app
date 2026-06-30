@@ -261,7 +261,7 @@ export default function MobileKDS() {
     };
 
     return (
-        <div className="min-h-screen bg-[#050B1A] text-white flex flex-col pb-24">
+        <div className="min-h-screen bg-background text-white flex flex-col pb-24">
             {/* Topbar */}
             <div className="bg-[#0B1328]/80 backdrop-blur-xl border-b border-[#2D6BFF]/10 sticky top-0 z-[50] px-4 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">

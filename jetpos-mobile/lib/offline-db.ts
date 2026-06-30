@@ -44,3 +44,17 @@ export class JetPosOfflineDB extends Dexie {
 }
 
 export const offlineDB = new JetPosOfflineDB();
+
+/**
+ * Çıkış / tenant değişimi sırasında çağrılmalı — temizlenmezse bir önceki
+ * tenant'ın ürün/satış verisi paylaşılan cihazda sonraki oturuma sızar
+ * (offlineDB sorguları tenant_id'ye göre filtrelenmeden okunuyor).
+ * Senkronize olmamış (sync_status: 'pending') satış varsa siler ve
+ * geri kalan sayıyı döner ki çağıran taraf kullanıcıyı uyarabilsin.
+ */
+export async function clearOfflineTenantData(): Promise<{ lostPendingSales: number }> {
+    const lostPendingSales = await offlineDB.pending_sales.where('sync_status').equals('pending').count();
+    await offlineDB.products.clear();
+    await offlineDB.pending_sales.clear();
+    return { lostPendingSales };
+}

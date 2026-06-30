@@ -1,10 +1,13 @@
 "use client";
 
-import { LayoutDashboard, Package, ScanLine, Wallet, ClipboardCheck, Menu, X, Utensils, LogOut, ArrowLeftRight, Users, CreditCard, Calculator, Zap, Globe, ChefHat, Receipt } from 'lucide-react';
+import { LayoutDashboard, Package, ScanLine, Wallet, ClipboardCheck, Menu, X, Utensils, LogOut, ArrowLeftRight, Users, CreditCard, Calculator, Zap, Globe, ChefHat, Receipt, Settings } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { clearOfflineTenantData } from '@/lib/offline-db';
+import { SyncService } from '@/lib/sync-service';
+import { toast } from 'sonner';
 
 export default function BottomNav() {
     const pathname = usePathname();
@@ -74,8 +77,9 @@ export default function BottomNav() {
         { name: 'Envanter Sayımı', icon: ClipboardCheck, path: '/inventory-count', show: true },
         { name: 'Depo Transferi', icon: ArrowLeftRight, path: '/warehouse-transfer', show: true },
         { name: 'Alış Faturası (AI)', icon: Receipt, path: '/alis-faturasi', show: true },
-        { 
-            name: 'Adisyon Sistemi', 
+        { name: 'Ayarlar', icon: Settings, path: '/ayarlar', show: true },
+        {
+            name: 'Adisyon Sistemi',
             icon: Utensils, 
             path: '/adisyon', 
             show: hasFeature('mobile_adisyon') || hasFeature('adisyon') 
@@ -108,18 +112,18 @@ export default function BottomNav() {
                             animate={{ x: 0 }}
                             exit={{ x: '100%' }}
                             transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
-                            className="fixed top-0 right-0 h-full w-72 bg-[#050B1A] border-l border-[#2D6BFF]/20 shadow-2xl z-[120] flex flex-col"
+                            className="fixed top-0 right-0 h-full w-72 bg-background border-l border-border-glow/20 shadow-2xl z-[120] flex flex-col"
                         >
-                            <div className="p-6 border-b border-[#2D6BFF]/10 flex items-center justify-between bg-[#0B1328]/50">
+                            <div className="p-6 border-b border-border-glow/10 flex items-center justify-between bg-card/50">
                                 <div className="min-w-0 flex-1">
-                                    <h2 className="text-xl font-black text-white truncate">{companyName}</h2>
-                                    <p className="text-[10px] text-[#6FD3FF] font-black uppercase tracking-[3px] mt-1 shadow-[0_0_10px_rgba(111,211,255,0.2)]">Mobil Modül</p>
+                                    <h2 className="text-xl font-black text-foreground truncate">{companyName}</h2>
+                                    <p className="text-[10px] text-cyan-glow font-black uppercase tracking-[3px] mt-1">Mobil Modül</p>
                                 </div>
                                 <button
                                     onClick={() => setIsSidebarOpen(false)}
-                                    className="p-2 bg-white/5 hover:bg-[#2563FF]/10 rounded-xl transition-colors border border-white/5 ml-4"
+                                    className="p-2 bg-foreground/5 hover:bg-primary/10 rounded-xl transition-colors border border-foreground/5 ml-4"
                                 >
-                                    <X className="w-5 h-5 text-slate-400" />
+                                    <X className="w-5 h-5 text-secondary" />
                                 </button>
                             </div>
 
@@ -135,18 +139,23 @@ export default function BottomNav() {
                                                 setIsSidebarOpen(false);
                                                 router.push(item.path);
                                             }}
-                                            className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all ${isActive ? 'bg-[#2563FF]/10 text-[#6FD3FF] border border-[#2D6BFF]/30 shadow-[0_0_20px_rgba(37,99,255,0.1)]' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+                                            className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all ${isActive ? 'bg-primary/10 text-cyan-glow border border-border-glow/30' : 'text-secondary hover:bg-foreground/5 hover:text-foreground'}`}
                                         >
-                                            <Icon className={`w-5 h-5 ${isActive ? 'text-[#6FD3FF]' : 'text-slate-600'}`} />
+                                            <Icon className={`w-5 h-5 ${isActive ? 'text-cyan-glow' : ''}`} />
                                             <span className="font-bold tracking-tight">{item.name}</span>
                                         </button>
                                     );
                                 })}
                             </div>
 
-                            <div className="p-4 border-t border-[#2D6BFF]/10 bg-[#0B1328]/30">
+                            <div className="p-4 border-t border-border-glow/10 bg-card/30">
                                 <button
-                                    onClick={() => {
+                                    onClick={async () => {
+                                        await SyncService.pushPendingSales().catch(() => {});
+                                        const { lostPendingSales } = await clearOfflineTenantData();
+                                        if (lostPendingSales > 0) {
+                                            toast.error(`${lostPendingSales} senkronize edilmemiş satış cihazdan silindi (çevrimdışıydı).`);
+                                        }
                                         localStorage.clear();
                                         window.location.href = '/';
                                     }}
@@ -162,7 +171,7 @@ export default function BottomNav() {
             </AnimatePresence>
 
             {/* Bottom Navigation */}
-            <div className="fixed bottom-0 left-0 right-0 z-[100] bg-[#050B1A]/95 backdrop-blur-2xl border-t border-[#2D6BFF]/20 pb-[env(safe-area-inset-bottom,0.5rem)] shadow-[0_-10px_40px_rgba(0,0,0,0.6)]">
+            <div className="fixed bottom-0 left-0 right-0 z-[100] bg-background/95 backdrop-blur-2xl border-t border-border-glow/20 pb-[env(safe-area-inset-bottom,0.5rem)] shadow-[0_-10px_40px_rgba(0,0,0,0.3)]">
                 <div className="flex items-center justify-around h-20 w-full max-w-md mx-auto px-1">
                     {navItems.map((item) => {
                         const Icon = item.icon;
@@ -174,16 +183,16 @@ export default function BottomNav() {
                                 onClick={() => router.push(item.path)}
                                 className="relative flex flex-col items-center justify-center w-full h-full group"
                             >
-                                <div className={`relative p-2.5 sm:p-3 rounded-2xl transition-all duration-500 ${isActive ? 'bg-[#2563FF]/20 -translate-y-2.5 shadow-[0_0_20px_rgba(37,99,255,0.2)]' : ''}`}>
+                                <div className={`relative p-2.5 sm:p-3 rounded-2xl transition-all duration-500 ${isActive ? 'bg-primary/20 -translate-y-2.5' : ''}`}>
                                     <Icon
                                         strokeWidth={isActive ? 3 : 2}
-                                        className={`w-5 h-5 sm:w-6 sm:h-6 transition-colors duration-300 ${isActive ? 'text-[#6FD3FF]' : 'text-slate-600'}`}
+                                        className={`w-5 h-5 sm:w-6 sm:h-6 transition-colors duration-300 ${isActive ? 'text-cyan-glow' : 'text-secondary'}`}
                                     />
                                     {(item.name === 'Satış' || item.name === 'Barkod') && !isActive && (
-                                        <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-[#1E90FF] rounded-full animate-pulse shadow-[0_0_8px_rgba(30,144,255,0.6)]" />
+                                        <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-accent rounded-full animate-pulse" />
                                     )}
                                 </div>
-                                <span className={`text-[8px] sm:text-[9px] font-black uppercase tracking-[2px] mt-1.5 transition-all duration-300 ${isActive ? 'text-[#6FD3FF] opacity-100 translate-y-0' : 'text-slate-600 opacity-0 translate-y-2'}`}>
+                                <span className={`text-[8px] sm:text-[9px] font-black uppercase tracking-[2px] mt-1.5 transition-all duration-300 ${isActive ? 'text-cyan-glow opacity-100 translate-y-0' : 'text-secondary opacity-0 translate-y-2'}`}>
                                     {item.name}
                                 </span>
                             </button>
@@ -195,13 +204,13 @@ export default function BottomNav() {
                         onClick={() => setIsSidebarOpen(true)}
                         className="relative flex flex-col items-center justify-center w-full h-full group"
                     >
-                        <div className={`relative p-2.5 sm:p-3 rounded-2xl transition-all duration-500 ${isSidebarOpen ? 'bg-[#2563FF]/20 -translate-y-2.5' : ''}`}>
+                        <div className={`relative p-2.5 sm:p-3 rounded-2xl transition-all duration-500 ${isSidebarOpen ? 'bg-primary/20 -translate-y-2.5' : ''}`}>
                             <Menu
                                 strokeWidth={isSidebarOpen ? 3 : 2}
-                                className={`w-5 h-5 sm:w-6 sm:h-6 transition-colors duration-300 ${isSidebarOpen ? 'text-[#6FD3FF]' : 'text-slate-600'}`}
+                                className={`w-5 h-5 sm:w-6 sm:h-6 transition-colors duration-300 ${isSidebarOpen ? 'text-cyan-glow' : 'text-secondary'}`}
                             />
                         </div>
-                        <span className={`text-[8px] sm:text-[9px] font-black uppercase tracking-[2px] mt-1.5 transition-all duration-300 ${isSidebarOpen ? 'text-[#6FD3FF] opacity-100 translate-y-0' : 'text-slate-600 opacity-0 translate-y-2'}`}>
+                        <span className={`text-[8px] sm:text-[9px] font-black uppercase tracking-[2px] mt-1.5 transition-all duration-300 ${isSidebarOpen ? 'text-cyan-glow opacity-100 translate-y-0' : 'text-secondary opacity-0 translate-y-2'}`}>
                             Menü
                         </span>
                     </button>

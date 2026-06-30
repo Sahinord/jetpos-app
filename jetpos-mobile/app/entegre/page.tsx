@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import BottomNav from '@/components/BottomNav';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TrendyolClient, TrendyolOrder } from '@/lib/trendyol-client';
+import { apiFetch } from '@/lib/api';
 
 interface MarketplaceStore {
     id: string;
@@ -21,7 +22,6 @@ interface MarketplaceStore {
     type: 'trendyol' | 'trendyol_go' | 'getir' | 'yemeksepeti';
     status: 'connected' | 'error' | 'pending';
     details: any;
-    settings: any;
 }
 
 type TimeRange = '24h' | '3d' | '7d' | '30d';
@@ -87,39 +87,29 @@ export default function EntegrePage() {
 
     const fetchIntegrations = async (tenantId: string) => {
         try {
-            const { data, error } = await supabase
-                .from('tenants')
-                .select('settings, features')
-                .eq('id', tenantId)
-                .single();
+            // Kimlik bilgileri (apiKey/apiSecret) bu uçtan asla dönmez — sadece
+            // bağlantı durumu sunucu tarafında okunup özetlenir.
+            const data = await apiFetch('/api/trendyol/status');
 
-            if (error) throw error;
-
-            const settings = data.settings || {};
-            const features = data.features || {};
             const marketplaceStores: MarketplaceStore[] = [];
 
-            if (features.trendyol_marketplace || settings.trendyol) {
-                const t = settings.trendyol || {};
+            if (data.trendyol?.enabled) {
                 marketplaceStores.push({
                     id: 'trendyol_mp',
                     name: 'Trendyol Mağaza',
                     type: 'trendyol',
-                    status: (t.apiKey && t.apiSecret && t.supplierId) ? 'connected' : 'pending',
-                    details: { id: t.supplierId || '-' },
-                    settings: t
+                    status: data.trendyol.connected ? 'connected' : 'pending',
+                    details: { id: data.trendyol.supplierId || '-' }
                 });
             }
 
-            if (features.trendyol_go || settings.trendyolGo) {
-                const tg = settings.trendyolGo || {};
+            if (data.trendyolGo?.enabled) {
                 marketplaceStores.push({
                     id: 'trendyol_go',
                     name: 'Trendyol GO / Yemek',
                     type: 'trendyol_go',
-                    status: (tg.apiKey && tg.apiSecret && tg.sellerId) ? 'connected' : 'pending',
-                    details: { id: tg.sellerId || '-' },
-                    settings: tg
+                    status: data.trendyolGo.connected ? 'connected' : 'pending',
+                    details: { id: data.trendyolGo.sellerId || '-' }
                 });
             }
 
@@ -136,7 +126,7 @@ export default function EntegrePage() {
 
         if (showLoader) setOrdersLoading(true);
         try {
-            const client = new TrendyolClient(store.settings, store.type as 'trendyol' | 'trendyol_go');
+            const client = new TrendyolClient(store.type as 'trendyol' | 'trendyol_go');
 
             const endDate = new Date();
             let hours = 48;

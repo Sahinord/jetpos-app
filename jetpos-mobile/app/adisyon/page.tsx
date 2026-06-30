@@ -1153,7 +1153,7 @@ export default function AdisyonMobile() {
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/95 backdrop-blur-md" />
                         <motion.div 
                             initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-                            className="relative w-full max-w-sm bg-slate-950 border border-white/10 p-6 rounded-[2.5rem] text-center text-white"
+                            className="relative w-full max-w-sm bg-background border border-white/10 p-6 rounded-[2.5rem] text-center text-white"
                         >
                             <Award className="w-12 h-12 text-[#2D6BFF] mx-auto mb-3" />
                             <h2 className="text-lg font-black uppercase tracking-tight">Çalışan Girişi</h2>
@@ -1255,7 +1255,7 @@ export default function AdisyonMobile() {
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/95 backdrop-blur-md" />
                         <motion.div 
                             initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-                            className="relative w-full max-w-sm bg-slate-950 border border-white/10 p-6 rounded-[2.5rem] text-center text-white"
+                            className="relative w-full max-w-sm bg-background border border-white/10 p-6 rounded-[2.5rem] text-center text-white"
                         >
                             <button 
                                 onClick={() => {

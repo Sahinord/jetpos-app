@@ -1,5 +1,8 @@
 // Trendyol & Trendyol GO Hybrid Client for JetPOS Mobile
-// CORS hatalarını aşmak için internal API proxy kullanır
+// API kimlik bilgileri tarayıcıya hiç gelmez — sunucu, /api/trendyol/orders
+// içinde tenant'ın kayıtlı ayarlarından kimliği kendisi okur.
+
+import { apiFetch } from './api';
 
 export interface TrendyolOrder {
     orderNumber: string;
@@ -21,16 +24,14 @@ export interface TrendyolOrder {
 }
 
 export class TrendyolClient {
-    private config: any;
     private type: 'trendyol' | 'trendyol_go';
 
-    constructor(config: any, type: 'trendyol' | 'trendyol_go' = 'trendyol') {
-        this.config = config;
+    constructor(type: 'trendyol' | 'trendyol_go' = 'trendyol') {
         this.type = type;
     }
 
     /**
-     * Siparişleri çek (Internal Proxy API üzerinden)
+     * Siparişleri çek (Internal Proxy API üzerinden — kimlik bilgileri server-side)
      */
     async getOrders(
         startDate: Date,
@@ -38,33 +39,17 @@ export class TrendyolClient {
         status?: string
     ): Promise<TrendyolOrder[]> {
         try {
-            const response = await fetch('/api/trendyol/orders', {
+            const rawData = await apiFetch('/api/trendyol/orders', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     type: this.type,
-                    apiKey: this.config.apiKey,
-                    apiSecret: this.config.apiSecret,
-                    supplierId: this.config.supplierId,
-                    sellerId: this.config.sellerId,
-                    storeId: this.config.storeId,
-                    agentName: this.config.agentName,
-                    isStage: this.config.stage,
                     startDate: startDate.getTime(),
                     endDate: endDate.getTime(),
                     status
                 })
             });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || `Bağlantı hatası (${response.status})`);
-            }
-
-            const rawData = await response.json();
-            
             // Veri yapılarını normalize et
             return rawData.map((order: any) => ({
                 ...order,
