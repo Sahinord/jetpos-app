@@ -496,104 +496,104 @@ function FiyatlandirmaContent() {
     const [formData, setFormData] = useState({ name: "", email: "", phone: "", company: "", message: "" });
 
     const FEATURES = [
-        { 
-            id: "pos", 
-            label: "JetKasa (POS)", 
+        {
+            id: "pos",
+            label: "JetKasa (POS)",
             description: "Market, mağaza ve perakende noktaları için ultra hızlı barkodlu satış terminali.",
             detailed: "Saniyeler içinde fiş kesmenizi sağlar. Online/Offline çalışma özelliğiyle internet kesilse bile satışa devam edebilirsiniz. Terazi entegrasyonu ve dokunmatik ekran desteği mevcuttur.",
             benefit: "Kasa kuyruklarını %40 azaltın, saniyeler içinde fiş kesin.",
-            icon: Barcode, 
-            category: "Operasyon" 
+            icon: Barcode,
+            category: "Operasyon"
         },
-        { 
-            id: "adisyon", 
-            label: "Adisyon & Restoran", 
+        {
+            id: "adisyon",
+            label: "Adisyon & Restoran",
             description: "Masa takibi, mutfak yönetimi ve garson uygulaması ile tam entegre restoran çözümü.",
             detailed: "Masaları anlık görün, siparişleri mutfağa otomatik iletin. Reçete sistemi ile maliyet hesabı yapın. Yemeksepeti, Getir ve Trendyol Yemek entegrasyonu dahildir.",
             benefit: "Sipariş hatalarını sıfıra indirin, mutfak hızını artırın.",
-            icon: Utensils, 
-            category: "Restaurant & Cafe" 
+            icon: Utensils,
+            category: "Restaurant & Cafe"
         },
-        { 
-            id: "ecommerce", 
-            label: "E-Ticaret Entegrasyonu", 
-            description: "Shopify, Woocommerce ve İkas gibi platformlarla tam stok ve fiyat senkronizasyonu.", 
+        {
+            id: "ecommerce",
+            label: "E-Ticaret Entegrasyonu",
+            description: "Shopify, Woocommerce ve İkas gibi platformlarla tam stok ve fiyat senkronizasyonu.",
             detailed: "Fiziksel mağazanızdaki stoklar ile web sitenizdeki stoklar tek panelden yönetilir. Bir yerden satıldığında her yerde otomatik düşer. Fiyat güncellemeleri anlıktır.",
             benefit: "Stok hatalarını önleyin, manuel iş yükünü %90 azaltın.",
-            icon: Globe, 
-            category: "Pazaryeri" 
+            icon: Globe,
+            category: "Pazaryeri"
         },
-        { 
-            id: "products", 
-            label: "Gelişmiş Stok Yönetimi", 
-            description: "Kritik stok seviyesi uyarıları, varyantlı ürün takibi ve barkod etiket tasarımı.", 
+        {
+            id: "products",
+            label: "Gelişmiş Stok Yönetimi",
+            description: "Kritik stok seviyesi uyarıları, varyantlı ürün takibi ve barkod etiket tasarımı.",
             detailed: "Çoklu depo takibi yapabilir, depolar arası transferleri yönetebilirsiniz. Parti ve seri no takibi ile son kullanma tarihi yaklaşan ürünleri önceden görün.",
             benefit: "Kaybolan ürünleri engelleyin, deponuzdaki her kuruşu takip edin.",
-            icon: Package, 
-            category: "Operasyon" 
+            icon: Package,
+            category: "Operasyon"
         },
-        { 
-            id: "sicak_satis", 
-            label: "Sıcak Satış (Plasiyer)", 
-            description: "Saha ekipleri için araçta fatura kesme ve tahsilat yönetimi modülü.", 
+        {
+            id: "sicak_satis",
+            label: "Sıcak Satış (Plasiyer)",
+            description: "Saha ekipleri için araçta fatura kesme ve tahsilat yönetimi modülü.",
             detailed: "Plasiyerleriniz sahada telefon veya tabletten sipariş alabilir, fatura kesebilir. GPS takibi ile rota yönetimi ve anlık depo kontrolü sağlar.",
             benefit: "Saha verimliliğini %50 artırın, hatalı sevkiyatı önleyin.",
-            icon: PhoneCall, 
-            category: "Mobilite" 
+            icon: PhoneCall,
+            category: "Mobilite"
         },
-        { 
-            id: "loyalty", 
-            label: "Müşteri Sadakat (Puan)", 
-            description: "Müşterilerinize alışveriş yaptıkça puan kazandırın, sadakati artırın.", 
+        {
+            id: "loyalty",
+            label: "Müşteri Sadakat (Puan)",
+            description: "Müşterilerinize alışveriş yaptıkça puan kazandırın, sadakati artırın.",
             detailed: "Müşteri kartı veya telefon numarası ile puan toplama. Özel günlerde kampanya tanımlama (örn: Doğum gününde 2 kat puan). SMS marketing entegreli.",
             benefit: "Müşteri geri dönüş oranını %30 artırın.",
-            icon: Star, 
-            category: "Pazaryeri" 
+            icon: Star,
+            category: "Pazaryeri"
         },
-        { 
-            id: "currency", 
-            label: "Dövizli İşlemler", 
-            description: "Dolar, Euro veya Altın bazlı satış yapma ve kasa tutma özelliği.", 
+        {
+            id: "currency",
+            label: "Dövizli İşlemler",
+            description: "Dolar, Euro veya Altın bazlı satış yapma ve kasa tutma özelliği.",
             detailed: "Merkez Bankası kurlarını otomatik çeker. Cari hesaplarınızı dövizli takip edebilir, raporlarınızı istediğiniz para birimiyle anlık olarak alabilirsiniz.",
             benefit: "Enflasyona karşı nakit akışınızı koruyun, kur kaybını önleyin.",
-            icon: Wallet, 
-            category: "Finansal" 
+            icon: Wallet,
+            category: "Finansal"
         },
-        { 
-            id: "cari_hesap", 
-            label: "Cari & Veresiye Takibi", 
-            description: "Müşteri ve tedarikçi limitleri, borç hatırlatıcı ve vadelendirme sistemi.", 
+        {
+            id: "cari_hesap",
+            label: "Cari & Veresiye Takibi",
+            description: "Müşteri ve tedarikçi limitleri, borç hatırlatıcı ve vadelendirme sistemi.",
             detailed: "Ödeme gecikmelerinde otomatik hatırlatma. Risk analizi ve limit tanımlama. Hesap özetini tek tıkla PDF veya WhatsApp üzerinden gönderme.",
             benefit: "Alacaklarınızı zamanında toplayın, nakit akışınızı koruyun.",
-            icon: Users, 
-            category: "Finansal" 
+            icon: Users,
+            category: "Finansal"
         },
-        { 
-            id: "invoice", 
-            label: "E-Fatura & E-Arşiv", 
-            description: "Dosya kağıdı yerine resmi fatura düzenleme. QNB Finansbank garantisiyle.", 
+        {
+            id: "invoice",
+            label: "E-Fatura & E-Arşiv",
+            description: "Dosya kağıdı yerine resmi fatura düzenleme. QNB Finansbank garantisiyle.",
             detailed: "BİS entegrasyonu ile tam yasal uyumluluk. İptal ve iade süreçleri kolayca yönetilir. Arşivleme süresi boyunca yasal saklama garantisi.",
             benefit: "Fatura maliyetlerini %80 düşürün, resmi süreçleri hızlandırın.",
-            icon: FileText, 
-            category: "Dijital Dönüşüm" 
+            icon: FileText,
+            category: "Dijital Dönüşüm"
         },
-        { 
-            id: "ai_insights", 
-            label: "Yapay Zeka (JetAI)", 
-            description: "Gelecek satışı tahmin eden ve ölü stokları uyaran akıllı asistan.", 
+        {
+            id: "ai_insights",
+            label: "Yapay Zeka (JetAI)",
+            description: "Gelecek satışı tahmin eden ve ölü stokları uyaran akıllı asistan.",
             detailed: "Mevsimsellik analizi ve talep tahmini. Karlılık odaklı stok önerileri. Robot asistan ile işletme durumu hakkında sesli veya yazılı rapor sunumu.",
             benefit: "Geleceği verilerle tahmin edin, rakiplerinizden öne geçin.",
-            icon: Brain, 
-            category: "İleri Teknoloji" 
+            icon: Brain,
+            category: "İleri Teknoloji"
         },
-        { 
-            id: "mobile_app", 
-            label: "Uzaktan Yönetim Uygulaması", 
-            description: "Mağazanızdan uzakta olsanız bile tüm satışları anlık takip edin.", 
+        {
+            id: "mobile_app",
+            label: "Uzaktan Yönetim Uygulaması",
+            description: "Mağazanızdan uzakta olsanız bile tüm satışları anlık takip edin.",
             detailed: "iOS ve Android uyumlu yerel uygulama. Anlık bildirimler, canlı kasa durumu, personel performans raporları. Dünyanın her yerinden tam kontrol.",
             benefit: "İşletmenizin durumu her an avucunuzun içinde olsun.",
-            icon: BarChart3, 
-            category: "Mobilite" 
+            icon: BarChart3,
+            category: "Mobilite"
         },
     ];
 
@@ -642,7 +642,7 @@ function FiyatlandirmaContent() {
                                 {viewMode === "plans" ? "Hızınıza Hız Katın" : "Sadece Gerekeni Seçin"}
                             </h1>
                             <p style={{ color: "#4B5563", fontSize: "1rem", maxWidth: "550px", margin: "0 auto 2rem" }}>
-                                {viewMode === "plans" 
+                                {viewMode === "plans"
                                     ? "Hazır paketlerimizden birini seçerek anında başlayın."
                                     : "İhtiyacın olmayan özelliklere para ödeme, kendi paketini yap."}
                             </p>
@@ -689,12 +689,12 @@ function FiyatlandirmaContent() {
                                                                 </div>
                                                                 <div style={{ flex: 1 }}>
                                                                     <h3 style={{ fontSize: "0.95rem", fontWeight: 800, color: "#111827", marginBottom: "0.15rem" }}>{f.label}</h3>
-                                                                    <button 
+                                                                    <button
                                                                         onClick={(e) => toggleDetail(f.id, e)}
-                                                                        style={{ 
-                                                                            background: "none", border: "none", padding: 0, 
-                                                                            color: "#7886C7", fontSize: "0.7rem", fontWeight: 700, 
-                                                                            cursor: "pointer", display: "flex", alignItems: "center", 
+                                                                        style={{
+                                                                            background: "none", border: "none", padding: 0,
+                                                                            color: "#7886C7", fontSize: "0.7rem", fontWeight: 700,
+                                                                            cursor: "pointer", display: "flex", alignItems: "center",
                                                                             gap: "0.25rem", position: "relative", zIndex: 10
                                                                         }}
                                                                     >
@@ -757,7 +757,7 @@ function FiyatlandirmaContent() {
                                 <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.9)", backdropFilter: "blur(16px)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem" }}>
                                     <motion.div initial={{ y: 50, scale: 0.9, opacity: 0 }} animate={{ y: 0, scale: 1, opacity: 1 }} exit={{ y: 50, scale: 0.9, opacity: 0 }} style={{ background: "white", border: "1px solid rgba(120, 134, 199, 0.15)", borderRadius: "3rem", padding: "4rem", width: "100%", maxWidth: "600px", position: "relative", boxShadow: "0 40px 100px rgba(0,0,0,0.25)" }}>
                                         <button onClick={() => setShowForm(false)} style={{ position: "absolute", top: "2rem", right: "2rem", background: "white", border: "1px solid rgba(120, 134, 199, 0.2)", borderRadius: "50%", width: "3.5rem", height: "3.5rem", color: "#111827", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><X style={{ width: "1.5rem" }} /></button>
-                                        
+
                                         <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
                                             <div style={{ width: "4rem", height: "4rem", background: "rgba(120, 134, 199, 0.15)", borderRadius: "1.5rem", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1.5rem" }}><Zap style={{ color: "#7886C7", width: "2rem" }} /></div>
                                             <h2 style={{ fontSize: "2.5rem", fontWeight: 950, marginBottom: "0.75rem", color: "#111827", letterSpacing: "-0.04em" }}>Neredeyse Bitti!</h2>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import TrendyolGOWidget from "./TrendyolGOWidget";
+import HepsiburadaWidget from "./HepsiburadaWidget";
 import ProductMapping from "./ProductMapping";
 import {
     ShoppingBag, Store, Package, ShoppingCart,
@@ -17,11 +18,12 @@ export default function IntegrationsDashboard({ integrationType }: { integration
         if (type === 'trendyol_go_integration') return 'trendyol_go';
         if (type === 'getir_integration') return 'getir';
         if (type === 'yemeksepeti_integration') return 'yemeksepeti';
+        if (type === 'hepsiburada_integration') return 'hepsiburada';
         return 'other';
     };
 
     // Diğer entegrasyonlar için "Yakında" ekranı
-    if (integrationType !== "trendyol_integration" && integrationType !== "trendyol_go_integration") {
+    if (integrationType !== "trendyol_integration" && integrationType !== "trendyol_go_integration" && integrationType !== "hepsiburada_integration") {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6">
                 <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center text-secondary/40">
@@ -49,19 +51,31 @@ export default function IntegrationsDashboard({ integrationType }: { integration
         { id: 'mapping' as const, label: 'Ürün Eşleştirme', icon: LinkIcon },
     ];
 
+    const isHepsiburada = integrationType === 'hepsiburada_integration';
+    const headerTitle = isHepsiburada ? 'Hepsiburada' : 'Trendyol GO';
+    const headerDesc = isHepsiburada ? 'Siparişler • Kargo (HepsiJet dahil) • Ciro Analizi' : 'Siparişler • Ciro Analizi • Stok Senkronizasyonu';
+
+    const iconWrapClass = isHepsiburada
+        ? 'w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center border border-amber-500/20'
+        : 'w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center border border-orange-500/20';
+    const iconClass = isHepsiburada ? 'w-6 h-6 text-amber-500' : 'w-6 h-6 text-orange-500';
+    const tabActiveClass = isHepsiburada
+        ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20'
+        : 'bg-orange-500 text-white shadow-lg shadow-orange-500/20';
+
     return (
         <div className="space-y-6">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-2">
                 <div>
                     <div className="flex items-center gap-3 mb-2">
-                        <div className="w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center border border-orange-500/20">
-                            <Package className="w-6 h-6 text-orange-500" />
+                        <div className={iconWrapClass}>
+                            <Package className={iconClass} />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-black tracking-tight text-white">Trendyol GO</h1>
+                            <h1 className="text-2xl font-black tracking-tight text-white">{headerTitle}</h1>
                             <p className="text-xs font-medium text-secondary/60">
-                                Siparişler • Ciro Analizi • Stok Senkronizasyonu
+                                {headerDesc}
                             </p>
                         </div>
                     </div>
@@ -76,7 +90,7 @@ export default function IntegrationsDashboard({ integrationType }: { integration
                         onClick={() => setActiveTab(tab.id)}
                         className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all whitespace-nowrap ${
                             activeTab === tab.id
-                                ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20'
+                                ? tabActiveClass
                                 : 'text-secondary hover:text-foreground hover:bg-white/5'
                         }`}
                     >
@@ -88,10 +102,12 @@ export default function IntegrationsDashboard({ integrationType }: { integration
 
             {/* Tab İçeriği */}
             <div className="min-h-[50vh]">
-                {activeTab === 'mapping' ? (
+                {activeTab === 'mapping' && !isHepsiburada ? (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <ProductMapping platform={getPlatformName(integrationType)} />
                     </div>
+                ) : isHepsiburada ? (
+                    <HepsiburadaWidget activeSubTab={activeTab} />
                 ) : (
                     <TrendyolGOWidget activeSubTab={activeTab} />
                 )}

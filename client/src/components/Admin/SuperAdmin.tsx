@@ -40,6 +40,7 @@ const AVAILABLE_FEATURES = [
     { id: 'label_designer', label: 'Ürün Etiket Tasarımı' },
     { id: 'trendyol_marketplace', label: 'Trendyol Pazaryeri' },
     { id: 'trendyol_go', label: 'Trendyol GO / Yemek' },
+    { id: 'hepsiburada_marketplace', label: 'Hepsiburada Pazaryeri & HepsiJet Kargo' },
     { id: 'invoice', label: 'Fatura İşlemleri Entegrasyonu' },
     { id: 'invoice_management', label: 'Fatura ve İrsaliye Yönetimi' },
     { id: 'ai_features', label: 'JetPos AI (Öngörüler & Asistan)' },
@@ -104,6 +105,10 @@ export default function SuperAdmin() {
     
     const [trendyolMarketplaceModal, setTrendyolMarketplaceModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
     const [trendyolMarketplaceSettings, setTrendyolMarketplaceSettings] = useState({ supplierId: '', apiKey: '', apiSecret: '' });
+
+    // Hepsiburada states (Pazaryeri sipariş + HepsiJet kargo, aynı Order API üzerinden)
+    const [hepsiburadaModal, setHepsiburadaModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
+    const [hepsiburadaSettings, setHepsiburadaSettings] = useState({ merchantId: '', username: '', password: '', stage: false, webhookUsername: '', webhookPassword: '' });
 
     // Warehouse management states
     const [warehouseModal, setWarehouseModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
@@ -653,6 +658,52 @@ export default function SuperAdmin() {
         }
     };
 
+    const handleSaveHepsiburadaSettings = async () => {
+        if (!hepsiburadaModal) return;
+
+        setSaving(true);
+        try {
+            const tenantObj = tenants.find(t => t.id === hepsiburadaModal.tenantId);
+            const currentSettings = tenantObj?.settings || {};
+
+            const updatedSettings = {
+                ...currentSettings,
+                hepsiburada: {
+                    merchantId: hepsiburadaSettings.merchantId,
+                    username: hepsiburadaSettings.username,
+                    password: hepsiburadaSettings.password,
+                    stage: hepsiburadaSettings.stage,
+                    webhookUsername: hepsiburadaSettings.webhookUsername,
+                    webhookPassword: hepsiburadaSettings.webhookPassword
+                }
+            };
+
+            const { error } = await supabase
+                .from('tenants')
+                .update({ settings: updatedSettings })
+                .eq('id', hepsiburadaModal.tenantId);
+
+            if (error) throw error;
+
+            await supabase
+                .from('notifications')
+                .insert([{
+                    title: "Hepsiburada Entegrasyon Güncellemesi",
+                    message: "Hepsiburada Pazaryeri ve HepsiJet kargo entegrasyon ayarlarınız sistem yöneticisi tarafından güncellendi.",
+                    type: "info",
+                    tenant_id: hepsiburadaModal.tenantId
+                }]);
+
+            alert(`✅ ${hepsiburadaModal.tenantName} için Hepsiburada Ayarları güncellendi!`);
+            setHepsiburadaModal(null);
+            await fetchTenants();
+        } catch (err: any) {
+            alert('❌ Hata: ' + err.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const fetchWarehouses = async (tenantId: string) => {
         setLoading(true);
         try {
@@ -1002,6 +1053,27 @@ export default function SuperAdmin() {
                                                 title="Trendyol Pazaryeri (Normal) Ayarları"
                                             >
                                                 <span className="font-black text-[9px]">TY</span>
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    const currentHb = tenant.settings?.hepsiburada || {};
+                                                    setHepsiburadaModal({
+                                                        tenantId: tenant.id,
+                                                        tenantName: tenant.company_name || tenant.license_key
+                                                    });
+                                                    setHepsiburadaSettings({
+                                                        merchantId: currentHb.merchantId || '',
+                                                        username: currentHb.username || '',
+                                                        password: currentHb.password || '',
+                                                        webhookUsername: currentHb.webhookUsername || `jetpos_${tenant.id.slice(0, 8)}`,
+                                                        webhookPassword: currentHb.webhookPassword || '',
+                                                        stage: currentHb.stage === true
+                                                    });
+                                                }}
+                                                className="p-3 bg-white/5 hover:bg-amber-500/20 rounded-xl text-slate-400 hover:text-amber-500 transition-all font-bold"
+                                                title="Hepsiburada Pazaryeri & HepsiJet Kargo Ayarları"
+                                            >
+                                                <span className="font-black text-[9px]">HB</span>
                                             </button>
                                             <button
                                                 onClick={() => {
@@ -1400,6 +1472,7 @@ export default function SuperAdmin() {
                                                             if (selectedPlatform && (newFw[idx].name === 'Yeni Sabit Mağaza' || newFw[idx].name.trim() === '')) {
                                                                 if (selectedPlatform === 'trendyol_go') newFw[idx].name = 'Trendyol GO Mağazası';
                                                                 else if (selectedPlatform === 'trendyol') newFw[idx].name = 'Trendyol Pazaryeri';
+                                                                else if (selectedPlatform === 'hepsiburada') newFw[idx].name = 'Hepsiburada Pazaryeri';
                                                                 else if (selectedPlatform === 'getir') newFw[idx].name = 'Getir Mağazası';
                                                                 else if (selectedPlatform === 'yemeksepeti') newFw[idx].name = 'Yemeksepeti Mağazası';
                                                                 else if (selectedPlatform === 'mobile') newFw[idx].name = 'Mobil Uygulama Siparişleri';
@@ -1414,6 +1487,7 @@ export default function SuperAdmin() {
                                                         <option value="">Yok</option>
                                                         <option value="trendyol">Trendyol Pazaryeri</option>
                                                         <option value="trendyol_go">Trendyol GO / Yemek</option>
+                                                        <option value="hepsiburada">Hepsiburada Pazaryeri</option>
                                                         <option value="getir">Getir</option>
                                                         <option value="yemeksepeti">Yemeksepeti</option>
                                                         <option value="mobile">Mobil Uygulama (JetPos Mobile)</option>
@@ -1447,7 +1521,7 @@ export default function SuperAdmin() {
                                     { label: 'ÜRÜN & STOK', features: ['products', 'label_designer', 'invoice_management'] },
                                     { label: 'DİJİTAL & WEB', features: ['qrmenu', 'showcase', 'cfd'] },
                                     { label: 'FİNANS & YÖNETİM', features: ['profit_calculator', 'price_simulator', 'reports', 'cari_hesap', 'bank_management', 'cash_management', 'employee_module', 'employee_login', 'employee_permissions', 'master_pin_enabled'] },
-                                    { label: 'YAPAY ZEKA & ENTEGRASYON', features: ['ai_features', 'trendyol_go'] },
+                                    { label: 'YAPAY ZEKA & ENTEGRASYON', features: ['ai_features', 'trendyol_marketplace', 'trendyol_go', 'hepsiburada_marketplace'] },
                                 ].map((cat) => (
                                     <div key={cat.label} className="space-y-4">
                                         <div className="flex items-center gap-3 ml-2">
@@ -1935,6 +2009,122 @@ export default function SuperAdmin() {
                                     onClick={handleSaveTrendyolMarketplaceSettings}
                                     disabled={saving}
                                     className="flex-1 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-black shadow-lg shadow-orange-600/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {saving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><Save className="w-4 h-4" /> Kaydet</>}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Hepsiburada Modal */}
+            {hepsiburadaModal && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+                    <div className="bg-slate-900 border border-white/10 rounded-[2.5rem] max-w-md w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+                        <div className="p-8 border-b border-white/10 sticky top-0 bg-slate-900 z-10">
+                            <div className="flex items-center gap-4 mb-2">
+                                <div className="w-12 h-12 bg-amber-500/20 rounded-2xl flex items-center justify-center">
+                                    <span className="font-black text-xl text-amber-500">HB</span>
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black text-white">Hepsiburada Ayarları</h3>
+                                    <p className="text-xs text-slate-500 mt-1">{hepsiburadaModal.tenantName}</p>
+                                </div>
+                            </div>
+                            <p className="text-[11px] text-slate-500 mt-3 leading-relaxed">
+                                Pazaryeri siparişleri ve HepsiJet dahil kargo firması seçimi/etiket alma aynı Hepsiburada Order API üzerinden tek entegrasyonla yönetilir — ayrı bir HepsiJet hesabı gerekmez.
+                            </p>
+                        </div>
+                        <div className="p-8 space-y-4">
+                            <div className="p-3 bg-amber-500/5 border border-amber-500/10 rounded-xl text-[10px] text-slate-400 leading-relaxed">
+                                Satıcı Paneli → Bilgilerim → Entegrasyon → "Entegratör Bilgileri" sekmesi: <b>Mağaza ID</b> = Merchant ID, "Entegratörlerim" altındaki kaydın <b>Servis Anahtarı</b> = aşağıdaki Şifre, entegratör kullanıcı adı = Kullanıcı Adı.
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Merchant ID</label>
+                                <input
+                                    type="text"
+                                    value={hepsiburadaSettings.merchantId}
+                                    onChange={(e) => setHepsiburadaSettings({ ...hepsiburadaSettings, merchantId: e.target.value })}
+                                    placeholder="b2910839-83b9-4d45-adb6-86bad457edcb"
+                                    className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-amber-500/50"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Kullanıcı Adı (Username)</label>
+                                <input
+                                    type="text"
+                                    value={hepsiburadaSettings.username}
+                                    onChange={(e) => setHepsiburadaSettings({ ...hepsiburadaSettings, username: e.target.value })}
+                                    className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-amber-500/50"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Şifre (Password)</label>
+                                <input
+                                    type="password"
+                                    value={hepsiburadaSettings.password}
+                                    onChange={(e) => setHepsiburadaSettings({ ...hepsiburadaSettings, password: e.target.value })}
+                                    className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-amber-500/50"
+                                />
+                            </div>
+                            <div className="pt-2 space-y-2 border-t border-white/5">
+                                <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest ml-1 pt-3">Webhook Kimlik Bilgisi (Sipariş Webhook Modeli)</p>
+                                <p className="text-[10px] text-slate-500 leading-relaxed">
+                                    Bu, yukarıdakinden FARKLI bir kimlik — Hepsiburada bize sipariş/paket bildirimi göndererken (webhook) kendini bu kullanıcı adı/şifre ile tanıtacak. Bu değerleri kendimiz belirleyip Hepsiburada'ya "Base URL" kaydı yaparken iletiyoruz.
+                                </p>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Webhook Kullanıcı Adı</label>
+                                <input
+                                    type="text"
+                                    value={hepsiburadaSettings.webhookUsername}
+                                    onChange={(e) => setHepsiburadaSettings({ ...hepsiburadaSettings, webhookUsername: e.target.value })}
+                                    className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-amber-500/50"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Webhook Şifresi</label>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={hepsiburadaSettings.webhookPassword}
+                                        onChange={(e) => setHepsiburadaSettings({ ...hepsiburadaSettings, webhookPassword: e.target.value })}
+                                        className="flex-1 px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-amber-500/50 font-mono text-xs"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setHepsiburadaSettings({ ...hepsiburadaSettings, webhookPassword: crypto.randomUUID().replace(/-/g, '') })}
+                                        className="px-4 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 rounded-xl font-black text-[10px] uppercase tracking-widest"
+                                    >
+                                        Üret
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="flex items-center justify-between p-4 bg-slate-950 border border-white/5 rounded-xl">
+                                <div>
+                                    <p className="text-xs font-black text-white">Test Ortamı (SIT)</p>
+                                    <p className="text-[10px] text-slate-500 mt-0.5">Açıksa istekler -sit (sandbox) ortamına gider</p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setHepsiburadaSettings({ ...hepsiburadaSettings, stage: !hepsiburadaSettings.stage })}
+                                    className={`relative w-12 h-7 rounded-full transition-all ${hepsiburadaSettings.stage ? 'bg-amber-500' : 'bg-white/10'}`}
+                                >
+                                    <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all ${hepsiburadaSettings.stage ? 'right-1' : 'left-1'}`} />
+                                </button>
+                            </div>
+                            <div className="flex gap-3 pt-4">
+                                <button
+                                    onClick={() => setHepsiburadaModal(null)}
+                                    className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold transition-all"
+                                >
+                                    İptal
+                                </button>
+                                <button
+                                    onClick={handleSaveHepsiburadaSettings}
+                                    disabled={saving}
+                                    className="flex-1 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-black shadow-lg shadow-amber-500/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                                 >
                                     {saving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><Save className="w-4 h-4" /> Kaydet</>}
                                 </button>

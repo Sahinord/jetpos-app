@@ -167,6 +167,8 @@ export default function Home() {
       setActiveTab('trendyol_go_integration');
     } else if (activeWarehouse?.platform === 'trendyol') {
       setActiveTab('trendyol_integration');
+    } else if (activeWarehouse?.platform === 'hepsiburada') {
+      setActiveTab('hepsiburada_integration');
     }
   }, [activeWarehouse]);
 

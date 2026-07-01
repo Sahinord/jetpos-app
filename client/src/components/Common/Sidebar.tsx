@@ -380,6 +380,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                 { id: "trendyol_go_integration", label: "Trendyol GO / Yemek", icon: ShoppingCart, feature: "trendyol_go", description: "Trendyol GO ve Yemek siparişleri, gelir ve net kar analizi." },
                 { id: "yemeksepeti_integration", label: "Yemeksepeti", icon: Store, feature: "yemeksepeti", description: "Yemeksepeti siparişleri, gelir ve net kar analizi." },
                 { id: "getir_integration", label: "Getir", icon: Package, feature: "getir", description: "Getir siparişleri, gelir ve net kar analizi." },
+                { id: "hepsiburada_integration", label: "Hepsiburada", icon: Store, feature: "hepsiburada_marketplace", description: "Hepsiburada Pazaryeri siparişleri ve HepsiJet dahil kargo yönetimi." },
             ]
         },
         {
@@ -452,9 +453,9 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
         }
 
         // --- TRENDYOL GO / PLATFORM MAĞ.AZA İZOLASYONU ---
-        if (activeWarehouse?.platform === 'trendyol_go' || activeWarehouse?.platform === 'trendyol') {
-            const platformLabel = activeWarehouse.platform === 'trendyol_go' ? 'Trendyol GO' : 'Trendyol Pazaryeri';
-            const integrationId = activeWarehouse.platform === 'trendyol_go' ? 'trendyol_go_integration' : 'trendyol_integration';
+        if (activeWarehouse?.platform === 'trendyol_go' || activeWarehouse?.platform === 'trendyol' || activeWarehouse?.platform === 'hepsiburada') {
+            const platformLabel = activeWarehouse.platform === 'trendyol_go' ? 'Trendyol GO' : activeWarehouse.platform === 'trendyol' ? 'Trendyol Pazaryeri' : 'Hepsiburada';
+            const integrationId = activeWarehouse.platform === 'trendyol_go' ? 'trendyol_go_integration' : activeWarehouse.platform === 'trendyol' ? 'trendyol_integration' : 'hepsiburada_integration';
 
             // Sadece izin verilen kategoriler
             if (category.id === 'main') {
