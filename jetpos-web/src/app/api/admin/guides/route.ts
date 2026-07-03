@@ -11,7 +11,7 @@ function getAdminSupabase() {
 
 // ── GET ───────────────────────────────────────────────────────────
 export async function GET(req: NextRequest) {
-    const guard = adminGuard(req);
+    const guard = await adminGuard(req, "guides");
     if (guard) return guard;
     try {
         const sb = getAdminSupabase();
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
 
 // ── POST ──────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
-    const guard = adminGuard(req);
+    const guard = await adminGuard(req, "guides");
     if (guard) return guard;
     try {
         const body = await req.json();
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
 
 // ── PATCH ───────────────────────────────────────────────────────── (UPDATE)
 export async function PATCH(req: NextRequest) {
-    const guard = adminGuard(req);
+    const guard = await adminGuard(req, "guides");
     if (guard) return guard;
     const id = req.nextUrl.searchParams.get("id");
     if (!id) return NextResponse.json({ error: "id zorunlu" }, { status: 400 });
@@ -72,7 +72,7 @@ export async function PATCH(req: NextRequest) {
 
 // ── DELETE ────────────────────────────────────────────────────────
 export async function DELETE(req: NextRequest) {
-    const guard = adminGuard(req);
+    const guard = await adminGuard(req, "guides");
     if (guard) return guard;
     const id = req.nextUrl.searchParams.get("id");
     if (!id) return NextResponse.json({ error: "id zorunlu" }, { status: 400 });

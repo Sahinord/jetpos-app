@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Shield, Settings, X, Check } from "lucide-react";
+import { Shield, Settings, Check } from "lucide-react";
 import Link from "next/link";
 
 export default function CookieBanner() {
     const [visible, setVisible] = useState(false);
     const [showDetails, setShowDetails] = useState(false);
-    const [analytics, setAnalytics] = useState(true);
+    // KVKK / Kurul Çerez Rehberi gereği rızaya tabi çerezler varsayılan KAPALI (opt-in)
+    const [analytics, setAnalytics] = useState(false);
     const [marketing, setMarketing] = useState(false);
 
     useEffect(() => {
@@ -20,35 +21,21 @@ export default function CookieBanner() {
         }
     }, []);
 
-    const acceptAll = () => {
+    const saveConsent = (consentAnalytics: boolean, consentMarketing: boolean) => {
         localStorage.setItem("jetpos-cookie-consent", JSON.stringify({
             necessary: true,
-            analytics: true,
-            marketing: true,
+            analytics: consentAnalytics,
+            marketing: consentMarketing,
             timestamp: new Date().toISOString(),
         }));
+        // AnalyticsLoader bu event'i dinler; rıza verilmedikçe GA yüklenmez
+        window.dispatchEvent(new Event("jetpos-consent-updated"));
         setVisible(false);
     };
 
-    const acceptSelected = () => {
-        localStorage.setItem("jetpos-cookie-consent", JSON.stringify({
-            necessary: true,
-            analytics,
-            marketing,
-            timestamp: new Date().toISOString(),
-        }));
-        setVisible(false);
-    };
-
-    const rejectAll = () => {
-        localStorage.setItem("jetpos-cookie-consent", JSON.stringify({
-            necessary: true,
-            analytics: false,
-            marketing: false,
-            timestamp: new Date().toISOString(),
-        }));
-        setVisible(false);
-    };
+    const acceptAll = () => saveConsent(true, true);
+    const acceptSelected = () => saveConsent(analytics, marketing);
+    const rejectAll = () => saveConsent(false, false);
 
     if (!visible) return null;
 
@@ -79,13 +66,13 @@ export default function CookieBanner() {
                 animation: "cookieSlideUp 0.5s cubic-bezier(0.22,1,0.36,1) both",
             }}>
                 <div style={{
-                    background: "rgba(17, 24, 39, 0.97)",
+                    background: "rgba(255, 255, 255, 0.97)",
                     backdropFilter: "blur(24px)",
                     WebkitBackdropFilter: "blur(24px)",
-                    border: "1px solid rgba(120, 134, 199, 0.2)",
+                    border: "1px solid rgba(120, 134, 199, 0.25)",
                     borderRadius: "1.5rem",
                     overflow: "hidden",
-                    boxShadow: "0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(120, 134, 199, 0.06) inset",
+                    boxShadow: "0 24px 64px rgba(17,24,39,0.18), 0 0 0 1px rgba(120, 134, 199, 0.06) inset",
                 }}>
                     {/* Top accent */}
                     <div style={{
@@ -109,12 +96,12 @@ export default function CookieBanner() {
                                 <Shield style={{ width: "1rem", height: "1rem", color: "#7886C7" }} />
                             </div>
                             <div style={{ flex: 1 }}>
-                                <p style={{ margin: "0 0 0.25rem", fontWeight: 700, color: "white", fontSize: "0.95rem" }}>
+                                <p style={{ margin: "0 0 0.25rem", fontWeight: 700, color: "#111827", fontSize: "0.95rem" }}>
                                     Çerez Tercihleriniz
                                 </p>
-                                <p style={{ margin: 0, fontSize: "0.8rem", color: "rgba(255,255,255,0.45)", lineHeight: 1.6 }}>
+                                <p style={{ margin: 0, fontSize: "0.8rem", color: "rgba(17,24,39,0.6)", lineHeight: 1.6 }}>
                                     Deneyiminizi iyileştirmek için çerezler kullanıyoruz. KVKK kapsamında tercihlerinizi belirleyebilirsiniz.{" "}
-                                    <Link href="/gizlilik-politikasi" style={{ color: "#7886C7", textDecoration: "none" }}>
+                                    <Link href="/gizlilik" style={{ color: "#7886C7", textDecoration: "none" }}>
                                         Gizlilik Politikası
                                     </Link>
                                 </p>
@@ -125,8 +112,8 @@ export default function CookieBanner() {
                         {showDetails && (
                             <div style={{
                                 marginBottom: "1rem",
-                                background: "rgba(255,255,255,0.03)",
-                                border: "1px solid rgba(255,255,255,0.07)",
+                                background: "rgba(17,24,39,0.03)",
+                                border: "1px solid rgba(17,24,39,0.08)",
                                 borderRadius: "0.875rem",
                                 overflow: "hidden",
                                 animation: "cookieFadeIn 0.3s ease both",
@@ -163,12 +150,12 @@ export default function CookieBanner() {
                                     <div key={item.id} style={{
                                         display: "flex", alignItems: "center", justifyContent: "space-between",
                                         padding: "0.875rem 1rem",
-                                        borderBottom: "1px solid rgba(255,255,255,0.04)",
+                                        borderBottom: "1px solid rgba(17,24,39,0.05)",
                                         gap: "1rem",
                                     }}>
                                         <div>
-                                            <p style={{ margin: 0, fontWeight: 600, color: "white", fontSize: "0.82rem" }}>{item.label}</p>
-                                            <p style={{ margin: 0, fontSize: "0.73rem", color: "rgba(255,255,255,0.4)" }}>{item.desc}</p>
+                                            <p style={{ margin: 0, fontWeight: 600, color: "#111827", fontSize: "0.82rem" }}>{item.label}</p>
+                                            <p style={{ margin: 0, fontSize: "0.73rem", color: "rgba(17,24,39,0.55)" }}>{item.desc}</p>
                                         </div>
                                         {/* Toggle */}
                                         <button
@@ -178,7 +165,7 @@ export default function CookieBanner() {
                                                 width: "2.5rem",
                                                 height: "1.375rem",
                                                 borderRadius: "9999px",
-                                                background: item.checked ? item.color : "rgba(255,255,255,0.1)",
+                                                background: item.checked ? item.color : "rgba(17,24,39,0.18)",
                                                 border: "none",
                                                 cursor: item.disabled ? "not-allowed" : "pointer",
                                                 position: "relative",
@@ -237,9 +224,9 @@ export default function CookieBanner() {
                                     style={{
                                         flex: 1,
                                         padding: "0.625rem 1rem",
-                                        background: "rgba(255,255,255,0.07)",
-                                        color: "white",
-                                        border: "1px solid rgba(255,255,255,0.12)",
+                                        background: "rgba(17,24,39,0.05)",
+                                        color: "#111827",
+                                        border: "1px solid rgba(17,24,39,0.15)",
                                         borderRadius: "0.75rem",
                                         fontWeight: 600,
                                         fontSize: "0.82rem",
@@ -248,8 +235,8 @@ export default function CookieBanner() {
                                         transition: "all 0.2s",
                                         minWidth: "120px",
                                     }}
-                                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.1)")}
-                                    onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.07)")}
+                                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(17,24,39,0.09)")}
+                                    onMouseLeave={e => (e.currentTarget.style.background = "rgba(17,24,39,0.05)")}
                                 >
                                     Seçilenleri Kabul Et
                                 </button>
@@ -258,9 +245,9 @@ export default function CookieBanner() {
                                     onClick={() => setShowDetails(true)}
                                     style={{
                                         padding: "0.625rem 0.875rem",
-                                        background: "rgba(255,255,255,0.05)",
-                                        color: "rgba(255,255,255,0.6)",
-                                        border: "1px solid rgba(255,255,255,0.1)",
+                                        background: "rgba(17,24,39,0.04)",
+                                        color: "rgba(17,24,39,0.65)",
+                                        border: "1px solid rgba(17,24,39,0.12)",
                                         borderRadius: "0.75rem",
                                         fontWeight: 600,
                                         fontSize: "0.78rem",
@@ -271,12 +258,12 @@ export default function CookieBanner() {
                                         flexShrink: 0,
                                     }}
                                     onMouseEnter={e => {
-                                        (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.08)";
-                                        (e.currentTarget as HTMLButtonElement).style.color = "white";
+                                        (e.currentTarget as HTMLButtonElement).style.background = "rgba(17,24,39,0.08)";
+                                        (e.currentTarget as HTMLButtonElement).style.color = "#111827";
                                     }}
                                     onMouseLeave={e => {
-                                        (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.05)";
-                                        (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.6)";
+                                        (e.currentTarget as HTMLButtonElement).style.background = "rgba(17,24,39,0.04)";
+                                        (e.currentTarget as HTMLButtonElement).style.color = "rgba(17,24,39,0.65)";
                                     }}
                                 >
                                     <Settings style={{ width: "0.75rem", height: "0.75rem" }} />
@@ -289,8 +276,8 @@ export default function CookieBanner() {
                                 style={{
                                     padding: "0.625rem 0.875rem",
                                     background: "transparent",
-                                    color: "rgba(255,255,255,0.35)",
-                                    border: "1px solid rgba(255,255,255,0.06)",
+                                    color: "rgba(17,24,39,0.65)",
+                                    border: "1px solid rgba(17,24,39,0.18)",
                                     borderRadius: "0.75rem",
                                     fontWeight: 500,
                                     fontSize: "0.78rem",
@@ -299,8 +286,8 @@ export default function CookieBanner() {
                                     transition: "all 0.2s",
                                     flexShrink: 0,
                                 }}
-                                onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.6)")}
-                                onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.35)")}
+                                onMouseEnter={e => (e.currentTarget.style.color = "#111827")}
+                                onMouseLeave={e => (e.currentTarget.style.color = "rgba(17,24,39,0.65)")}
                             >
                                 Reddet
                             </button>

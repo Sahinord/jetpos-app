@@ -10,16 +10,16 @@ const faqs = [
         answer: "JetPOS bulut tabanlı bir sistemdir, bu nedenle verilerin her yerden erişilebilir olması için internet bağlantısı önerilir. Ancak internet kesintilerinde bile işlem yapmaya devam edebileceğiniz 'offline' modu çok yakında hizmete girecektir."
     },
     {
-        question: "Starter ile JetScale arasındaki temel fark ne?",
-        answer: "Starter paketi 1 kullanıcı ile aylık taahhütsüz çalışır; temel satış, stok ve raporlama içerir. JetScale ise yıllık ödeme ile %21 tasarruf sağlar, 3 kullanıcıya kadar izin verir, E-Fatura, Yapay Zeka analizleri, depo yönetimi ve cari hesap takibi gibi gelişmiş özellikleri içerir."
+        question: "JetStart ile JetPro arasındaki temel fark ne?",
+        answer: "JetStart paketi 1 kullanıcı ile aylık taahhütsüz çalışır; temel satış, stok ve raporlama içerir. JetPro ise yıllık ödeme ile %30 tasarruf sağlar, 3 kullanıcıya kadar izin verir, E-Fatura, Yapay Zeka analizleri, depo yönetimi ve cari hesap takibi gibi gelişmiş özellikleri içerir."
     },
     {
         question: "Mevcut sistemimden JetPOS'a geçiş nasıl olur?",
-        answer: "Ekibimiz ücretsiz geçiş desteği sağlar. Ürün listelerinizi, müşteri verilerinizi ve stok bilgilerinizi Excel veya CSV aracılığıyla içe aktarıyoruz. JetScale ve Pro paketlerinde bu geçiş tamamen ücretsizdir ve ortalama 1–3 iş günü sürer."
+        answer: "Ekibimiz ücretsiz geçiş desteği sağlar. Ürün listelerinizi, müşteri verilerinizi ve stok bilgilerinizi Excel veya CSV aracılığıyla içe aktarıyoruz. JetPro ve JetMax paketlerinde bu geçiş tamamen ücretsizdir ve ortalama 1–3 iş günü sürer."
     },
     {
         question: "Kaç ürün tanımlayabilirim?",
-        answer: "Starter pakette 500 ürün limiti bulunmaktadır. JetScale ve üzeri paketlerde ürün sayısı sınırsızdır. Kategoriler, varyantlar (renk, beden vb.) ve barkodlar da sınırsız şekilde eklenebilir."
+        answer: "JetStart pakette 500 ürün limiti bulunmaktadır. JetPro ve üzeri paketlerde ürün sayısı sınırsızdır. Kategoriler, varyantlar (renk, beden vb.) ve barkodlar da sınırsız şekilde eklenebilir."
     },
     {
         question: "Verilerim ne kadar güvende?",
@@ -35,7 +35,7 @@ const faqs = [
     },
     {
         question: "Farklı şubelerimi tek bir yerden yönetebilir miyim?",
-        answer: "Evet! JetScale'de 1, Pro'da 3 şube, Kurumsal pakette ise sınırsız şube desteği bulunmaktadır. Tüm şubelerinizin stoklarını, satışlarını ve kasa hareketlerini tek yönetici panelinden gerçek zamanlı takip edebilirsiniz."
+        answer: "Evet! JetPro'da 1, JetMax'ta 3 şube, Kurumsal pakette ise sınırsız şube desteği bulunmaktadır. Tüm şubelerinizin stoklarını, satışlarını ve kasa hareketlerini tek yönetici panelinden gerçek zamanlı takip edebilirsiniz."
     },
     {
         question: "Aboneliği iptal edersem verilerim ne olur?",

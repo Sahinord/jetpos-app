@@ -11,7 +11,7 @@ function getAdminSupabase() {
 
 // ── GET: jetpos.shop "çok yakında" sayfasından gelen erken erişim kayıtları ──
 export async function GET(req: NextRequest) {
-    const guard = adminGuard(req);
+    const guard = await adminGuard(req, "early_access");
     if (guard) return guard;
     try {
         const sb = getAdminSupabase();

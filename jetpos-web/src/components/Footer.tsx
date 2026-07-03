@@ -73,6 +73,7 @@ export default function Footer() {
                         <ul style={{ display: "flex", flexDirection: "column", gap: "1rem", listStyle: "none" }}>
                             {([
                                 { label: "Hakkımızda", href: "/hakkimizda" },
+                                { label: "Kurumsal Çözümler", href: "/kurumsal" },
                                 { label: "Sıkça Sorulan Sorular", href: "/faq" },
                                 { label: "Gizlilik & KVKK", href: "/gizlilik" },
                                 { label: "İş Ortaklığı", href: "/is-ortakligi" },

@@ -6,7 +6,7 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import {
-    Building2, User, Mail, Phone, Briefcase, Users,
+    Building2, User, Mail, Phone, Briefcase,
     Monitor, MessageSquare, ChevronRight, Check,
     Sparkles, ArrowRight, Clock, Shield, Zap, Star
 } from "lucide-react";
@@ -78,6 +78,10 @@ export default function DemoPage() {
         message: "",
     });
 
+    // KVKK aydınlatma metni onayı (zorunlu) ve ticari ileti izni (isteğe bağlı)
+    const [kvkkAcknowledged, setKvkkAcknowledged] = useState(false);
+    const [marketingConsent, setMarketingConsent] = useState(false);
+
     const updateForm = (key: string, value: string) => {
         setForm(prev => ({ ...prev, [key]: value }));
     };
@@ -95,19 +99,27 @@ export default function DemoPage() {
     const isStep2Valid = form.sector && form.employee_count;
 
     const handleSubmit = async () => {
+        if (!kvkkAcknowledged) {
+            setError("Devam etmek için Gizlilik & KVKK Politikası'nı okuduğunuzu onaylamanız gerekmektedir.");
+            return;
+        }
         setLoading(true);
         setError("");
         try {
             const res = await fetch("/api/demo-request", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(form),
+                body: JSON.stringify({
+                    ...form,
+                    kvkk_acknowledged: kvkkAcknowledged,
+                    marketing_consent: marketingConsent,
+                }),
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Bir hata oluştu.");
             setSubmitted(true);
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Bir hata oluştu.");
         } finally {
             setLoading(false);
         }
@@ -511,6 +523,37 @@ export default function DemoPage() {
                                         />
                                     </div>
 
+                                    {/* KVKK aydınlatma onayı + isteğe bağlı ticari ileti izni */}
+                                    <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "1.5rem" }}>
+                                        <label style={{ display: "flex", alignItems: "flex-start", gap: "0.65rem", cursor: "pointer" }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={kvkkAcknowledged}
+                                                onChange={e => setKvkkAcknowledged(e.target.checked)}
+                                                style={{ width: "1.05rem", height: "1.05rem", marginTop: "0.15rem", accentColor: "#7886C7", cursor: "pointer", flexShrink: 0 }}
+                                            />
+                                            <span style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.82rem", lineHeight: 1.6 }}>
+                                                Kişisel verilerimin demo talebimin değerlendirilmesi amacıyla işlenmesine ilişkin{" "}
+                                                <Link href="/gizlilik" target="_blank" style={{ color: "#7886C7", textDecoration: "underline" }}>
+                                                    Gizlilik &amp; KVKK Politikası
+                                                </Link>
+                                                {"'nı okudum ve anladım. "}
+                                                <span style={{ color: "#f87171" }}>*</span>
+                                            </span>
+                                        </label>
+                                        <label style={{ display: "flex", alignItems: "flex-start", gap: "0.65rem", cursor: "pointer" }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={marketingConsent}
+                                                onChange={e => setMarketingConsent(e.target.checked)}
+                                                style={{ width: "1.05rem", height: "1.05rem", marginTop: "0.15rem", accentColor: "#7886C7", cursor: "pointer", flexShrink: 0 }}
+                                            />
+                                            <span style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.82rem", lineHeight: 1.6 }}>
+                                                {"JetPOS kampanya ve duyurularından e-posta/SMS ile haberdar olmak istiyorum. (isteğe bağlı)"}
+                                            </span>
+                                        </label>
+                                    </div>
+
                                     {error && (
                                         <div style={{
                                             background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)",
@@ -529,13 +572,13 @@ export default function DemoPage() {
                                         }}>
                                             ← Geri
                                         </button>
-                                        <button onClick={handleSubmit} disabled={loading} style={{
+                                        <button onClick={handleSubmit} disabled={loading || !kvkkAcknowledged} style={{
                                             flex: 2, padding: "1rem", borderRadius: "0.875rem", border: "none",
-                                            background: loading ? "rgba(255,255,255,0.05)" : "linear-gradient(135deg, #22c55e, #16a34a)",
-                                            color: loading ? "rgba(255,255,255,0.3)" : "white",
-                                            fontWeight: 800, fontSize: "1rem", cursor: loading ? "not-allowed" : "pointer",
+                                            background: (loading || !kvkkAcknowledged) ? "rgba(255,255,255,0.05)" : "linear-gradient(135deg, #22c55e, #16a34a)",
+                                            color: (loading || !kvkkAcknowledged) ? "rgba(255,255,255,0.3)" : "white",
+                                            fontWeight: 800, fontSize: "1rem", cursor: (loading || !kvkkAcknowledged) ? "not-allowed" : "pointer",
                                             fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
-                                            transition: "all 0.2s", boxShadow: loading ? "none" : "0 4px 20px rgba(34,197,94,0.4)"
+                                            transition: "all 0.2s", boxShadow: (loading || !kvkkAcknowledged) ? "none" : "0 4px 20px rgba(34,197,94,0.4)"
                                         }}>
                                             {loading ? (
                                                 <>
@@ -550,7 +593,7 @@ export default function DemoPage() {
 
                                     <p style={{ textAlign: "center", color: "rgba(255,255,255,0.3)", fontSize: "0.8rem", marginTop: "1.25rem" }}>
                                         <Shield style={{ display: "inline", width: "0.8rem", height: "0.8rem", verticalAlign: "middle", marginRight: "0.3rem" }} />
-                                        Bilgileriniz paylaşılmaz. Sadece demo için kullanılır.
+                                        Bilgileriniz yalnızca demo talebinizin değerlendirilmesi amacıyla, Gizlilik &amp; KVKK Politikası kapsamında işlenir.
                                     </p>
                                 </div>
                             </motion.div>

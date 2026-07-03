@@ -11,7 +11,7 @@ function getAdminSupabase() {
 
 // ── GET: Hakkımızda içeriği ───────────────────────────────────────
 export async function GET(req: NextRequest) {
-    const guard = adminGuard(req);
+    const guard = await adminGuard(req, "about");
     if (guard) return guard;
     try {
         const sb = getAdminSupabase();
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
 
 // ── PATCH: Section güncelle ───────────────────────────────────────
 export async function PATCH(req: NextRequest) {
-    const guard = adminGuard(req);
+    const guard = await adminGuard(req, "about");
     if (guard) return guard;
     const section = req.nextUrl.searchParams.get("section");
     if (!section) return NextResponse.json({ error: "section zorunlu" }, { status: 400 });

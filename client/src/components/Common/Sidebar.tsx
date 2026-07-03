@@ -339,11 +339,22 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                     items: [
                         { id: "alis_irsaliyesi", label: "Alış İrsaliyesi", icon: FileInput, description: "Mal alımında gelen irsaliyelerin kaydı." },
                         { id: "satis_irsaliyesi", label: "Satış İrsaliyesi", icon: FileOutput, description: "Müşterilere sevkiyat öncesi kesilen sevk irsaliyesi." },
+                        { id: "sevk_irsaliyesi", label: "Sevk İrsaliyesi", icon: ArrowUpRight, description: "Stok çıkışı için düzenlenen sevk belgesi." },
+                        { id: "alis_iade_irsaliyesi", label: "Alış İade İrsaliyesi", icon: ArrowDownLeft, description: "Tedarikçiye geri gönderilen malın irsaliyesi." },
+                        { id: "satis_iade_irsaliyesi", label: "Satış İade İrsaliyesi", icon: ArrowDownLeft, description: "Müşteriden iade alınan malın sevk irsaliyesi." },
                         { id: "alis_faturasi", label: "Alış Faturası", icon: FilePlus, description: "Tedarikçilerden gelen mal ve stok faturaları." },
                         { id: "satis_faturasi", label: "Satış Faturası", icon: FileText, description: "Toptan müşterilere kesilen kurumsal faturalar." },
                         { id: "perakende_satis_faturasi", label: "Perakende Satış", icon: ShoppingBag, description: "Nihai tüketicilere kesilen perakende faturaları." },
                         { id: "iade_faturasi", label: "İade Faturası", icon: History, description: "İade alınan veya iade edilen malların fatura takibi." },
+                        { id: "iade_fiyat_farki", label: "İade Fiyat Farkı Fişi", icon: Scale, description: "İade işlemlerinde oluşan fiyat farkı belgesi." },
+                        { id: "emsaliyet_fisleri", label: "Emsaliyet Fişleri", icon: FileSearch, description: "Emsaliyet belgesi düzenleme ekranı." },
+                        { id: "alinan_hizmet_faturasi", label: "Alınan Hizmet Faturası", icon: FileInput, description: "Dışarıdan alınan hizmetlerin fatura kaydı." },
+                        { id: "yapilan_hizmet_faturasi", label: "Yapılan Hizmet Faturası", icon: FileOutput, description: "Verilen hizmetler için düzenlenen fatura." },
+                        { id: "yapilan_hizmet_iadesi", label: "Yapılan Hizmet Fat. İadesi", icon: ArrowDownLeft, description: "Yapılan hizmet faturasının iade belgesi." },
+                        { id: "alinan_hizmet_iadesi", label: "Alınan Hizmet Fat. İadesi", icon: ArrowDownLeft, description: "Alınan hizmet faturasının iade belgesi." },
                         { id: "fatura_listesi", label: "Fatura Listesi", icon: FileText, description: "Kesilen ve alınan tüm faturaların detaylı dökümü." },
+                        { id: "fatura_kdv_listesi", label: "Fatura KDV Listesi", icon: FileBarChart, description: "KDV bazlı fatura dökümü ve özeti." },
+                        { id: "kdv_analiz_raporu", label: "KDV Analiz Raporu", icon: PieChart, description: "KDV beyanname desteği için detaylı analiz raporu." },
                     ]
                 },
                 {
@@ -369,6 +380,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                 { id: "dead_stock", label: "Stok Eritme", icon: Trash2, feature: "ai_features", description: "Rafta yatan parayı (bayat stok) nakde çevirme operasyonu." },
                 { id: "simulation", label: "Fiyat Simülasyonu", icon: TrendingUp, feature: "price_simulator", description: "Fiyat değişikliklerinin kärlılık üzerindeki etkilerini simüle etme aracı." },
                 { id: "ai_insights", label: "AI Öngörüleri", icon: Brain, feature: "ai_features", description: "Yapay zeka analizleri ile işletmenize özel büyüme önerileri." },
+                { id: "ai_assistant", label: "AI Asistan", icon: MessageSquare, feature: "ai_features", description: "İşletme verilerinize dayalı sohbet tabanlı yapay zeka yardımcısı." },
             ]
         },
         {

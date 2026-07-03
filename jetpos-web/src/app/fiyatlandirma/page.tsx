@@ -6,7 +6,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
     Check, ChevronDown, Zap, Star, ArrowRight,
     Barcode, FileText, Package, Wallet,
-    Brain, Shield, Users, Building2, BarChart3, PhoneCall, HelpCircle, Globe, Utensils, X
+    Brain, Shield, Users, Building2, BarChart3, PhoneCall, HelpCircle, Globe, Utensils, X, Eye,
+    Store, ShoppingCart, Coffee, ShoppingBag, Heart, QrCode,
+    Award, Medal, BadgeCheck, Sparkles, Flame
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -16,11 +18,11 @@ import Link from "next/link";
 const plans = [
     {
         id: "baslangic",
-        name: "Starter",
+        name: "JetStart",
         period: "Aylık · Taahhütsüz",
         subtitle: "Taahhütsüz, esnek ödeme. İstediğiniz zaman iptal edebilirsiniz.",
-        monthlyPrice: 1249,
-        yearlyPrice: 985,
+        monthlyPrice: 1149,
+        yearlyPrice: 1149,
         highlight: false,
         badge: "Taahhütsüz",
         badgeColor: "#7886C7",
@@ -28,88 +30,139 @@ const plans = [
         cta: "14 Gün Ücretsiz Dene",
         users: "1 Kullanıcı",
         features: [
-            { text: "JetKasa Satış Sistemi" },
-            { text: "Barkodlu Satış" },
-            { text: "Mobil Barkod Okuma" },
-            { text: "Stok Takibi" },
-            { text: "Kasa & Gün Sonu Takibi" },
-            { text: "Kasiyer Takip" },
-            { text: "Gelir Gider Takibi" },
-            { text: "Temel Raporlama" },
+            { text: "Hızlı Satış (POS) — nakit & kartlı" },
+            { text: "Offline Satış — internet kesilse de çalışır" },
+            { text: "Satış Geçmişi" },
+            { text: "Barkodlu Satış & Mobil Barkod Okuma" },
+            { text: "Stok Uyarıları — kritik seviye otomatik uyarı" },
+            { text: "Ürün Etiketleri & Barkod Yazdırma" },
+            { text: "Arşiv & Geri Dönüşüm" },
+            { text: "Temel Satış Raporları" },
+            { text: "Müşteri Ekranı (CFD)" },
+            { text: "Nakit Çekmece Desteği" },
+            { text: "Fiş Düzenleyicisi — logo & vergi bilgisi" },
+            { text: "QR Kod Oluşturucu" },
+            { text: "Döviz Çevirici — canlı kurlar" },
             { text: "7/24 Teknik Destek" },
         ],
         notIncluded: [
-            "E-Fatura & E-Arşiv",
+            "JetMuhasebe Modülü",
             "Yapay Zeka Analizleri",
             "Depo Yönetimi",
-            "Çoklu Şube",
+            "CRM & Sadakat Sistemi",
+            "Pazaryeri Entegrasyonları",
+            "Adisyon / Mutfak Ekranı",
         ],
+        extras: null,
     },
     {
         id: "buyume",
-        name: "JetScale",
-        period: "Yıllık · %21 Tasarruf",
-        subtitle: "E-Fatura, AI analizleri ve gelişmiş depo yönetimi dahil.",
-        monthlyPrice: 883,
-        yearlyPrice: 679,
+        name: "JetPro",
+        period: "Yıllık · %30 Tasarruf",
+        subtitle: "E-Fatura, AI analizleri ve gelişmiş muhasebe dahil.",
+        monthlyPrice: 1149,
+        yearlyPrice: 799,
         highlight: false,
         badge: "⭐ En Popüler",
-        badgeColor: "#8b5cf6",
-        color: "#8b5cf6",
+        badgeColor: "#7886C7",
+        color: "#7886C7",
+        taksit: "Vade Farksız 3 Taksit",
         cta: "14 Gün Ücretsiz Dene",
         users: "3 Kullanıcı",
         features: [
-            { text: "Tüm Starter özellikleri" },
-            { text: "E-Fatura & E-Arşiv", tag: "Dahil", tagColor: "#8b5cf6" },
-            { text: "Yapay Zeka Analizleri", tag: "Dahil", tagColor: "#8b5cf6" },
-            { text: "Depo Yönetimi" },
-            { text: "Cari Hesap Yönetimi" },
-            { text: "Personel Takibi" },
-            { text: "Üretim Takibi" },
-            { text: "Teklif Oluşturma" },
-            { text: "Detaylı Raporlama" },
-            { text: "Barkod Yazdırma" },
-            { text: "Ücretsiz Kurulum", tag: "Hediye", tagColor: "#22c55e" },
+            { text: "JetStart'ın tüm özellikleri" },
+            { text: "Depo Yönetimi — çoklu depo & fiyat" },
+            { text: "Cari Hesap Takibi (müşteri & tedarikçi)" },
+            { text: "Borç / Alacak / Virman Dekontu" },
+            { text: "Kasa & Banka İşlemleri" },
+            { text: "Alış & Satış Faturası / İrsaliyesi" },
+            { text: "İade Faturası" },
+            { text: "Mali Takvim — vergi & ödeme takvimi" },
+            { text: "Gider Yönetimi" },
+            { text: "Kâr Hesaplama — ürün bazlı" },
+            { text: "Kâr Pilotu (AI) — kârlılık stratejileri" },
+            { text: "Akıllı Sepet (AI) — kampanya önerileri" },
+            { text: "Fiyat Simülasyonu" },
+            { text: "Müşteri Analizi (AI) — sadakat özeti" },
+            { text: "Müşteri Segmentleri — VIP, Risk, Yeni" },
+            { text: "Sadakat Puan Sistemi" },
+            { text: "Personel Tanımlama & Vardiya Takibi" },
+            { text: "Personel Yetki Sistemi — rol bazlı erişim" },
+            { text: "Detaylı Satış Raporları" },
         ],
         notIncluded: [
+            "Adisyon & Mutfak Ekranı (KDS)",
+            "Pazaryeri Entegrasyonları",
             "Çoklu Şube",
-            "Sınırsız Kullanıcı",
+            "JetQR Dijital Menü",
+            "Vitrin Tasarımı",
         ],
+        extras: {
+            label: "JetStart Pakete Ek;",
+            group: "Gelişmiş İşletme Özellikleri",
+            items: [
+                { icon: "FileText", text: "Fatura & İrsaliye Yönetimi" },
+                { icon: "Brain", text: "Yapay Zeka Analizleri" },
+                { icon: "Package", text: "Depo Yönetimi" },
+                { icon: "Wallet", text: "Cari Hesap & Muhasebe" },
+                { icon: "Users", text: "Personel & Vardiya" },
+                { icon: "BarChart3", text: "CRM & Sadakat Sistemi" },
+            ],
+        },
     },
     {
         id: "pro",
-        name: "Pro",
+        name: "JetMax",
         period: "2 Yıl Öde · 3 Yıl Kullan",
         subtitle: "2 yıl öde, 3 yıl kullan. Sınırsız kullanıcı ve barkod okuyucu hediye.",
-        monthlyPrice: 543,
-        yearlyPrice: 394,
+        monthlyPrice: 549,
+        yearlyPrice: 549,
         originalYearly: 21255,
         highlight: true,
         badge: "⚡ En İyi Değer",
         badgeColor: "#5A659F",
         color: "#5A659F",
-        cta: "Bu Planı Seç",
+        taksit: "Vade Farksız 3 Taksit",
+        cta: "Hemen Başla",
         users: "Sınırsız",
         features: [
-            { text: "Tüm JetScale özellikleri" },
-            { text: "Sınırsız Kullanıcı", tag: "Hediye", tagColor: "#22c55e" },
-            { text: "Çoklu Şube (3'e kadar)" },
-            { text: "KDV & Mizan Raporları" },
-            { text: "Trendyol Entegrasyonu", tag: "Hediye", tagColor: "#22c55e" },
-            { text: "Yazarkasa POS Entegrasyonu", tag: "Hediye", tagColor: "#22c55e" },
-            { text: "Özel Barkod Yazdırma" },
-            { text: "Ücretsiz Kurulum & Geçiş", tag: "Hediye", tagColor: "#22c55e" },
-            { text: "Barkod Okuyucu", tag: "Hediye", tagColor: "#22c55e" },
-            { text: "+1 Yıl Kullanım", tag: "Hediye", tagColor: "#22c55e" },
+            { text: "JetPro'nun tüm özellikleri" },
+            { text: "Çoklu Şube / Depo (3'e kadar)" },
+            { text: "Sınırsız Kullanıcı" },
+            { text: "Masa Yönetimi (Adisyon)" },
+            { text: "Mutfak Ekranı (KDS)" },
+            { text: "Trendyol Pazaryeri entegrasyonu" },
+            { text: "Trendyol GO & Yemek siparişleri" },
+            { text: "Yemeksepeti entegrasyonu" },
+            { text: "Getir entegrasyonu" },
+            { text: "Hepsiburada & HepsiJet entegrasyonu" },
+            { text: "Stok Eritme (AI) — yavaş satış tasfiyesi" },
+            { text: "AI Öngörüleri — büyüme analizleri" },
+            { text: "JetQR — dijital menü tasarımı & yayını" },
+            { text: "Vitrin Tasarımı — özel landing page" },
+            { text: "Akıllı Dönüştürücü — PDF, Word, görsel" },
+            { text: "Sistem Kayıtları (Audit Log)" },
+            { text: "+1 Yıl Kullanım Hediye" },
         ],
         notIncluded: [],
         footnote: "✓ 3 yıl kullanım · Barkod okuyucu hediye · 1 yıl bonus",
+        extras: {
+            label: "JetPro Pakete Ek;",
+            group: "Büyüme & Zincir Özellikleri",
+            items: [
+                { icon: "Building2", text: "Çoklu Şube (3'e kadar)" },
+                { icon: "Users", text: "Sınırsız Kullanıcı" },
+                { icon: "Globe", text: "Pazaryeri Entegrasyonları" },
+                { icon: "Utensils", text: "Adisyon & Mutfak Ekranı" },
+                { icon: "Zap", text: "+1 Yıl Kullanım Hediye" },
+            ],
+        },
     },
     {
         id: "ozel",
         name: "Kurumsal",
         period: "Özel Teklif",
-        subtitle: "Çok şubeli zincirler ve büyük işletmeler için özel çözüm.",
+        subtitle: "Çok şubeli zincirler ve büyük ölçekli işletmeler için özel çözüm.",
         monthlyPrice: 0,
         yearlyPrice: 0,
         highlight: false,
@@ -120,93 +173,210 @@ const plans = [
         cta: "Bize Ulaşın",
         users: "Sınırsız",
         features: [
-            { text: "Tüm Pro özellikleri" },
-            { text: "Sınırsız Şube & Kullanıcı" },
-            { text: "Özel API Erişimi" },
-            { text: "ERP Entegrasyonu" },
-            { text: "Özel Raporlama & KPI" },
-            { text: "Özel Temsilci Atama" },
+            { text: "JetMax'ın tüm özellikleri" },
+            { text: "Sınırsız Şube & Depo" },
+            { text: "Sınırsız Kullanıcı" },
+            { text: "Beyaz Etiket — kendi markanızla" },
+            { text: "Özel API Erişimi & ERP Entegrasyonu" },
+            { text: "Özel Entegrasyon Geliştirme" },
+            { text: "Özel Raporlama & KPI Paneli" },
             { text: "SLA Garantisi" },
-            { text: "7/24 Telefon Desteği" },
+            { text: "Dedicated Hesap Yöneticisi" },
+            { text: "Yerinde Kurulum & Ekip Eğitimi" },
+            { text: "7/24 Öncelikli Telefon Desteği" },
+            { text: "Tüm Pazaryeri Entegrasyonları (Trendyol, Yemeksepeti, Getir, Hepsiburada)" },
+            { text: "Masa Yönetimi & Mutfak Ekranı (KDS)" },
+            { text: "JetQR Dijital Menü & Vitrin Tasarımı" },
+            { text: "Sistem Kayıtları (Audit Log)" },
+            { text: "JetMuhasebe — Tam Muhasebe Modülü" },
+            { text: "CRM & Sadakat Puan Sistemi" },
+            { text: "Personel & Vardiya Yönetimi" },
+            { text: "AI Destekli Kâr Pilotu & Stok Eritme" },
+            { text: "Akıllı Dönüştürücü (PDF, Word, görsel)" },
+            { text: "Özel Onboarding Süreci" },
         ],
         notIncluded: [],
+        extras: {
+            label: "JetMax Pakete Ek;",
+            group: "Kurumsal & Zincir Özellikleri",
+            items: [
+                { icon: "Building2", text: "Sınırsız Şube & Depo" },
+                { icon: "Users", text: "Sınırsız Kullanıcı" },
+                { icon: "Shield", text: "SLA Garantisi" },
+                { icon: "Globe", text: "Özel API & ERP Entegrasyonu" },
+                { icon: "Star", text: "Beyaz Etiket (White-label)" },
+                { icon: "PhoneCall", text: "Dedicated Hesap Yöneticisi" },
+            ],
+        },
     },
 ];
 
 /* ─── COMPARISON ──────────────────────────────── */
 const featureCategories = [
     {
-        title: "Satış & POS",
+        title: "JetKasa — Satış & POS",
         icon: Barcode,
         features: [
-            { name: "JetKasa Satış Sistemi", plans: [true, true, true, true] },
-            { name: "Barkodlu Satış", plans: [true, true, true, true] },
-            { name: "Mobil Barkod Okuma", plans: [true, true, true, true] },
-            { name: "Kasiyer Takip", plans: [true, true, true, true] },
-            { name: "Çoklu Şube", plans: [false, false, "3 Şube", "Sınırsız"] },
+            { name: "Hızlı Satış (POS)", plans: [true, true, true, true] },
+            { name: "Offline Satış", plans: [true, true, true, true] },
+            { name: "Satış Geçmişi", plans: [true, true, true, true] },
+            { name: "Barkodlu Satış & Mobil Okuma", plans: [true, true, true, true] },
+            { name: "Nakit Çekmece", plans: [true, true, true, true] },
         ]
     },
     {
-        title: "Finans & Muhasebe",
-        icon: Wallet,
-        features: [
-            { name: "Gelir Gider Takibi", plans: [true, true, true, true] },
-            { name: "Kasa Gün Sonu", plans: [true, true, true, true] },
-            { name: "E-Fatura & E-Arşiv", plans: [false, true, true, true] },
-            { name: "KDV & Mizan Raporları", plans: [false, false, true, true] },
-            { name: "Cari Hesap Yönetimi", plans: [false, true, true, true] },
-        ]
-    },
-    {
-        title: "Stok & Depo",
+        title: "JetStok — Ürün & Depo",
         icon: Package,
         features: [
-            { name: "Stok Takibi", plans: [true, true, true, true] },
-            { name: "Depo Yönetimi", plans: [false, true, true, true] },
-            { name: "Üretim Takibi", plans: [false, true, true, true] },
-            { name: "Teklif Oluşturma", plans: [false, true, true, true] },
+            { name: "Ürün Listesi", plans: [true, true, true, true] },
+            { name: "Stok Uyarıları", plans: [true, true, true, true] },
+            { name: "Ürün Etiketleri & Barkod Yazdırma", plans: [true, true, true, true] },
+            { name: "Arşiv & Geri Dönüşüm", plans: [true, true, true, true] },
+            { name: "Depo Yönetimi (çoklu depo)", plans: [false, true, true, true] },
         ]
     },
     {
-        title: "Personel & Müşteri",
-        icon: Users,
+        title: "JetMuhasebe — Finans",
+        icon: Wallet,
         features: [
-            { name: "Kullanıcı Sayısı", plans: ["1", "3", "Sınırsız", "Sınırsız"] },
-            { name: "Personel Takibi", plans: [false, true, true, true] },
-            { name: "Özel Temsilci", plans: [false, false, false, true] },
+            { name: "Cari Hesap Takibi", plans: [false, true, true, true] },
+            { name: "Kasa & Banka İşlemleri", plans: [false, true, true, true] },
+            { name: "Alış / Satış Faturası & İrsaliyesi", plans: [false, true, true, true] },
+            { name: "İade Faturası", plans: [false, true, true, true] },
+            { name: "Mali Takvim", plans: [false, true, true, true] },
+            { name: "Gider Yönetimi", plans: [false, true, true, true] },
+            { name: "Kâr Hesaplama", plans: [false, true, true, true] },
         ]
     },
     {
-        title: "Yapay Zeka & Raporlama",
+        title: "JetMasa — Restoran & Kafe",
+        icon: Utensils,
+        features: [
+            { name: "Masa Yönetimi (Adisyon)", plans: [false, false, true, true] },
+            { name: "Mutfak Ekranı (KDS)", plans: [false, false, true, true] },
+        ]
+    },
+    {
+        title: "JetRapor — AI & Analiz",
         icon: Brain,
         features: [
-            { name: "Temel Raporlama", plans: [true, true, true, true] },
-            { name: "Detaylı Raporlama", plans: [false, true, true, true] },
-            { name: "AI Satış Analizleri", plans: [false, true, true, true] },
+            { name: "Temel Satış Raporları", plans: [true, true, true, true] },
+            { name: "Detaylı Satış Raporları", plans: [false, true, true, true] },
+            { name: "Kâr Pilotu (AI)", plans: [false, true, true, true] },
+            { name: "Akıllı Sepet (AI)", plans: [false, true, true, true] },
+            { name: "Fiyat Simülasyonu", plans: [false, true, true, true] },
+            { name: "Stok Eritme (AI)", plans: [false, false, true, true] },
+            { name: "AI Öngörüleri", plans: [false, false, true, true] },
             { name: "Özel KPI Raporları", plans: [false, false, false, true] },
         ]
     },
     {
-        title: "Entegrasyon & Destek",
+        title: "JetEntegre — Pazaryeri",
+        icon: Globe,
+        features: [
+            { name: "Trendyol Pazaryeri", plans: [false, false, true, true] },
+            { name: "Trendyol GO & Yemek", plans: [false, false, true, true] },
+            { name: "Yemeksepeti", plans: [false, false, true, true] },
+            { name: "Getir", plans: [false, false, true, true] },
+            { name: "Hepsiburada & HepsiJet", plans: [false, false, true, true] },
+            { name: "Özel API Erişimi", plans: [false, false, false, true] },
+            { name: "ERP Entegrasyonu", plans: [false, false, false, true] },
+        ]
+    },
+    {
+        title: "JetPuan — CRM & Sadakat",
+        icon: Users,
+        features: [
+            { name: "Müşteri Analizi (AI)", plans: [false, true, true, true] },
+            { name: "Müşteri Segmentleri", plans: [false, true, true, true] },
+            { name: "Sadakat Puan Sistemi", plans: [false, true, true, true] },
+            { name: "Personel & Vardiya Takibi", plans: [false, true, true, true] },
+            { name: "Personel Yetki Sistemi", plans: [false, true, true, true] },
+        ]
+    },
+    {
+        title: "JetWeb & Dijital",
         icon: Shield,
         features: [
-            { name: "7/24 Teknik Destek", plans: [true, true, true, true] },
-            { name: "Ücretsiz Kurulum", plans: [false, "Hediye", "Hediye", "Hediye"] },
-            { name: "Trendyol Entegrasyonu", plans: [false, false, "Hediye", true] },
+            { name: "JetQR — Dijital Menü", plans: [false, false, true, true] },
+            { name: "Vitrin Tasarımı (Landing Page)", plans: [false, false, true, true] },
+            { name: "Beyaz Etiket (White-label)", plans: [false, false, false, true] },
+        ]
+    },
+    {
+        title: "Altyapı & Destek",
+        icon: BarChart3,
+        features: [
+            { name: "Kullanıcı Sayısı", plans: ["1", "3", "Sınırsız", "Sınırsız"] },
+            { name: "Şube / Depo", plans: ["1", "1", "3", "Sınırsız"] },
+            { name: "Müşteri Ekranı (CFD)", plans: [true, true, true, true] },
+            { name: "Sistem Kayıtları (Audit Log)", plans: [false, false, true, true] },
             { name: "Barkod Okuyucu", plans: [false, false, "Hediye", true] },
-            { name: "API Erişimi", plans: [false, false, false, true] },
+            { name: "7/24 Teknik Destek", plans: [true, true, true, true] },
+            { name: "Öncelikli Telefon Desteği", plans: [false, false, false, true] },
+            { name: "SLA Garantisi", plans: [false, false, false, true] },
         ]
     },
 ];
 
+/* ─── CYCLING CHIP ─────────────────────────────────── */
+function CyclingChip({ items, chipStyle }: {
+    items: { text: string; Icon: React.ElementType }[];
+    chipStyle: React.CSSProperties;
+}) {
+    const [idx, setIdx] = useState(0);
+    useEffect(() => {
+        if (items.length < 2) return;
+        const t = setInterval(() => setIdx(i => (i + 1) % items.length), 2500);
+        return () => clearInterval(t);
+    }, [items.length]);
+    const { text, Icon } = items[idx];
+    return (
+        <div style={{
+            display: "inline-flex", alignItems: "center",
+            fontSize: "0.6rem", fontWeight: 700,
+            padding: "0.22rem 0.6rem", borderRadius: "9999px",
+            overflow: "hidden", whiteSpace: "nowrap",
+            minWidth: "7rem", justifyContent: "center",
+            ...chipStyle,
+        }}>
+            <AnimatePresence mode="wait">
+                <motion.span
+                    key={idx}
+                    initial={{ y: 10, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: -10, opacity: 0 }}
+                    transition={{ duration: 0.22 }}
+                    style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}
+                >
+                    <Icon style={{ width: "0.65rem", height: "0.65rem", flexShrink: 0 }} />
+                    {text}
+                </motion.span>
+            </AnimatePresence>
+        </div>
+    );
+}
+
 /* ─── PLAN CARD ─────────────────────────────────────── */
-function PlanCard({ plan, yearly }: { plan: typeof plans[0]; yearly: boolean }) {
+function PlanCard({ plan, yearly, onBuy }: { plan: typeof plans[0]; yearly: boolean; onBuy?: (plan: typeof plans[0], yearly: boolean) => void }) {
     const [expanded, setExpanded] = useState(false);
     const isCustom = (plan as any).isCustom;
+    const isPaid = !isCustom && plan.id !== "baslangic";
     const price = yearly ? plan.yearlyPrice : plan.monthlyPrice;
     const visibleFeatures = expanded ? plan.features : plan.features.slice(0, 7);
 
     return (
+        <>
+        <style>{`
+            @keyframes shimmerBadge {
+                0%   { background-position: -250% center; }
+                100% { background-position: 250% center; }
+            }
+            @keyframes pulseBadge {
+                0%, 100% { box-shadow: 0 0 0 0 rgba(120,134,199,0.35); }
+                50%       { box-shadow: 0 0 0 5px rgba(120,134,199,0); }
+            }
+        `}</style>
         <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
@@ -218,13 +388,15 @@ function PlanCard({ plan, yearly }: { plan: typeof plans[0]; yearly: boolean }) 
                 <div style={{
                     position: "absolute", top: "-1px", left: "50%", transform: "translateX(-50%)",
                     background: plan.highlight
-                        ? "linear-gradient(135deg, #5A659F, #7886C7)"
-                        : plan.badge === "⭐ En Popüler"
-                            ? "linear-gradient(135deg, #8b5cf6, #a78bfa)"
+                        ? "linear-gradient(90deg,#4a5899,#7886C7,#9faee8,#7886C7,#4a5899)"
+                        : plan.badge?.includes("Popüler")
+                            ? "linear-gradient(90deg,#6d3fc5,#8b5cf6,#a78bfa,#8b5cf6,#6d3fc5)"
                             : plan.badgeColor,
+                    backgroundSize: (plan.highlight || plan.badge?.includes("Popüler")) ? "250% auto" : "auto",
+                    animation: (plan.highlight || plan.badge?.includes("Popüler")) ? "shimmerBadge 3s linear infinite" : undefined,
                     color: "white", fontSize: "0.68rem", fontWeight: 700,
                     padding: "0.3rem 1rem", borderRadius: "0 0 0.625rem 0.625rem",
-                    whiteSpace: "nowrap", zIndex: 10, letterSpacing: "0.05em"
+                    whiteSpace: "nowrap", zIndex: 10, letterSpacing: "0.05em",
                 }}>
                     {plan.badge}
                 </div>
@@ -245,13 +417,69 @@ function PlanCard({ plan, yearly }: { plan: typeof plans[0]; yearly: boolean }) 
                         <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "#111827", margin: 0 }}>
                             {plan.name}
                         </h3>
-                        <span style={{
-                            fontSize: "0.6rem", fontWeight: 700, color: plan.color,
-                            background: `${plan.color}10`, border: `1px solid ${plan.color}20`,
-                            padding: "0.15rem 0.5rem", borderRadius: "9999px"
-                        }}>
-                            {plan.users}
-                        </span>
+                        {/* Cycling chip badge */}
+                        {(() => {
+                            const isHighlight = plan.highlight;
+                            const isPopular = plan.badge?.includes("Popüler");
+                            const isTaahhut = plan.badge === "Taahhütsüz";
+
+                            if (isHighlight) {
+                                return <CyclingChip
+                                    items={[
+                                        { text: "En Çok Tercih Edilen", Icon: Award },
+                                        { text: "Sınırsız Kullanıcı", Icon: Users },
+                                        { text: "En İyi Değer", Icon: Flame },
+                                    ]}
+                                    chipStyle={{
+                                        background: "linear-gradient(90deg,#4a5899,#7886C7,#9faee8,#7886C7,#4a5899)",
+                                        backgroundSize: "250% auto",
+                                        animation: "shimmerBadge 3s linear infinite",
+                                        color: "white",
+                                    }}
+                                />;
+                            }
+                            if (isPopular) {
+                                return <CyclingChip
+                                    items={[
+                                        { text: "En Popüler Seçim", Icon: Medal },
+                                        { text: "Sınırsız Ürün", Icon: Package },
+                                        { text: "3 Taksit İmkanı", Icon: Wallet },
+                                    ]}
+                                    chipStyle={{
+                                        background: "linear-gradient(90deg,#6d3fc5,#8b5cf6,#a78bfa,#8b5cf6,#6d3fc5)",
+                                        backgroundSize: "250% auto",
+                                        animation: "shimmerBadge 3s linear infinite",
+                                        color: "white",
+                                    }}
+                                />;
+                            }
+                            if (isTaahhut) {
+                                return <CyclingChip
+                                    items={[
+                                        { text: "14 Gün Ücretsiz", Icon: Sparkles },
+                                        { text: "Kredi Kartı Yok", Icon: BadgeCheck },
+                                        { text: "Anında İptal", Icon: Zap },
+                                    ]}
+                                    chipStyle={{
+                                        background: "rgba(120,134,199,0.08)",
+                                        border: "1px solid rgba(120,134,199,0.3)",
+                                        color: "#7886C7",
+                                    }}
+                                />;
+                            }
+                            return <CyclingChip
+                                items={[
+                                    { text: "White-label", Icon: Star },
+                                    { text: "SLA Garantisi", Icon: Shield },
+                                    { text: "Sınırsız Şube", Icon: Building2 },
+                                ]}
+                                chipStyle={{
+                                    background: "rgba(154,167,223,0.08)",
+                                    border: "1px solid rgba(154,167,223,0.25)",
+                                    color: "#9AA7DF",
+                                }}
+                            />;
+                        })()}
                     </div>
                     <p style={{ fontSize: "0.7rem", color: plan.color, fontWeight: 600, marginBottom: "0.5rem" }}>
                         {plan.period}
@@ -263,9 +491,10 @@ function PlanCard({ plan, yearly }: { plan: typeof plans[0]; yearly: boolean }) 
 
                 {/* Price */}
                 <div>
-                    {(plan as any).originalYearly && (
+                    {/* "2 yıl öde 3 yıl kullan" tipi planlar — yıllık toplam üstü çizili */}
+                    {(plan as any).originalYearly && plan.monthlyPrice === plan.yearlyPrice && (
                         <div style={{ fontSize: "0.78rem", color: "#9CA3AF", textDecoration: "line-through", marginBottom: "0.25rem" }}>
-                            ₺{(plan as any).originalYearly.toLocaleString("tr-TR")} +KDV
+                            ₺{(plan as any).originalYearly.toLocaleString("tr-TR")} +KDV/ay
                         </div>
                     )}
                     {isCustom ? (
@@ -282,39 +511,118 @@ function PlanCard({ plan, yearly }: { plan: typeof plans[0]; yearly: boolean }) 
                                 </span>
                                 <span style={{ fontSize: "0.85rem", color: "#6B7280" }}>+KDV/ay</span>
                             </div>
-                            {yearly && plan.monthlyPrice > 0 && (
-                                <p style={{ fontSize: "0.75rem", color: "#4ade80", marginTop: "0.3rem" }}>
-                                    Yıllık ₺{((plan.monthlyPrice - plan.yearlyPrice) * 12).toLocaleString("tr-TR")} tasarruf
-                                </p>
+                            {/* Yıllık indirimli planlar — eski fiyat üstü çizili + yeni yıllık toplam */}
+                            {plan.monthlyPrice > plan.yearlyPrice && (
+                                <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", marginTop: "0.35rem" }}>
+                                    <span style={{ fontSize: "0.75rem", color: "#9CA3AF", textDecoration: "line-through" }}>
+                                        ₺{(plan.monthlyPrice * 12).toLocaleString("tr-TR")}
+                                    </span>
+                                    <span style={{ fontSize: "0.75rem", color: "#4ade80", fontWeight: 700 }}>
+                                        ₺{(plan.yearlyPrice * 12).toLocaleString("tr-TR")}/yıl +KDV
+                                    </span>
+                                </div>
                             )}
                         </>
                     )}
                 </div>
 
                 {/* CTA */}
-                <Link
-                    href={isCustom ? "/#contact" : "/demo"}
-                    style={{
-                        display: "block", textAlign: "center",
-                        width: "100%", padding: "0.9rem",
-                        borderRadius: "0.875rem",
-                        border: plan.highlight || plan.badge === "⭐ En Popüler" || isCustom ? "none" : "1px solid rgba(120, 134, 199, 0.3)",
-                        background: plan.highlight
-                            ? "linear-gradient(135deg, #5A659F, #7886C7)"
-                            : plan.badge === "⭐ En Popüler"
-                                ? "linear-gradient(135deg, #8b5cf6, #a78bfa)"
-                                : isCustom
-                                    ? "linear-gradient(135deg, #7886C7, #9AA7DF)"
-                                    : "rgba(120, 134, 199, 0.08)",
-                        color: (plan.highlight || plan.badge === "⭐ En Popüler" || isCustom) ? "white" : "#7886C7", fontWeight: 700, fontSize: "0.95rem",
-                        cursor: "pointer", textDecoration: "none",
-                        boxShadow: plan.highlight ? "0 4px 16px rgba(90,101,159,0.3)" : plan.badge === "⭐ En Popüler" ? "0 4px 16px rgba(139,92,246,0.35)" : "none",
-                    }}
-                >
-                    {plan.cta}
-                </Link>
+                {!isCustom ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                        {(() => {
+                            const isTrial = !yearly || plan.badge === "Taahhütsüz";
+                            return (
+                                <>
+                                    <button
+                                        onClick={() => onBuy?.(plan, yearly)}
+                                        style={{
+                                            display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem",
+                                            width: "100%", padding: "0.9rem",
+                                            borderRadius: "0.875rem", border: "none",
+                                            background: isTrial
+                                                ? "linear-gradient(135deg, #22c55e, #16a34a)"
+                                                : plan.highlight
+                                                    ? "linear-gradient(135deg, #5A659F, #7886C7)"
+                                                    : "linear-gradient(135deg, #7886C7, #9AA7DF)",
+                                            color: "white", fontWeight: 700, fontSize: "0.95rem",
+                                            cursor: "pointer",
+                                            boxShadow: isTrial
+                                                ? "0 4px 16px rgba(34,197,94,0.3)"
+                                                : plan.highlight ? "0 4px 16px rgba(90,101,159,0.3)" : "0 4px 16px rgba(120,134,199,0.3)",
+                                        }}
+                                    >
+                                        {isTrial ? (
+                                            <><Sparkles style={{ width: "0.9rem", height: "0.9rem" }} /> 14 Gün Ücretsiz Dene</>
+                                        ) : (
+                                            <><PhoneCall style={{ width: "0.9rem", height: "0.9rem" }} /> Sizi Arayalım</>
+                                        )}
+                                    </button>
+                                </>
+                            );
+                        })()}
+                    </div>
+                ) : (
+                    <button
+                        onClick={() => onBuy?.(plan, yearly)}
+                        style={{
+                            display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem",
+                            width: "100%", padding: "0.9rem",
+                            borderRadius: "0.875rem", border: "none",
+                            background: "linear-gradient(135deg, #7886C7, #5A659F)",
+                            color: "white", fontWeight: 700, fontSize: "0.95rem",
+                            cursor: "pointer",
+                            boxShadow: "0 4px 16px rgba(120,134,199,0.3)",
+                        }}
+                    >
+                        <PhoneCall style={{ width: "0.9rem", height: "0.9rem" }} />
+                        Teklif İsteyin
+                    </button>
+                )}
 
                 <div style={{ height: "1px", background: "rgba(120, 134, 199, 0.12)" }} />
+
+                {/* Extras — "X Pakete Ek;" section */}
+                {(plan as any).extras && (() => {
+                    const extras = (plan as any).extras;
+                    const iconMap: Record<string, React.ElementType> = {
+                        FileText, Brain, Package, Wallet, Users, BarChart3, Building2, Globe, Barcode, Zap, Shield, Star, PhoneCall, Utensils, Heart, QrCode, Store, ShoppingCart, Coffee, ShoppingBag,
+                    };
+                    return (
+                        <div>
+                            <p style={{ fontSize: "0.78rem", color: "#6B7280", fontWeight: 600, marginBottom: "0.625rem" }}>
+                                {extras.label}
+                            </p>
+                            <div style={{
+                                background: "rgba(120,134,199,0.05)",
+                                border: "1px solid rgba(120,134,199,0.15)",
+                                borderRadius: "0.75rem",
+                                padding: "0.875rem",
+                                marginBottom: "0.75rem",
+                            }}>
+                                <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "#374151", marginBottom: "0.625rem" }}>
+                                    {extras.group}
+                                </p>
+                                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                                    {extras.items.map((item: { icon: string; text: string }, i: number) => {
+                                        const Icon = iconMap[item.icon] || Check;
+                                        return (
+                                            <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                                                <div style={{
+                                                    width: "1.5rem", height: "1.5rem", borderRadius: "0.375rem",
+                                                    background: "rgba(120,134,199,0.1)", display: "flex",
+                                                    alignItems: "center", justifyContent: "center", flexShrink: 0,
+                                                }}>
+                                                    <Icon style={{ width: "0.75rem", height: "0.75rem", color: "#7886C7" }} />
+                                                </div>
+                                                <span style={{ fontSize: "0.8rem", color: "#374151", fontWeight: 500 }}>{item.text}</span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })()}
 
                 {/* Features */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem", flex: 1 }}>
@@ -371,6 +679,7 @@ function PlanCard({ plan, yearly }: { plan: typeof plans[0]; yearly: boolean }) 
                 )}
             </div>
         </motion.div>
+        </>
     );
 }
 
@@ -478,11 +787,645 @@ function ComparisonTable() {
     );
 }
 
+/* ─── CALL MODAL ─────────────────────────────────────── */
+function CallModal({ plan, yearly, onClose }: { plan: typeof plans[0]; yearly: boolean; onClose: () => void }) {
+    const price = yearly ? plan.yearlyPrice : plan.monthlyPrice;
+    const [form, setForm] = useState({ ad: "", soyad: "", telefon: "", email: "", sirket: "" });
+    const [kvkk, setKvkk] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [success, setSuccess] = useState(false);
+    const [error, setError] = useState("");
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!form.ad || !form.soyad || !form.telefon || !form.email || !form.sirket) {
+            setError("Lütfen tüm alanları doldurun.");
+            return;
+        }
+        if (!kvkk) {
+            setError("Kullanıcı sözleşmesini ve gizlilik politikasını kabul etmelisiniz.");
+            return;
+        }
+        setLoading(true);
+        setError("");
+        try {
+            const res = await fetch("/api/demo-request", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: `${form.ad} ${form.soyad}`,
+                    email: form.email,
+                    phone: form.telefon,
+                    company: form.sirket,
+                    package_interest: plan.name,
+                    message: `[SİZİ ARAYALIM] Paket: ${plan.name} · ${price > 0 ? `₺${price?.toLocaleString("tr-TR")}/ay` : "Kurumsal Teklif"}`,
+                }),
+            });
+            if (res.ok) setSuccess(true);
+            else setError("Bir hata oluştu, lütfen tekrar deneyin.");
+        } catch {
+            setError("Bağlantı hatası, lütfen tekrar deneyin.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const inputStyle: React.CSSProperties = {
+        width: "100%", padding: "0.75rem 1rem",
+        border: "1.5px solid rgba(120,134,199,0.2)", borderRadius: "0.75rem",
+        fontSize: "0.9rem", color: "#111827", outline: "none",
+        background: "rgba(120,134,199,0.03)", boxSizing: "border-box",
+        fontFamily: "inherit", transition: "border-color 0.2s",
+    };
+
+    return (
+        <div style={{
+            position: "fixed", inset: 0, zIndex: 1000,
+            background: "rgba(0,0,0,0.55)", backdropFilter: "blur(6px)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: "1rem",
+        }} onClick={onClose}>
+            <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ duration: 0.2 }}
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                    background: "white", borderRadius: "1.5rem",
+                    padding: "2rem", width: "100%", maxWidth: "420px",
+                    boxShadow: "0 25px 60px rgba(0,0,0,0.2)",
+                }}
+            >
+                {success ? (
+                    /* ── Success state ── */
+                    <div style={{ textAlign: "center", padding: "1rem 0" }}>
+                        <motion.div
+                            initial={{ scale: 0 }} animate={{ scale: 1 }}
+                            transition={{ type: "spring", stiffness: 200 }}
+                            style={{
+                                width: "4rem", height: "4rem", borderRadius: "50%",
+                                background: "linear-gradient(135deg, #22c55e, #16a34a)",
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                                margin: "0 auto 1.25rem",
+                            }}
+                        >
+                            <Check style={{ width: "2rem", height: "2rem", color: "white" }} strokeWidth={3} />
+                        </motion.div>
+                        <h2 style={{ fontSize: "1.3rem", fontWeight: 900, color: "#111827", marginBottom: "0.5rem" }}>
+                            Talebiniz Alındı!
+                        </h2>
+                        <p style={{ color: "#4B5563", fontSize: "0.9rem", lineHeight: 1.6, marginBottom: "1.5rem" }}>
+                            En kısa sürede sizi arayacağız.<br />
+                            <span style={{ color: "#7886C7", fontWeight: 700 }}>{plan.name}</span> paketini konuşacağız ve ödeme linkini ileteceğiz.
+                        </p>
+                        <button onClick={onClose} style={{
+                            background: "linear-gradient(135deg, #7886C7, #5A659F)",
+                            color: "white", border: "none", borderRadius: "0.75rem",
+                            padding: "0.75rem 2rem", fontWeight: 700, cursor: "pointer", fontSize: "0.9rem",
+                        }}>Tamam</button>
+                    </div>
+                ) : (
+                    /* ── Form state ── */
+                    <>
+                        {/* Header */}
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.5rem" }}>
+                            <div>
+                                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.3rem" }}>
+                                    <PhoneCall style={{ width: "1rem", height: "1rem", color: "#7886C7" }} />
+                                    <span style={{ fontSize: "1.2rem", fontWeight: 900, color: "#111827" }}>Sizi Arayalım</span>
+                                </div>
+                                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                                    <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#7886C7", background: "rgba(120,134,199,0.1)", padding: "0.15rem 0.6rem", borderRadius: "9999px" }}>
+                                        {plan.name}
+                                    </span>
+                                    {price > 0 && (
+                                        <span style={{ fontSize: "0.75rem", color: "#6B7280" }}>
+                                            ₺{price?.toLocaleString("tr-TR")}/ay
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                            <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#9CA3AF", padding: "0.25rem" }}>
+                                <X style={{ width: "1.25rem", height: "1.25rem" }} />
+                            </button>
+                        </div>
+
+                        <p style={{ fontSize: "0.85rem", color: "#6B7280", marginBottom: "1.25rem", lineHeight: 1.6 }}>
+                            Bilgilerinizi bırakın, sizi arayıp paketi etkinleştiriyoruz.
+                        </p>
+
+                        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+                                <input
+                                    placeholder="Ad"
+                                    value={form.ad}
+                                    onChange={e => setForm(f => ({ ...f, ad: e.target.value }))}
+                                    style={inputStyle}
+                                />
+                                <input
+                                    placeholder="Soyad"
+                                    value={form.soyad}
+                                    onChange={e => setForm(f => ({ ...f, soyad: e.target.value }))}
+                                    style={inputStyle}
+                                />
+                            </div>
+                            <input
+                                placeholder="Telefon Numarası"
+                                type="tel"
+                                value={form.telefon}
+                                onChange={e => setForm(f => ({ ...f, telefon: e.target.value }))}
+                                style={inputStyle}
+                            />
+                            <input
+                                placeholder="E-posta Adresi"
+                                type="email"
+                                value={form.email}
+                                onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                                style={inputStyle}
+                            />
+                            <input
+                                placeholder="Şirket / İşletme Adı"
+                                value={form.sirket}
+                                onChange={e => setForm(f => ({ ...f, sirket: e.target.value }))}
+                                style={inputStyle}
+                            />
+
+                            <label style={{ display: "flex", alignItems: "flex-start", gap: "0.6rem", cursor: "pointer", marginTop: "0.25rem" }}>
+                                <div
+                                    onClick={() => setKvkk(v => !v)}
+                                    style={{
+                                        width: "1.1rem", height: "1.1rem", flexShrink: 0, marginTop: "0.1rem",
+                                        borderRadius: "0.3rem", border: `2px solid ${kvkk ? "#7886C7" : "rgba(120,134,199,0.35)"}`,
+                                        background: kvkk ? "#7886C7" : "white",
+                                        display: "flex", alignItems: "center", justifyContent: "center",
+                                        transition: "all 0.15s",
+                                    }}
+                                >
+                                    {kvkk && <Check style={{ width: "0.65rem", height: "0.65rem", color: "white" }} strokeWidth={3} />}
+                                </div>
+                                <span style={{ fontSize: "0.75rem", color: "#6B7280", lineHeight: 1.5 }}>
+                                    <a href="/gizlilik" target="_blank" style={{ color: "#7886C7", fontWeight: 600, textDecoration: "none" }}>Kullanıcı Sözleşmesi</a>'ni ve{" "}
+                                    <a href="/gizlilik" target="_blank" style={{ color: "#7886C7", fontWeight: 600, textDecoration: "none" }}>Gizlilik Politikası</a>'nı okudum, kabul ediyorum.
+                                </span>
+                            </label>
+
+                            {error && (
+                                <p style={{ fontSize: "0.78rem", color: "#ef4444", margin: 0 }}>{error}</p>
+                            )}
+
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                style={{
+                                    display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
+                                    padding: "0.875rem", borderRadius: "0.875rem", border: "none",
+                                    background: loading ? "#9CA3AF" : "linear-gradient(135deg, #7886C7, #5A659F)",
+                                    color: "white", fontWeight: 700, fontSize: "0.95rem",
+                                    cursor: loading ? "not-allowed" : "pointer",
+                                    boxShadow: loading ? "none" : "0 4px 16px rgba(120,134,199,0.4)",
+                                    marginTop: "0.25rem",
+                                }}
+                            >
+                                {loading ? (
+                                    "Gönderiliyor..."
+                                ) : (
+                                    <>
+                                        <PhoneCall style={{ width: "0.95rem", height: "0.95rem" }} />
+                                        Sizi Arasınlar
+                                        <ArrowRight style={{ width: "0.95rem", height: "0.95rem" }} />
+                                    </>
+                                )}
+                            </button>
+                        </form>
+
+                        <p style={{ fontSize: "0.7rem", color: "#9CA3AF", textAlign: "center", marginTop: "1rem" }}>
+                            Bilgileriniz yalnızca sizinle iletişim amacıyla kullanılır.
+                        </p>
+                    </>
+                )}
+            </motion.div>
+        </div>
+    );
+}
+
 /* ─── PAGE CONTENT ───────────────────────────────────── */
+/* ─── SECTOR PLANS ──────────────────────────────────── */
+type SectorKey = "standart" | "restoran" | "market" | "kafe" | "eticaret";
+
+const SECTOR_PLANS: Record<SectorKey, typeof plans> = {
+    standart: plans,
+    restoran: [
+        {
+            id: "baslangic", name: "JetRestoran", period: "Aylık · Taahhütsüz",
+            subtitle: "KDS, JetQR, pazaryeri ve adisyon dahil — tüm restoran araçları tek pakette.",
+            monthlyPrice: 1299, yearlyPrice: 1299,
+            highlight: false, badge: "Taahhütsüz", badgeColor: "#7886C7", color: "#7886C7",
+            cta: "14 Gün Ücretsiz Dene", users: "Sınırsız",
+            features: [
+                { text: "Hızlı POS Satış — nakit, kartlı, QR ödeme" },
+                { text: "Masa & Adisyon Yönetimi — sınırsız masa" },
+                { text: "Mutfak Ekranı (KDS) — anlık sipariş akışı" },
+                { text: "JetQR Dijital Menü — masadan telefonla sipariş" },
+                { text: "Garson Uygulaması — mobilden sipariş alma" },
+                { text: "Yemeksepeti Entegrasyonu" },
+                { text: "Getir Entegrasyonu" },
+                { text: "Trendyol GO & Yemek" },
+                { text: "Stok Takibi & Kritik Uyarılar" },
+                { text: "Personel & Vardiya Takibi" },
+                { text: "Cari Hesap Yönetimi" },
+                { text: "Fatura & İrsaliye" },
+                { text: "Detaylı Satış & Kâr Raporları" },
+                { text: "7/24 Teknik Destek" },
+            ],
+            notIncluded: ["Hepsiburada Entegrasyonu", "CRM & Sadakat", "AI Analizler", "Çoklu Şube"],
+            extras: null,
+        },
+        {
+            id: "pro", name: "JetRestoran Pro", period: "Yıllık · Yılda ₺4.800 Tasarruf",
+            subtitle: "AI analizleri, CRM ve çoklu şube — yıllık ödeme ile %31 indirim.",
+            monthlyPrice: 1299, yearlyPrice: 899,
+            originalYearly: 15588,
+            highlight: true, badge: "⚡ %31 Tasarruf", badgeColor: "#5A659F", color: "#5A659F",
+            taksit: "Vade Farksız 3 Taksit",
+            cta: "Hemen Başla", users: "Sınırsız",
+            features: [
+                { text: "JetRestoran'ın tüm özellikleri" },
+                { text: "Hepsiburada & Hepsi Yemek Entegrasyonu" },
+                { text: "CRM & Müşteri Sadakat Puan Sistemi" },
+                { text: "Müşteri Segmentleri (AI) — VIP, Risk, Yeni" },
+                { text: "Kâr Pilotu (AI) — kârlılık optimizasyonu" },
+                { text: "Stok Eritme (AI) — fire ve israfı azalt" },
+                { text: "AI Büyüme Öngörüleri — işletme analizi" },
+                { text: "Çoklu Şube (2'ye kadar)" },
+                { text: "Vitrin Tasarımı & Online Katalog" },
+                { text: "Audit Log — kritik sistem kayıtları" },
+                { text: "+6 Ay Ücretsiz Kullanım" },
+            ],
+            notIncluded: [],
+            footnote: "✓ Yıllık ₺10.788 · Yılda ₺4.800 tasarruf · Barkod okuyucu hediye",
+            extras: {
+                label: "JetRestoran Pakete Ek;",
+                group: "Pro Özellikler",
+                items: [
+                    { icon: "Globe", text: "Hepsiburada & Hepsi Yemek" },
+                    { icon: "Heart", text: "CRM & Sadakat Puan Sistemi" },
+                    { icon: "Brain", text: "Kâr Pilotu & AI Öngörüleri" },
+                    { icon: "Building2", text: "Çoklu Şube (2'ye kadar)" },
+                    { icon: "QrCode", text: "Vitrin & Online Katalog" },
+                    { icon: "Zap", text: "+6 Ay Ücretsiz Kullanım" },
+                ],
+            },
+        },
+    ],
+    market: [
+        {
+            id: "baslangic", name: "JetStart", period: "Aylık · Taahhütsüz",
+            subtitle: "Bakkal, market ve küçük perakende için temel paket.",
+            monthlyPrice: 1149, yearlyPrice: 1149,
+            highlight: false, badge: "Taahhütsüz", badgeColor: "#7886C7", color: "#7886C7",
+            cta: "14 Gün Ücretsiz Dene", users: "1 Kullanıcı",
+            features: [
+                { text: "Hızlı Satış (POS) — nakit & kartlı" },
+                { text: "Barkodlu Satış & Mobil Okuma" },
+                { text: "Stok Takibi & Kritik Uyarılar" },
+                { text: "Ürün Etiketleri & Barkod Yazdırma" },
+                { text: "Satış Geçmişi" },
+                { text: "Temel Raporlar" },
+                { text: "7/24 Teknik Destek" },
+            ],
+            notIncluded: ["Depo Yönetimi", "Muhasebe Modülü", "AI Analizler", "Çoklu Şube"],
+            extras: null,
+        },
+        {
+            id: "buyume", name: "JetPro", period: "Yıllık · %30 Tasarruf",
+            subtitle: "Büyüyen market ve çok ürünlü mağazalar için.",
+            monthlyPrice: 1149, yearlyPrice: 799,
+            highlight: false, badge: "⭐ En Popüler", badgeColor: "#7886C7", color: "#7886C7",
+            taksit: "Vade Farksız 3 Taksit",
+            cta: "14 Gün Ücretsiz Dene", users: "3 Kullanıcı",
+            features: [
+                { text: "JetStart'ın tüm özellikleri" },
+                { text: "Depo Yönetimi (çoklu depo)" },
+                { text: "Cari Hesap Takibi" },
+                { text: "Fatura & İrsaliye" },
+                { text: "Kasa & Banka İşlemleri" },
+                { text: "Mali Takvim & Gider Takibi" },
+                { text: "Personel & Vardiya Takibi" },
+                { text: "Kâr Pilotu (AI)" },
+            ],
+            notIncluded: ["Çoklu Şube", "Pazaryeri Entegrasyonları"],
+            extras: {
+                label: "JetStart Pakete Ek;",
+                group: "Gelişmiş Market Özellikleri",
+                items: [
+                    { icon: "Package", text: "Depo Yönetimi" },
+                    { icon: "Wallet", text: "Cari Hesap & Muhasebe" },
+                    { icon: "FileText", text: "Fatura & İrsaliye" },
+                    { icon: "Users", text: "Personel Takibi" },
+                    { icon: "Brain", text: "Kâr Pilotu (AI)" },
+                    { icon: "BarChart3", text: "Detaylı Raporlama" },
+                ],
+            },
+        },
+        {
+            id: "pro", name: "JetMax", period: "2 Yıl Öde · 3 Yıl Kullan",
+            subtitle: "Zincir market ve çok şubeli perakende için tam paket.",
+            monthlyPrice: 549, yearlyPrice: 549,
+            originalYearly: 21255,
+            highlight: true, badge: "⚡ En İyi Değer", badgeColor: "#5A659F", color: "#5A659F",
+            taksit: "Vade Farksız 3 Taksit",
+            cta: "Hemen Başla", users: "Sınırsız",
+            features: [
+                { text: "JetPro'nun tüm özellikleri" },
+                { text: "Çoklu Şube (3'e kadar)" },
+                { text: "Sınırsız Kullanıcı" },
+                { text: "Trendyol Pazaryeri" },
+                { text: "Hepsiburada & HepsiJet" },
+                { text: "CRM & Sadakat Puan Sistemi" },
+                { text: "Stok Eritme (AI)" },
+                { text: "AI Öngörüleri" },
+                { text: "+1 Yıl Kullanım Hediye" },
+            ],
+            notIncluded: [],
+            footnote: "✓ 3 yıl kullanım · Barkod okuyucu hediye · 1 yıl bonus",
+            extras: {
+                label: "JetPro Pakete Ek;",
+                group: "Zincir Market Özellikleri",
+                items: [
+                    { icon: "Building2", text: "Çoklu Şube (3'e kadar)" },
+                    { icon: "Users", text: "Sınırsız Kullanıcı" },
+                    { icon: "Globe", text: "Trendyol & Hepsiburada" },
+                    { icon: "Heart", text: "CRM & Sadakat" },
+                    { icon: "Brain", text: "AI Öngörüleri" },
+                    { icon: "Zap", text: "+1 Yıl Kullanım Hediye" },
+                ],
+            },
+        },
+        {
+            id: "ozel", name: "Kurumsal", period: "Özel Teklif",
+            subtitle: "Çok şubeli zincir marketler için özel çözüm.",
+            monthlyPrice: 0, yearlyPrice: 0,
+            highlight: false, badge: "Teklif Al", badgeColor: "#9AA7DF", color: "#9AA7DF",
+            isCustom: true, cta: "Bize Ulaşın", users: "Sınırsız",
+            features: [
+                { text: "JetMax'ın tüm özellikleri" },
+                { text: "Sınırsız Şube & Kullanıcı" },
+                { text: "Özel API & ERP Entegrasyonu" },
+                { text: "Beyaz Etiket (White-label)" },
+                { text: "SLA Garantisi" },
+                { text: "Dedicated Hesap Yöneticisi" },
+            ],
+            notIncluded: [],
+            extras: {
+                label: "JetMax Pakete Ek;",
+                group: "Kurumsal & Zincir Özellikleri",
+                items: [
+                    { icon: "Building2", text: "Sınırsız Şube & Kullanıcı" },
+                    { icon: "Globe", text: "Özel API & ERP Entegrasyonu" },
+                    { icon: "Star", text: "Beyaz Etiket (White-label)" },
+                    { icon: "Shield", text: "SLA Garantisi" },
+                    { icon: "PhoneCall", text: "Dedicated Hesap Yöneticisi" },
+                    { icon: "Zap", text: "Özel Entegrasyon Geliştirme" },
+                ],
+            },
+        },
+    ],
+    kafe: [
+        {
+            id: "baslangic", name: "JetStarter", period: "Aylık · Taahhütsüz",
+            subtitle: "Küçük kafe ve kahveciler için hızlı başlangıç.",
+            monthlyPrice: 1149, yearlyPrice: 1149,
+            highlight: false, badge: "Taahhütsüz", badgeColor: "#7886C7", color: "#7886C7",
+            cta: "14 Gün Ücretsiz Dene", users: "1 Kullanıcı",
+            features: [
+                { text: "Hızlı Satış (POS)" },
+                { text: "Masa Yönetimi (Adisyon)" },
+                { text: "Mutfak Ekranı (KDS)" },
+                { text: "Stok Takibi" },
+                { text: "Temel Raporlar" },
+                { text: "7/24 Teknik Destek" },
+            ],
+            notIncluded: ["Pazaryeri Entegrasyonları", "Personel Takibi", "AI Analizler"],
+            extras: null,
+        },
+        {
+            id: "buyume", name: "JetPro", period: "Yıllık · %30 Tasarruf",
+            subtitle: "Trendyol GO ve Yemeksepeti ile büyüyen kafeler için.",
+            monthlyPrice: 1149, yearlyPrice: 799,
+            highlight: false, badge: "⭐ En Popüler", badgeColor: "#7886C7", color: "#7886C7",
+            taksit: "Vade Farksız 3 Taksit",
+            cta: "14 Gün Ücretsiz Dene", users: "3 Kullanıcı",
+            features: [
+                { text: "JetStarter'ın tüm özellikleri" },
+                { text: "Trendyol GO & Yemek" },
+                { text: "Yemeksepeti Entegrasyonu" },
+                { text: "Getir Entegrasyonu" },
+                { text: "Personel & Vardiya Takibi" },
+                { text: "Cari Hesap" },
+                { text: "Kâr Pilotu (AI)" },
+            ],
+            notIncluded: ["Çoklu Şube", "Sınırsız Kullanıcı"],
+            extras: {
+                label: "JetStarter Pakete Ek;",
+                group: "Büyüyen Kafe Özellikleri",
+                items: [
+                    { icon: "Globe", text: "Trendyol GO & Yemeksepeti" },
+                    { icon: "Zap", text: "Getir Entegrasyonu" },
+                    { icon: "Users", text: "Personel & Vardiya" },
+                    { icon: "Wallet", text: "Cari Hesap" },
+                    { icon: "Brain", text: "Kâr Pilotu (AI)" },
+                    { icon: "BarChart3", text: "Detaylı Raporlama" },
+                ],
+            },
+        },
+        {
+            id: "pro", name: "JetPlus", period: "2 Yıl Öde · 3 Yıl Kullan",
+            subtitle: "Zincir kafe ve çok şubeli işletmeler için.",
+            monthlyPrice: 549, yearlyPrice: 549,
+            originalYearly: 21255,
+            highlight: true, badge: "⚡ En İyi Değer", badgeColor: "#5A659F", color: "#5A659F",
+            taksit: "Vade Farksız 3 Taksit",
+            cta: "Hemen Başla", users: "Sınırsız",
+            features: [
+                { text: "JetPro'nun tüm özellikleri" },
+                { text: "Çoklu Şube (3'e kadar)" },
+                { text: "Sınırsız Kullanıcı" },
+                { text: "CRM & Sadakat Puan Sistemi" },
+                { text: "AI Öngörüleri" },
+                { text: "+1 Yıl Kullanım Hediye" },
+            ],
+            notIncluded: [],
+            footnote: "✓ 3 yıl kullanım · Barkod okuyucu hediye · 1 yıl bonus",
+            extras: {
+                label: "JetPro Pakete Ek;",
+                group: "Zincir Kafe Özellikleri",
+                items: [
+                    { icon: "Building2", text: "Çoklu Şube (3'e kadar)" },
+                    { icon: "Users", text: "Sınırsız Kullanıcı" },
+                    { icon: "Heart", text: "CRM & Sadakat" },
+                    { icon: "Brain", text: "AI Öngörüleri" },
+                    { icon: "Zap", text: "+1 Yıl Kullanım Hediye" },
+                ],
+            },
+        },
+        {
+            id: "ozel", name: "Kurumsal", period: "Özel Teklif",
+            subtitle: "Franchise ve çok şubeli kafe zincirleri için.",
+            monthlyPrice: 0, yearlyPrice: 0,
+            highlight: false, badge: "Teklif Al", badgeColor: "#9AA7DF", color: "#9AA7DF",
+            isCustom: true, cta: "Bize Ulaşın", users: "Sınırsız",
+            features: [
+                { text: "JetPlus'ın tüm özellikleri" },
+                { text: "Sınırsız Şube & Kullanıcı" },
+                { text: "Özel API & ERP Entegrasyonu" },
+                { text: "Beyaz Etiket (White-label)" },
+                { text: "SLA Garantisi" },
+                { text: "Dedicated Hesap Yöneticisi" },
+            ],
+            notIncluded: [],
+            extras: {
+                label: "JetPlus Pakete Ek;",
+                group: "Kurumsal & Zincir Özellikleri",
+                items: [
+                    { icon: "Building2", text: "Sınırsız Şube & Kullanıcı" },
+                    { icon: "Globe", text: "Özel API & ERP Entegrasyonu" },
+                    { icon: "Star", text: "Beyaz Etiket (White-label)" },
+                    { icon: "Shield", text: "SLA Garantisi" },
+                    { icon: "PhoneCall", text: "Dedicated Hesap Yöneticisi" },
+                    { icon: "Zap", text: "Özel Entegrasyon Geliştirme" },
+                ],
+            },
+        },
+    ],
+    eticaret: [
+        {
+            id: "baslangic", name: "JetStart", period: "Aylık · Taahhütsüz",
+            subtitle: "Fiziksel mağaza ile e-ticarete başlayanlar için.",
+            monthlyPrice: 1149, yearlyPrice: 1149,
+            highlight: false, badge: "Taahhütsüz", badgeColor: "#7886C7", color: "#7886C7",
+            cta: "14 Gün Ücretsiz Dene", users: "1 Kullanıcı",
+            features: [
+                { text: "Hızlı Satış (POS)" },
+                { text: "Barkodlu Satış & Mobil Okuma" },
+                { text: "Stok Takibi" },
+                { text: "Trendyol Pazaryeri" },
+                { text: "Temel Raporlar" },
+                { text: "7/24 Teknik Destek" },
+            ],
+            notIncluded: ["Hepsiburada", "Depo Yönetimi", "AI Analizler", "Çoklu Şube"],
+            extras: null,
+        },
+        {
+            id: "buyume", name: "JetPro", period: "Yıllık · %30 Tasarruf",
+            subtitle: "Çok kanallı satış yapan büyüyen e-ticaret işletmeleri için.",
+            monthlyPrice: 1149, yearlyPrice: 799,
+            highlight: false, badge: "⭐ En Popüler", badgeColor: "#7886C7", color: "#7886C7",
+            taksit: "Vade Farksız 3 Taksit",
+            cta: "14 Gün Ücretsiz Dene", users: "3 Kullanıcı",
+            features: [
+                { text: "JetStart'ın tüm özellikleri" },
+                { text: "Hepsiburada & HepsiJet" },
+                { text: "Depo Yönetimi" },
+                { text: "Cari Hesap Takibi" },
+                { text: "Fatura & İrsaliye" },
+                { text: "Personel & Vardiya Takibi" },
+                { text: "Kâr Pilotu (AI)" },
+            ],
+            notIncluded: ["Getir & Yemeksepeti", "Çoklu Şube"],
+            extras: {
+                label: "JetStart Pakete Ek;",
+                group: "Çok Kanallı Satış Özellikleri",
+                items: [
+                    { icon: "Globe", text: "Hepsiburada & HepsiJet" },
+                    { icon: "Package", text: "Depo Yönetimi" },
+                    { icon: "Wallet", text: "Cari Hesap & Fatura" },
+                    { icon: "Users", text: "Personel Takibi" },
+                    { icon: "Brain", text: "Kâr Pilotu (AI)" },
+                    { icon: "BarChart3", text: "Detaylı Raporlama" },
+                ],
+            },
+        },
+        {
+            id: "pro", name: "JetMax", period: "2 Yıl Öde · 3 Yıl Kullan",
+            subtitle: "Tüm pazaryerleri ve çok şubeli e-ticaret için.",
+            monthlyPrice: 549, yearlyPrice: 549,
+            originalYearly: 21255,
+            highlight: true, badge: "⚡ En İyi Değer", badgeColor: "#5A659F", color: "#5A659F",
+            taksit: "Vade Farksız 3 Taksit",
+            cta: "Hemen Başla", users: "Sınırsız",
+            features: [
+                { text: "JetPro'nun tüm özellikleri" },
+                { text: "Çoklu Şube (3'e kadar)" },
+                { text: "Sınırsız Kullanıcı" },
+                { text: "Trendyol GO & Yemek" },
+                { text: "Yemeksepeti & Getir" },
+                { text: "CRM & Sadakat Puan Sistemi" },
+                { text: "Stok Eritme (AI)" },
+                { text: "AI Öngörüleri" },
+                { text: "+1 Yıl Kullanım Hediye" },
+            ],
+            notIncluded: [],
+            footnote: "✓ 3 yıl kullanım · Barkod okuyucu hediye · 1 yıl bonus",
+            extras: {
+                label: "JetPro Pakete Ek;",
+                group: "Tam Pazaryeri Özellikleri",
+                items: [
+                    { icon: "Building2", text: "Çoklu Şube (3'e kadar)" },
+                    { icon: "Users", text: "Sınırsız Kullanıcı" },
+                    { icon: "Globe", text: "Tüm Pazaryerleri" },
+                    { icon: "Heart", text: "CRM & Sadakat" },
+                    { icon: "Brain", text: "AI Öngörüleri" },
+                    { icon: "Zap", text: "+1 Yıl Kullanım Hediye" },
+                ],
+            },
+        },
+        {
+            id: "ozel", name: "Kurumsal", period: "Özel Teklif",
+            subtitle: "Yüksek hacimli e-ticaret ve zincir mağazalar için.",
+            monthlyPrice: 0, yearlyPrice: 0,
+            highlight: false, badge: "Teklif Al", badgeColor: "#9AA7DF", color: "#9AA7DF",
+            isCustom: true, cta: "Bize Ulaşın", users: "Sınırsız",
+            features: [
+                { text: "JetMax'ın tüm özellikleri" },
+                { text: "Sınırsız Şube & Kullanıcı" },
+                { text: "Özel API & ERP Entegrasyonu" },
+                { text: "Beyaz Etiket (White-label)" },
+                { text: "SLA Garantisi" },
+                { text: "Dedicated Hesap Yöneticisi" },
+            ],
+            notIncluded: [],
+            extras: {
+                label: "JetMax Pakete Ek;",
+                group: "Kurumsal & Zincir Özellikleri",
+                items: [
+                    { icon: "Building2", text: "Sınırsız Şube & Kullanıcı" },
+                    { icon: "Globe", text: "Tüm Pazaryeri Entegrasyonları" },
+                    { icon: "Star", text: "Beyaz Etiket (White-label)" },
+                    { icon: "Shield", text: "SLA Garantisi" },
+                    { icon: "PhoneCall", text: "Dedicated Hesap Yöneticisi" },
+                    { icon: "Zap", text: "Özel ERP Entegrasyonu" },
+                ],
+            },
+        },
+    ],
+};
+
+const SECTORS: { id: SectorKey; label: string; Icon: React.ElementType }[] = [
+    { id: "standart", label: "Standart", Icon: Store },
+    { id: "restoran", label: "Restoran", Icon: Utensils },
+    { id: "market", label: "Market", Icon: ShoppingCart },
+    { id: "kafe", label: "Kafe", Icon: Coffee },
+    { id: "eticaret", label: "E-Ticaret", Icon: ShoppingBag },
+];
+
 function FiyatlandirmaContent() {
     const searchParams = useSearchParams();
     const [yearly, setYearly] = useState(true);
     const [viewMode, setViewMode] = useState<"plans" | "custom">("plans");
+    const [sector, setSector] = useState<SectorKey>("standart");
+    const [callModal, setCallModal] = useState<{ plan: typeof plans[0]; yearly: boolean } | null>(null);
+    const activePlans = SECTOR_PLANS[sector].filter(p => !(p as any).isCustom);
 
     useEffect(() => {
         const tab = searchParams.get("tab");
@@ -648,9 +1591,39 @@ function FiyatlandirmaContent() {
                             </p>
 
                             {viewMode === "plans" && (
-                                <div style={{ display: "inline-flex", alignItems: "center", background: "white", border: "1px solid rgba(120, 134, 199, 0.15)", borderRadius: "100px", padding: "0.2rem" }}>
-                                    <button onClick={() => setYearly(false)} style={{ padding: "0.4rem 1.25rem", borderRadius: "100px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: "0.75rem", background: !yearly ? "#7886C7" : "transparent", color: !yearly ? "white" : "#6B7280" }}>Aylık</button>
-                                    <button onClick={() => setYearly(true)} style={{ padding: "0.4rem 1.25rem", borderRadius: "100px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: "0.75rem", background: yearly ? "#7886C7" : "transparent", color: yearly ? "white" : "#6B7280" }}>Yıllık</button>
+                                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
+                                    {/* Aylık / Yıllık toggle */}
+                                    <div style={{ display: "inline-flex", alignItems: "center", background: "white", border: "1px solid rgba(120, 134, 199, 0.15)", borderRadius: "100px", padding: "0.2rem" }}>
+                                        <button onClick={() => setYearly(false)} style={{ padding: "0.4rem 1.25rem", borderRadius: "100px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: "0.75rem", background: !yearly ? "#7886C7" : "transparent", color: !yearly ? "white" : "#6B7280" }}>Aylık</button>
+                                        <button onClick={() => setYearly(true)} style={{ padding: "0.4rem 1.25rem", borderRadius: "100px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: "0.75rem", background: yearly ? "#7886C7" : "transparent", color: yearly ? "white" : "#6B7280" }}>Yıllık</button>
+                                    </div>
+
+                                    {/* Sektör seçici */}
+                                    <div style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", background: "white", border: "1px solid rgba(120, 134, 199, 0.15)", borderRadius: "100px", padding: "0.25rem" }}>
+                                        {SECTORS.map((s) => (
+                                            <button
+                                                key={s.id}
+                                                onClick={() => setSector(s.id)}
+                                                style={{
+                                                    padding: "0.35rem 1rem",
+                                                    borderRadius: "100px",
+                                                    border: "none",
+                                                    cursor: "pointer",
+                                                    fontWeight: 700,
+                                                    fontSize: "0.78rem",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: "0.35rem",
+                                                    background: sector === s.id ? "#7886C7" : "transparent",
+                                                    color: sector === s.id ? "white" : "#6B7280",
+                                                    transition: "all 0.2s ease",
+                                                }}
+                                            >
+                                                <s.Icon style={{ width: "0.85rem", height: "0.85rem" }} />
+                                                <span>{s.label}</span>
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
                             )}
                         </motion.div>
@@ -659,7 +1632,7 @@ function FiyatlandirmaContent() {
                             {viewMode === "plans" ? (
                                 <motion.div key="plans" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
                                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: "1rem" }}>
-                                        {plans.map((p) => <PlanCard key={p.id} plan={p} yearly={yearly} />)}
+                                        {activePlans.map((p) => <PlanCard key={p.id} plan={p} yearly={yearly} onBuy={(plan, yr) => setCallModal({ plan, yearly: yr })} />)}
                                     </div>
                                     <ComparisonTable />
                                 </motion.div>
@@ -800,6 +1773,17 @@ function FiyatlandirmaContent() {
                 <Footer />
             </main>
             {success && <motion.div initial={{ y: -100 }} animate={{ y: 20 }} style={{ position: "fixed", top: 0, left: "50%", transform: "translateX(-50%)", background: "#10b981", color: "#111827", padding: "1.25rem 3.5rem", borderRadius: "5rem", fontWeight: 900, fontSize: "1.1rem", zIndex: 10000, boxShadow: "0 20px 50px rgba(16,185,129,0.4)" }}>🚀 Harika! Talebiniz Alındı. <button onClick={() => setSuccess(false)} style={{ background: "none", border: "none", color: "#111827", marginLeft: "1.5rem", cursor: "pointer", fontSize: "1.25rem" }}>✕</button></motion.div>}
+
+            {/* Call Modal */}
+            <AnimatePresence>
+                {callModal && (
+                    <CallModal
+                        plan={callModal.plan}
+                        yearly={callModal.yearly}
+                        onClose={() => setCallModal(null)}
+                    />
+                )}
+            </AnimatePresence>
         </>
     );
 }

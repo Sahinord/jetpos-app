@@ -11,7 +11,7 @@ function getAdminSupabase() {
 
 // ── GET: Demo talepleri ───────────────────────────────────────────
 export async function GET(req: NextRequest) {
-    const guard = adminGuard(req);
+    const guard = await adminGuard(req, "requests");
     if (guard) return guard;
     try {
         const sb = getAdminSupabase();
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
 
 // ── PATCH: Durum güncelle ─────────────────────────────────────────
 export async function PATCH(req: NextRequest) {
-    const guard = adminGuard(req);
+    const guard = await adminGuard(req, "requests");
     if (guard) return guard;
     const id = req.nextUrl.searchParams.get("id");
     if (!id) return NextResponse.json({ error: "id zorunlu" }, { status: 400 });

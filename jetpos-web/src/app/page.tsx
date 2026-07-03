@@ -15,15 +15,15 @@ import CallToAction from "@/components/CallToAction";
 import SupportFormSection from "@/components/SupportFormSection";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
-import StickyBanner from "@/components/StickyBanner";
 import CookieBanner from "@/components/CookieBanner";
 import LeadPopup from "@/components/LeadPopup";
+// Çarka geri dönmek istersen: SpinWheel'i import edip aşağıda CatchGame ile değiştir
+import CatchGame from "@/components/CatchGame";
 
 export default function Home() {
   return (
     <>
       <div className="site-bg" />
-      <StickyBanner />
       <main className="main-canvas" style={{ position: "relative", zIndex: 1, minHeight: "100vh", overflowX: "hidden" }}>
         <Navbar />
         <Hero />
@@ -44,6 +44,7 @@ export default function Home() {
       <WhatsAppButton />
       <CookieBanner />
       <LeadPopup />
+      <CatchGame />
     </>
   );
 }

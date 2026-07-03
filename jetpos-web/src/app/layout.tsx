@@ -1,5 +1,6 @@
 import React from "react";
 import type { Metadata, Viewport } from "next";
+import AnalyticsLoader from "@/components/AnalyticsLoader";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -30,27 +31,11 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const gaId = process.env.NEXT_PUBLIC_GA_ID;
-
   return (
     <html lang="tr" className="scroll-smooth">
       <body className="antialiased">
-        {/* Google Analytics — only loads when a real GA ID is configured */}
-        {gaId && gaId !== "G-XXXXXXXXXX" && (
-          <>
-            <script async src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}></script>
-            <script
-              dangerouslySetInnerHTML={{
-                __html: `
-                  window.dataLayer = window.dataLayer || [];
-                  function gtag(){dataLayer.push(arguments);}
-                  gtag('js', new Date());
-                  gtag('config', '${gaId}');
-                `,
-              }}
-            />
-          </>
-        )}
+        {/* Google Analytics — çerez bandından açık rıza verilmedikçe YÜKLENMEZ (KVKK opt-in) */}
+        <AnalyticsLoader />
         {children}
       </body>
     </html>

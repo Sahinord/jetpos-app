@@ -9,7 +9,7 @@ function getAdminSupabase() {
 }
 
 export async function GET(req: NextRequest) {
-    const guard = adminGuard(req);
+    const guard = await adminGuard(req, "announcements");
     if (guard) return guard;
     try {
         const sb = getAdminSupabase();
@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-    const guard = adminGuard(req);
+    const guard = await adminGuard(req, "announcements");
     if (guard) return guard;
     try {
         const body = await req.json();
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-    const guard = adminGuard(req);
+    const guard = await adminGuard(req, "announcements");
     if (guard) return guard;
     const id = req.nextUrl.searchParams.get("id");
     try {

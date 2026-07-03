@@ -110,8 +110,16 @@ export default async function QRMenuPage({ params }: { params: { slug: string } 
           }} 
           className="w-full overflow-hidden py-2 whitespace-nowrap shadow-sm"
         >
-          {/* Basit bir CSS animasyonu gerektirir, tailwind config'de yoksa inline eklenebilir veya standart kayan yazı kullanılabilir */}
-          <div dangerouslySetInnerHTML={{ __html: `<marquee scrollamount="5" class="font-medium text-sm block">${qrSettings.marquee_text}</marquee>` }} />
+          {/* Güvenlik: marquee_text tenant kontrollü veri. dangerouslySetInnerHTML
+              KULLANILMAZ; metin JSX içinde basılır (React otomatik kaçırır) →
+              stored XSS engellenir. Kayan efekt saf CSS ile. */}
+          <style dangerouslySetInnerHTML={{ __html: `@keyframes qrMarquee{0%{transform:translateX(100%)}100%{transform:translateX(-100%)}}` }} />
+          <span
+            className="font-medium text-sm inline-block"
+            style={{ animation: "qrMarquee 15s linear infinite", willChange: "transform" }}
+          >
+            {qrSettings.marquee_text}
+          </span>
         </div>
       )}
 

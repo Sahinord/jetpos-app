@@ -5,8 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
     Check, Zap, Info, ArrowRight, ShoppingCart,
     Barcode, Package, Wallet, CreditCard,
-    Brain, Users, Building2,
-    Plus, Minus, ArrowLeft, Store, Truck
+    Brain, Users, Building2, Globe,
+    Plus, Minus, ArrowLeft, Store, Truck,
+    Utensils, BarChart3, Heart, QrCode, Sparkles, FileText, Coffee
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -16,56 +17,93 @@ import Link from "next/link";
 const FEATURE_GROUPS = [
     {
         id: "satis",
-        title: "Satış & Operasyon",
+        title: "JetKasa — Satış & POS",
         icon: Barcode,
         features: [
-            { id: "hizli_satis", name: "JetKasa POS", price: 150, description: "Saniyeler içinde satış yapmanızı sağlayan dokunmatik arayüz." },
-            { id: "barkodlu_satis", name: "Modern Barkod Sistemi", price: 100, description: "Tüm barkod türlerini ve el terminallerini destekler." },
-            { id: "mobil_barkod", name: "Mobil Satış Paneli", price: 120, description: "Telefon kamerasını barkod okuyucu olarak kullanma." },
-            { id: "magaza_takip", name: "Merkezi Yönetim", price: 200, description: "Tüm şubeleri tek panelden anlık izleme." },
-            { id: "qr_menu", name: "QR Menü ve Sipariş", price: 150, description: "Masanızdan temassız sipariş ve ödeme altyapısı." },
-            { id: "kds_mutfak", name: "Mutfak Ekranı (KDS)", price: 200, description: "Siparişleri anlık olarak mutfağa ileten dijital ekran." },
-        ]
-    },
-    {
-        id: "finans",
-        title: "E-Dönüşüm & Finans",
-        icon: Wallet,
-        features: [
-            { id: "e_fatura", name: "Jet E-Fatura", price: 250, description: "Sınırsız e-fatura gönderimi ve resmi entegrasyon." },
-            { id: "e_arsiv", name: "Dijital Arşivleme", price: 150, description: "Fatura arşivleme ve hızlı sorgulama." },
-            { id: "gelir_gider", name: "Muhasebe & Cari", price: 100, description: "Müşteri ve tedarikçi cari hesap yönetimi." },
-            { id: "kasa_gun_sonu", name: "Anlık Kasa Takibi", price: 100, description: "Günlük ciro ve nakit akış analizi." },
+            { id: "hizli_satis", name: "Hızlı Satış (POS)", price: 150, description: "Nakit & kartlı satış, sepet yönetimi, offline çalışma desteği." },
+            { id: "barkodlu_satis", name: "Barkodlu Satış & Mobil Okuma", price: 100, description: "Tüm barkod türleri ve telefon kamerası ile barkod okuma." },
+            { id: "musteri_ekrani", name: "Müşteri Ekranı (CFD)", price: 80, description: "Kasada müşteri tarafına dönen sipariş & işlem takip ekranı." },
+            { id: "magaza_takip", name: "Çoklu Şube Yönetimi", price: 200, description: "Tüm şubeleri tek panelden anlık izleme ve yönetim." },
         ]
     },
     {
         id: "stok",
-        title: "Stok & Envanter",
+        title: "JetStok — Ürün & Depo",
         icon: Package,
         features: [
-            { id: "stok_takibi", name: "Akıllı Stok Takibi", price: 150, description: "Ürün giriş-çıkış ve kritik seviye SMS uyarıları." },
-            { id: "uretim_takibi", name: "Üretim & Reçete", price: 300, description: "Maliyet analizi ve hammadde düşümü." },
+            { id: "stok_takibi", name: "Akıllı Stok Takibi", price: 100, description: "Ürün giriş-çıkış takibi ve kritik seviye otomatik uyarıları." },
+            { id: "depo_yonetimi", name: "Depo Yönetimi", price: 150, description: "Çoklu depo/mağaza yönetimi, depo bazlı stok ve fiyat." },
+            { id: "urun_etiket", name: "Ürün Etiketleri & Barkod Yazdırma", price: 80, description: "Barkodlu fiyat etiketi tasarımı ve termal yazıcı desteği." },
+        ]
+    },
+    {
+        id: "muhasebe",
+        title: "JetMuhasebe — Finans",
+        icon: Wallet,
+        features: [
+            { id: "cari_hesap", name: "Cari Hesap Takibi", price: 150, description: "Müşteri & tedarikçi tanımlama, borç/alacak/virman dekontu." },
+            { id: "kasa_banka", name: "Kasa & Banka İşlemleri", price: 120, description: "Kasa tahsil/tediye/virman fişi, banka hesap yönetimi." },
+            { id: "fatura_irsaliye", name: "Fatura & İrsaliye", price: 130, description: "Alış/satış irsaliyesi, fatura listesi ve iade fatura takibi." },
+            { id: "mali_takvim", name: "Mali Takvim & Gider", price: 100, description: "Ödeme, tahsilat ve vergi takvimi; işletme gider takibi." },
+            { id: "kar_hesaplama", name: "Kâr Hesaplama", price: 80, description: "Ürün bazlı kâr oranı hesaplama ve maliyet analizi." },
+        ]
+    },
+    {
+        id: "restoran",
+        title: "JetMasa — Restoran & Kafe",
+        icon: Utensils,
+        features: [
+            { id: "adisyon", name: "Masa Yönetimi (Adisyon)", price: 200, description: "Masa bazlı sipariş takibi ve adisyon ekranı." },
+            { id: "kds_mutfak", name: "Mutfak Ekranı (KDS)", price: 180, description: "Siparişleri anlık olarak mutfak istasyonlarına ileten ekran." },
         ]
     },
     {
         id: "ai",
-        title: "Yapay Zeka (JetAI) & Analitik",
+        title: "JetRapor — AI & Analiz",
         icon: Brain,
         features: [
-            { id: "ai_fiyat", name: "AI Fiyat Analizi", price: 300, description: "Rakiplerle fiyat karşılaştırması yapan AI modülü." },
-            { id: "ai_talep", name: "Tahminleme Algoritması", price: 250, description: "Gelecek hafta ne satacağınızı tahmin eder." },
-            { id: "gelismis_analitik", name: "Gelişmiş Analitik", price: 200, description: "Detaylı grafikler ve performans raporları." },
+            { id: "satis_raporlari", name: "Detaylı Satış Raporları", price: 100, description: "Detaylı satış performans grafikleri ve dönem analizi." },
+            { id: "kar_pilotu", name: "Kâr Pilotu (AI)", price: 250, description: "Yapay zeka destekli kârlılık stratejileri ve öneriler." },
+            { id: "akilli_sepet", name: "Akıllı Sepet (AI)", price: 200, description: "Sepet değerini artıran AI kampanya önerileri." },
+            { id: "fiyat_sim", name: "Fiyat Simülasyonu", price: 150, description: "Fiyat değişikliklerinin kâra etkisini önceden görme." },
+            { id: "stok_eritme", name: "Stok Eritme (AI)", price: 200, description: "Bayat/yavaş satılan stok tasfiye operasyonu AI önerileri." },
+            { id: "ai_ongoru", name: "AI Öngörüleri", price: 250, description: "İşletmeye özel büyüme analizleri ve tahminleme." },
         ]
     },
     {
         id: "pazaryeri",
-        title: "Global Entegrasyonlar",
-        icon: Truck,
+        title: "JetEntegre — Pazaryeri",
+        icon: Globe,
         features: [
-            { id: "getir_sync", name: "Online Sipariş Sync", price: 200, description: "Getir, Yemeksepeti ve Trendyol Yemek." },
-            { id: "pazaryeri_sync", name: "E-Ticaret Köprüsü", price: 200, description: "Trendyol, İkas, Hepsiburada ve N11 entegrasyonu." },
+            { id: "trendyol", name: "Trendyol Pazaryeri", price: 150, description: "Trendyol sipariş ve stok senkronizasyonu." },
+            { id: "trendyol_go", name: "Trendyol GO & Yemek", price: 150, description: "Trendyol GO ve Yemek siparişleri, gelir/kâr analizi." },
+            { id: "yemeksepeti", name: "Yemeksepeti", price: 150, description: "Siparişler, gelir ve net kâr analizi." },
+            { id: "getir", name: "Getir", price: 150, description: "Siparişler, gelir ve net kâr analizi." },
+            { id: "hepsiburada", name: "Hepsiburada & HepsiJet", price: 150, description: "Siparişler ve HepsiJet kargo yönetimi." },
         ]
-    }
+    },
+    {
+        id: "crm",
+        title: "JetPuan — CRM & Sadakat",
+        icon: Heart,
+        features: [
+            { id: "musteri_analiz", name: "Müşteri Analizi (AI)", price: 150, description: "AI destekli müşteri analizi ve sadakat özeti." },
+            { id: "segmentler", name: "Müşteri Segmentleri", price: 100, description: "VIP, Risk, Yeni müşteri grupları ve hedefleme." },
+            { id: "puan_sistemi", name: "Sadakat Puan Sistemi", price: 120, description: "Sadakat puanı ayarları ve müşteri puan takibi." },
+            { id: "personel", name: "Personel & Vardiya Takibi", price: 100, description: "Personel tanımlama, giriş/çıkış ve vardiya performansı." },
+        ]
+    },
+    {
+        id: "dijital",
+        title: "JetWeb — Dijital & Araçlar",
+        icon: QrCode,
+        features: [
+            { id: "jetqr", name: "JetQR Dijital Menü", price: 120, description: "Dijital menü tasarımı, QR kod üretimi ve yayınlama." },
+            { id: "vitrin", name: "Vitrin Tasarımı", price: 200, description: "Müşteriye özel premium açılış sayfası (landing page)." },
+            { id: "donusturucu", name: "Akıllı Dönüştürücü", price: 80, description: "Görsel, PDF, Word dosyası dönüştürme aracı." },
+            { id: "audit_log", name: "Sistem Kayıtları (Audit Log)", price: 100, description: "Fiyat değişimi, silme işlemleri, kritik hareketler takibi." },
+        ]
+    },
 ];
 
 const ADDONS = [
@@ -75,14 +113,15 @@ const ADDONS = [
 ];
 
 const PRESETS = [
-    { id: "bakkal", name: "Bakkal / Market", features: ["hizli_satis", "barkodlu_satis", "stok_takibi", "kasa_gun_sonu"], icon: Store },
-    { id: "cafe", name: "Cafe & Restoran", features: ["hizli_satis", "getir_sync", "gelir_gider", "kasa_gun_sonu", "uretim_takibi"], icon: Zap },
-    { id: "eticaret", name: "Mağaza & E-Ticaret", features: ["pazaryeri_sync", "e_fatura", "stok_takibi", "ai_fiyat", "magaza_takip"], icon: ShoppingCart },
+    { id: "bakkal", name: "Bakkal / Market", features: ["hizli_satis", "barkodlu_satis", "stok_takibi", "kasa_banka", "satis_raporlari"], icon: Store },
+    { id: "cafe", name: "Cafe & Restoran", features: ["hizli_satis", "adisyon", "kds_mutfak", "yemeksepeti", "trendyol_go", "getir", "kasa_banka"], icon: Coffee },
+    { id: "eticaret", name: "Mağaza & E-Ticaret", features: ["hizli_satis", "trendyol", "hepsiburada", "stok_takibi", "depo_yonetimi", "fatura_irsaliye", "magaza_takip"], icon: ShoppingCart },
+    { id: "zincir", name: "Zincir & Çok Şubeli", features: ["hizli_satis", "magaza_takip", "depo_yonetimi", "cari_hesap", "personel", "audit_log", "ai_ongoru"], icon: Building2 },
 ];
 
 /* ─── PAGE ────────────────────────────────────────── */
 export default function CustomPackagePage() {
-    const [selectedFeatures, setSelectedFeatures] = useState<string[]>(["hizli_satis", "stok_takibi"]);
+    const [selectedFeatures, setSelectedFeatures] = useState<string[]>(["hizli_satis", "stok_takibi", "kasa_banka"]);
     const [counts, setCounts] = useState<{ [key: string]: number }>({
         ek_sube: 0,
         ek_kullanici: 1,
