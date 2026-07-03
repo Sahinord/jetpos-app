@@ -126,6 +126,10 @@ export default function POS({
     const [isListingCari, setIsListingCari] = useState(false);
 
     const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+    const searchInputRef = useRef<HTMLInputElement>(null);
+    // Stable refs so the global barcode listener always sees fresh values without stale closures
+    const barcodeMapRef = useRef<Map<string, any>>(new Map());
+    const addToCartRef = useRef<(product: any) => void>(() => {});
     const { currentTenant, activeWarehouse, warehouses, setActiveWarehouse, activeEmployee } = useTenant();
 
     // We use activeWarehouse directly from context for better reactivity
@@ -169,6 +173,9 @@ export default function POS({
         });
         return map;
     }, [products]);
+
+    // Keep stable refs in sync so the global keyboard listener never captures stale data
+    useEffect(() => { barcodeMapRef.current = barcodeMap; }, [barcodeMap]);
 
     // Defer search to keep UI snappy
     const deferredSearch = useDeferredValue(search);
@@ -313,6 +320,57 @@ export default function POS({
         return () => clearInterval(timer);
     }, []);
 
+    // Global barcode scanner capture: intercepts rapid keystrokes (HID barcode reader
+    // pattern: chars < 80ms apart ending with Enter) when no input is focused,
+    // so the user doesn't need to click the search box before scanning.
+    useEffect(() => {
+        let buffer = "";
+        let lastKeyTime = 0;
+
+        const handleGlobalKey = (e: KeyboardEvent) => {
+            const target = e.target as HTMLElement;
+            const tag = target.tagName;
+            // Input already focused — let native onChange handle it
+            if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+            if (e.ctrlKey || e.altKey || e.metaKey) return;
+
+            const now = Date.now();
+            // Reset buffer if there was a long pause (user typing, not scanner)
+            if (now - lastKeyTime > 500) buffer = "";
+            lastKeyTime = now;
+
+            if (e.key === "Enter") {
+                if (buffer.length >= 3) {
+                    const product = barcodeMapRef.current.get(buffer.toLowerCase());
+                    if (product) {
+                        addToCartRef.current(product);
+                        searchInputRef.current?.focus();
+                    } else {
+                        // Show buffer in search so user can see what was scanned
+                        searchInputRef.current?.focus();
+                        const setter = Object.getOwnPropertyDescriptor(
+                            window.HTMLInputElement.prototype, "value"
+                        )?.set;
+                        if (setter && searchInputRef.current) {
+                            setter.call(searchInputRef.current, buffer);
+                            searchInputRef.current.dispatchEvent(new Event("input", { bubbles: true }));
+                        }
+                    }
+                }
+                buffer = "";
+                return;
+            }
+
+            if (e.key.length === 1) {
+                buffer += e.key;
+                e.preventDefault();
+            }
+        };
+
+        document.addEventListener("keydown", handleGlobalKey);
+        return () => document.removeEventListener("keydown", handleGlobalKey);
+    }, []);
+
     // Cart Calculations
     const subtotal = cart.reduce((sum, item) => sum + (item.sale_price * item.quantity), 0);
     const total = Math.max(0, subtotal - discount);
@@ -369,6 +427,10 @@ export default function POS({
         playBeep();
         setNumpadValue("");
     };
+
+    // Sync addToCart ref so global barcode listener always calls the latest version
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    addToCartRef.current = addToCart;
 
     const handleWeightSubmit = () => {
         const grams = parseFloat(weightInput.replace(',', '.'));
@@ -905,6 +967,7 @@ export default function POS({
                                 <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/5 rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300" />
                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-secondary group-focus-within:text-primary w-5 h-5 transition-colors" />
                                 <input
+                                    ref={searchInputRef}
                                     type="text"
                                     placeholder={t('pos.search_placeholder')}
                                     className={`relative w-full ${(theme === 'light' || theme === 'mavi') ? 'bg-white border-primary/20 text-slate-900' : 'bg-card/50 border-border/60 text-white'} border rounded-xl py-4 pl-12 pr-12 outline-none font-medium placeholder:text-secondary/40 transition-all focus:shadow-lg focus:shadow-primary/5 backdrop-blur-sm`}
@@ -918,6 +981,8 @@ export default function POS({
                                                 addToCart(p);
                                                 setSearch("");
                                             }
+                                            // Return focus to search so next scan lands here
+                                            setTimeout(() => searchInputRef.current?.focus(), 0);
                                         }
                                     }}
                                 />
