@@ -376,6 +376,13 @@ function PlanCard({ plan, yearly, onBuy }: { plan: typeof plans[0]; yearly: bool
                 0%, 100% { box-shadow: 0 0 0 0 rgba(120,134,199,0.35); }
                 50%       { box-shadow: 0 0 0 5px rgba(120,134,199,0); }
             }
+            .pricing-plan-card {
+                box-shadow: 0 1px 2px rgba(17,24,39,0.04);
+            }
+            .pricing-plan-card:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 16px 32px rgba(90,101,159,0.16);
+            }
         `}</style>
         <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -402,14 +409,14 @@ function PlanCard({ plan, yearly, onBuy }: { plan: typeof plans[0]; yearly: bool
                 </div>
             )}
 
-            <div style={{
+            <div className="pricing-plan-card" style={{
                 background: plan.highlight ? "rgba(120,134,199,0.04)" : "white",
                 border: `1px solid ${plan.highlight ? "rgba(90,101,159,0.3)" : plan.badge === "⭐ En Popüler" ? "rgba(139,92,246,0.3)" : "rgba(120,134,199,0.15)"}`,
                 borderRadius: "1rem",
                 padding: "1.25rem",
                 display: "flex", flexDirection: "column", gap: "1rem",
                 height: "100%",
-                transition: "all 0.3s ease",
+                transition: "transform 0.25s ease, box-shadow 0.25s ease",
             }}>
                 {/* Header */}
                 <div>
@@ -484,19 +491,13 @@ function PlanCard({ plan, yearly, onBuy }: { plan: typeof plans[0]; yearly: bool
                     <p style={{ fontSize: "0.7rem", color: plan.color, fontWeight: 600, marginBottom: "0.5rem" }}>
                         {plan.period}
                     </p>
-                    <p style={{ fontSize: "0.85rem", color: "#4B5563", lineHeight: 1.5 }}>
+                    <p style={{ fontSize: "0.85rem", color: "#4B5563", lineHeight: 1.5, minHeight: "2.55rem" }}>
                         {plan.subtitle}
                     </p>
                 </div>
 
                 {/* Price */}
                 <div>
-                    {/* "2 yıl öde 3 yıl kullan" tipi planlar — yıllık toplam üstü çizili */}
-                    {(plan as any).originalYearly && plan.monthlyPrice === plan.yearlyPrice && (
-                        <div style={{ fontSize: "0.78rem", color: "#9CA3AF", textDecoration: "line-through", marginBottom: "0.25rem" }}>
-                            ₺{(plan as any).originalYearly.toLocaleString("tr-TR")} +KDV/ay
-                        </div>
-                    )}
                     {isCustom ? (
                         <div>
                             <span style={{ fontSize: "1.5rem", fontWeight: 800, color: "#111827" }}>Teklif Bazlı</span>
@@ -511,17 +512,23 @@ function PlanCard({ plan, yearly, onBuy }: { plan: typeof plans[0]; yearly: bool
                                 </span>
                                 <span style={{ fontSize: "0.85rem", color: "#6B7280" }}>+KDV/ay</span>
                             </div>
-                            {/* Yıllık indirimli planlar — eski fiyat üstü çizili + yeni yıllık toplam */}
-                            {plan.monthlyPrice > plan.yearlyPrice && (
-                                <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", marginTop: "0.35rem" }}>
+                            {/* Karşılaştırma satırı — her kartta aynı yükseklikte, yoksa boş bırakılır (buton hizası için) */}
+                            <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", marginTop: "0.35rem", minHeight: "1.15rem" }}>
+                                {(plan as any).originalYearly && plan.monthlyPrice === plan.yearlyPrice ? (
                                     <span style={{ fontSize: "0.75rem", color: "#9CA3AF", textDecoration: "line-through" }}>
-                                        ₺{(plan.monthlyPrice * 12).toLocaleString("tr-TR")}
+                                        ₺{(plan as any).originalYearly.toLocaleString("tr-TR")} +KDV/ay
                                     </span>
-                                    <span style={{ fontSize: "0.75rem", color: "#4ade80", fontWeight: 700 }}>
-                                        ₺{(plan.yearlyPrice * 12).toLocaleString("tr-TR")}/yıl +KDV
-                                    </span>
-                                </div>
-                            )}
+                                ) : plan.monthlyPrice > plan.yearlyPrice ? (
+                                    <>
+                                        <span style={{ fontSize: "0.75rem", color: "#9CA3AF", textDecoration: "line-through" }}>
+                                            ₺{(plan.monthlyPrice * 12).toLocaleString("tr-TR")}
+                                        </span>
+                                        <span style={{ fontSize: "0.75rem", color: "#4ade80", fontWeight: 700 }}>
+                                            ₺{(plan.yearlyPrice * 12).toLocaleString("tr-TR")}/yıl +KDV
+                                        </span>
+                                    </>
+                                ) : null}
+                            </div>
                         </>
                     )}
                 </div>
@@ -1011,7 +1018,7 @@ function CallModal({ plan, yearly, onClose }: { plan: typeof plans[0]; yearly: b
 
 /* ─── PAGE CONTENT ───────────────────────────────────── */
 /* ─── SECTOR PLANS ──────────────────────────────────── */
-type SectorKey = "standart" | "restoran" | "market" | "kafe" | "eticaret";
+type SectorKey = "standart" | "restoran" | "kafe";
 
 const SECTOR_PLANS: Record<SectorKey, typeof plans> = {
     standart: plans,
@@ -1074,119 +1081,6 @@ const SECTOR_PLANS: Record<SectorKey, typeof plans> = {
                     { icon: "Building2", text: "Çoklu Şube (2'ye kadar)" },
                     { icon: "QrCode", text: "Vitrin & Online Katalog" },
                     { icon: "Zap", text: "+6 Ay Ücretsiz Kullanım" },
-                ],
-            },
-        },
-    ],
-    market: [
-        {
-            id: "baslangic", name: "JetStart", period: "Aylık · Taahhütsüz",
-            subtitle: "Bakkal, market ve küçük perakende için temel paket.",
-            monthlyPrice: 1149, yearlyPrice: 1149,
-            highlight: false, badge: "Taahhütsüz", badgeColor: "#7886C7", color: "#7886C7",
-            cta: "14 Gün Ücretsiz Dene", users: "1 Kullanıcı",
-            features: [
-                { text: "Hızlı Satış (POS) — nakit & kartlı" },
-                { text: "Barkodlu Satış & Mobil Okuma" },
-                { text: "Stok Takibi & Kritik Uyarılar" },
-                { text: "Ürün Etiketleri & Barkod Yazdırma" },
-                { text: "Satış Geçmişi" },
-                { text: "Temel Raporlar" },
-                { text: "7/24 Teknik Destek" },
-            ],
-            notIncluded: ["Depo Yönetimi", "Muhasebe Modülü", "AI Analizler", "Çoklu Şube"],
-            extras: null,
-        },
-        {
-            id: "buyume", name: "JetPro", period: "Yıllık · %30 Tasarruf",
-            subtitle: "Büyüyen market ve çok ürünlü mağazalar için.",
-            monthlyPrice: 1149, yearlyPrice: 799,
-            highlight: false, badge: "⭐ En Popüler", badgeColor: "#7886C7", color: "#7886C7",
-            taksit: "Vade Farksız 3 Taksit",
-            cta: "14 Gün Ücretsiz Dene", users: "3 Kullanıcı",
-            features: [
-                { text: "JetStart'ın tüm özellikleri" },
-                { text: "Depo Yönetimi (çoklu depo)" },
-                { text: "Cari Hesap Takibi" },
-                { text: "Fatura & İrsaliye" },
-                { text: "Kasa & Banka İşlemleri" },
-                { text: "Mali Takvim & Gider Takibi" },
-                { text: "Personel & Vardiya Takibi" },
-                { text: "Kâr Pilotu (AI)" },
-            ],
-            notIncluded: ["Çoklu Şube", "Pazaryeri Entegrasyonları"],
-            extras: {
-                label: "JetStart Pakete Ek;",
-                group: "Gelişmiş Market Özellikleri",
-                items: [
-                    { icon: "Package", text: "Depo Yönetimi" },
-                    { icon: "Wallet", text: "Cari Hesap & Muhasebe" },
-                    { icon: "FileText", text: "Fatura & İrsaliye" },
-                    { icon: "Users", text: "Personel Takibi" },
-                    { icon: "Brain", text: "Kâr Pilotu (AI)" },
-                    { icon: "BarChart3", text: "Detaylı Raporlama" },
-                ],
-            },
-        },
-        {
-            id: "pro", name: "JetMax", period: "2 Yıl Öde · 3 Yıl Kullan",
-            subtitle: "Zincir market ve çok şubeli perakende için tam paket.",
-            monthlyPrice: 549, yearlyPrice: 549,
-            originalYearly: 21255,
-            highlight: true, badge: "⚡ En İyi Değer", badgeColor: "#5A659F", color: "#5A659F",
-            taksit: "Vade Farksız 3 Taksit",
-            cta: "Hemen Başla", users: "Sınırsız",
-            features: [
-                { text: "JetPro'nun tüm özellikleri" },
-                { text: "Çoklu Şube (3'e kadar)" },
-                { text: "Sınırsız Kullanıcı" },
-                { text: "Trendyol Pazaryeri" },
-                { text: "Hepsiburada & HepsiJet" },
-                { text: "CRM & Sadakat Puan Sistemi" },
-                { text: "Stok Eritme (AI)" },
-                { text: "AI Öngörüleri" },
-                { text: "+1 Yıl Kullanım Hediye" },
-            ],
-            notIncluded: [],
-            footnote: "✓ 3 yıl kullanım · Barkod okuyucu hediye · 1 yıl bonus",
-            extras: {
-                label: "JetPro Pakete Ek;",
-                group: "Zincir Market Özellikleri",
-                items: [
-                    { icon: "Building2", text: "Çoklu Şube (3'e kadar)" },
-                    { icon: "Users", text: "Sınırsız Kullanıcı" },
-                    { icon: "Globe", text: "Trendyol & Hepsiburada" },
-                    { icon: "Heart", text: "CRM & Sadakat" },
-                    { icon: "Brain", text: "AI Öngörüleri" },
-                    { icon: "Zap", text: "+1 Yıl Kullanım Hediye" },
-                ],
-            },
-        },
-        {
-            id: "ozel", name: "Kurumsal", period: "Özel Teklif",
-            subtitle: "Çok şubeli zincir marketler için özel çözüm.",
-            monthlyPrice: 0, yearlyPrice: 0,
-            highlight: false, badge: "Teklif Al", badgeColor: "#9AA7DF", color: "#9AA7DF",
-            isCustom: true, cta: "Bize Ulaşın", users: "Sınırsız",
-            features: [
-                { text: "JetMax'ın tüm özellikleri" },
-                { text: "Sınırsız Şube & Kullanıcı" },
-                { text: "Özel API & ERP Entegrasyonu" },
-                { text: "Beyaz Etiket (White-label)" },
-                { text: "SLA Garantisi" },
-                { text: "Dedicated Hesap Yöneticisi" },
-            ],
-            notIncluded: [],
-            extras: {
-                label: "JetMax Pakete Ek;",
-                group: "Kurumsal & Zincir Özellikleri",
-                items: [
-                    { icon: "Building2", text: "Sınırsız Şube & Kullanıcı" },
-                    { icon: "Globe", text: "Özel API & ERP Entegrasyonu" },
-                    { icon: "Star", text: "Beyaz Etiket (White-label)" },
-                    { icon: "Shield", text: "SLA Garantisi" },
-                    { icon: "PhoneCall", text: "Dedicated Hesap Yöneticisi" },
-                    { icon: "Zap", text: "Özel Entegrasyon Geliştirme" },
                 ],
             },
         },
@@ -1298,125 +1192,12 @@ const SECTOR_PLANS: Record<SectorKey, typeof plans> = {
             },
         },
     ],
-    eticaret: [
-        {
-            id: "baslangic", name: "JetStart", period: "Aylık · Taahhütsüz",
-            subtitle: "Fiziksel mağaza ile e-ticarete başlayanlar için.",
-            monthlyPrice: 1149, yearlyPrice: 1149,
-            highlight: false, badge: "Taahhütsüz", badgeColor: "#7886C7", color: "#7886C7",
-            cta: "14 Gün Ücretsiz Dene", users: "1 Kullanıcı",
-            features: [
-                { text: "Hızlı Satış (POS)" },
-                { text: "Barkodlu Satış & Mobil Okuma" },
-                { text: "Stok Takibi" },
-                { text: "Trendyol Pazaryeri" },
-                { text: "Temel Raporlar" },
-                { text: "7/24 Teknik Destek" },
-            ],
-            notIncluded: ["Hepsiburada", "Depo Yönetimi", "AI Analizler", "Çoklu Şube"],
-            extras: null,
-        },
-        {
-            id: "buyume", name: "JetPro", period: "Yıllık · %30 Tasarruf",
-            subtitle: "Çok kanallı satış yapan büyüyen e-ticaret işletmeleri için.",
-            monthlyPrice: 1149, yearlyPrice: 799,
-            highlight: false, badge: "⭐ En Popüler", badgeColor: "#7886C7", color: "#7886C7",
-            taksit: "Vade Farksız 3 Taksit",
-            cta: "14 Gün Ücretsiz Dene", users: "3 Kullanıcı",
-            features: [
-                { text: "JetStart'ın tüm özellikleri" },
-                { text: "Hepsiburada & HepsiJet" },
-                { text: "Depo Yönetimi" },
-                { text: "Cari Hesap Takibi" },
-                { text: "Fatura & İrsaliye" },
-                { text: "Personel & Vardiya Takibi" },
-                { text: "Kâr Pilotu (AI)" },
-            ],
-            notIncluded: ["Getir & Yemeksepeti", "Çoklu Şube"],
-            extras: {
-                label: "JetStart Pakete Ek;",
-                group: "Çok Kanallı Satış Özellikleri",
-                items: [
-                    { icon: "Globe", text: "Hepsiburada & HepsiJet" },
-                    { icon: "Package", text: "Depo Yönetimi" },
-                    { icon: "Wallet", text: "Cari Hesap & Fatura" },
-                    { icon: "Users", text: "Personel Takibi" },
-                    { icon: "Brain", text: "Kâr Pilotu (AI)" },
-                    { icon: "BarChart3", text: "Detaylı Raporlama" },
-                ],
-            },
-        },
-        {
-            id: "pro", name: "JetMax", period: "2 Yıl Öde · 3 Yıl Kullan",
-            subtitle: "Tüm pazaryerleri ve çok şubeli e-ticaret için.",
-            monthlyPrice: 549, yearlyPrice: 549,
-            originalYearly: 21255,
-            highlight: true, badge: "⚡ En İyi Değer", badgeColor: "#5A659F", color: "#5A659F",
-            taksit: "Vade Farksız 3 Taksit",
-            cta: "Hemen Başla", users: "Sınırsız",
-            features: [
-                { text: "JetPro'nun tüm özellikleri" },
-                { text: "Çoklu Şube (3'e kadar)" },
-                { text: "Sınırsız Kullanıcı" },
-                { text: "Trendyol GO & Yemek" },
-                { text: "Yemeksepeti & Getir" },
-                { text: "CRM & Sadakat Puan Sistemi" },
-                { text: "Stok Eritme (AI)" },
-                { text: "AI Öngörüleri" },
-                { text: "+1 Yıl Kullanım Hediye" },
-            ],
-            notIncluded: [],
-            footnote: "✓ 3 yıl kullanım · Barkod okuyucu hediye · 1 yıl bonus",
-            extras: {
-                label: "JetPro Pakete Ek;",
-                group: "Tam Pazaryeri Özellikleri",
-                items: [
-                    { icon: "Building2", text: "Çoklu Şube (3'e kadar)" },
-                    { icon: "Users", text: "Sınırsız Kullanıcı" },
-                    { icon: "Globe", text: "Tüm Pazaryerleri" },
-                    { icon: "Heart", text: "CRM & Sadakat" },
-                    { icon: "Brain", text: "AI Öngörüleri" },
-                    { icon: "Zap", text: "+1 Yıl Kullanım Hediye" },
-                ],
-            },
-        },
-        {
-            id: "ozel", name: "Kurumsal", period: "Özel Teklif",
-            subtitle: "Yüksek hacimli e-ticaret ve zincir mağazalar için.",
-            monthlyPrice: 0, yearlyPrice: 0,
-            highlight: false, badge: "Teklif Al", badgeColor: "#9AA7DF", color: "#9AA7DF",
-            isCustom: true, cta: "Bize Ulaşın", users: "Sınırsız",
-            features: [
-                { text: "JetMax'ın tüm özellikleri" },
-                { text: "Sınırsız Şube & Kullanıcı" },
-                { text: "Özel API & ERP Entegrasyonu" },
-                { text: "Beyaz Etiket (White-label)" },
-                { text: "SLA Garantisi" },
-                { text: "Dedicated Hesap Yöneticisi" },
-            ],
-            notIncluded: [],
-            extras: {
-                label: "JetMax Pakete Ek;",
-                group: "Kurumsal & Zincir Özellikleri",
-                items: [
-                    { icon: "Building2", text: "Sınırsız Şube & Kullanıcı" },
-                    { icon: "Globe", text: "Tüm Pazaryeri Entegrasyonları" },
-                    { icon: "Star", text: "Beyaz Etiket (White-label)" },
-                    { icon: "Shield", text: "SLA Garantisi" },
-                    { icon: "PhoneCall", text: "Dedicated Hesap Yöneticisi" },
-                    { icon: "Zap", text: "Özel ERP Entegrasyonu" },
-                ],
-            },
-        },
-    ],
 };
 
 const SECTORS: { id: SectorKey; label: string; Icon: React.ElementType }[] = [
-    { id: "standart", label: "Standart", Icon: Store },
+    { id: "standart", label: "JetPos", Icon: Store },
     { id: "restoran", label: "Restoran", Icon: Utensils },
-    { id: "market", label: "Market", Icon: ShoppingCart },
     { id: "kafe", label: "Kafe", Icon: Coffee },
-    { id: "eticaret", label: "E-Ticaret", Icon: ShoppingBag },
 ];
 
 function FiyatlandirmaContent() {

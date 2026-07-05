@@ -78,7 +78,7 @@ export default function SupportFormSection() {
                 __html: `
                 .sfs-section {
                     padding: 80px 0;
-                    background: #FFFFFF;
+                    background: transparent;
                     font-family: 'Inter', sans-serif;
                 }
 

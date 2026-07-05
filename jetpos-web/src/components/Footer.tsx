@@ -55,6 +55,7 @@ export default function Footer() {
                                 { label: "Fiyatlandırma", href: "/fiyatlandirma" },
                                 { label: "Hızlı Paket Oluştur", href: "/fiyatlandirma/ozellestir" },
                                 { label: "Entegrasyonlar", href: "/#integrations" },
+                                { label: "Sistem Gereksinimleri", href: "/sistem-gereksinimleri" },
                                 { label: "API Dokümanları", href: "/api-docs" },
                             ] as { label: string; href: string }[]).map(({ label, href }) => (
                                 <li key={label}>
