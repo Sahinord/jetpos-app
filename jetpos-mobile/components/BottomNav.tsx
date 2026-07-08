@@ -17,11 +17,10 @@ export default function BottomNav() {
     const [companyName, setCompanyName] = useState('JetPOS Mobile');
 
     const waiterRole = typeof window !== 'undefined' ? localStorage.getItem('activeWaiterRole') : null;
-    if (waiterRole === 'Kitchen' || waiterRole === 'Mutfak') {
-        return null;
-    }
+    const isKitchen = waiterRole === 'Kitchen' || waiterRole === 'Mutfak';
 
     useEffect(() => {
+        if (isKitchen) return;
         const tenantId = localStorage.getItem('tenantId');
         setCompanyName(localStorage.getItem('companyName') || 'JetPOS Mobile');
 
@@ -38,6 +37,11 @@ export default function BottomNav() {
                 });
         }
     }, []);
+
+    // Hooks'lardan SONRA koşullu çıkış — aksi halde React hooks sırası bozulur
+    if (isKitchen) {
+        return null;
+    }
 
     const hasFeature = (f: string) => {
         if (!features) return false;

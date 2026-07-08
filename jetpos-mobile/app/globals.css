@@ -94,6 +94,12 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+html {
+  /* iOS'ta cihaz döndürüldüğünde otomatik yazı büyütmeyi engelle */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
@@ -104,6 +110,30 @@ body {
   min-height: 100vh;
   position: relative;
   word-break: break-word;
+}
+
+/* Dokunmatikte 300ms tıklama gecikmesini ve çift-dokunma zoom'unu engelle */
+button, a, input, select, textarea, [role="button"] {
+  touch-action: manipulation;
+}
+
+/* iOS Safari, font-size < 16px olan input'a odaklanınca sayfayı zoom'lar ve
+   layout kayar. Mobilde form elemanlarını 16px'e sabitleyerek bunu engelle. */
+@media (max-width: 640px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Mobil adres çubuğu dinamiği: dvh destekleyen tarayıcılarda tam yükseklikler
+   dvh kullanır (100vh mobilde adres çubuğu açıkken taşar). vh satırları eski
+   tarayıcılar için fallback olarak kalır. */
+.sheet-h-92 { height: 92vh; }
+.sheet-max-80 { max-height: 80vh; }
+@supports (height: 100dvh) {
+  body { min-height: 100dvh; }
+  .sheet-h-92 { height: 92dvh; }
+  .sheet-max-80 { max-height: 80dvh; }
 }
 
 /* Responsive Safety Utilities */

@@ -1372,7 +1372,7 @@ export default function AdisyonMobile() {
                         <motion.div 
                             initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
                             transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
-                            className="relative w-full bg-[#0b1329] border-t border-white/10 rounded-t-[2.5rem] p-6 max-h-[80vh] flex flex-col"
+                            className="relative w-full bg-[#0b1329] border-t border-white/10 rounded-t-[2.5rem] p-6 sheet-max-80 flex flex-col"
                         >
                             <div className="flex items-center justify-between mb-6">
                                 <div>

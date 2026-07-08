@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { supabase, setCurrentTenant } from '@/lib/supabase';
 import { Search, Users, ArrowLeft, ArrowUpRight, ArrowDownLeft, Wallet } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -33,7 +33,7 @@ export default function CariPage() {
             const tenantId = localStorage.getItem('tenantId');
             if (!tenantId) return;
 
-            await supabase.rpc('set_current_tenant', { tenant_id: tenantId });
+            await setCurrentTenant(tenantId);
 
             const { data, error } = await supabase
                 .from('cari_hesaplar')

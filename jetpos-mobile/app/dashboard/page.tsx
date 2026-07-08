@@ -92,12 +92,28 @@ export default function DashboardPage() {
             ]);
 
             // Envanter değeri için tüm ürünleri çek (Maliyet üzerinden hesapla)
-            const { data: productsData } = await supabase
-                .from('products')
-                .select('stock_quantity, purchase_price, status')
-                .eq('tenant_id', tenantId);
-
-            const products = productsData || [];
+            // PostgREST tek istekte en fazla 1000 satır döner — 1000+ ürünlü
+            // tenant'larda toplamlar eksik kalmasın diye sayfalayarak çekiyoruz.
+            const products: any[] = [];
+            {
+                const PAGE_SIZE = 1000;
+                let page = 0;
+                let hasMore = true;
+                while (hasMore) {
+                    const { data: chunk } = await supabase
+                        .from('products')
+                        .select('stock_quantity, purchase_price, status')
+                        .eq('tenant_id', tenantId)
+                        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+                    if (chunk && chunk.length > 0) {
+                        products.push(...chunk);
+                        hasMore = chunk.length === PAGE_SIZE;
+                    } else {
+                        hasMore = false;
+                    }
+                    page++;
+                }
+            }
             const activeOnes = products.filter(p => (p.status || 'active') === 'active');
             
             // Envanter değeri = Stok Adedi * Alış Fiyatı (PC ile aynı mantık)
@@ -111,11 +127,14 @@ export default function DashboardPage() {
             const startOfWeek = new Date(new Date().setDate(new Date().getDate() - 7)).toISOString();
             const startOfMonth = new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString();
 
+            // Yalnızca gösterilen pencerelerin kapsadığı aralığı çek (en eskisi: 1 ay) —
+            // hem gereksiz veri taşımayı önler hem 1000 satır sınırına takılma riskini azaltır.
             const { data: invoicesData } = await supabase
                 .from('invoices')
                 .select('grand_total, created_at')
                 .eq('tenant_id', tenantId)
-                .in('invoice_type', ['sales', 'retail']);
+                .in('invoice_type', ['sales', 'retail'])
+                .gte('created_at', startOfMonth);
 
             const sales = invoicesData || [];
             const salesToday = sales.filter(inv => inv.created_at >= startOfToday).reduce((s, i) => s + (Number(i.grand_total) || 0), 0);

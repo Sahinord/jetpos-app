@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { supabase, setCurrentTenant } from '@/lib/supabase';
 import { Search, Package, MoreVertical, Edit3, ArrowUpRight, Store } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import ProductEditModal from '@/components/ProductEditModal';
@@ -87,7 +87,7 @@ export default function ProductsPage() {
             const tenantId = localStorage.getItem('tenantId');
             if (!tenantId) return;
 
-            await supabase.rpc('set_current_tenant', { tenant_id: tenantId });
+            await setCurrentTenant(tenantId);
 
             let allProducts: Product[] = [];
             let page = 0;
@@ -222,7 +222,7 @@ function ProductItemCard({ product, onUpdate }: { product: Product; onUpdate: ()
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                             <h3 className="text-base sm:text-lg font-black text-white leading-tight tracking-tight truncate group-active:text-[#6FD3FF] transition-colors">
-                                {product.name}
+                                {product.name?.trim() || product.barcode || 'İsimsiz Ürün'}
                             </h3>
                             {product.status === 'inactive' && (
                                 <div className="px-1.5 py-0.5 bg-rose-500/10 border border-rose-500/20 rounded-lg shrink-0">

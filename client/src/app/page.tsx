@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Sidebar from "@/components/Common/Sidebar";
 import TopBar from "@/components/Common/TopBar";
 import SummaryCards from "@/components/Dashboard/SummaryCards";
@@ -227,7 +227,7 @@ export default function Home() {
           filter: `tenant_id=eq.${currentTenant.id}`
         }, () => {
           // Update products in state or re-fetch
-          fetchData();
+          fetchData(true);
         })
         .subscribe();
 
@@ -240,7 +240,7 @@ export default function Home() {
           table: 'sales',
           filter: `tenant_id=eq.${currentTenant.id}`
         }, () => {
-          fetchData();
+          fetchData(true);
         })
         .subscribe();
 
@@ -259,6 +259,25 @@ export default function Home() {
       };
     }
   }, [tenantLoading, currentTenant, activeWarehouse]);
+
+  // Dashboard/Anasayfa canlı tazeleme — Supabase Realtime, header tabanlı RLS
+  // kullanan tablolarda (products/sales) websocket üzerinden x-tenant-id/x-license-key
+  // taşınamadığı için olayları sessizce düşürebiliyor; bu yüzden fiyat/stok verileri
+  // eskiden ancak başka sekmeye geçip dönünce (remount) tazeleniyordu. Bu effect,
+  // kullanıcı dashboard/anasayfadayken sekmeye her girişte anında ve sonrasında
+  // periyodik olarak SESSİZ (spinner göstermeden) yeniden çeker; sekmeden çıkınca
+  // interval temizlenir, arka planda boşuna yük olmaz.
+  useEffect(() => {
+    if (tenantLoading || !currentTenant) return;
+    if (activeTab !== 'home' && activeTab !== 'dashboard') return;
+
+    fetchData(true); // sekmeye dönünce hemen taze
+    const interval = setInterval(() => fetchData(true), 90000); // 90 sn'de bir tazele
+    return () => clearInterval(interval);
+    // fetchData/activeWarehouse deps'e eklenmedi: bu dosyadaki diğer effect'lerle
+    // aynı desen — fetchData her render'da yeniden oluşuyor ve döngü riski var.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, tenantLoading, currentTenant]);
 
   useEffect(() => {
     const savedRate = localStorage.getItem('campaignRate');
@@ -339,8 +358,16 @@ export default function Home() {
     localStorage.setItem('receiptSettings', JSON.stringify(receiptSettings));
   }, [theme, isBeepEnabled, showHelpIcons, isEmployeeModuleEnabled, isPriceSyncEnabled, isStockSyncEnabled, isWarehouseStockDeductionEnabled, isCashDrawerEnabled, cashDrawerPrinterName, receiptPrinterName, labelPrinterName, isAdisyonStoreSpecificEnabled, isAdisyonAutoOpenReservationEnabled, lowStockThreshold, receiptSettings]);
 
-  const fetchData = async () => {
-    setLoading(true);
+  const isRefetchingRef = useRef(false);
+
+  const fetchData = async (silent = false) => {
+    // Üst üste binen çekimleri engelle: arka plan tazeleme (polling/realtime) yavaş
+    // bir çekimle çakışırsa ikinci çağrı atlanır — büyük katalogda gereksiz yük olmaz.
+    if (isRefetchingRef.current) return;
+    isRefetchingRef.current = true;
+    // silent=true iken görünür "loading" durumuna dokunma (arka planda sessiz tazeleme);
+    // aksi halde her tazelemede ekranda spinner yanıp söner.
+    if (!silent) setLoading(true);
     try {
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -354,7 +381,7 @@ export default function Home() {
         console.log('📡 Offline mode: Loading data from local DB...');
         const localProducts = await offlineDB.products.toArray();
         setProducts(localProducts);
-        setLoading(false);
+        if (!silent) setLoading(false);
         return;
       }
 
@@ -436,9 +463,10 @@ export default function Home() {
       }
 
     } catch (error: any) {
-      showToast(error.message, "error");
+      if (!silent) showToast(error.message, "error");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
+      isRefetchingRef.current = false;
       fetchTrashProducts();
       fetchArchiveProducts();
     }
@@ -785,6 +813,52 @@ export default function Home() {
             warehouse_name: activeWarehouse?.name || 'Genel'
           }
         );
+      }
+
+      // Ürün Değişiklik Geçmişi (product_change_logs) — düzenlenen üründe değişen
+      // her alanı ayrı kayıt olarak yaz. Bu tablo "Ürün Değişiklik Geçmişi"
+      // ekranını besliyor; şimdiye kadar yalnızca fatura/irsaliye fiyat değişimleri
+      // yazdığı için manuel düzenlemeler geçmişte hiç görünmüyordu. field_name'ler
+      // geri-alma mantığının beklediği products kolon adlarıyla birebir aynı.
+      if (editingProduct) {
+        try {
+          const ep = editingProduct as any;
+          const operator = activeEmployee ? `${activeEmployee.first_name} ${activeEmployee.last_name}` : 'Yönetici';
+          const changeRows: any[] = [];
+          const pushChange = (change_type: string, field_name: string, oldV: any, newV: any) => {
+            changeRows.push({
+              product_id: savedProductId,
+              product_name: formData.name,
+              product_barcode: formData.barcode || null,
+              change_type,
+              field_name,
+              old_value: oldV === null || oldV === undefined ? '' : String(oldV),
+              new_value: newV === null || newV === undefined ? '' : String(newV),
+              change_source: 'desktop',
+              changed_by: operator,
+              tenant_id: currentTenant.id,
+            });
+          };
+
+          if ((ep.name || '') !== (formData.name || '')) pushChange('name', 'name', ep.name, formData.name);
+          if ((ep.barcode || '') !== (formData.barcode || '')) pushChange('barcode', 'barcode', ep.barcode, formData.barcode);
+          if ((ep.status || '') !== (formData.status || '')) pushChange('status', 'status', ep.status, formData.status);
+          // Fiyat/stok yalnızca master ürüne yansıdığında loglanır (depo-yerel
+          // fiyat/stok, master'ı değiştirmediğinden yanıltıcı kayıt oluşturmasın).
+          if ((effectivePriceSync || !activeWarehouse) &&
+              Number(ep.sale_price || 0) !== Number(formData.sale_price || 0)) {
+            pushChange('price', 'sale_price', ep.sale_price, formData.sale_price);
+          }
+          if ((effectiveStockSync || !activeWarehouse) && oldStock !== newStock) {
+            pushChange('stock', 'stock_quantity', oldStock, newStock);
+          }
+
+          if (changeRows.length > 0) {
+            await supabase.from('product_change_logs').insert(changeRows);
+          }
+        } catch (logErr) {
+          console.warn('product_change_logs yazılamadı:', logErr);
+        }
       }
 
       showToast(editingProduct ? "Ürün güncellendi" : "Yeni ürün eklendi");

@@ -380,7 +380,7 @@ export default function POSPage() {
                                     <p className="text-[9px] font-black text-[#5B8CFF] uppercase tracking-widest leading-none">{p.stock_quantity || 0} Adet</p>
                                 </div>
                                 <div className="space-y-1">
-                                    <h3 className="text-xs sm:text-sm font-black text-white leading-tight line-clamp-2 uppercase tracking-tight">{p.name}</h3>
+                                    <h3 className="text-xs sm:text-sm font-black text-white leading-tight line-clamp-2 uppercase tracking-tight">{p.name?.trim() || p.barcode || 'İsimsiz Ürün'}</h3>
                                     <p className="text-lg font-black text-[#6FD3FF] tracking-tighter">₺{(p.sale_price || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</p>
                                 </div>
                             </div>
@@ -415,8 +415,8 @@ export default function POSPage() {
             <AnimatePresence>
                 {showCart && (
                     <>
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowCart(false)} className="fixed inset-0 bg-black/90 backdrop-blur-md z-50" />
-                        <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 30 }} className="fixed bottom-0 left-0 right-0 h-[92vh] bg-[#0B1328] rounded-t-[2.5rem] z-50 overflow-hidden flex flex-col border-t border-[#2D6BFF]/20 shadow-2xl container-safe">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowCart(false)} className="fixed inset-0 bg-black/90 backdrop-blur-md z-[110]" />
+                        <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 30 }} className="fixed bottom-0 left-0 right-0 sheet-h-92 bg-[#0B1328] rounded-t-[2.5rem] z-[120] overflow-hidden flex flex-col border-t border-[#2D6BFF]/20 shadow-2xl container-safe">
                             <div className="w-full h-8 shrink-0 flex items-center justify-center" onClick={() => setShowCart(false)}><div className="w-12 h-1.5 rounded-full bg-white/10" /></div>
                             <div className="px-6 pb-4 border-b border-white/5 flex items-center justify-between shrink-0">
                                 <h2 className="text-2xl font-black text-white tracking-tight">SEPETİM</h2>
@@ -429,7 +429,7 @@ export default function POSPage() {
                                             {i.image_url ? <img src={i.image_url} className="w-full h-full object-cover" /> : <Package className="text-slate-700 w-6 h-6" />}
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <h3 className="font-black text-white text-sm truncate uppercase tracking-tight">{i.name}</h3>
+                                            <h3 className="font-black text-white text-sm truncate uppercase tracking-tight">{i.name?.trim() || i.barcode || 'İsimsiz Ürün'}</h3>
                                             <p className="text-[10px] text-[#5B8CFF] font-black mt-0.5">₺{i.sale_price.toLocaleString('tr-TR')}</p>
                                         </div>
                                         <div className="flex items-center gap-3 bg-black/30 p-1.5 rounded-xl border border-white/5">

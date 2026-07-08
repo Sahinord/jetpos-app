@@ -6,6 +6,13 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--prefix", "jetpos-web"],
       "port": 3002
+    },
+    {
+      "name": "jetpos-mobile",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:preview", "--prefix", "jetpos-mobile"],
+      "port": 3001,
+      "autoPort": true
     }
   ]
 }

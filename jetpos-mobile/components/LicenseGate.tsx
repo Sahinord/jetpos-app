@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, setCurrentTenant } from '@/lib/supabase';
 import { KeyRound, Loader } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -40,6 +40,10 @@ export default function LicenseGate({ onSuccess }: LicenseGateProps) {
             localStorage.setItem('licenseKey', license.trim());
             localStorage.setItem('tenantId', data.id);
             localStorage.setItem('companyName', data.company_name);
+
+            // RLS header'larını (x-tenant-id / x-license-key) hemen güncelle —
+            // reload olmadan sonraki sorguların tenant verisini görebilmesi için şart.
+            await setCurrentTenant(data.id);
 
             // Fixed Warehouse Kontrolü (Mobil için sabitlenmiş mağaza var mı?)
             const { data: fixedWh } = await supabase

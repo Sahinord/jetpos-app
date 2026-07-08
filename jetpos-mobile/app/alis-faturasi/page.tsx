@@ -582,7 +582,7 @@ export default function AlisFaturasiPage() {
             {/* Cari Search Modal */}
             {showCariSearch && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[200] flex items-end">
-                    <div className="w-full bg-background border-t border-border-glow/20 rounded-t-[2rem] max-h-[80vh] flex flex-col">
+                    <div className="w-full bg-background border-t border-border-glow/20 rounded-t-[2rem] sheet-max-80 flex flex-col">
                         <div className="p-5 border-b border-white/5 flex items-center gap-3">
                             <Search className="w-4 h-4 text-secondary shrink-0" />
                             <input

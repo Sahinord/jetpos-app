@@ -680,7 +680,7 @@ export default function EntegrePage() {
                             initial={{ y: 40, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             exit={{ y: 40, opacity: 0 }}
-                            className="bg-[#0B1328] border border-white/10 rounded-t-[2.5rem] sm:rounded-[2.5rem] max-w-md w-full shadow-2xl max-h-[80vh] overflow-y-auto"
+                            className="bg-[#0B1328] border border-white/10 rounded-t-[2.5rem] sm:rounded-[2.5rem] max-w-md w-full shadow-2xl sheet-max-80 overflow-y-auto"
                         >
                             <div className="p-6 border-b border-white/10 sticky top-0 bg-[#0B1328] z-10 flex items-center justify-between">
                                 <div>
