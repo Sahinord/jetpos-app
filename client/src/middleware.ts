@@ -19,6 +19,14 @@ export function middleware(request: NextRequest) {
         return NextResponse.next();
     }
 
+    // Public webhook uçları — kendi güçlü doğrulamalarını (x-api-key, sabit-zamanlı)
+    // route handler'da yaparlar; JetPos middleware'i bunları geçirmeli, aksi halde
+    // dış servis (Getir) header'larımız olmadığı için 401 yer.
+    const PUBLIC_API_PATHS = ['/api/getir-carsi/'];
+    if (PUBLIC_API_PATHS.some((p) => pathname.startsWith(p))) {
+        return NextResponse.next();
+    }
+
     // Only protect /api routes
     if (pathname.startsWith('/api/') && !pathname.includes('/auth/callback')) {
         const signature = request.headers.get('x-jetpos-signature');

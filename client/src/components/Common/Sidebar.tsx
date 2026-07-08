@@ -391,7 +391,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                 { id: "trendyol_integration", label: "Trendyol Pazaryeri", icon: ShoppingBag, feature: "trendyol_marketplace", description: "Trendyol Pazaryeri siparişleri ve stok senkronizasyonu." },
                 { id: "trendyol_go_integration", label: "Trendyol GO / Yemek", icon: ShoppingCart, feature: "trendyol_go", description: "Trendyol GO ve Yemek siparişleri, gelir ve net kar analizi." },
                 { id: "yemeksepeti_integration", label: "Yemeksepeti", icon: Store, feature: "yemeksepeti", description: "Yemeksepeti siparişleri, gelir ve net kar analizi." },
-                { id: "getir_integration", label: "Getir", icon: Package, feature: "getir", description: "Getir siparişleri, gelir ve net kar analizi." },
+                { id: "getir_integration", label: "Getir Çarşı", icon: Package, feature: "getir", description: "Getir Çarşı siparişleri, gelir ve net kar analizi." },
                 { id: "hepsiburada_integration", label: "Hepsiburada", icon: Store, feature: "hepsiburada_marketplace", description: "Hepsiburada Pazaryeri siparişleri ve HepsiJet dahil kargo yönetimi." },
             ]
         },

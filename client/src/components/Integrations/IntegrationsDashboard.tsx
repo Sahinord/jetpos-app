@@ -3,11 +3,12 @@
 import { useState } from "react";
 import TrendyolGOWidget from "./TrendyolGOWidget";
 import HepsiburadaWidget from "./HepsiburadaWidget";
+import GetirCarsiWidget from "./GetirCarsiWidget";
 import ProductMapping from "./ProductMapping";
 import {
-    ShoppingBag, Store, Package, ShoppingCart,
+    Store, Package, ShoppingCart,
     LayoutDashboard, Link as LinkIcon,
-    TrendingUp, Settings, BarChart3, ClipboardList
+    Settings, BarChart3, ClipboardList
 } from "lucide-react";
 
 export default function IntegrationsDashboard({ integrationType }: { integrationType: string }) {
@@ -22,8 +23,8 @@ export default function IntegrationsDashboard({ integrationType }: { integration
         return 'other';
     };
 
-    // Diğer entegrasyonlar için "Yakında" ekranı
-    if (integrationType !== "trendyol_integration" && integrationType !== "trendyol_go_integration" && integrationType !== "hepsiburada_integration") {
+    // Diğer (henüz gelmeyen) entegrasyonlar için "Yakında" ekranı
+    if (integrationType !== "trendyol_integration" && integrationType !== "trendyol_go_integration" && integrationType !== "hepsiburada_integration" && integrationType !== "getir_integration") {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6">
                 <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center text-secondary/40">
@@ -52,16 +53,23 @@ export default function IntegrationsDashboard({ integrationType }: { integration
     ];
 
     const isHepsiburada = integrationType === 'hepsiburada_integration';
-    const headerTitle = isHepsiburada ? 'Hepsiburada' : 'Trendyol GO';
-    const headerDesc = isHepsiburada ? 'Siparişler • Kargo (HepsiJet dahil) • Ciro Analizi' : 'Siparişler • Ciro Analizi • Stok Senkronizasyonu';
+    const isGetir = integrationType === 'getir_integration';
+    const headerTitle = isGetir ? 'Getir Çarşı' : isHepsiburada ? 'Hepsiburada' : 'Trendyol GO';
+    const headerDesc = isGetir
+        ? 'Siparişler • Ciro Analizi • Canlı Takip'
+        : isHepsiburada ? 'Siparişler • Kargo (HepsiJet dahil) • Ciro Analizi' : 'Siparişler • Ciro Analizi • Stok Senkronizasyonu';
 
-    const iconWrapClass = isHepsiburada
-        ? 'w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center border border-amber-500/20'
-        : 'w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center border border-orange-500/20';
-    const iconClass = isHepsiburada ? 'w-6 h-6 text-amber-500' : 'w-6 h-6 text-orange-500';
-    const tabActiveClass = isHepsiburada
-        ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20'
-        : 'bg-orange-500 text-white shadow-lg shadow-orange-500/20';
+    const iconWrapClass = isGetir
+        ? 'w-12 h-12 bg-purple-500/10 rounded-2xl flex items-center justify-center border border-purple-500/20'
+        : isHepsiburada
+            ? 'w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center border border-amber-500/20'
+            : 'w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center border border-orange-500/20';
+    const iconClass = isGetir ? 'w-6 h-6 text-purple-400' : isHepsiburada ? 'w-6 h-6 text-amber-500' : 'w-6 h-6 text-orange-500';
+    const tabActiveClass = isGetir
+        ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20'
+        : isHepsiburada
+            ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20'
+            : 'bg-orange-500 text-white shadow-lg shadow-orange-500/20';
 
     return (
         <div className="space-y-6">
@@ -102,7 +110,9 @@ export default function IntegrationsDashboard({ integrationType }: { integration
 
             {/* Tab İçeriği */}
             <div className="min-h-[50vh]">
-                {activeTab === 'mapping' && !isHepsiburada ? (
+                {isGetir ? (
+                    <GetirCarsiWidget activeSubTab={activeTab} />
+                ) : activeTab === 'mapping' && !isHepsiburada ? (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <ProductMapping platform={getPlatformName(integrationType)} />
                     </div>

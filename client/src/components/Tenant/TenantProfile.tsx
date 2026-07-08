@@ -84,7 +84,7 @@ export default function TenantProfile() {
         { key: 'adisyon', label: 'Adisyon & Restoran', desc: 'Masa ve sipariş yönetimi', icon: LayoutDashboard, gradient: 'from-violet-500 to-indigo-600' },
         { key: 'mobile_app', label: 'Mobil Uygulama', desc: 'iOS & Android POS', icon: Phone, gradient: 'from-cyan-500 to-blue-600' },
         { key: 'trendyol_go', label: 'Trendyol Entegrasyon', desc: 'Otomatik sipariş & stok', icon: Globe, gradient: 'from-orange-500 to-red-500' },
-        { key: 'getir', label: 'Getir Yemek', desc: 'Otomatik sipariş & stok', icon: Globe, gradient: 'from-purple-500 to-pink-500' },
+        { key: 'getir', label: 'Getir Çarşı', desc: 'Otomatik sipariş & stok', icon: Globe, gradient: 'from-purple-500 to-pink-500' },
         { key: 'qnb_invoice', label: 'E-Fatura (QNB)', desc: 'Otomatik fatura kesimi', icon: Ticket, gradient: 'from-emerald-500 to-teal-600' },
         { key: 'ai_features', label: 'Yapay Zeka Asistan', desc: 'Akıllı tahmin & analiz', icon: Zap, gradient: 'from-amber-500 to-orange-600' },
     ];

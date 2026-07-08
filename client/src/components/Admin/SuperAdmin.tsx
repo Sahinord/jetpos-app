@@ -1551,7 +1551,7 @@ export default function SuperAdmin() {
                                                                 if (selectedPlatform === 'trendyol_go') newFw[idx].name = 'Trendyol GO Mağazası';
                                                                 else if (selectedPlatform === 'trendyol') newFw[idx].name = 'Trendyol Pazaryeri';
                                                                 else if (selectedPlatform === 'hepsiburada') newFw[idx].name = 'Hepsiburada Pazaryeri';
-                                                                else if (selectedPlatform === 'getir') newFw[idx].name = 'Getir Mağazası';
+                                                                else if (selectedPlatform === 'getir') newFw[idx].name = 'Getir Çarşı Mağazası';
                                                                 else if (selectedPlatform === 'yemeksepeti') newFw[idx].name = 'Yemeksepeti Mağazası';
                                                                 else if (selectedPlatform === 'mobile') newFw[idx].name = 'Mobil Uygulama Siparişleri';
                                                                 
@@ -1566,7 +1566,7 @@ export default function SuperAdmin() {
                                                         <option value="trendyol">Trendyol Pazaryeri</option>
                                                         <option value="trendyol_go">Trendyol GO / Yemek</option>
                                                         <option value="hepsiburada">Hepsiburada Pazaryeri</option>
-                                                        <option value="getir">Getir</option>
+                                                        <option value="getir">Getir Çarşı</option>
                                                         <option value="yemeksepeti">Yemeksepeti</option>
                                                         <option value="mobile">Mobil Uygulama (JetPos Mobile)</option>
                                                     </select>
