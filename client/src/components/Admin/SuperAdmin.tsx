@@ -40,6 +40,7 @@ const AVAILABLE_FEATURES = [
     { id: 'label_designer', label: 'Ürün Etiket Tasarımı' },
     { id: 'trendyol_marketplace', label: 'Trendyol Pazaryeri' },
     { id: 'trendyol_go', label: 'Trendyol GO / Yemek' },
+    { id: 'getir_carsi', label: 'Getir Çarşı' },
     { id: 'hepsiburada_marketplace', label: 'Hepsiburada Pazaryeri & HepsiJet Kargo' },
     { id: 'invoice', label: 'Fatura İşlemleri Entegrasyonu' },
     { id: 'invoice_management', label: 'Fatura ve İrsaliye Yönetimi' },
@@ -102,6 +103,22 @@ export default function SuperAdmin() {
     // Trendyol states
     const [trendyolGoModal, setTrendyolGoModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
     const [trendyolGoSettings, setTrendyolGoSettings] = useState({ sellerId: '', storeId: '', apiKey: '', apiSecret: '', token: '', stage: false });
+
+    // Getir Çarşı (per-tenant): shopId + outbound kimlik + mağaza türü
+    const GETIR_STORE_TYPES = [
+        { code: 'market', label: 'Market / Bakkal' },
+        { code: 'buyukmarket', label: 'Büyük Market' },
+        { code: 'su', label: 'Su & Damacana' },
+        { code: 'tup', label: 'Tüp Bayi' },
+        { code: 'sarkuteri', label: 'Şarküteri / Kasap' },
+        { code: 'manav', label: 'Manav' },
+        { code: 'firin', label: 'Fırın / Pastane' },
+        { code: 'kozmetik', label: 'Kozmetik / Kişisel Bakım' },
+        { code: 'pet', label: 'Pet Shop' },
+        { code: 'diger', label: 'Diğer' },
+    ];
+    const [getirCarsiModal, setGetirCarsiModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
+    const [getirCarsiSettings, setGetirCarsiSettings] = useState({ shopId: '', username: '', password: '', storeType: 'market', active: true });
     
     const [trendyolMarketplaceModal, setTrendyolMarketplaceModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
     const [trendyolMarketplaceSettings, setTrendyolMarketplaceSettings] = useState({ supplierId: '', apiKey: '', apiSecret: '' });
@@ -614,6 +631,47 @@ export default function SuperAdmin() {
         }
     };
 
+    const handleSaveGetirCarsiSettings = async () => {
+        if (!getirCarsiModal) return;
+        setSaving(true);
+        try {
+            const tenantObj = tenants.find(t => t.id === getirCarsiModal.tenantId);
+            const currentSettings = tenantObj?.settings || {};
+
+            const updatedSettings = {
+                ...currentSettings,
+                getirCarsi: {
+                    shopId: getirCarsiSettings.shopId.trim(),
+                    username: getirCarsiSettings.username.trim(),
+                    password: getirCarsiSettings.password,
+                    storeType: getirCarsiSettings.storeType,
+                    active: getirCarsiSettings.active,
+                }
+            };
+
+            const { error } = await supabase
+                .from('tenants')
+                .update({ settings: updatedSettings })
+                .eq('id', getirCarsiModal.tenantId);
+            if (error) throw error;
+
+            await supabase.from('notifications').insert([{
+                title: "Getir Çarşı Entegrasyon Güncellemesi",
+                message: "Getir Çarşı sipariş entegrasyon ayarlarınız sistem yöneticisi tarafından güncellendi.",
+                type: "info",
+                tenant_id: getirCarsiModal.tenantId
+            }]);
+
+            alert(`✅ ${getirCarsiModal.tenantName} için Getir Çarşı ayarları güncellendi!`);
+            setGetirCarsiModal(null);
+            await fetchTenants();
+        } catch (err: any) {
+            alert('❌ Hata: ' + err.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const handleSaveTrendyolMarketplaceSettings = async () => {
         if (!trendyolMarketplaceModal) return;
 
@@ -1035,6 +1093,26 @@ export default function SuperAdmin() {
                                                 title="Trendyol GO / Yemek Ayarları"
                                             >
                                                 <span className="font-black text-[9px]">GO</span>
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    const currentGc = tenant.settings?.getirCarsi || {};
+                                                    setGetirCarsiModal({
+                                                        tenantId: tenant.id,
+                                                        tenantName: tenant.company_name || tenant.license_key
+                                                    });
+                                                    setGetirCarsiSettings({
+                                                        shopId: currentGc.shopId || '',
+                                                        username: currentGc.username || '',
+                                                        password: currentGc.password || '',
+                                                        storeType: currentGc.storeType || 'market',
+                                                        active: currentGc.active !== false
+                                                    });
+                                                }}
+                                                className="p-3 bg-white/5 hover:bg-purple-500/20 rounded-xl text-slate-400 hover:text-purple-400 transition-all font-bold"
+                                                title="Getir Çarşı Ayarları"
+                                            >
+                                                <span className="font-black text-[9px]">ÇARŞI</span>
                                             </button>
                                             <button
                                                 onClick={() => {
@@ -1946,6 +2024,97 @@ export default function SuperAdmin() {
                                     onClick={handleSaveTrendyolGoSettings}
                                     disabled={saving}
                                     className="flex-1 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-black shadow-lg shadow-orange-500/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {saving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><Save className="w-4 h-4" /> Kaydet</>}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Getir Çarşı Modal */}
+            {getirCarsiModal && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+                    <div className="bg-slate-900 border border-white/10 rounded-[2.5rem] max-w-md w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+                        <div className="p-8 border-b border-white/10 sticky top-0 bg-slate-900 z-10">
+                            <div className="flex items-center gap-4 mb-2">
+                                <div className="w-12 h-12 bg-purple-500/20 rounded-2xl flex items-center justify-center">
+                                    <span className="font-black text-[13px] text-purple-400">ÇARŞI</span>
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black text-white">Getir Çarşı Ayarları</h3>
+                                    <p className="text-xs text-slate-500 mt-1">{getirCarsiModal.tenantName}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-8 space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Getir Shop ID</label>
+                                <input
+                                    type="text"
+                                    value={getirCarsiSettings.shopId}
+                                    onChange={(e) => setGetirCarsiSettings({ ...getirCarsiSettings, shopId: e.target.value })}
+                                    placeholder="Getir panelindeki mağaza kimliği"
+                                    className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-purple-500/50"
+                                />
+                                <p className="text-[10px] text-slate-500 ml-1">Siparişler bu shopId ile bu işletmeye yönlendirilir.</p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Getir Kullanıcı Adı</label>
+                                    <input
+                                        type="text"
+                                        value={getirCarsiSettings.username}
+                                        onChange={(e) => setGetirCarsiSettings({ ...getirCarsiSettings, username: e.target.value })}
+                                        className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-purple-500/50"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Getir Şifre</label>
+                                    <input
+                                        type="password"
+                                        value={getirCarsiSettings.password}
+                                        onChange={(e) => setGetirCarsiSettings({ ...getirCarsiSettings, password: e.target.value })}
+                                        className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-purple-500/50"
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Mağaza Türü</label>
+                                <select
+                                    value={getirCarsiSettings.storeType}
+                                    onChange={(e) => setGetirCarsiSettings({ ...getirCarsiSettings, storeType: e.target.value })}
+                                    className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-purple-500/50"
+                                >
+                                    {GETIR_STORE_TYPES.map(st => (
+                                        <option key={st.code} value={st.code} className="bg-slate-900">{st.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                                <div>
+                                    <span className="text-sm font-bold text-white block">Entegrasyon Aktif</span>
+                                    <span className="text-[10px] text-slate-500">Kapalıysa bu işletmeye sipariş düşmez</span>
+                                </div>
+                                <button
+                                    onClick={() => setGetirCarsiSettings({ ...getirCarsiSettings, active: !getirCarsiSettings.active })}
+                                    className={`w-12 h-6 rounded-full transition-all relative ${getirCarsiSettings.active ? 'bg-purple-500' : 'bg-slate-700'}`}
+                                >
+                                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${getirCarsiSettings.active ? 'right-1' : 'left-1'}`} />
+                                </button>
+                            </div>
+                            <div className="flex gap-3 pt-4">
+                                <button
+                                    onClick={() => setGetirCarsiModal(null)}
+                                    className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold transition-all"
+                                >
+                                    İptal
+                                </button>
+                                <button
+                                    onClick={handleSaveGetirCarsiSettings}
+                                    disabled={saving}
+                                    className="flex-1 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-xl font-black shadow-lg shadow-purple-500/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                                 >
                                     {saving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><Save className="w-4 h-4" /> Kaydet</>}
                                 </button>
