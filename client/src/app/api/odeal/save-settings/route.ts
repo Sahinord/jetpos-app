@@ -11,8 +11,18 @@ export const dynamic = "force-dynamic";
 const str = (v: unknown, max = 300) => String(v ?? "").slice(0, max);
 
 export async function POST(req: NextRequest) {
+    // ═══ [ODEAL DEBUG] geçici hata ayıklama logları (şimdilik) ═══
+    console.log("[ODEAL DEBUG] /save-settings çağrıldı", {
+        tenant: req.headers.get("x-tenant-id"),
+        keyLen: (req.headers.get("x-license-key") || "").length,
+    });
+
     const auth = await verifyTenantAccess(req);
-    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+    if (!auth.ok) {
+        console.warn("[ODEAL DEBUG] /save-settings auth REDDEDİLDİ", { status: auth.status, error: auth.error });
+        return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+    console.log("[ODEAL DEBUG] /save-settings auth OK", { tenantId: auth.tenantId });
 
     let body: Record<string, unknown>;
     try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid_json" }, { status: 400 }); }
@@ -36,7 +46,19 @@ export async function POST(req: NextRequest) {
         .from("tenants")
         .update({ settings: { ...current, odeal } })
         .eq("id", auth.tenantId);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+        console.warn("[ODEAL DEBUG] /save-settings DB güncelleme HATASI", { error: error.message });
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
 
+    console.log("[ODEAL DEBUG] /save-settings KAYDEDİLDİ", {
+        tenantId: auth.tenantId,
+        active: odeal.active,
+        hasPublic: !!odeal.publicKey,
+        hasSecret: !!odeal.secretKey,
+        externalDeviceKey: odeal.externalDeviceKey || "(yok)",
+        paxId: odeal.paxId || "(yok)",
+        environment: odeal.environment,
+    });
     return NextResponse.json({ success: true, odeal });
 }

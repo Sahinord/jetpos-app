@@ -614,11 +614,19 @@ export default function POS({
             vatRatio: Number(c.kdv ?? c.vat ?? 10),
             referenceCode: String(c.id || c.barcode || c.barkod || ""),
         }));
+        // ═══ [ODEAL DEBUG] geçici hata ayıklama logları (şimdilik) ═══
+        console.log("[ODEAL DEBUG] handleOdealCard → /pay isteği", {
+            total,
+            itemCount: items.length,
+            tenant: (typeof localStorage !== "undefined" && localStorage.getItem("currentTenantId")) || "(yok)",
+            keyLen: ((typeof localStorage !== "undefined" && localStorage.getItem("licenseKey")) || "").length,
+        });
         try {
             const res = await apiFetch("/api/odeal/pay", {
                 method: "POST",
                 body: JSON.stringify({ total, items }),
             });
+            console.log("[ODEAL DEBUG] handleOdealCard ← /pay yanıtı", res);
             const ref = res?.referenceCode;
             if (!ref) throw new Error("Referans alınamadı");
             setOdealPay({ status: "waiting", ref });
@@ -630,6 +638,7 @@ export default function POS({
                 tries++;
                 try {
                     const st = await apiFetch(`/api/odeal/status/${ref}`);
+                    console.log("[ODEAL DEBUG] handleOdealCard poll", { try: tries, ref, status: st?.status });
                     if (st?.status === "succeeded") {
                         stopOdealPoll();
                         setOdealPay({ status: "success", ref });
@@ -639,7 +648,7 @@ export default function POS({
                         stopOdealPoll();
                         setOdealPay({ status: "failed", message: st.status === "cancelled" ? "Ödeme iptal edildi." : "Ödeme başarısız." });
                     }
-                } catch { /* poll hatası yut */ }
+                } catch (pe) { console.warn("[ODEAL DEBUG] handleOdealCard poll hatası", pe); /* poll hatası yut */ }
                 if (tries > 90) { // ~3 dk
                     stopOdealPoll();
                     setOdealPay({ status: "failed", message: "Zaman aşımı. Cihazdan sonucu kontrol edin." });
@@ -649,9 +658,11 @@ export default function POS({
             // Ödeal kurulu/aktif değil (ayar yok / kapalı / anahtar eksik) → normal kart
             const msg = String(e?.message || "");
             if (/ayar yok|aktif|eksik|tanımlı|değil/i.test(msg)) {
+                console.warn("[ODEAL DEBUG] handleOdealCard: Ödeal kurulu değil → normal KART satışına düşülüyor", { msg });
                 setOdealPay({ status: "idle" });
                 handleCheckout("KART");
             } else {
+                console.error("[ODEAL DEBUG] handleOdealCard: HATA (fallback DEĞİL, ekranda gösterilecek)", { msg, error: e });
                 setOdealPay({ status: "failed", message: msg || "Ödeal'e gönderilemedi." });
             }
         }
