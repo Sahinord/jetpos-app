@@ -602,12 +602,9 @@ export default function POS({
 
     const handleOdealCard = async () => {
         if (cart.length === 0) return;
-        // İşletmede Ödeal aktif değilse normal kart satışı yap (cihaza gitme)
-        const odealActive = (currentTenant as any)?.settings?.odeal?.active === true;
-        if (!odealActive) {
-            handleCheckout("KART");
-            return;
-        }
+        // Sunucu-otoriter: her zaman /pay dene. Ödeal kurulu/aktif değilse
+        // sunucu 400 döner, sessizce normal kart satışına düşeriz (client'taki
+        // bayat settings'e güvenmiyoruz).
         setOdealPay({ status: "sending" });
         // Sepeti Ödeal formatına çevir
         const items = cart.map((c: any) => ({
@@ -649,9 +646,9 @@ export default function POS({
                 }
             }, 2000);
         } catch (e: any) {
-            // Ödeal tanımlı/aktif değilse normal kart satışına düş
+            // Ödeal kurulu/aktif değil (ayar yok / kapalı / anahtar eksik) → normal kart
             const msg = String(e?.message || "");
-            if (msg.includes("tanımlı") || msg.includes("aktif")) {
+            if (/ayar yok|aktif|eksik|tanımlı|değil/i.test(msg)) {
                 setOdealPay({ status: "idle" });
                 handleCheckout("KART");
             } else {
@@ -1535,12 +1532,12 @@ export default function POS({
                                 </div>
                                 <div className="w-8 h-8 mx-auto mb-4 border-3 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin" style={{ borderWidth: "3px" }} />
                                 <h3 className="text-lg font-black text-white mb-1">
-                                    {odealPay.status === "sending" ? "Cihaza gönderiliyor..." : "Cihazda ödeme bekleniyor"}
+                                    {odealPay.status === "sending" ? "Cihaza gönderiliyor..." : "✅ POS cihazına yönlendirildi"}
                                 </h3>
                                 <p className="text-sm text-slate-400">
                                     {odealPay.status === "sending"
                                         ? "Ödeal terminaline sepet iletiliyor."
-                                        : "Müşteri kartla ödeme yapmalı. Sonuç otomatik gelir."}
+                                        : "Ödeme başarıyla cihaza gönderildi. Müşteri kartla ödesin; sonuç otomatik gelecek."}
                                 </p>
                                 <p className="text-2xl font-black text-cyan-400 mt-4">₺{total.toFixed(2)}</p>
                                 {odealPay.status === "waiting" && (
