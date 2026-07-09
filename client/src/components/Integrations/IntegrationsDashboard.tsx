@@ -4,9 +4,10 @@ import { useState } from "react";
 import TrendyolGOWidget from "./TrendyolGOWidget";
 import HepsiburadaWidget from "./HepsiburadaWidget";
 import GetirCarsiWidget from "./GetirCarsiWidget";
+import OdealWidget from "./OdealWidget";
 import ProductMapping from "./ProductMapping";
 import {
-    Store, Package, ShoppingCart,
+    Store, Package, ShoppingCart, CreditCard,
     LayoutDashboard, Link as LinkIcon,
     Settings, BarChart3, ClipboardList
 } from "lucide-react";
@@ -24,7 +25,7 @@ export default function IntegrationsDashboard({ integrationType }: { integration
     };
 
     // Diğer (henüz gelmeyen) entegrasyonlar için "Yakında" ekranı
-    if (integrationType !== "trendyol_integration" && integrationType !== "trendyol_go_integration" && integrationType !== "hepsiburada_integration" && integrationType !== "getir_integration") {
+    if (integrationType !== "trendyol_integration" && integrationType !== "trendyol_go_integration" && integrationType !== "hepsiburada_integration" && integrationType !== "getir_integration" && integrationType !== "odeal_integration") {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6">
                 <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center text-secondary/40">
@@ -43,33 +44,48 @@ export default function IntegrationsDashboard({ integrationType }: { integration
         );
     }
 
-    // Tab tanımları
-    const tabs = [
-        { id: 'overview' as const, label: 'Genel Bakış', icon: LayoutDashboard },
-        { id: 'orders' as const, label: 'Siparişler', icon: ClipboardList },
-        { id: 'finance' as const, label: 'Finans & Analiz', icon: BarChart3 },
-        { id: 'settings' as const, label: 'Ayarlar', icon: Settings },
-        { id: 'mapping' as const, label: 'Ürün Eşleştirme', icon: LinkIcon },
-    ];
-
     const isHepsiburada = integrationType === 'hepsiburada_integration';
     const isGetir = integrationType === 'getir_integration';
-    const headerTitle = isGetir ? 'Getir Çarşı' : isHepsiburada ? 'Hepsiburada' : 'Trendyol GO';
-    const headerDesc = isGetir
-        ? 'Siparişler • Ciro Analizi • Canlı Takip'
-        : isHepsiburada ? 'Siparişler • Kargo (HepsiJet dahil) • Ciro Analizi' : 'Siparişler • Ciro Analizi • Stok Senkronizasyonu';
+    const isOdeal = integrationType === 'odeal_integration';
 
-    const iconWrapClass = isGetir
-        ? 'w-12 h-12 bg-purple-500/10 rounded-2xl flex items-center justify-center border border-purple-500/20'
-        : isHepsiburada
-            ? 'w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center border border-amber-500/20'
-            : 'w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center border border-orange-500/20';
-    const iconClass = isGetir ? 'w-6 h-6 text-purple-400' : isHepsiburada ? 'w-6 h-6 text-amber-500' : 'w-6 h-6 text-orange-500';
-    const tabActiveClass = isGetir
-        ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20'
-        : isHepsiburada
-            ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20'
-            : 'bg-orange-500 text-white shadow-lg shadow-orange-500/20';
+    // Tab tanımları — Ödeal bir ödeme entegrasyonu; "Siparişler" yerine "İşlemler",
+    // ürün eşleştirme yok.
+    const tabs = isOdeal
+        ? [
+            { id: 'overview' as const, label: 'Genel Bakış', icon: LayoutDashboard },
+            { id: 'orders' as const, label: 'İşlemler', icon: ClipboardList },
+            { id: 'finance' as const, label: 'Finans', icon: BarChart3 },
+            { id: 'settings' as const, label: 'Ayarlar', icon: Settings },
+        ]
+        : [
+            { id: 'overview' as const, label: 'Genel Bakış', icon: LayoutDashboard },
+            { id: 'orders' as const, label: 'Siparişler', icon: ClipboardList },
+            { id: 'finance' as const, label: 'Finans & Analiz', icon: BarChart3 },
+            { id: 'settings' as const, label: 'Ayarlar', icon: Settings },
+            { id: 'mapping' as const, label: 'Ürün Eşleştirme', icon: LinkIcon },
+        ];
+    const headerTitle = isOdeal ? 'Ödeal Ödeme' : isGetir ? 'Getir Çarşı' : isHepsiburada ? 'Hepsiburada' : 'Trendyol GO';
+    const headerDesc = isOdeal
+        ? 'A910S POS • Kart Ödemesi • İşlem Takibi'
+        : isGetir
+            ? 'Siparişler • Ciro Analizi • Canlı Takip'
+            : isHepsiburada ? 'Siparişler • Kargo (HepsiJet dahil) • Ciro Analizi' : 'Siparişler • Ciro Analizi • Stok Senkronizasyonu';
+
+    const iconWrapClass = isOdeal
+        ? 'w-12 h-12 bg-cyan-500/10 rounded-2xl flex items-center justify-center border border-cyan-500/20'
+        : isGetir
+            ? 'w-12 h-12 bg-purple-500/10 rounded-2xl flex items-center justify-center border border-purple-500/20'
+            : isHepsiburada
+                ? 'w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center border border-amber-500/20'
+                : 'w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center border border-orange-500/20';
+    const iconClass = isOdeal ? 'w-6 h-6 text-cyan-400' : isGetir ? 'w-6 h-6 text-purple-400' : isHepsiburada ? 'w-6 h-6 text-amber-500' : 'w-6 h-6 text-orange-500';
+    const tabActiveClass = isOdeal
+        ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/20'
+        : isGetir
+            ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20'
+            : isHepsiburada
+                ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20'
+                : 'bg-orange-500 text-white shadow-lg shadow-orange-500/20';
 
     return (
         <div className="space-y-6">
@@ -78,7 +94,7 @@ export default function IntegrationsDashboard({ integrationType }: { integration
                 <div>
                     <div className="flex items-center gap-3 mb-2">
                         <div className={iconWrapClass}>
-                            <Package className={iconClass} />
+                            {isOdeal ? <CreditCard className={iconClass} /> : <Package className={iconClass} />}
                         </div>
                         <div>
                             <h1 className="text-2xl font-black tracking-tight text-white">{headerTitle}</h1>
@@ -110,7 +126,9 @@ export default function IntegrationsDashboard({ integrationType }: { integration
 
             {/* Tab İçeriği */}
             <div className="min-h-[50vh]">
-                {isGetir ? (
+                {isOdeal ? (
+                    <OdealWidget activeSubTab={activeTab} />
+                ) : isGetir ? (
                     <GetirCarsiWidget activeSubTab={activeTab} />
                 ) : activeTab === 'mapping' && !isHepsiburada ? (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">

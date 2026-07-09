@@ -393,6 +393,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                 { id: "yemeksepeti_integration", label: "Yemeksepeti", icon: Store, feature: "yemeksepeti", description: "Yemeksepeti siparişleri, gelir ve net kar analizi." },
                 { id: "getir_integration", label: "Getir Çarşı", icon: Package, feature: "getir", description: "Getir Çarşı siparişleri, gelir ve net kar analizi." },
                 { id: "hepsiburada_integration", label: "Hepsiburada", icon: Store, feature: "hepsiburada_marketplace", description: "Hepsiburada Pazaryeri siparişleri ve HepsiJet dahil kargo yönetimi." },
+                { id: "odeal_integration", label: "Ödeal (Ödeme)", icon: CreditCard, feature: "odeal", description: "Ödeal A910S kart ödeme entegrasyonu, işlem takibi ve ayarlar." },
             ]
         },
         {

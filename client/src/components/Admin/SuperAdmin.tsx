@@ -41,6 +41,7 @@ const AVAILABLE_FEATURES = [
     { id: 'trendyol_marketplace', label: 'Trendyol Pazaryeri' },
     { id: 'trendyol_go', label: 'Trendyol GO / Yemek' },
     { id: 'getir_carsi', label: 'Getir Çarşı' },
+    { id: 'odeal', label: 'Ödeal Ödeme (A910S POS)' },
     { id: 'hepsiburada_marketplace', label: 'Hepsiburada Pazaryeri & HepsiJet Kargo' },
     { id: 'invoice', label: 'Fatura İşlemleri Entegrasyonu' },
     { id: 'invoice_management', label: 'Fatura ve İrsaliye Yönetimi' },
@@ -704,11 +705,12 @@ export default function SuperAdmin() {
                 }
             };
 
-            const { error } = await supabase
-                .from('tenants')
-                .update({ settings: updatedSettings })
-                .eq('id', odealModal.tenantId);
-            if (error) throw error;
+            // Service-role route (anon client tenants tablosunu RLS'ten güncelleyemiyor)
+            const result = await apiFetch('/api/admin/save-tenant', {
+                method: 'POST',
+                body: JSON.stringify({ tenantId: odealModal.tenantId, updateData: { settings: updatedSettings } }),
+            });
+            if (result?.error) throw new Error(result.error);
 
             await supabase.from('notifications').insert([{
                 title: "Ödeal Entegrasyon Güncellemesi",
@@ -1680,7 +1682,7 @@ export default function SuperAdmin() {
                                     { label: 'ÜRÜN & STOK', features: ['products', 'label_designer', 'invoice_management'] },
                                     { label: 'DİJİTAL & WEB', features: ['qrmenu', 'showcase', 'cfd'] },
                                     { label: 'FİNANS & YÖNETİM', features: ['profit_calculator', 'price_simulator', 'reports', 'cari_hesap', 'bank_management', 'cash_management', 'employee_module', 'employee_login', 'employee_permissions', 'master_pin_enabled'] },
-                                    { label: 'YAPAY ZEKA & ENTEGRASYON', features: ['ai_features', 'trendyol_marketplace', 'trendyol_go', 'hepsiburada_marketplace'] },
+                                    { label: 'YAPAY ZEKA & ENTEGRASYON', features: ['ai_features', 'trendyol_marketplace', 'trendyol_go', 'getir_carsi', 'hepsiburada_marketplace', 'odeal'] },
                                 ].map((cat) => (
                                     <div key={cat.label} className="space-y-4">
                                         <div className="flex items-center gap-3 ml-2">
