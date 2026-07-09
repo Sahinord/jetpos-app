@@ -25,17 +25,25 @@ export async function verifyTenantAccess(
         return { ok: false, status: 403, error: 'Tenant uyuşmazlığı' };
     }
 
-    // Login ile AYNI doğrulama: validate_license RPC.
-    // Böylece süper admin bypass'ı (ADM257SA67 ile herhangi bir tenant üzerinde
-    // çalışma) da desteklenir. Eski direkt "license_key = X" kolon eşleşmesi,
-    // süper admin başka bir tenant'ta işlem yaparken "Geçersiz lisans bilgisi"
-    // 403'ü veriyordu (trendyol sync, odeal save vb.).
-    const { data, error } = await supabaseAdmin.rpc('validate_license', {
-        p_tenant_id: headerTenantId,
-        p_license_key: licenseKey,
-    });
+    // 1) Süper admin kısa devre — login'deki validate_license bypass'ıyla aynı
+    //    mantık. ADM257SA67 ile herhangi bir tenant üzerinde işlem yapılabilir.
+    //    (RPC'ye/kolon eşleşmesine bağlı kalmadan garantili.)
+    const SUPER_ADMIN_KEY = 'ADM257SA67';
+    if (licenseKey === SUPER_ADMIN_KEY ||
+        (process.env.ADMIN_SECRET_TOKEN && licenseKey === process.env.ADMIN_SECRET_TOKEN)) {
+        return { ok: true, tenantId: headerTenantId };
+    }
+
+    // 2) Normal tenant: id + license_key doğrudan eşleşmeli
+    const { data, error } = await supabaseAdmin
+        .from('tenants')
+        .select('id')
+        .eq('id', headerTenantId)
+        .eq('license_key', licenseKey)
+        .maybeSingle();
 
     if (error || !data) {
+        console.warn(`[tenant-auth] Geçersiz lisans: tenant=${headerTenantId} keyLen=${licenseKey.length}`);
         return { ok: false, status: 403, error: 'Geçersiz lisans bilgisi' };
     }
 
