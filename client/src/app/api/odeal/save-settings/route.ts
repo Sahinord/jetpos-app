@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase-admin";
+import { supabaseAdmin, hasServiceRoleKey } from "@/lib/supabase-admin";
 import { verifyTenantAccess } from "@/lib/server-tenant-auth";
+
+const SERVICE_KEY_MISSING_MSG =
+    "Sunucuda SUPABASE_SERVICE_ROLE_KEY tanımlı değil (Vercel env). Bu yüzden kaydedilemiyor. Deployment ortam değişkenlerine ekleyip yeniden deploy edin.";
 
 // İşletmenin KENDİ Ödeal ayarını kaydetmesi (JetEntegre > Ödeal > Ayarlar).
 // verifyTenantAccess ile caller yalnızca KENDİ tenant'ını günceller; service-role
@@ -22,7 +25,13 @@ export async function POST(req: NextRequest) {
         console.warn("[ODEAL DEBUG] /save-settings auth REDDEDİLDİ", { status: auth.status, error: auth.error });
         return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
-    console.log("[ODEAL DEBUG] /save-settings auth OK", { tenantId: auth.tenantId });
+    console.log("[ODEAL DEBUG] /save-settings auth OK", { tenantId: auth.tenantId, hasServiceRoleKey });
+
+    // service-role key yoksa supabaseAdmin "Invalid API key" döner → önden net hata
+    if (!hasServiceRoleKey) {
+        console.error("[ODEAL DEBUG] /save-settings: SUPABASE_SERVICE_ROLE_KEY YOK — kayıt yapılamaz");
+        return NextResponse.json({ error: SERVICE_KEY_MISSING_MSG }, { status: 500 });
+    }
 
     let body: Record<string, unknown>;
     try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid_json" }, { status: 400 }); }
@@ -36,10 +45,16 @@ export async function POST(req: NextRequest) {
         active: body.active === true,
     };
 
+    const mapDbError = (m: string) =>
+        /invalid api key/i.test(m) ? SERVICE_KEY_MISSING_MSG : m;
+
     // Mevcut settings'i al, odeal'i birleştir (diğer entegrasyonları ezmesin)
     const { data: t, error: readErr } = await supabaseAdmin
         .from("tenants").select("settings").eq("id", auth.tenantId).maybeSingle();
-    if (readErr) return NextResponse.json({ error: readErr.message }, { status: 500 });
+    if (readErr) {
+        console.warn("[ODEAL DEBUG] /save-settings okuma HATASI", { error: readErr.message });
+        return NextResponse.json({ error: mapDbError(readErr.message) }, { status: 500 });
+    }
 
     const current = (t?.settings as Record<string, unknown>) || {};
     const { error } = await supabaseAdmin
@@ -48,7 +63,7 @@ export async function POST(req: NextRequest) {
         .eq("id", auth.tenantId);
     if (error) {
         console.warn("[ODEAL DEBUG] /save-settings DB güncelleme HATASI", { error: error.message });
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: mapDbError(error.message) }, { status: 500 });
     }
 
     console.log("[ODEAL DEBUG] /save-settings KAYDEDİLDİ", {
