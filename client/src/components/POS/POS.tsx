@@ -7,7 +7,7 @@ import {
     ChevronLeft, ChevronRight, Hash, BadgePercent,
     Calculator, MousePointer2, User, Clock, Monitor, X,
     Wallet, Building2, Sparkles, TrendingUp, Camera, Users,
-    BarChart3
+    BarChart3, Check
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PrintReceiptButton, triggerManualPrint, ReceiptPreview } from "./Receipt";
@@ -15,6 +15,7 @@ import { Html5QrcodeScanner } from "html5-qrcode";
 import { useTenant } from "@/lib/tenant-context";
 import { supabase, auditLog } from "@/lib/supabase";
 import { useTranslation } from "@/lib/i18n";
+import { apiFetch } from "@/lib/api";
 import { readScaleWeight } from "@/lib/hardware";
 import CariSearchModal from "../Cari/CariSearchModal";
 import PinVerificationModal from "../Common/PinVerificationModal";
@@ -588,6 +589,75 @@ export default function POS({
         setDiscount(suspended.discount);
         setSuspendedSales(suspendedSales.filter(s => s.id !== suspended.id));
         setShowSuspendedModal(false);
+    };
+
+    // ── ÖDEAL D2D kart ödemesi ──
+    // status: idle | sending | waiting | success | failed
+    const [odealPay, setOdealPay] = useState<{ status: string; ref?: string; message?: string }>({ status: "idle" });
+    const odealPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    const stopOdealPoll = () => {
+        if (odealPollRef.current) { clearInterval(odealPollRef.current); odealPollRef.current = null; }
+    };
+
+    const handleOdealCard = async () => {
+        if (cart.length === 0) return;
+        // İşletmede Ödeal aktif değilse normal kart satışı yap (cihaza gitme)
+        const odealActive = (currentTenant as any)?.settings?.odeal?.active === true;
+        if (!odealActive) {
+            handleCheckout("KART");
+            return;
+        }
+        setOdealPay({ status: "sending" });
+        // Sepeti Ödeal formatına çevir
+        const items = cart.map((c: any) => ({
+            name: String(c.name || c.ad || "Ürün"),
+            quantity: Number(c.quantity || c.miktar || 1),
+            grossPrice: Number((c.price ?? c.fiyat ?? 0)) * Number(c.quantity || c.miktar || 1),
+            vatRatio: Number(c.kdv ?? c.vat ?? 10),
+            referenceCode: String(c.id || c.barcode || c.barkod || ""),
+        }));
+        try {
+            const res = await apiFetch("/api/odeal/pay", {
+                method: "POST",
+                body: JSON.stringify({ total, items }),
+            });
+            const ref = res?.referenceCode;
+            if (!ref) throw new Error("Referans alınamadı");
+            setOdealPay({ status: "waiting", ref });
+
+            // Sonucu poll et (webhook düşene kadar) — 2 sn'de bir, ~3 dk timeout
+            let tries = 0;
+            stopOdealPoll();
+            odealPollRef.current = setInterval(async () => {
+                tries++;
+                try {
+                    const st = await apiFetch(`/api/odeal/status/${ref}`);
+                    if (st?.status === "succeeded") {
+                        stopOdealPoll();
+                        setOdealPay({ status: "success", ref });
+                        handleCheckout("KART"); // satışı tamamla
+                        setTimeout(() => setOdealPay({ status: "idle" }), 1500);
+                    } else if (st?.status === "failed" || st?.status === "cancelled") {
+                        stopOdealPoll();
+                        setOdealPay({ status: "failed", message: st.status === "cancelled" ? "Ödeme iptal edildi." : "Ödeme başarısız." });
+                    }
+                } catch { /* poll hatası yut */ }
+                if (tries > 90) { // ~3 dk
+                    stopOdealPoll();
+                    setOdealPay({ status: "failed", message: "Zaman aşımı. Cihazdan sonucu kontrol edin." });
+                }
+            }, 2000);
+        } catch (e: any) {
+            // Ödeal tanımlı/aktif değilse normal kart satışına düş
+            const msg = String(e?.message || "");
+            if (msg.includes("tanımlı") || msg.includes("aktif")) {
+                setOdealPay({ status: "idle" });
+                handleCheckout("KART");
+            } else {
+                setOdealPay({ status: "failed", message: msg || "Ödeal'e gönderilemedi." });
+            }
+        }
     };
 
     const handleCheckout = (method: string) => {
@@ -1267,7 +1337,8 @@ export default function POS({
                                     onClick={() => {
                                         if (cart.length === 0) return;
                                         updateDisplayStatus('payment', { paymentMethod: 'KART' });
-                                        setTimeout(() => handleCheckout("KART"), 1500);
+                                        // Ödeal aktifse cihaza gönderir; değilse normal kart satışına düşer
+                                        handleOdealCard();
                                     }}
                                     className="group relative flex flex-col items-center justify-center p-3 rounded-xl bg-primary text-white hover:scale-[1.01] transition-all shadow-md shadow-primary/20 active:scale-95 border border-primary/20 overflow-hidden"
                                 >
@@ -1452,6 +1523,59 @@ export default function POS({
                 }}
                 title="MÜŞTERİ SEÇİMİ (CRM)"
             />
+
+            {/* Ödeal Kart Ödeme Durumu */}
+            {odealPay.status !== "idle" && (
+                <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+                    <div className="bg-slate-900 border border-cyan-500/20 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl">
+                        {(odealPay.status === "sending" || odealPay.status === "waiting") && (
+                            <>
+                                <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
+                                    <CreditCard className="w-8 h-8 text-cyan-400" />
+                                </div>
+                                <div className="w-8 h-8 mx-auto mb-4 border-3 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin" style={{ borderWidth: "3px" }} />
+                                <h3 className="text-lg font-black text-white mb-1">
+                                    {odealPay.status === "sending" ? "Cihaza gönderiliyor..." : "Cihazda ödeme bekleniyor"}
+                                </h3>
+                                <p className="text-sm text-slate-400">
+                                    {odealPay.status === "sending"
+                                        ? "Ödeal terminaline sepet iletiliyor."
+                                        : "Müşteri kartla ödeme yapmalı. Sonuç otomatik gelir."}
+                                </p>
+                                <p className="text-2xl font-black text-cyan-400 mt-4">₺{total.toFixed(2)}</p>
+                                {odealPay.status === "waiting" && (
+                                    <button onClick={() => { stopOdealPoll(); setOdealPay({ status: "idle" }); }}
+                                        className="mt-5 px-6 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-sm font-bold">
+                                        Bekleme Ekranını Kapat
+                                    </button>
+                                )}
+                            </>
+                        )}
+                        {odealPay.status === "success" && (
+                            <>
+                                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-emerald-500 flex items-center justify-center">
+                                    <Check className="w-9 h-9 text-white" strokeWidth={3} />
+                                </div>
+                                <h3 className="text-xl font-black text-white">Ödeme Başarılı! 🎉</h3>
+                                <p className="text-sm text-slate-400 mt-1">Satış tamamlandı.</p>
+                            </>
+                        )}
+                        {odealPay.status === "failed" && (
+                            <>
+                                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-red-500/15 border border-red-500/30 flex items-center justify-center">
+                                    <X className="w-9 h-9 text-red-400" strokeWidth={3} />
+                                </div>
+                                <h3 className="text-lg font-black text-white mb-1">Ödeme Alınamadı</h3>
+                                <p className="text-sm text-slate-400">{odealPay.message}</p>
+                                <button onClick={() => setOdealPay({ status: "idle" })}
+                                    className="mt-5 px-6 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-600 text-white text-sm font-black">
+                                    Tamam
+                                </button>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* Sale Success & Receipt Modal */}
             <AnimatePresence>

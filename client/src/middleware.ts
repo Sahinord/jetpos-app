@@ -22,7 +22,16 @@ export function middleware(request: NextRequest) {
     // Public webhook uçları — kendi güçlü doğrulamalarını (x-api-key, sabit-zamanlı)
     // route handler'da yaparlar; JetPos middleware'i bunları geçirmeli, aksi halde
     // dış servis (Getir) header'larımız olmadığı için 401 yer.
-    const PUBLIC_API_PATHS = ['/api/getir-carsi/'];
+    // Dış servislerin çağırdığı webhook uçları (kendi güçlü doğrulamaları route'ta).
+    // Not: Ödeal'de yalnızca WEBHOOK'lar public; pay/status/register-callbacks
+    // POS tarafından x-tenant-id + x-license-key ile çağrılır, onlar korumada kalır.
+    const PUBLIC_API_PATHS = [
+        '/api/getir-carsi/',
+        '/api/odeal/payment-succeeded',
+        '/api/odeal/payment-cancelled',
+        '/api/odeal/payment-failed',
+        '/api/odeal/e-invoice-created',
+    ];
     if (PUBLIC_API_PATHS.some((p) => pathname.startsWith(p))) {
         return NextResponse.next();
     }

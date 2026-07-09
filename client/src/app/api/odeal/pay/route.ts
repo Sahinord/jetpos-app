@@ -1,0 +1,89 @@
+import { NextRequest, NextResponse } from "next/server";
+import { randomBytes } from "crypto";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+import { verifyTenantAccess } from "@/lib/server-tenant-auth";
+import { getTenantOdealCreds } from "@/lib/odeal/odeal-auth";
+import { sendBasket, saveConfiguration, type OdealBasketItem } from "@/lib/odeal/odeal-client";
+
+// Sunucu instance başına, tenant başına callback kaydını bir kez yap (idempotent).
+const registeredTenants = new Set<string>();
+
+// POS → "Ödeal ile Öde". Tenant kimliği x-tenant-id + x-license-key ile doğrulanır.
+// Sunucu, tenant'ın Ödeal kimlik bilgisini yükleyip sepeti cihaza gönderir.
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+export async function POST(req: NextRequest) {
+    const auth = await verifyTenantAccess(req);
+    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
+    const creds = await getTenantOdealCreds(auth.tenantId);
+    if (!creds) {
+        return NextResponse.json({
+            error: `Bu işletmede Ödeal ayarı yok. SuperAdmin'de ÖDEAL bilgilerini bu işletmeye (tenant: ${auth.tenantId.slice(0, 8)}…) girip kaydettiğinden emin ol.`,
+        }, { status: 400 });
+    }
+    if (!creds.active) {
+        return NextResponse.json({ error: "Ödeal kayıtlı ama 'Entegrasyon Aktif' kapalı. SuperAdmin'den aç." }, { status: 400 });
+    }
+    if (!creds.publicKey || !creds.secretKey) {
+        return NextResponse.json({ error: "Ödeal Public/Secret Key eksik. SuperAdmin'den gir." }, { status: 400 });
+    }
+    if (!creds.externalDeviceKey) {
+        return NextResponse.json({ error: "Cihaz kodu (externalDeviceKey) tanımlı değil. SuperAdmin > Ödeal'den girin." }, { status: 400 });
+    }
+
+    let body: { total?: number; items?: OdealBasketItem[]; siparisNo?: string };
+    try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid_json" }, { status: 400 }); }
+
+    const total = Number(body.total) || 0;
+    const items = Array.isArray(body.items) ? body.items : [];
+    if (total <= 0 || items.length === 0) {
+        return NextResponse.json({ error: "Geçerli tutar ve ürünler gerekli." }, { status: 400 });
+    }
+
+    // Callback URL'lerini Ödeal'e kaydet (bu tenant için ilk sefer; sonuçların
+    // webhook'la gelmesi için gerekir). Ödeme akışını bloklamaması için await'siz.
+    const base = (process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin).replace(/\/+$/, "");
+    const isLocal = /localhost|127\.0\.0\.1/.test(base);
+    // Local'de callback kaydını ATLA — Ödeal localhost'a ulaşamaz ve merchant'ın
+    // gerçek (public) callback URL'lerini localhost'la ezmesin.
+    if (!isLocal && !registeredTenants.has(auth.tenantId)) {
+        registeredTenants.add(auth.tenantId);
+        saveConfiguration(creds, {
+            paymentSucceededUrl: `${base}/api/odeal/payment-succeeded`,
+            paymentFailedUrl: `${base}/api/odeal/payment-failed`,
+            paymentCancelledUrl: `${base}/api/odeal/payment-cancelled`,
+            eInvoiceCreatedUrl: `${base}/api/odeal/e-invoice-created`,
+        }).catch(() => registeredTenants.delete(auth.tenantId)); // hata olursa tekrar denesin
+    }
+
+    // Benzersiz referans (idempotency + webhook eşleşmesi)
+    const referenceCode = `JP-${auth.tenantId.slice(0, 8)}-${Date.now()}-${randomBytes(3).toString("hex")}`;
+
+    // Önce pending kaydı yaz (webhook gelince güncellenecek)
+    await supabaseAdmin.from("odeal_transactions").insert([{
+        tenant_id: auth.tenantId,
+        reference_code: referenceCode,
+        status: "pending",
+        amount: total,
+        basket: { total, items },
+    }]);
+
+    const result = await sendBasket(creds, {
+        referenceCode,
+        total,
+        items,
+        receiptInfo: body.siparisNo ? { siparisNo: body.siparisNo } : undefined,
+    });
+
+    if (!result.ok) {
+        await supabaseAdmin.from("odeal_transactions")
+            .update({ status: "failed", result: { error: result.body }, updated_at: new Date().toISOString() })
+            .eq("tenant_id", auth.tenantId).eq("reference_code", referenceCode);
+        return NextResponse.json({ error: "Ödeal sepet gönderilemedi.", detail: result.body, referenceCode }, { status: 502 });
+    }
+
+    // Cihaz uyanacak; POS sonuç için status'u poll eder ya da webhook düşer
+    return NextResponse.json({ success: true, referenceCode });
+}

@@ -119,6 +119,14 @@ export default function SuperAdmin() {
     ];
     const [getirCarsiModal, setGetirCarsiModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
     const [getirCarsiSettings, setGetirCarsiSettings] = useState({ shopId: '', username: '', password: '', storeType: 'market', active: true });
+
+    // Ödeal A910S ödeme terminali (per-tenant, güvenli — server-side saklanır)
+    const [odealModal, setOdealModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
+    const [odealSettings, setOdealSettings] = useState({
+        publicKey: '', secretKey: '', username: '', password: '',
+        terminalSerial: '', paxId: '', vkn: '', externalDeviceKey: '', baseUrl: '',
+        environment: 'stage', active: true
+    });
     
     const [trendyolMarketplaceModal, setTrendyolMarketplaceModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
     const [trendyolMarketplaceSettings, setTrendyolMarketplaceSettings] = useState({ supplierId: '', apiKey: '', apiSecret: '' });
@@ -672,6 +680,53 @@ export default function SuperAdmin() {
         }
     };
 
+    const handleSaveOdealSettings = async () => {
+        if (!odealModal) return;
+        setSaving(true);
+        try {
+            const tenantObj = tenants.find(t => t.id === odealModal.tenantId);
+            const currentSettings = tenantObj?.settings || {};
+
+            const updatedSettings = {
+                ...currentSettings,
+                odeal: {
+                    publicKey: odealSettings.publicKey.trim(),
+                    secretKey: odealSettings.secretKey.trim(),
+                    username: odealSettings.username.trim(),
+                    password: odealSettings.password,
+                    terminalSerial: odealSettings.terminalSerial.trim(),
+                    paxId: odealSettings.paxId.trim(),
+                    vkn: odealSettings.vkn.trim(),
+                    externalDeviceKey: odealSettings.externalDeviceKey.trim(),
+                    baseUrl: odealSettings.baseUrl.trim(),
+                    environment: odealSettings.environment,
+                    active: odealSettings.active,
+                }
+            };
+
+            const { error } = await supabase
+                .from('tenants')
+                .update({ settings: updatedSettings })
+                .eq('id', odealModal.tenantId);
+            if (error) throw error;
+
+            await supabase.from('notifications').insert([{
+                title: "Ödeal Entegrasyon Güncellemesi",
+                message: "Ödeal ödeme terminali ayarlarınız sistem yöneticisi tarafından güncellendi.",
+                type: "info",
+                tenant_id: odealModal.tenantId
+            }]);
+
+            alert(`✅ ${odealModal.tenantName} için Ödeal ayarları güncellendi!`);
+            setOdealModal(null);
+            await fetchTenants();
+        } catch (err: any) {
+            alert('❌ Hata: ' + err.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const handleSaveTrendyolMarketplaceSettings = async () => {
         if (!trendyolMarketplaceModal) return;
 
@@ -1113,6 +1168,32 @@ export default function SuperAdmin() {
                                                 title="Getir Çarşı Ayarları"
                                             >
                                                 <span className="font-black text-[9px]">ÇARŞI</span>
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    const currentOd = tenant.settings?.odeal || {};
+                                                    setOdealModal({
+                                                        tenantId: tenant.id,
+                                                        tenantName: tenant.company_name || tenant.license_key
+                                                    });
+                                                    setOdealSettings({
+                                                        publicKey: currentOd.publicKey || '',
+                                                        secretKey: currentOd.secretKey || '',
+                                                        username: currentOd.username || '',
+                                                        password: currentOd.password || '',
+                                                        terminalSerial: currentOd.terminalSerial || '',
+                                                        paxId: currentOd.paxId || '',
+                                                        vkn: currentOd.vkn || '',
+                                                        externalDeviceKey: currentOd.externalDeviceKey || '',
+                                                        baseUrl: currentOd.baseUrl || '',
+                                                        environment: currentOd.environment || 'stage',
+                                                        active: currentOd.active !== false
+                                                    });
+                                                }}
+                                                className="p-3 bg-white/5 hover:bg-cyan-500/20 rounded-xl text-slate-400 hover:text-cyan-400 transition-all font-bold"
+                                                title="Ödeal Ödeme Terminali Ayarları"
+                                            >
+                                                <span className="font-black text-[9px]">ÖDEAL</span>
                                             </button>
                                             <button
                                                 onClick={() => {
@@ -2115,6 +2196,134 @@ export default function SuperAdmin() {
                                     onClick={handleSaveGetirCarsiSettings}
                                     disabled={saving}
                                     className="flex-1 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-xl font-black shadow-lg shadow-purple-500/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {saving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><Save className="w-4 h-4" /> Kaydet</>}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Ödeal Ödeme Terminali Modal */}
+            {odealModal && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+                    <div className="bg-slate-900 border border-white/10 rounded-[2.5rem] max-w-md w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+                        <div className="p-8 border-b border-white/10 sticky top-0 bg-slate-900 z-10">
+                            <div className="flex items-center gap-4 mb-2">
+                                <div className="w-12 h-12 bg-cyan-500/20 rounded-2xl flex items-center justify-center">
+                                    <span className="font-black text-[12px] text-cyan-400">ÖDEAL</span>
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black text-white">Ödeal Ödeme Terminali</h3>
+                                    <p className="text-xs text-slate-500 mt-1">{odealModal.tenantName}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-8 space-y-4">
+                            <div className="flex items-start gap-2 p-3 bg-cyan-500/[0.06] border border-cyan-500/20 rounded-xl">
+                                <span className="text-cyan-400 text-xs font-bold">🔒</span>
+                                <p className="text-[11px] text-slate-400 leading-relaxed">
+                                    Bu bilgiler yalnızca sunucu tarafında kullanılır, cihaza ödeme emri göndermek için gereklidir. Güvenli saklanır.
+                                </p>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Public Key</label>
+                                <input type="text" value={odealSettings.publicKey}
+                                    onChange={(e) => setOdealSettings({ ...odealSettings, publicKey: e.target.value })}
+                                    className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-cyan-500/50 text-sm" />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Secret Key</label>
+                                <input type="password" value={odealSettings.secretKey}
+                                    onChange={(e) => setOdealSettings({ ...odealSettings, secretKey: e.target.value })}
+                                    className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-cyan-500/50 text-sm" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Kullanıcı Adı</label>
+                                    <input type="text" value={odealSettings.username}
+                                        onChange={(e) => setOdealSettings({ ...odealSettings, username: e.target.value })}
+                                        className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-cyan-500/50 text-sm" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Şifre</label>
+                                    <input type="password" value={odealSettings.password}
+                                        onChange={(e) => setOdealSettings({ ...odealSettings, password: e.target.value })}
+                                        className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-cyan-500/50 text-sm" />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Terminal Seri No</label>
+                                    <input type="text" value={odealSettings.terminalSerial}
+                                        onChange={(e) => setOdealSettings({ ...odealSettings, terminalSerial: e.target.value })}
+                                        placeholder="Fiziksel Seri"
+                                        className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-cyan-500/50 text-sm" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">PaxID</label>
+                                    <input type="text" value={odealSettings.paxId}
+                                        onChange={(e) => setOdealSettings({ ...odealSettings, paxId: e.target.value })}
+                                        className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-cyan-500/50 text-sm" />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">VKN</label>
+                                    <input type="text" value={odealSettings.vkn}
+                                        onChange={(e) => setOdealSettings({ ...odealSettings, vkn: e.target.value })}
+                                        className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-cyan-500/50 text-sm" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Ortam</label>
+                                    <select value={odealSettings.environment}
+                                        onChange={(e) => setOdealSettings({ ...odealSettings, environment: e.target.value })}
+                                        className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-cyan-500/50 text-sm">
+                                        <option value="stage" className="bg-slate-900">Stage (Test)</option>
+                                        <option value="prod" className="bg-slate-900">Production (Canlı)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Cihaz Kodu (externalDeviceKey)</label>
+                                <input type="text" value={odealSettings.externalDeviceKey}
+                                    onChange={(e) => setOdealSettings({ ...odealSettings, externalDeviceKey: e.target.value })}
+                                    placeholder="Cihazdaki Ödeal > Cihazlarım menüsünden alınır"
+                                    className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-cyan-500/50 text-sm" />
+                                <p className="text-[10px] text-slate-500 ml-1">Sepetin hangi cihaza gideceğini belirler. Zorunlu.</p>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">API Base URL (opsiyonel)</label>
+                                <input type="text" value={odealSettings.baseUrl}
+                                    onChange={(e) => setOdealSettings({ ...odealSettings, baseUrl: e.target.value })}
+                                    placeholder="Boş bırak = ortama göre varsayılan"
+                                    className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-cyan-500/50 text-sm" />
+                                <p className="text-[10px] text-slate-500 ml-1">Ödeal&apos;in verdiği Fiziki POS base adresi (ör. .../basket bu adrese eklenir).</p>
+                            </div>
+                            <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                                <div>
+                                    <span className="text-sm font-bold text-white block">Entegrasyon Aktif</span>
+                                    <span className="text-[10px] text-slate-500">Kapalıysa Ödeal ile ödeme alınmaz</span>
+                                </div>
+                                <button
+                                    onClick={() => setOdealSettings({ ...odealSettings, active: !odealSettings.active })}
+                                    className={`w-12 h-6 rounded-full transition-all relative ${odealSettings.active ? 'bg-cyan-500' : 'bg-slate-700'}`}
+                                >
+                                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${odealSettings.active ? 'right-1' : 'left-1'}`} />
+                                </button>
+                            </div>
+                            <div className="flex gap-3 pt-4">
+                                <button
+                                    onClick={() => setOdealModal(null)}
+                                    className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold transition-all"
+                                >
+                                    İptal
+                                </button>
+                                <button
+                                    onClick={handleSaveOdealSettings}
+                                    disabled={saving}
+                                    className="flex-1 py-3 bg-cyan-500 hover:bg-cyan-600 text-white rounded-xl font-black shadow-lg shadow-cyan-500/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                                 >
                                     {saving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><Save className="w-4 h-4" /> Kaydet</>}
                                 </button>
