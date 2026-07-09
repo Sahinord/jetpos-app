@@ -5,7 +5,7 @@ const IS_ELECTRON = typeof window !== 'undefined' &&
                     navigator.userAgent.indexOf('Electron') >= 0 ||
                     (window as any).process?.versions?.electron);
 
-// Production Vercel URL
+// Production Vercel URL (aktif domain)
 const PROD_API_BASE = 'https://jetpos-app-71jf.vercel.app';
 
 // Geliştirme modunda isek ve localde çalışıyorsak relative path kullanalım

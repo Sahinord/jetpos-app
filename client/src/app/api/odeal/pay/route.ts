@@ -105,7 +105,14 @@ export async function POST(req: NextRequest) {
         await supabaseAdmin.from("odeal_transactions")
             .update({ status: "failed", result: { error: result.body }, updated_at: new Date().toISOString() })
             .eq("tenant_id", auth.tenantId).eq("reference_code", referenceCode);
-        return NextResponse.json({ error: "Ödeal sepet gönderilemedi.", detail: result.body, referenceCode }, { status: 502 });
+        // [ODEAL DEBUG] Ödeal'in gerçek red sebebini mesaja koy (şimdilik) — tarayıcı konsolunda görünsün
+        const detailStr = typeof result.body === "string" ? result.body : JSON.stringify(result.body);
+        return NextResponse.json({
+            error: `Ödeal sepet gönderilemedi (HTTP ${result.status}): ${(detailStr || "boş yanıt").slice(0, 400)}`,
+            detail: result.body,
+            status: result.status,
+            referenceCode,
+        }, { status: 502 });
     }
 
     console.log("[ODEAL DEBUG] /pay BAŞARILI — cihaza gönderildi", { referenceCode });

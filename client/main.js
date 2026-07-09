@@ -50,7 +50,7 @@ log.info('--- [CORE-v2.7] FINAL STABILITY ENGINE ---');
 // gerekir (electron-updater müşterilere saatlik poll'da ulaştırır).
 // KALICI ÇÖZÜM: Vercel'de sabit bir custom domain (örn. https://app.jetpos.shop)
 // bağlayıp burayı ona çevir — deploy/hash değişse bile adres hiç kırılmaz.
-const PROD_URL = 'https://jetpos-client-test.vercel.app';
+const PROD_URL = 'https://jetpos-app-71jf.vercel.app';
 let mainWindow;
 
 setInterval(() => {
