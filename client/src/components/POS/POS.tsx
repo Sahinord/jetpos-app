@@ -607,13 +607,24 @@ export default function POS({
         // bayat settings'e güvenmiyoruz).
         setOdealPay({ status: "sending" });
         // Sepeti Ödeal formatına çevir
-        const items = cart.map((c: any) => ({
-            name: String(c.name || c.ad || "Ürün"),
-            quantity: Number(c.quantity || c.miktar || 1),
-            grossPrice: Number((c.price ?? c.fiyat ?? 0)) * Number(c.quantity || c.miktar || 1),
-            vatRatio: Number(c.kdv ?? c.vat ?? 10),
-            referenceCode: String(c.id || c.barcode || c.barkod || ""),
-        }));
+        const items = cart.map((c: any) => {
+            const qty = Number(c.quantity ?? c.miktar ?? 1) || 1;
+            // Sepet fiyatı `sale_price` alanında tutuluyor (bkz. addToCart / subtotal).
+            const unit = Number(c.sale_price ?? c.price ?? c.fiyat ?? 0) || 0;
+            return {
+                name: String(c.name || c.ad || "Ürün"),
+                quantity: qty,
+                grossPrice: Number((unit * qty).toFixed(2)), // satır toplamı (KDV dahil), > 0 olmalı
+                vatRatio: Number(c.vat_rate ?? c.kdv ?? c.vat ?? 10),
+                referenceCode: String(c.id || c.barcode || c.barkod || ""),
+            };
+        });
+        // Ödeal 0 TL ürünü reddediyor (code 1603). Fiyatsız satır varsa engelle.
+        if (items.some(it => !(it.grossPrice > 0))) {
+            console.error("[ODEAL DEBUG] handleOdealCard: 0 TL ürün var, gönderilmiyor", items);
+            setOdealPay({ status: "failed", message: "Sepette fiyatı 0 olan ürün var. Fiyatları kontrol edin." });
+            return;
+        }
         // ═══ [ODEAL DEBUG] geçici hata ayıklama logları (şimdilik) ═══
         console.log("[ODEAL DEBUG] handleOdealCard → /pay isteği", {
             total,
