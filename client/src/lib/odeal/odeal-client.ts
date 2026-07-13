@@ -24,11 +24,25 @@ function headers(creds: OdealCreds): Record<string, string> {
 }
 
 async function post(url: string, creds: OdealCreds, body: unknown) {
-    const res = await fetch(url, { method: "POST", headers: headers(creds), body: JSON.stringify(body) });
-    const text = await res.text();
-    let json: unknown = null;
-    try { json = text ? JSON.parse(text) : null; } catch { /* text kalır */ }
-    return { ok: res.ok, status: res.status, body: json ?? text };
+    // ═══ [ODEAL DEBUG] Ödeal'e giden tam istek (şimdilik) ═══
+    console.log("[ODEAL DEBUG] → POST", url, "body:", JSON.stringify(body));
+    let last: { ok: boolean; status: number; body: unknown } = { ok: false, status: 0, body: "" };
+    // Ödeal stage 5xx sık ve geçici (Ödeal doğruladı) → aynı referenceCode ile 1 kez daha dene (idempotent)
+    for (let attempt = 0; attempt < 2; attempt++) {
+        const res = await fetch(url, { method: "POST", headers: headers(creds), body: JSON.stringify(body) });
+        const text = await res.text();
+        let json: unknown = null;
+        try { json = text ? JSON.parse(text) : null; } catch { /* text kalır */ }
+        // 500'de gövde Tomcat HTML'i olur; ilk 300 karakteri logla
+        console.log(`[ODEAL DEBUG] ← POST sonuç (deneme ${attempt + 1})`, res.status, typeof (json ?? text) === "string" ? String(text).slice(0, 300) : json);
+        last = { ok: res.ok, status: res.status, body: json ?? text };
+        if (res.status >= 500 && attempt < 1) {
+            await new Promise(r => setTimeout(r, 1500));
+            continue;
+        }
+        return last;
+    }
+    return last;
 }
 
 export type OdealBasketItem = {

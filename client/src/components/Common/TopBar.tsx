@@ -16,14 +16,23 @@ import { motion } from "framer-motion";
 import TenantSwitcher from "../Tenant/TenantSwitcher";
 import { useTenant } from "@/lib/tenant-context";
 import NotificationCenter from "../Notifications/NotificationCenter";
+import { getSidebarPosition, type SidebarPosition } from "./Sidebar";
 
 export default function TopBar({ activeTab, onMenuClick }: { activeTab: string, onMenuClick?: () => void }) {
     const [currentTime, setCurrentTime] = useState(new Date());
     const { currentTenant } = useTenant();
+    const [sidebarPosition, setSidebarPosition] = useState<SidebarPosition>("left");
 
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
         return () => clearInterval(timer);
+    }, []);
+
+    useEffect(() => {
+        setSidebarPosition(getSidebarPosition());
+        const handlePositionChange = () => setSidebarPosition(getSidebarPosition());
+        window.addEventListener('sidebar-position-changed', handlePositionChange);
+        return () => window.removeEventListener('sidebar-position-changed', handlePositionChange);
     }, []);
 
     const handleWindowAction = (action: 'window-minimize' | 'window-maximize' | 'window-close') => {
@@ -141,8 +150,8 @@ export default function TopBar({ activeTab, onMenuClick }: { activeTab: string, 
             className="h-20 lg:h-24 border-b border-border bg-card/80 backdrop-blur-xl flex items-center justify-between px-4 lg:px-10 sticky top-0 z-40 select-none"
             style={{ WebkitAppRegion: 'drag' } as any}
         >
-            {/* Left Section: Mobile Menu + Tenant Switcher + Title */}
-            <div className="flex items-center gap-3 lg:gap-4" style={{ WebkitAppRegion: 'no-drag' } as any}>
+            {/* Left Section: depends on sidebar position */}
+            <div className={`flex items-center gap-3 lg:gap-4 ${sidebarPosition === 'right' ? 'order-2' : ''}`} style={{ WebkitAppRegion: 'no-drag' } as any}>
                 <button
                     onClick={onMenuClick}
                     className="p-2 -ml-2 text-secondary hover:text-primary transition-colors lg:hidden rounded-lg hover:bg-primary/5"
@@ -166,13 +175,7 @@ export default function TopBar({ activeTab, onMenuClick }: { activeTab: string, 
                 {typeof window !== 'undefined' && localStorage.getItem('licenseKey') === 'ADM257SA67' && currentTenant?.license_key !== 'ADM257SA67' && (
                     <button
                         onClick={() => {
-                            // Admin tenant ID'sini bul ve oraya dön. 
-                            // Not: Normalde Admin Tenant ID'sini bir yerden çekmek lazım ama biz license key ile tetikleyebiliriz.
-                            // find_tenant_by_license ile admin'i bulup ID'sini alacağız.
-                            // Ama şimdilik basitçe currentTenantId'yi silip sayfayı yenileyince LicenseGate'e atacak, 
-                            // orada admin key girince düzelecek.
-                            // Veya daha iyisi, Admin ID'sini sabit tutalım ya da context'e ekleyelim.
-                            localStorage.setItem('currentTenantId', '00000000-0000-0000-0000-000000000000'); // Fake ID to trigger re-login as admin
+                            localStorage.setItem('currentTenantId', '00000000-0000-0000-0000-000000000000');
                             localStorage.removeItem('currentTenantId');
                             window.location.reload();
                         }}
@@ -184,10 +187,10 @@ export default function TopBar({ activeTab, onMenuClick }: { activeTab: string, 
                 )}
             </div>
 
-            {/* Right Section: Actions & Info */}
-            <div className="flex items-center space-x-8" style={{ WebkitAppRegion: 'no-drag' } as any}>
+            {/* Right Section: Actions & Info - flips when sidebar is on right */}
+            <div className={`flex items-center space-x-8 ${sidebarPosition === 'right' ? 'order-1 flex-row-reverse space-x-reverse' : ''}`} style={{ WebkitAppRegion: 'no-drag' } as any}>
                 {/* Date & Time */}
-                <div className="hidden xl:flex flex-col items-end text-right border-r border-border pr-8 space-y-1">
+                <div className={`hidden xl:flex flex-col items-end text-right ${sidebarPosition === 'right' ? 'border-l border-border pl-8' : 'border-r border-border pr-8'} space-y-1`}>
                     <div className="flex items-center space-x-2 text-secondary text-xs font-bold">
                         <Calendar className="w-4 h-4" />
                         <span>{currentTime.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
@@ -199,7 +202,7 @@ export default function TopBar({ activeTab, onMenuClick }: { activeTab: string, 
                 </div>
 
                 {/* System Status & Windows Style Controls */}
-                <div className="flex items-center space-x-6">
+                <div className={`flex items-center space-x-6 ${sidebarPosition === 'right' ? 'flex-row-reverse space-x-reverse' : ''}`}>
                     <div className="flex items-center space-x-3">
                         <NotificationCenter />
 

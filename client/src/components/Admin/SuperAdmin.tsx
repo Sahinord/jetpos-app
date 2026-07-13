@@ -42,6 +42,7 @@ const AVAILABLE_FEATURES = [
     { id: 'trendyol_go', label: 'Trendyol GO / Yemek' },
     { id: 'getir_carsi', label: 'Getir Çarşı' },
     { id: 'odeal', label: 'Ödeal Ödeme (A910S POS)' },
+    { id: 'tgo_yemek', label: 'Yemek Siparişleri (Trendyol · Uber Eats · Getir)' },
     { id: 'hepsiburada_marketplace', label: 'Hepsiburada Pazaryeri & HepsiJet Kargo' },
     { id: 'invoice', label: 'Fatura İşlemleri Entegrasyonu' },
     { id: 'invoice_management', label: 'Fatura ve İrsaliye Yönetimi' },
@@ -127,6 +128,18 @@ export default function SuperAdmin() {
         publicKey: '', secretKey: '', username: '', password: '',
         terminalSerial: '', paxId: '', vkn: '', externalDeviceKey: '', baseUrl: '',
         environment: 'stage', active: true
+    });
+
+    // Yemek — iki bağlantı: Trendyol Go·Uber Eats (birleşik) + Getir Yemek (ayrı)
+    const [tgoYemekModal, setTgoYemekModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
+    const [tgoYemekSettings, setTgoYemekSettings] = useState<{
+        agentName: string; stage: boolean; active: boolean;
+        tgo: { active: boolean; sellerId: string; apiKey: string; apiSecret: string; storeId: string };
+        getir: { active: boolean; sellerId: string; apiKey: string; apiSecret: string; storeId: string };
+    }>({
+        agentName: 'JetPos', stage: true, active: true,
+        tgo: { active: true, sellerId: '', apiKey: '', apiSecret: '', storeId: '' },
+        getir: { active: false, sellerId: '', apiKey: '', apiSecret: '', storeId: '' },
     });
     
     const [trendyolMarketplaceModal, setTrendyolMarketplaceModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
@@ -729,6 +742,62 @@ export default function SuperAdmin() {
         }
     };
 
+    // Kayıtlı bir yemek bağlantısını forma yükle
+    const loadYmConn = (c: any, defActive: boolean) => ({
+        active: c?.active !== undefined ? c.active !== false : defActive,
+        sellerId: c?.sellerId || '',
+        apiKey: c?.apiKey || '',
+        apiSecret: c?.apiSecret || '',
+        storeId: c?.storeId || '',
+    });
+
+    const handleSaveTgoYemekSettings = async () => {
+        if (!tgoYemekModal) return;
+        setSaving(true);
+        try {
+            const tenantObj = tenants.find(t => t.id === tgoYemekModal.tenantId);
+            const currentSettings = tenantObj?.settings || {};
+            const s = tgoYemekSettings;
+            const conn = (c: typeof s.tgo) => ({
+                active: c.active,
+                sellerId: c.sellerId.trim(),
+                apiKey: c.apiKey.trim(),
+                apiSecret: c.apiSecret,
+                storeId: c.storeId.trim(),
+            });
+            const updatedSettings = {
+                ...currentSettings,
+                tgoYemek: {
+                    active: s.active,
+                    agentName: s.agentName.trim() || 'JetPos',
+                    stage: s.stage,
+                    tgo: conn(s.tgo),
+                    getir: conn(s.getir),
+                },
+            };
+            const result = await apiFetch('/api/admin/save-tenant', {
+                method: 'POST',
+                body: JSON.stringify({ tenantId: tgoYemekModal.tenantId, updateData: { settings: updatedSettings } }),
+            });
+            if (result?.error) throw new Error(result.error);
+
+            await supabase.from('notifications').insert([{
+                title: "Yemek Entegrasyonu Güncellemesi",
+                message: "Yemek siparişi (Trendyol · Uber Eats · Getir) mağaza ayarlarınız güncellendi.",
+                type: "info",
+                tenant_id: tgoYemekModal.tenantId
+            }]);
+
+            alert(`✅ ${tgoYemekModal.tenantName} için Yemek mağaza ayarları güncellendi!`);
+            setTgoYemekModal(null);
+            await fetchTenants();
+        } catch (err: any) {
+            alert('❌ Hata: ' + err.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const handleSaveTrendyolMarketplaceSettings = async () => {
         if (!trendyolMarketplaceModal) return;
 
@@ -1196,6 +1265,26 @@ export default function SuperAdmin() {
                                                 title="Ödeal Ödeme Terminali Ayarları"
                                             >
                                                 <span className="font-black text-[9px]">ÖDEAL</span>
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    const currentYm: any = tenant.settings?.tgoYemek || {};
+                                                    setTgoYemekModal({
+                                                        tenantId: tenant.id,
+                                                        tenantName: tenant.company_name || tenant.license_key
+                                                    });
+                                                    setTgoYemekSettings({
+                                                        agentName: currentYm.agentName || 'JetPos',
+                                                        stage: currentYm.stage !== false,
+                                                        active: currentYm.active !== false,
+                                                        tgo: loadYmConn(currentYm.tgo, true),
+                                                        getir: loadYmConn(currentYm.getir, false),
+                                                    });
+                                                }}
+                                                className="p-3 bg-white/5 hover:bg-orange-500/20 rounded-xl text-slate-400 hover:text-orange-400 transition-all font-bold"
+                                                title="Yemek Siparişleri (Trendyol · Uber Eats · Getir)"
+                                            >
+                                                <span className="font-black text-[9px]">YEMEK</span>
                                             </button>
                                             <button
                                                 onClick={() => {
@@ -1682,7 +1771,7 @@ export default function SuperAdmin() {
                                     { label: 'ÜRÜN & STOK', features: ['products', 'label_designer', 'invoice_management'] },
                                     { label: 'DİJİTAL & WEB', features: ['qrmenu', 'showcase', 'cfd'] },
                                     { label: 'FİNANS & YÖNETİM', features: ['profit_calculator', 'price_simulator', 'reports', 'cari_hesap', 'bank_management', 'cash_management', 'employee_module', 'employee_login', 'employee_permissions', 'master_pin_enabled'] },
-                                    { label: 'YAPAY ZEKA & ENTEGRASYON', features: ['ai_features', 'trendyol_marketplace', 'trendyol_go', 'getir_carsi', 'hepsiburada_marketplace', 'odeal'] },
+                                    { label: 'YAPAY ZEKA & ENTEGRASYON', features: ['ai_features', 'trendyol_marketplace', 'trendyol_go', 'getir_carsi', 'hepsiburada_marketplace', 'odeal', 'tgo_yemek'] },
                                 ].map((cat) => (
                                     <div key={cat.label} className="space-y-4">
                                         <div className="flex items-center gap-3 ml-2">
@@ -2326,6 +2415,148 @@ export default function SuperAdmin() {
                                     onClick={handleSaveOdealSettings}
                                     disabled={saving}
                                     className="flex-1 py-3 bg-cyan-500 hover:bg-cyan-600 text-white rounded-xl font-black shadow-lg shadow-cyan-500/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {saving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><Save className="w-4 h-4" /> Kaydet</>}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Yemek Siparişleri Modal (Trendyol Yemek · Uber Eats · Getir Yemek — 3 sabit mağaza) */}
+            {tgoYemekModal && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+                    <div className="bg-slate-900 border border-white/10 rounded-[2.5rem] max-w-lg w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+                        <div className="p-8 border-b border-white/10 sticky top-0 bg-slate-900 z-10">
+                            <div className="flex items-center gap-4 mb-2">
+                                <div className="w-12 h-12 bg-orange-500/20 rounded-2xl flex items-center justify-center">
+                                    <span className="font-black text-[11px] text-orange-400">YEMEK</span>
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black text-white">Yemek Siparişleri</h3>
+                                    <p className="text-xs text-slate-500 mt-1">{tgoYemekModal.tenantName}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-8 space-y-4">
+                            <div className="flex items-start gap-2 p-3 bg-orange-500/[0.06] border border-orange-500/20 rounded-xl">
+                                <span className="text-orange-400 text-xs font-bold">🍔</span>
+                                <p className="text-[11px] text-slate-400 leading-relaxed">
+                                    <b className="text-slate-300">Trendyol Go · Uber Eats</b> tek bağlantıdır — Uber, Trendyol Go'yu aldı; Uber Eats siparişleri de bu API'den gelir ve markaya göre otomatik etiketlenir. <b className="text-slate-300">Getir Yemek</b> ayrı bir bağlantıdır (geçiş dönemi). Sadece kullandığınız bağlantıları açın.
+                                </p>
+                            </div>
+
+                            {/* Ortak: agent + ortam */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Agent Adı (Referans)</label>
+                                    <input type="text" value={tgoYemekSettings.agentName}
+                                        onChange={(e) => setTgoYemekSettings(p => ({ ...p, agentName: e.target.value }))}
+                                        className="w-full px-4 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-orange-500/50 text-sm" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Ortam</label>
+                                    <select value={tgoYemekSettings.stage ? 'stage' : 'prod'}
+                                        onChange={(e) => setTgoYemekSettings(p => ({ ...p, stage: e.target.value === 'stage' }))}
+                                        className="w-full px-4 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-orange-500/50 text-sm">
+                                        <option value="stage" className="bg-slate-900">Stage (Test)</option>
+                                        <option value="prod" className="bg-slate-900">Production (Canlı)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Bağlantı 1: Trendyol Go · Uber Eats (birleşik) */}
+                            <div className="p-4 bg-white/5 border border-white/10 rounded-2xl space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <span className="text-sm font-black text-white block">Trendyol Go · Uber Eats</span>
+                                        <span className="text-[10px] text-slate-500">Uber Eats + Trendyol Yemek siparişleri (tek API)</span>
+                                    </div>
+                                    <button
+                                        onClick={() => setTgoYemekSettings(p => ({ ...p, tgo: { ...p.tgo, active: !p.tgo.active } }))}
+                                        className={`w-11 h-6 rounded-full transition-all relative ${tgoYemekSettings.tgo.active ? 'bg-orange-500' : 'bg-slate-700'}`}
+                                    >
+                                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${tgoYemekSettings.tgo.active ? 'right-1' : 'left-1'}`} />
+                                    </button>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <input type="text" value={tgoYemekSettings.tgo.sellerId}
+                                        onChange={(e) => setTgoYemekSettings(p => ({ ...p, tgo: { ...p.tgo, sellerId: e.target.value } }))}
+                                        placeholder="Seller ID"
+                                        className="w-full px-4 py-2.5 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-orange-500/50 text-xs" />
+                                    <input type="text" value={tgoYemekSettings.tgo.storeId}
+                                        onChange={(e) => setTgoYemekSettings(p => ({ ...p, tgo: { ...p.tgo, storeId: e.target.value } }))}
+                                        placeholder="Restoran / Store ID"
+                                        className="w-full px-4 py-2.5 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-orange-500/50 text-xs" />
+                                </div>
+                                <input type="text" value={tgoYemekSettings.tgo.apiKey}
+                                    onChange={(e) => setTgoYemekSettings(p => ({ ...p, tgo: { ...p.tgo, apiKey: e.target.value } }))}
+                                    placeholder="API Key"
+                                    className="w-full px-4 py-2.5 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-orange-500/50 text-xs" />
+                                <input type="password" value={tgoYemekSettings.tgo.apiSecret}
+                                    onChange={(e) => setTgoYemekSettings(p => ({ ...p, tgo: { ...p.tgo, apiSecret: e.target.value } }))}
+                                    placeholder="API Secret"
+                                    className="w-full px-4 py-2.5 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-orange-500/50 text-xs" />
+                            </div>
+
+                            {/* Bağlantı 2: Getir Yemek (ayrı) */}
+                            <div className="p-4 bg-white/5 border border-white/10 rounded-2xl space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <span className="text-sm font-black text-white block">Getir Yemek</span>
+                                        <span className="text-[10px] text-slate-500">Ayrı bağlantı (geçiş dönemi)</span>
+                                    </div>
+                                    <button
+                                        onClick={() => setTgoYemekSettings(p => ({ ...p, getir: { ...p.getir, active: !p.getir.active } }))}
+                                        className={`w-11 h-6 rounded-full transition-all relative ${tgoYemekSettings.getir.active ? 'bg-orange-500' : 'bg-slate-700'}`}
+                                    >
+                                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${tgoYemekSettings.getir.active ? 'right-1' : 'left-1'}`} />
+                                    </button>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <input type="text" value={tgoYemekSettings.getir.sellerId}
+                                        onChange={(e) => setTgoYemekSettings(p => ({ ...p, getir: { ...p.getir, sellerId: e.target.value } }))}
+                                        placeholder="Seller ID"
+                                        className="w-full px-4 py-2.5 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-orange-500/50 text-xs" />
+                                    <input type="text" value={tgoYemekSettings.getir.storeId}
+                                        onChange={(e) => setTgoYemekSettings(p => ({ ...p, getir: { ...p.getir, storeId: e.target.value } }))}
+                                        placeholder="Restoran / Store ID"
+                                        className="w-full px-4 py-2.5 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-orange-500/50 text-xs" />
+                                </div>
+                                <input type="text" value={tgoYemekSettings.getir.apiKey}
+                                    onChange={(e) => setTgoYemekSettings(p => ({ ...p, getir: { ...p.getir, apiKey: e.target.value } }))}
+                                    placeholder="API Key"
+                                    className="w-full px-4 py-2.5 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-orange-500/50 text-xs" />
+                                <input type="password" value={tgoYemekSettings.getir.apiSecret}
+                                    onChange={(e) => setTgoYemekSettings(p => ({ ...p, getir: { ...p.getir, apiSecret: e.target.value } }))}
+                                    placeholder="API Secret"
+                                    className="w-full px-4 py-2.5 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-orange-500/50 text-xs" />
+                            </div>
+
+                            <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                                <div>
+                                    <span className="text-sm font-bold text-white block">Entegrasyon Aktif</span>
+                                    <span className="text-[10px] text-slate-500">Kapalıysa yemek siparişi çekilmez</span>
+                                </div>
+                                <button
+                                    onClick={() => setTgoYemekSettings(p => ({ ...p, active: !p.active }))}
+                                    className={`w-12 h-6 rounded-full transition-all relative ${tgoYemekSettings.active ? 'bg-orange-500' : 'bg-slate-700'}`}
+                                >
+                                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${tgoYemekSettings.active ? 'right-1' : 'left-1'}`} />
+                                </button>
+                            </div>
+                            <div className="flex gap-3 pt-2">
+                                <button
+                                    onClick={() => setTgoYemekModal(null)}
+                                    className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold transition-all"
+                                >
+                                    İptal
+                                </button>
+                                <button
+                                    onClick={handleSaveTgoYemekSettings}
+                                    disabled={saving}
+                                    className="flex-1 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-black shadow-lg shadow-orange-500/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                                 >
                                     {saving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><Save className="w-4 h-4" /> Kaydet</>}
                                 </button>

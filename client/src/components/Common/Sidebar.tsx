@@ -31,6 +31,7 @@ import {
     Store,
     Building2,
     CreditCard,
+    UtensilsCrossed,
     ShoppingBag,
     FileBarChart,
     Brain,
@@ -394,6 +395,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                 { id: "getir_integration", label: "Getir Çarşı", icon: Package, feature: "getir", description: "Getir Çarşı siparişleri, gelir ve net kar analizi." },
                 { id: "hepsiburada_integration", label: "Hepsiburada", icon: Store, feature: "hepsiburada_marketplace", description: "Hepsiburada Pazaryeri siparişleri ve HepsiJet dahil kargo yönetimi." },
                 { id: "odeal_integration", label: "Ödeal (Ödeme)", icon: CreditCard, feature: "odeal", description: "Ödeal A910S kart ödeme entegrasyonu, işlem takibi ve ayarlar." },
+                { id: "tgo_yemek_integration", label: "Yemek Siparişleri", icon: UtensilsCrossed, feature: "tgo_yemek", description: "Trendyol Yemek · Uber Eats · Getir Yemek — canlı sipariş, yeni sipariş bildirimi, hazırlama akışı." },
             ]
         },
         {
@@ -666,7 +668,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
 
 
     const effectiveWidth = isCollapsed ? COLLAPSED_WIDTH : sidebarWidth;
-    const sideClass = position === "left" ? "left-0 border-r" : "right-0 border-l";
+    const sideClass = position === "left" ? "left-0 border-r border-r-[var(--color-border)]" : "right-0 border-l border-l-[var(--color-border)]";
     const hiddenTranslate = position === "left" ? "-translate-x-full" : "translate-x-full";
 
     return (

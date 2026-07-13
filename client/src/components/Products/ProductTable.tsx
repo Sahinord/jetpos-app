@@ -632,10 +632,22 @@ export default function ProductTable({ products, categories = [], onEdit, onDele
                                     className="w-full bg-primary/5 border border-border rounded-2xl py-3.5 pl-12 pr-4 focus:outline-none focus:border-primary/50 transition-all text-lg font-medium placeholder:text-secondary/40 text-foreground"
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && search.trim() !== '') {
+                                            const exactMatch = products.find((p: any) => p.barcode?.toLowerCase() === search.trim().toLowerCase());
+                                            if (exactMatch) {
+                                                onEdit(exactMatch);
+                                            }
+                                        }
+                                    }}
                                     onPaste={(e) => {
                                         e.preventDefault();
                                         const pastedText = e.clipboardData.getData('text').trim();
                                         setSearch(pastedText);
+                                        const exactMatch = products.find((p: any) => p.barcode?.toLowerCase() === pastedText.toLowerCase());
+                                        if (exactMatch) {
+                                            onEdit(exactMatch);
+                                        }
                                     }}
                                 />
                             </div>

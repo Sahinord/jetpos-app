@@ -5,6 +5,7 @@ import TrendyolGOWidget from "./TrendyolGOWidget";
 import HepsiburadaWidget from "./HepsiburadaWidget";
 import GetirCarsiWidget from "./GetirCarsiWidget";
 import OdealWidget from "./OdealWidget";
+import TgoYemekWidget from "./TgoYemekWidget";
 import ProductMapping from "./ProductMapping";
 import {
     Store, Package, ShoppingCart, CreditCard,
@@ -25,7 +26,7 @@ export default function IntegrationsDashboard({ integrationType }: { integration
     };
 
     // Diğer (henüz gelmeyen) entegrasyonlar için "Yakında" ekranı
-    if (integrationType !== "trendyol_integration" && integrationType !== "trendyol_go_integration" && integrationType !== "hepsiburada_integration" && integrationType !== "getir_integration" && integrationType !== "odeal_integration") {
+    if (integrationType !== "trendyol_integration" && integrationType !== "trendyol_go_integration" && integrationType !== "hepsiburada_integration" && integrationType !== "getir_integration" && integrationType !== "odeal_integration" && integrationType !== "tgo_yemek_integration") {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6">
                 <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center text-secondary/40">
@@ -47,10 +48,18 @@ export default function IntegrationsDashboard({ integrationType }: { integration
     const isHepsiburada = integrationType === 'hepsiburada_integration';
     const isGetir = integrationType === 'getir_integration';
     const isOdeal = integrationType === 'odeal_integration';
+    const isTgoYemek = integrationType === 'tgo_yemek_integration';
 
     // Tab tanımları — Ödeal bir ödeme entegrasyonu; "Siparişler" yerine "İşlemler",
     // ürün eşleştirme yok.
-    const tabs = isOdeal
+    const tabs = isTgoYemek
+        ? [
+            { id: 'overview' as const, label: 'Genel Bakış', icon: LayoutDashboard },
+            { id: 'orders' as const, label: 'Canlı Siparişler', icon: ClipboardList },
+            { id: 'finance' as const, label: 'Finans', icon: BarChart3 },
+            { id: 'settings' as const, label: 'Ayarlar', icon: Settings },
+        ]
+        : isOdeal
         ? [
             { id: 'overview' as const, label: 'Genel Bakış', icon: LayoutDashboard },
             { id: 'orders' as const, label: 'İşlemler', icon: ClipboardList },
@@ -64,22 +73,28 @@ export default function IntegrationsDashboard({ integrationType }: { integration
             { id: 'settings' as const, label: 'Ayarlar', icon: Settings },
             { id: 'mapping' as const, label: 'Ürün Eşleştirme', icon: LinkIcon },
         ];
-    const headerTitle = isOdeal ? 'Ödeal Ödeme' : isGetir ? 'Getir Çarşı' : isHepsiburada ? 'Hepsiburada' : 'Trendyol GO';
-    const headerDesc = isOdeal
+    const headerTitle = isTgoYemek ? 'Yemek Siparişleri' : isOdeal ? 'Ödeal Ödeme' : isGetir ? 'Getir Çarşı' : isHepsiburada ? 'Hepsiburada' : 'Trendyol GO';
+    const headerDesc = isTgoYemek
+        ? 'Trendyol Yemek · Uber Eats · Getir • Canlı Sipariş • Bildirim'
+        : isOdeal
         ? 'A910S POS • Kart Ödemesi • İşlem Takibi'
         : isGetir
             ? 'Siparişler • Ciro Analizi • Canlı Takip'
             : isHepsiburada ? 'Siparişler • Kargo (HepsiJet dahil) • Ciro Analizi' : 'Siparişler • Ciro Analizi • Stok Senkronizasyonu';
 
-    const iconWrapClass = isOdeal
+    const iconWrapClass = isTgoYemek
+        ? 'w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center border border-orange-500/20'
+        : isOdeal
         ? 'w-12 h-12 bg-cyan-500/10 rounded-2xl flex items-center justify-center border border-cyan-500/20'
         : isGetir
             ? 'w-12 h-12 bg-purple-500/10 rounded-2xl flex items-center justify-center border border-purple-500/20'
             : isHepsiburada
                 ? 'w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center border border-amber-500/20'
                 : 'w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center border border-orange-500/20';
-    const iconClass = isOdeal ? 'w-6 h-6 text-cyan-400' : isGetir ? 'w-6 h-6 text-purple-400' : isHepsiburada ? 'w-6 h-6 text-amber-500' : 'w-6 h-6 text-orange-500';
-    const tabActiveClass = isOdeal
+    const iconClass = isTgoYemek ? 'w-6 h-6 text-orange-400' : isOdeal ? 'w-6 h-6 text-cyan-400' : isGetir ? 'w-6 h-6 text-purple-400' : isHepsiburada ? 'w-6 h-6 text-amber-500' : 'w-6 h-6 text-orange-500';
+    const tabActiveClass = isTgoYemek
+        ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20'
+        : isOdeal
         ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/20'
         : isGetir
             ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20'
@@ -94,7 +109,7 @@ export default function IntegrationsDashboard({ integrationType }: { integration
                 <div>
                     <div className="flex items-center gap-3 mb-2">
                         <div className={iconWrapClass}>
-                            {isOdeal ? <CreditCard className={iconClass} /> : <Package className={iconClass} />}
+                            {isOdeal ? <CreditCard className={iconClass} /> : isTgoYemek ? <ShoppingCart className={iconClass} /> : <Package className={iconClass} />}
                         </div>
                         <div>
                             <h1 className="text-2xl font-black tracking-tight text-white">{headerTitle}</h1>
@@ -128,6 +143,8 @@ export default function IntegrationsDashboard({ integrationType }: { integration
             <div className="min-h-[50vh]">
                 {isOdeal ? (
                     <OdealWidget activeSubTab={activeTab} />
+                ) : isTgoYemek ? (
+                    <TgoYemekWidget activeSubTab={activeTab} />
                 ) : isGetir ? (
                     <GetirCarsiWidget activeSubTab={activeTab} />
                 ) : activeTab === 'mapping' && !isHepsiburada ? (

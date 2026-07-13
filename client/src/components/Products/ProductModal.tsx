@@ -15,7 +15,8 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
 
     const [pricingPrefs, setPricingPrefs] = useState({
         margin: "30" as any, commission: "0" as any, withholding: "0" as any,
-        platform_commission: "0" as any, shipping_cost: "0" as any
+        platform_commission: "0" as any, shipping_cost: "0" as any,
+        includeVat: true
     });
 
     const [showAdvancedPricing, setShowAdvancedPricing] = useState(false);
@@ -28,7 +29,8 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                 setPricingPrefs({
                     margin: String(parsed.margin || 30), commission: String(parsed.commission || 0),
                     withholding: String(parsed.withholding || 0), platform_commission: String(parsed.platform_commission || 0),
-                    shipping_cost: String(parsed.shipping_cost || 0)
+                    shipping_cost: String(parsed.shipping_cost || 0),
+                    includeVat: parsed.includeVat !== false
                 });
             } catch (e) { }
         }
@@ -66,7 +68,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
     const handleSuggestPrice = () => {
         const suggested = suggestSalePrice(
             Number(formData.purchase_price) || 0, Number(pricingPrefs.margin) || 0,
-            formData.vat_rate, Number(pricingPrefs.commission) || 0,
+            pricingPrefs.includeVat ? formData.vat_rate : 0, Number(pricingPrefs.commission) || 0,
             Number(pricingPrefs.withholding) || 0, Number(pricingPrefs.platform_commission) || 0,
             Number(pricingPrefs.shipping_cost) || 0
         );
@@ -318,24 +320,39 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                 {showAdvancedPricing && (
                                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
                                         className="overflow-hidden">
-                                        <div className="grid grid-cols-5 gap-2 p-3 bg-white/[0.02] rounded-xl border border-white/[0.04]">
-                                            {[
-                                                { key: 'margin', label: 'Hedef Kâr %', color: '' },
-                                                { key: 'commission', label: 'POS Kom. %', color: '' },
-                                                { key: 'platform_commission', label: 'Platform %', color: 'text-orange-400' },
-                                                { key: 'shipping_cost', label: 'Kargo ₺', color: 'text-blue-400' },
-                                                { key: 'withholding', label: 'Stopaj %', color: '' },
-                                            ].map(f => (
-                                                <div key={f.key}>
-                                                    <label className={`text-[8px] font-bold mb-1 block ${f.color || 'text-slate-500'}`}>{f.label}</label>
-                                                    <input
-                                                        type="text" inputMode="decimal"
-                                                        className="w-full bg-white/[0.03] border border-white/[0.06] rounded-lg px-2 py-1.5 text-[11px] font-bold text-white outline-none focus:border-primary/30 tabular-nums"
-                                                        value={(pricingPrefs as any)[f.key]} onFocus={e => e.target.select()}
-                                                        onChange={e => handleNumericInput(f.key, e.target.value, true)}
-                                                    />
+                                        <div className="space-y-2 p-3 bg-white/[0.02] rounded-xl border border-white/[0.04]">
+                                            <div className="grid grid-cols-5 gap-2">
+                                                {[
+                                                    { key: 'margin', label: 'Hedef Kâr %', color: '' },
+                                                    { key: 'commission', label: 'POS Kom. %', color: '' },
+                                                    { key: 'platform_commission', label: 'Platform %', color: 'text-orange-400' },
+                                                    { key: 'shipping_cost', label: 'Kargo ₺', color: 'text-blue-400' },
+                                                    { key: 'withholding', label: 'Stopaj %', color: '' },
+                                                ].map(f => (
+                                                    <div key={f.key}>
+                                                        <label className={`text-[8px] font-bold mb-1 block ${f.color || 'text-slate-500'}`}>{f.label}</label>
+                                                        <input
+                                                            type="text" inputMode="decimal"
+                                                            className="w-full bg-white/[0.03] border border-white/[0.06] rounded-lg px-2 py-1.5 text-[11px] font-bold text-white outline-none focus:border-primary/30 tabular-nums"
+                                                            value={(pricingPrefs as any)[f.key]} onFocus={e => e.target.select()}
+                                                            onChange={e => handleNumericInput(f.key, e.target.value, true)}
+                                                        />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            {/* KDV Toggle */}
+                                            <div className="flex items-center justify-between pt-1.5 border-t border-white/[0.04]">
+                                                <div className="flex items-center gap-1.5">
+                                                    <DollarSign size={10} className="text-emerald-400" />
+                                                    <span className="text-[9px] font-bold text-slate-400">Öneriye KDV Ekle</span>
+                                                    <span className="text-[8px] text-slate-600">(%{formData.vat_rate})</span>
                                                 </div>
-                                            ))}
+                                                <label className="relative inline-flex items-center cursor-pointer">
+                                                    <input type="checkbox" className="sr-only peer" checked={pricingPrefs.includeVat}
+                                                        onChange={e => setPricingPrefs({ ...pricingPrefs, includeVat: e.target.checked })} />
+                                                    <div className={`w-8 h-[18px] rounded-full transition-all after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all ${pricingPrefs.includeVat ? 'bg-emerald-500 after:translate-x-[14px]' : 'bg-white/[0.06]'}`} />
+                                                </label>
+                                            </div>
                                         </div>
                                     </motion.div>
                                 )}
