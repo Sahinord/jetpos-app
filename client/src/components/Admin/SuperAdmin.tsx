@@ -141,6 +141,15 @@ export default function SuperAdmin() {
         tgo: { active: true, sellerId: '', apiKey: '', apiSecret: '', storeId: '' },
         getir: { active: false, sellerId: '', apiKey: '', apiSecret: '', storeId: '' },
     });
+
+    // Ödeal Lead (potansiyel müşteri) gönderme — partner seviyesi (per-tenant değil)
+    const [leadModalOpen, setLeadModalOpen] = useState(false);
+    const [leadSubmitting, setLeadSubmitting] = useState(false);
+    const [leadForm, setLeadForm] = useState({
+        mobile: '', firstName: '', lastName: '', companyTitle: '',
+        businessType: 'INDIVIDUAL', setupCity: '', setupTown: '', setupAddress: '',
+        salesType: 'CeptePOS', owner: '',
+    });
     
     const [trendyolMarketplaceModal, setTrendyolMarketplaceModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
     const [trendyolMarketplaceSettings, setTrendyolMarketplaceSettings] = useState({ supplierId: '', apiKey: '', apiSecret: '' });
@@ -798,6 +807,39 @@ export default function SuperAdmin() {
         }
     };
 
+    const handleSubmitLead = async () => {
+        if (!leadForm.mobile.trim()) { alert('Telefon (mobile) zorunludur.'); return; }
+        setLeadSubmitting(true);
+        try {
+            const optionalFields: Record<string, string> = {};
+            if (leadForm.companyTitle.trim()) optionalFields.companyTitle = leadForm.companyTitle.trim();
+            if (leadForm.businessType) optionalFields.businessType = leadForm.businessType;
+            if (leadForm.setupCity.trim()) optionalFields.setupCity = leadForm.setupCity.trim();
+            if (leadForm.setupTown.trim()) optionalFields.setupTown = leadForm.setupTown.trim();
+            if (leadForm.setupAddress.trim()) optionalFields.setupAddress = leadForm.setupAddress.trim();
+            if (leadForm.salesType) optionalFields.salesType = leadForm.salesType;
+
+            const res = await apiFetch('/api/odeal/lead', {
+                method: 'POST',
+                body: JSON.stringify({
+                    mobile: leadForm.mobile,
+                    firstName: leadForm.firstName,
+                    lastName: leadForm.lastName,
+                    owner: leadForm.owner,
+                    optionalFields,
+                }),
+            });
+            if (res?.error) throw new Error(res.error + (Array.isArray(res.errors) ? ' — ' + res.errors.join(', ') : ''));
+            alert(`✅ Lead Ödeal'e gönderildi! Başvuru ID: ${res.registerRefCode || '-'}`);
+            setLeadModalOpen(false);
+            setLeadForm({ mobile: '', firstName: '', lastName: '', companyTitle: '', businessType: 'INDIVIDUAL', setupCity: '', setupTown: '', setupAddress: '', salesType: 'CeptePOS', owner: '' });
+        } catch (err: any) {
+            alert('❌ ' + (err.message || 'Lead gönderilemedi'));
+        } finally {
+            setLeadSubmitting(false);
+        }
+    };
+
     const handleSaveTrendyolMarketplaceSettings = async () => {
         if (!trendyolMarketplaceModal) return;
 
@@ -1067,6 +1109,10 @@ export default function SuperAdmin() {
                                     className="w-full pl-11 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-primary/50 transition-all text-sm"
                                 />
                             </div>
+                            <button onClick={() => setLeadModalOpen(true)} className="flex items-center gap-2 px-5 py-3 bg-orange-500/15 border border-orange-500/30 hover:bg-orange-500/25 text-orange-300 rounded-xl font-bold transition-all whitespace-nowrap" title="Potansiyel müşteriyi Ödeal'e ilet (Lead API)">
+                                <Send className="w-5 h-5" />
+                                Ödeal Lead
+                            </button>
                             <button onClick={handleAddNew} className="flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold transition-all shadow-lg shadow-primary/20 whitespace-nowrap">
                                 <Plus className="w-5 h-5" />
                                 Yeni Lisans
@@ -2390,7 +2436,7 @@ export default function SuperAdmin() {
                                     onChange={(e) => setOdealSettings({ ...odealSettings, baseUrl: e.target.value })}
                                     placeholder="Boş bırak = ortama göre varsayılan"
                                     className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-cyan-500/50 text-sm" />
-                                <p className="text-[10px] text-slate-500 ml-1">Ödeal&apos;in verdiği Fiziki POS base adresi (ör. .../basket bu adrese eklenir).</p>
+                                <p className="text-[10px] text-slate-500 ml-1">Boş bırak → Ortam&apos;a göre otomatik: Stage = stage.odealapp.com, Prod = api.odeal.com. Sadece Ödeal özel bir adres verdiyse doldur.</p>
                             </div>
                             <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
                                 <div>
@@ -2559,6 +2605,65 @@ export default function SuperAdmin() {
                                     className="flex-1 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-black shadow-lg shadow-orange-500/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                                 >
                                     {saving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><Save className="w-4 h-4" /> Kaydet</>}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Ödeal Lead (potansiyel müşteri) Modal */}
+            {leadModalOpen && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+                    <div className="bg-slate-900 border border-white/10 rounded-[2.5rem] max-w-lg w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+                        <div className="p-8 border-b border-white/10 sticky top-0 bg-slate-900 z-10">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-orange-500/20 rounded-2xl flex items-center justify-center text-orange-400"><Send className="w-6 h-6" /></div>
+                                <div>
+                                    <h3 className="text-xl font-black text-white">Ödeal Lead Gönder</h3>
+                                    <p className="text-xs text-slate-500 mt-1">Potansiyel müşteriyi Ödeal&apos;e ilet — satışı ve evrağı Ödeal tamamlar</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-8 space-y-4">
+                            <div className="flex items-start gap-2 p-3 bg-orange-500/[0.06] border border-orange-500/20 rounded-xl">
+                                <span className="text-orange-400 text-xs font-bold">ℹ️</span>
+                                <p className="text-[11px] text-slate-400 leading-relaxed">Tek zorunlu alan telefon. Ortam (stage/prod) sunucu ayarından gelir. Başarılıysa Ödeal başvuru ID&apos;si (registerRefCode) döner.</p>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Telefon (zorunlu)</label>
+                                <input type="text" value={leadForm.mobile} onChange={e => setLeadForm({ ...leadForm, mobile: e.target.value })} placeholder="5XXXXXXXXX" className="w-full px-4 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-orange-500/50 text-sm" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Ad</label><input type="text" value={leadForm.firstName} onChange={e => setLeadForm({ ...leadForm, firstName: e.target.value })} className="w-full px-4 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-orange-500/50 text-sm" /></div>
+                                <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Soyad</label><input type="text" value={leadForm.lastName} onChange={e => setLeadForm({ ...leadForm, lastName: e.target.value })} className="w-full px-4 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-orange-500/50 text-sm" /></div>
+                            </div>
+                            <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Firma / Tabela Adı</label><input type="text" value={leadForm.companyTitle} onChange={e => setLeadForm({ ...leadForm, companyTitle: e.target.value })} className="w-full px-4 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-orange-500/50 text-sm" /></div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">İşyeri Türü</label>
+                                    <select value={leadForm.businessType} onChange={e => setLeadForm({ ...leadForm, businessType: e.target.value })} className="w-full px-4 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-orange-500/50 text-sm">
+                                        <option value="INDIVIDUAL" className="bg-slate-900">Şahıs</option>
+                                        <option value="CORPORATE" className="bg-slate-900">Tüzel</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Satış Türü</label>
+                                    <select value={leadForm.salesType} onChange={e => setLeadForm({ ...leadForm, salesType: e.target.value })} className="w-full px-4 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-orange-500/50 text-sm">
+                                        <option value="CeptePOS" className="bg-slate-900">CeptePOS</option>
+                                        <option value="EDOC_POS" className="bg-slate-900">EDOC_POS</option>
+                                        <option value="PHY_POS" className="bg-slate-900">PHY_POS</option>
+                                        <option value="SanalPOS" className="bg-slate-900">SanalPOS</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">İl</label><input type="text" value={leadForm.setupCity} onChange={e => setLeadForm({ ...leadForm, setupCity: e.target.value })} placeholder="İstanbul" className="w-full px-4 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-orange-500/50 text-sm" /></div>
+                                <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">İlçe</label><input type="text" value={leadForm.setupTown} onChange={e => setLeadForm({ ...leadForm, setupTown: e.target.value })} placeholder="Kadıköy" className="w-full px-4 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-orange-500/50 text-sm" /></div>
+                            </div>
+                            <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Kurulum Adresi</label><input type="text" value={leadForm.setupAddress} onChange={e => setLeadForm({ ...leadForm, setupAddress: e.target.value })} className="w-full px-4 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-orange-500/50 text-sm" /></div>
+                            <div className="flex gap-3 pt-2">
+                                <button onClick={() => setLeadModalOpen(false)} className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold transition-all">İptal</button>
+                                <button onClick={handleSubmitLead} disabled={leadSubmitting} className="flex-1 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-black shadow-lg shadow-orange-500/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                                    {leadSubmitting ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><Send className="w-4 h-4" /> Gönder</>}
                                 </button>
                             </div>
                         </div>

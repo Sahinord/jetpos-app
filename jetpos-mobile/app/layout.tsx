@@ -3,6 +3,7 @@ import "./globals.css";
 import PWARegister from "@/components/PWARegister";
 import ThemeApplier from "@/components/ThemeApplier";
 import SessionGuard from "@/components/SessionGuard";
+import OrderNotifier from "@/components/OrderNotifier";
 
 import { Toaster } from "sonner";
 
@@ -43,6 +44,7 @@ export default function RootLayout({
         <ThemeApplier />
         <SessionGuard />
         <PWARegister />
+        <OrderNotifier />
         <Toaster position="top-center" richColors theme="dark" />
         {children}
       </body>

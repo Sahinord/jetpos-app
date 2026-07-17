@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Sidebar from "@/components/Common/Sidebar";
+import OrderNotifier from "@/components/Common/OrderNotifier";
 import TopBar from "@/components/Common/TopBar";
 import SummaryCards from "@/components/Dashboard/SummaryCards";
 import ProductTable from "@/components/Products/ProductTable";
@@ -95,6 +96,8 @@ export default function Home() {
   const [isClearAllModalOpen, setIsClearAllModalOpen] = useState(false);
   const [clearAllConfirmationText, setClearAllConfirmationText] = useState("");
   const [isCashDrawerEnabled, setIsCashDrawerEnabled] = useState(false);
+  // Adisyon fişi: kapalıysa NAKİT satışta fiş çıkmaz, ekranda "Satış Tamamlandı" + para üstü gösterilir
+  const [isAdisyonReceiptEnabled, setIsAdisyonReceiptEnabled] = useState(false);
   const [cashDrawerPrinterName, setCashDrawerPrinterName] = useState("");
   const [receiptPrinterName, setReceiptPrinterName] = useState("");
   const [adisyonCart, setAdisyonCart] = useState<any[]>([]);
@@ -309,6 +312,9 @@ export default function Home() {
     const savedCashDrawer = localStorage.getItem('isCashDrawerEnabled');
     if (savedCashDrawer !== null) setIsCashDrawerEnabled(savedCashDrawer === 'true');
 
+    const savedAdisyonReceipt = localStorage.getItem('isAdisyonReceiptEnabled');
+    if (savedAdisyonReceipt !== null) setIsAdisyonReceiptEnabled(savedAdisyonReceipt === 'true');
+
     const savedPrinterName = localStorage.getItem('cashDrawerPrinterName');
     if (savedPrinterName) setCashDrawerPrinterName(savedPrinterName);
 
@@ -351,6 +357,7 @@ export default function Home() {
     localStorage.setItem('isStockSyncEnabled', isStockSyncEnabled.toString());
     localStorage.setItem('isWarehouseStockDeductionEnabled', isWarehouseStockDeductionEnabled.toString());
     localStorage.setItem('isCashDrawerEnabled', isCashDrawerEnabled.toString());
+    localStorage.setItem('isAdisyonReceiptEnabled', isAdisyonReceiptEnabled.toString());
     localStorage.setItem('cashDrawerPrinterName', cashDrawerPrinterName);
     localStorage.setItem('receiptPrinterName', receiptPrinterName);
     localStorage.setItem('labelPrinterName', labelPrinterName);
@@ -358,7 +365,7 @@ export default function Home() {
     localStorage.setItem('isAdisyonAutoOpenReservationEnabled', isAdisyonAutoOpenReservationEnabled.toString());
     localStorage.setItem('lowStockThreshold', lowStockThreshold.toString());
     localStorage.setItem('receiptSettings', JSON.stringify(receiptSettings));
-  }, [theme, isBeepEnabled, showHelpIcons, isEmployeeModuleEnabled, isPriceSyncEnabled, isStockSyncEnabled, isWarehouseStockDeductionEnabled, isCashDrawerEnabled, cashDrawerPrinterName, receiptPrinterName, labelPrinterName, isAdisyonStoreSpecificEnabled, isAdisyonAutoOpenReservationEnabled, lowStockThreshold, receiptSettings]);
+  }, [theme, isBeepEnabled, showHelpIcons, isEmployeeModuleEnabled, isPriceSyncEnabled, isStockSyncEnabled, isWarehouseStockDeductionEnabled, isCashDrawerEnabled, isAdisyonReceiptEnabled, cashDrawerPrinterName, receiptPrinterName, labelPrinterName, isAdisyonStoreSpecificEnabled, isAdisyonAutoOpenReservationEnabled, lowStockThreshold, receiptSettings]);
 
   const isRefetchingRef = useRef(false);
 
@@ -1271,7 +1278,8 @@ export default function Home() {
         const { error: rpcError } = await sb.rpc('decrement_stock', rpcParams);
 
         if (rpcError) {
-          console.error("Stok düşme hatası:", rpcError);
+          // Boş {} yerine gerçek mesajı bas (RPC SECURITY DEFINER migration'ı sonrası bu hata bitmeli)
+          console.error("Stok düşme hatası:", (rpcError as any)?.message || (rpcError as any)?.code || (rpcError as any)?.hint || JSON.stringify(rpcError));
         } else {
           const productInState = products.find((p: any) => p.id === item.id);
           const oldStock = productInState?.stock_quantity || 0;
@@ -1395,6 +1403,8 @@ export default function Home() {
   return (
     <div className={`flex min-h-screen bg-background text-foreground theme-${theme}`}>
       <StoreSelectionOverlay />
+      <OrderNotifier tenantId={currentTenant?.id} showToast={showToast} />
+
       {!isKitchenStaff && (
         <Sidebar
           activeTab={activeTab}
@@ -1524,6 +1534,7 @@ export default function Home() {
                   products={products.filter((p: any) => p.status === 'active' || (p.is_active !== false && p.status !== 'passive'))}
                   categories={categories}
                   onCheckout={handleCheckout}
+                  isAdisyonReceiptEnabled={isAdisyonReceiptEnabled}
                   showToast={showToast}
                   campaignRate={campaignRate}
                   theme={theme}
@@ -1564,6 +1575,8 @@ export default function Home() {
                 setIsWarehouseStockDeductionEnabled={setIsWarehouseStockDeductionEnabled}
                 isCashDrawerEnabled={isCashDrawerEnabled}
                 setIsCashDrawerEnabled={setIsCashDrawerEnabled}
+                isAdisyonReceiptEnabled={isAdisyonReceiptEnabled}
+                setIsAdisyonReceiptEnabled={setIsAdisyonReceiptEnabled}
                 cashDrawerPrinterName={cashDrawerPrinterName}
                 setCashDrawerPrinterName={setCashDrawerPrinterName}
                 receiptPrinterName={receiptPrinterName}
@@ -1655,6 +1668,7 @@ export default function Home() {
                 categories={categories}
                 showToast={showToast}
                 onCheckout={handleCheckout}
+                isAdisyonReceiptEnabled={isAdisyonReceiptEnabled}
                 isCashDrawerEnabled={isCashDrawerEnabled}
                 cashDrawerPrinterName={cashDrawerPrinterName}
               />

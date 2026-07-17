@@ -94,7 +94,7 @@ function sendRawToPrinter(printerName, buffer, callback) {
     const tempFile = path.join(app.getPath('temp'), `jetpos_raw_${Date.now()}.bin`);
     try {
         fs.writeFileSync(tempFile, buffer);
-        const cmd = `powershell -ExecutionPolicy Bypass -File "${rawPrintScript}" -PrinterName "${printerName}" -FilePath "${tempFile}"`;
+        const cmd = `powershell -WindowStyle Hidden -ExecutionPolicy Bypass -File "${rawPrintScript}" -PrinterName "${printerName}" -FilePath "${tempFile}"`;
         exec(cmd, (error, stdout, stderr) => {
             const success = !error && stdout.trim() === 'OK';
             try { if (fs.existsSync(tempFile)) fs.unlinkSync(tempFile); } catch (e) { }
@@ -243,6 +243,9 @@ function createWindow() {
 
                         if (!printWin.isDestroyed()) printWin.close();
                         try { fs.unlinkSync(tempHtml); } catch (e) { }
+                        // Yazdırma penceresi kapanınca ana pencerenin klavye focus'unu geri al —
+                        // yoksa input'lar alt+tab yapılana kadar yazı almıyordu ("box'a yazı yazılamıyor" bug'ı).
+                        try { if (mainWindow && !mainWindow.isDestroyed()) { mainWindow.focus(); mainWindow.webContents.focus(); } } catch (e) { }
                         event.sender.send('silent-print-result', { success, error: failureReason });
                     });
                 }, 1500);

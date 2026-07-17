@@ -21,10 +21,13 @@ interface Product {
 export default function ProductsPage() {
     const router = useRouter();
     const [products, setProducts] = useState<Product[]>([]);
+    const [searchInput, setSearchInput] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [visibleCount, setVisibleCount] = useState(20);
     const observerTarget = useRef(null);
+    const refetchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
         fetchProducts();
@@ -40,14 +43,24 @@ export default function ProductsPage() {
                 table: 'products',
                 filter: `tenant_id=eq.${tenantId}`
             }, () => {
-                fetchProducts();
+                // 20k üründe her değişimde full-refetch ağır → debounce'la (sel önlenir)
+                if (refetchTimer.current) clearTimeout(refetchTimer.current);
+                refetchTimer.current = setTimeout(() => fetchProducts(), 1500);
             })
             .subscribe();
 
         return () => {
+            if (refetchTimer.current) clearTimeout(refetchTimer.current);
             supabase.removeChannel(channel);
         };
     }, []);
+
+    // Aramayı debounce et (her tuşta 20k filtreleme yerine) + arama değişince başa sar
+    useEffect(() => {
+        const t = setTimeout(() => setSearchTerm(searchInput.trim()), 200);
+        return () => clearTimeout(t);
+    }, [searchInput]);
+    useEffect(() => { setVisibleCount(20); }, [searchTerm]);
 
     const filteredProducts = useMemo(() => {
         let result = products;
@@ -85,41 +98,51 @@ export default function ProductsPage() {
     const fetchProducts = async () => {
         try {
             const tenantId = localStorage.getItem('tenantId');
-            if (!tenantId) return;
+            if (!tenantId) { setLoading(false); return; }
 
             await setCurrentTenant(tenantId);
 
-            let allProducts: Product[] = [];
-            let page = 0;
             const PAGE_SIZE = 1000;
-            let hasMore = true;
+            const MAX_PRODUCTS = 20000; // en fazla 20k ürün
+            const cols = 'id, name, barcode, stock_quantity, sale_price, purchase_price, status, category_id';
+            const all: Product[] = [];
+            let firstErr: string | null = null;
 
-            while (hasMore) {
-                const { data, error } = await supabase
-                    .from('products')
-                    .select('id, name, barcode, stock_quantity, sale_price, purchase_price, status, category_id')
-                    .eq('tenant_id', tenantId)
-                    .order('name', { ascending: true })
-                    .order('id', { ascending: true })
-                    .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+            for (let page = 0; page * PAGE_SIZE < MAX_PRODUCTS; page++) {
+                const from = page * PAGE_SIZE;
+                const to = from + PAGE_SIZE - 1;
 
-                if (error) {
-                    hasMore = false;
-                    break;
+                let out: { data: any[] | null; error: { message: string } | null };
+                out = await supabase.from('products')
+                    .select(cols).eq('tenant_id', tenantId)
+                    .order('name', { ascending: true }).range(from, to);
+                // Sıralı sorgu hata verirse (ör. büyük tabloda statement timeout) sırasız tekrar dene
+                if (out.error) {
+                    out = await supabase.from('products')
+                        .select(cols).eq('tenant_id', tenantId).range(from, to);
                 }
+                if (out.error) { firstErr = out.error.message; break; }
 
-                if (data && data.length > 0) {
-                    allProducts = [...allProducts, ...data];
-                    setProducts([...allProducts]);
-                    if (data.length < PAGE_SIZE) hasMore = false;
-                } else {
-                    hasMore = false;
+                const rows = out.data || [];
+                if (rows.length === 0) break;
+
+                for (const p of rows) {
+                    all.push({
+                        ...p,
+                        sale_price: Number(p.sale_price) || 0,          // string gelirse toFixed patlamasın
+                        purchase_price: Number(p.purchase_price) || 0,
+                        stock_quantity: Number(p.stock_quantity) || 0,
+                    });
                 }
-                page++;
-                if (page === 1) setLoading(false);
+                setProducts(all.slice()); // progressive: her sayfa geldikçe göster
+                setLoading(false);
+                if (rows.length < PAGE_SIZE) break;
             }
-        } catch (error) {
-            console.error('Products fetch error:', error);
+
+            setError(all.length === 0 && firstErr ? firstErr : null);
+        } catch (e: any) {
+            console.error('Products fetch error:', e);
+            setError(e?.message || 'Ürünler yüklenemedi');
         } finally {
             setLoading(false);
         }
@@ -152,8 +175,8 @@ export default function ProductsPage() {
                     </div>
                     <input
                         type="text"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        value={searchInput}
+                        onChange={(e) => setSearchInput(e.target.value)}
                         placeholder="Ürün adı veya barkod..."
                         className="w-full h-12 sm:h-14 glass-dark border border-[#2D6BFF]/20 rounded-[1rem] sm:rounded-[1.25rem] pl-11 pr-4 text-xs sm:text-sm font-black text-white placeholder-slate-600 outline-none focus:border-[#2563FF]/50 focus:ring-4 focus:ring-[#2563FF]/5 transition-all shadow-inner"
                     />
@@ -162,6 +185,11 @@ export default function ProductsPage() {
 
             {/* Products List Content */}
             <div className="p-4 sm:p-6 relative z-10">
+                {error && (
+                    <div className="mb-4 px-4 py-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-[11px] font-bold">
+                        Ürünler yüklenemedi: {error}
+                    </div>
+                )}
                 {loading && products.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-24 gap-4">
                         <div className="relative">

@@ -6,13 +6,14 @@ import type { OdealCreds } from "@/lib/odeal/odeal-auth";
  * baseUrl tenant ayarından gelir (stage/prod). Endpoint'ler: /basket, /configuration.
  */
 
-// Fiziki POS base URL (Postman D2D Stage koleksiyonundan doğrulandı).
-// SuperAdmin'de baseUrl doluysa o kullanılır (canlı adres Ödeal'den alınır).
+// Fiziki POS base URL'leri — Ödeal resmi dokümanından doğrulandı:
+// docs.odeal.com/entegrasyon/tr/guide/welcome → API Endpoint'leri.
+// SuperAdmin'de baseUrl doluysa onu kullan (özel/geçiş adresleri için override).
 function resolveBase(creds: OdealCreds): string {
     if (creds.baseUrl) return creds.baseUrl.replace(/\/+$/, "");
     return creds.environment === "prod"
-        ? "https://apigw.odeal.com/api/v1"     // canlı — Ödeal'den teyit et
-        : "https://stage.odealapp.com/api/v1"; // stage — Postman'dan doğrulandı
+        ? "https://api.odeal.com/api/v1"       // CANLI (prod) — dokümandan teyitli
+        : "https://stage.odealapp.com/api/v1"; // STAGE (test) — dokümandan teyitli
 }
 
 function headers(creds: OdealCreds): Record<string, string> {

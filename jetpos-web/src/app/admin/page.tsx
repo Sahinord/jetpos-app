@@ -8,7 +8,7 @@ import {
     RefreshCw, Sparkles, TrendingUp, AlertCircle, Eye, EyeOff,
     LayoutDashboard, Trash2, Edit, BookOpen, ExternalLink, Calendar,
     FileText, Building2, ShieldCheck, Clock, MessageSquare, Bell, Menu, X, Heart,
-    ShoppingCart, CreditCard, Package, Gamepad2, Users, User, UserPlus, KeyRound
+    ShoppingCart, CreditCard, Package, Gamepad2, Users, User, UserPlus, KeyRound, Send
 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
@@ -56,6 +56,7 @@ const PERM_OPTIONS: { key: string; label: string }[] = [
     { key: "early_access", label: "Erken Erişim" },
     { key: "licenses", label: "Lisanslar" },
     { key: "crm", label: "CRM" },
+    { key: "leads", label: "Ödeal Lead" },
     { key: "tickets", label: "Destek" },
     { key: "announcements", label: "Duyurular" },
     { key: "blog", label: "Blog" },
@@ -127,7 +128,7 @@ export default function AdminPage() {
     const [staffFormPerms, setStaffFormPerms] = useState<Record<string, boolean>>({});
     const [savingStaff, setSavingStaff] = useState(false);
     const [callerIp, setCallerIp] = useState("");
-    const [activeTab, setActiveTab] = useState<"dashboard" | "requests" | "licenses" | "blog" | "guides" | "about" | "tickets" | "announcements" | "crm" | "early-access" | "orders" | "game" | "staff">("dashboard");
+    const [activeTab, setActiveTab] = useState<"dashboard" | "requests" | "licenses" | "blog" | "guides" | "about" | "tickets" | "announcements" | "crm" | "early-access" | "orders" | "game" | "leads" | "staff">("dashboard");
     const [orders, setOrders] = useState<any[]>([]);
     const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
     const [orderSearch, setOrderSearch] = useState("");
@@ -163,6 +164,35 @@ export default function AdminPage() {
     const [showNewAnnounce, setShowNewAnnounce] = useState(false);
     const [announceForm, setAnnounceForm] = useState({ title: "", message: "", type: "info" });
     const [savingAnnounce, setSavingAnnounce] = useState(false);
+
+    // Ödeal Lead (potansiyel müşteri) gönderme
+    const [leadForm, setLeadForm] = useState({ mobile: "", firstName: "", lastName: "", companyTitle: "", businessType: "INDIVIDUAL", setupCity: "", setupTown: "", setupAddress: "", salesType: "CeptePOS", owner: "" });
+    const [leadSubmitting, setLeadSubmitting] = useState(false);
+    const submitLead = async () => {
+        if (!leadForm.mobile.trim()) { setToast({ message: "Telefon (mobile) zorunludur.", type: "error" }); return; }
+        setLeadSubmitting(true);
+        try {
+            const optionalFields: Record<string, string> = {};
+            if (leadForm.companyTitle.trim()) optionalFields.companyTitle = leadForm.companyTitle.trim();
+            if (leadForm.businessType) optionalFields.businessType = leadForm.businessType;
+            if (leadForm.setupCity.trim()) optionalFields.setupCity = leadForm.setupCity.trim();
+            if (leadForm.setupTown.trim()) optionalFields.setupTown = leadForm.setupTown.trim();
+            if (leadForm.setupAddress.trim()) optionalFields.setupAddress = leadForm.setupAddress.trim();
+            if (leadForm.salesType) optionalFields.salesType = leadForm.salesType;
+            const res = await adminFetch("/api/odeal-lead", {
+                method: "POST",
+                body: JSON.stringify({ mobile: leadForm.mobile, firstName: leadForm.firstName, lastName: leadForm.lastName, owner: leadForm.owner, optionalFields }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error((data?.error || "Gönderilemedi") + (Array.isArray(data?.errors) ? " — " + data.errors.join(", ") : ""));
+            setToast({ message: `Lead gönderildi! Başvuru ID: ${data.registerRefCode || "-"}`, type: "success" });
+            setLeadForm({ mobile: "", firstName: "", lastName: "", companyTitle: "", businessType: "INDIVIDUAL", setupCity: "", setupTown: "", setupAddress: "", salesType: "CeptePOS", owner: "" });
+        } catch (e: any) {
+            setToast({ message: e?.message || "Lead gönderilemedi", type: "error" });
+        } finally {
+            setLeadSubmitting(false);
+        }
+    };
 
     // Form states for new license
     const [showNewLicense, setShowNewLicense] = useState(false);
@@ -674,6 +704,7 @@ export default function AdminPage() {
                 { id: "early-access", label: "Erken Erişim", icon: Mail },
                 { id: "licenses", label: "Lisans Yönetimi", icon: ShieldCheck },
                 { id: "crm", label: "CRM Analizi", icon: Heart },
+                { id: "leads", label: "Ödeal Lead", icon: Send },
             ]
         },
         {
@@ -2138,6 +2169,60 @@ export default function AdminPage() {
                         )}
                     </div>
                 )}
+
+                {activeTab === "leads" && (() => {
+                    const inp: React.CSSProperties = { width: "100%", padding: "0.75rem 1rem", background: "#0b1220", border: "1px solid rgba(217,224,255,0.1)", borderRadius: 10, color: "white", outline: "none", fontSize: "0.9rem", marginBottom: "1rem" };
+                    const lbl: React.CSSProperties = { display: "block", fontSize: "0.7rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(255,255,255,0.5)", marginBottom: "0.4rem" };
+                    const set = (k: keyof typeof leadForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setLeadForm({ ...leadForm, [k]: e.target.value });
+                    return (
+                        <div>
+                            <div style={{ marginBottom: "1.5rem" }}>
+                                <h2 style={{ fontSize: "1.5rem", fontWeight: 800, margin: 0 }}>Ödeal Lead Gönder</h2>
+                                <p style={{ color: "rgba(255,255,255,0.5)", margin: "0.25rem 0 0", fontSize: "0.875rem" }}>Potansiyel müşteriyi Ödeal&apos;e ilet — satışı ve evrağı Ödeal tamamlar</p>
+                            </div>
+                            <div style={{ maxWidth: 560, background: "#111827", border: "1px solid rgba(217,224,255,0.12)", borderRadius: 16, padding: "1.5rem" }}>
+                                <div style={{ display: "flex", gap: 8, padding: "0.75rem", background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 12, marginBottom: "1.25rem", fontSize: "0.78rem", color: "rgba(255,255,255,0.6)" }}>
+                                    ℹ️ Tek zorunlu alan telefon. Ortam (stage/prod) sunucu ayarından gelir. Başarılıysa Ödeal başvuru ID&apos;si döner.
+                                </div>
+                                <label style={lbl}>Telefon (zorunlu)</label>
+                                <input value={leadForm.mobile} onChange={set("mobile")} placeholder="5XXXXXXXXX" style={inp} />
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                                    <div><label style={lbl}>Ad</label><input value={leadForm.firstName} onChange={set("firstName")} style={inp} /></div>
+                                    <div><label style={lbl}>Soyad</label><input value={leadForm.lastName} onChange={set("lastName")} style={inp} /></div>
+                                </div>
+                                <label style={lbl}>Firma / Tabela Adı</label>
+                                <input value={leadForm.companyTitle} onChange={set("companyTitle")} style={inp} />
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                                    <div>
+                                        <label style={lbl}>İşyeri Türü</label>
+                                        <select value={leadForm.businessType} onChange={set("businessType")} style={inp}>
+                                            <option value="INDIVIDUAL">Şahıs</option>
+                                            <option value="CORPORATE">Tüzel</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style={lbl}>Satış Türü</label>
+                                        <select value={leadForm.salesType} onChange={set("salesType")} style={inp}>
+                                            <option value="CeptePOS">CeptePOS</option>
+                                            <option value="EDOC_POS">EDOC_POS</option>
+                                            <option value="PHY_POS">PHY_POS</option>
+                                            <option value="SanalPOS">SanalPOS</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                                    <div><label style={lbl}>İl</label><input value={leadForm.setupCity} onChange={set("setupCity")} placeholder="İstanbul" style={inp} /></div>
+                                    <div><label style={lbl}>İlçe</label><input value={leadForm.setupTown} onChange={set("setupTown")} placeholder="Kadıköy" style={inp} /></div>
+                                </div>
+                                <label style={lbl}>Kurulum Adresi</label>
+                                <input value={leadForm.setupAddress} onChange={set("setupAddress")} style={inp} />
+                                <button onClick={submitLead} disabled={leadSubmitting} style={{ width: "100%", padding: "0.85rem", background: leadSubmitting ? "rgba(245,158,11,0.5)" : "#f59e0b", color: "white", border: "none", borderRadius: 12, fontWeight: 800, fontSize: "0.95rem", cursor: leadSubmitting ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: "0.5rem" }}>
+                                    <Send style={{ width: 16, height: 16 }} /> {leadSubmitting ? "Gönderiliyor…" : "Ödeal'e Gönder"}
+                                </button>
+                            </div>
+                        </div>
+                    );
+                })()}
 
                 {activeTab === "game" && (
                     <div>

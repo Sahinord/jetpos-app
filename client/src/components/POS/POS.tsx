@@ -36,6 +36,7 @@ export default function POS({
     isPriceSyncEnabled = false,
     isStockSyncEnabled = false,
     isCashDrawerEnabled = false,
+    isAdisyonReceiptEnabled = false,
     cashDrawerPrinterName = "",
     receiptPrinterName = "",
     labelPrinterName = "",
@@ -109,6 +110,15 @@ export default function POS({
 
     // UI States
     const [numpadValue, setNumpadValue] = useState("");
+    // NAKİT satış sonrası şık "Satış Tamamlandı" ekranı (fiş/adisyon ÇIKMAZ)
+    const [saleDone, setSaleDone] = useState<{ saleId: string; total: number; received: number; change: number } | null>(null);
+    // Gizli yazıcı sadece bu dolunca yazdırır → NAKİT'te boş bırakılır (otomatik fiş olmaz)
+    const [printData, setPrintData] = useState<any>(null);
+    useEffect(() => {
+        if (!saleDone) return;
+        const t = setTimeout(() => setSaleDone(null), 6000);
+        return () => clearTimeout(t);
+    }, [saleDone]);
     const [activeInput, setActiveInput] = useState<"quantity" | "discount" | "price">("quantity");
     const [weightModalProduct, setWeightModalProduct] = useState<any>(null);
     const [weightInput, setWeightInput] = useState("");
@@ -697,7 +707,7 @@ export default function POS({
         // CRM Integration: Pass selected customer id
         onCheckout(cart, method, selectedCari?.id);
 
-        setLastTransaction({
+        const tx = {
             items: [...cart],
             total,
             paymentMethod: method,
@@ -707,7 +717,8 @@ export default function POS({
             receivedAmount: method === 'NAKİT' ? receivedAmount : 0,
             changeAmount: method === 'NAKİT' ? changeAmount : 0,
             receiptSettings
-        });
+        };
+        setLastTransaction(tx);
         updateDisplayStatus('completed', {
             total,
             receivedAmount,
@@ -715,7 +726,14 @@ export default function POS({
             paymentMethod: method,
             customerName: selectedCari?.unvani
         });
-        setShowReceiptModal(true);
+        // Adisyon Fişi ayarı KAPALIYSA nakit satışta fiş çıkmaz → şık "Satış Tamamlandı" ekranı.
+        // Açıksa (veya diğer ödeme türlerinde) fişi otomatik yazdır (printData) + önizleme modalı.
+        if (method === 'NAKİT' && !isAdisyonReceiptEnabled) {
+            setSaleDone({ saleId, total, received: receivedAmount, change: changeAmount });
+        } else {
+            setPrintData(tx);
+            setShowReceiptModal(true);
+        }
         setCart([]);
         setSelectedCari(null); // Reset customer
         setDiscount(0);
@@ -1650,8 +1668,65 @@ export default function POS({
                 )}
             </AnimatePresence>
 
-            {/* Hidden Printing Component */}
-            <PrintReceiptButton data={lastTransaction} printerName={receiptPrinterName} onAfterPrint={() => console.log('Yazdırıldı')} />
+            {/* NAKİT — Şık "Satış Tamamlandı" ekranı (fiş/adisyon çıkmaz) */}
+            <AnimatePresence>
+                {saleDone && (
+                    <div
+                        onClick={() => setSaleDone(null)}
+                        className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-emerald-500/20 backdrop-blur-xl cursor-pointer"
+                    >
+                        <motion.div
+                            onClick={(e) => e.stopPropagation()}
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="glass-card w-full max-w-sm !p-0 text-center border-emerald-500/30 cursor-default overflow-hidden"
+                        >
+                            <div className="p-8 flex flex-col items-center gap-4">
+                                <motion.div
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ type: 'spring', stiffness: 260, damping: 18 }}
+                                    className="w-20 h-20 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/40"
+                                >
+                                    <Check size={44} className="text-white" strokeWidth={3} />
+                                </motion.div>
+                                <div>
+                                    <h3 className="text-2xl font-black text-white uppercase tracking-widest">Satış Tamamlandı</h3>
+                                    <p className="text-secondary font-bold text-[10px] tracking-[3px] uppercase mt-1.5">Fiş No: {saleDone.saleId}</p>
+                                </div>
+
+                                {/* Para Üstü — vurgulu */}
+                                <div className="w-full mt-1 p-5 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/5 border border-emerald-500/30">
+                                    <p className="text-[10px] font-black uppercase tracking-[4px] text-emerald-300/80">Para Üstü</p>
+                                    <p className="text-4xl font-black text-emerald-400 mt-1 tracking-tight">₺{saleDone.change.toFixed(2)}</p>
+                                </div>
+
+                                <div className="w-full grid grid-cols-2 gap-3 text-left">
+                                    <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-secondary">Toplam</p>
+                                        <p className="text-lg font-black text-white leading-tight">₺{saleDone.total.toFixed(2)}</p>
+                                    </div>
+                                    <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-secondary">Alınan</p>
+                                        <p className="text-lg font-black text-white leading-tight">₺{saleDone.received.toFixed(2)}</p>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={() => setSaleDone(null)}
+                                    className="w-full mt-2 py-4 bg-emerald-500 text-white font-black rounded-2xl shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 transition-all active:scale-95 uppercase tracking-widest"
+                                >
+                                    Yeni Satış
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Hidden Printing Component — sadece printData dolunca yazdırır (NAKİT'te boş) */}
+            <PrintReceiptButton data={printData} printerName={receiptPrinterName} onAfterPrint={() => setPrintData(null)} />
 
             {/* Right Click Context Menu */}
             <AnimatePresence>

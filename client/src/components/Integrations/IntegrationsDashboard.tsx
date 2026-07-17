@@ -6,6 +6,7 @@ import HepsiburadaWidget from "./HepsiburadaWidget";
 import GetirCarsiWidget from "./GetirCarsiWidget";
 import OdealWidget from "./OdealWidget";
 import TgoYemekWidget from "./TgoYemekWidget";
+import TrendyolMarketplaceWidget from "./TrendyolMarketplaceWidget";
 import ProductMapping from "./ProductMapping";
 import {
     Store, Package, ShoppingCart, CreditCard,
@@ -49,6 +50,7 @@ export default function IntegrationsDashboard({ integrationType }: { integration
     const isGetir = integrationType === 'getir_integration';
     const isOdeal = integrationType === 'odeal_integration';
     const isTgoYemek = integrationType === 'tgo_yemek_integration';
+    const isMarketplace = integrationType === 'trendyol_integration'; // Trendyol Pazaryeri (GO değil)
 
     // Tab tanımları — Ödeal bir ödeme entegrasyonu; "Siparişler" yerine "İşlemler",
     // ürün eşleştirme yok.
@@ -73,14 +75,14 @@ export default function IntegrationsDashboard({ integrationType }: { integration
             { id: 'settings' as const, label: 'Ayarlar', icon: Settings },
             { id: 'mapping' as const, label: 'Ürün Eşleştirme', icon: LinkIcon },
         ];
-    const headerTitle = isTgoYemek ? 'Yemek Siparişleri' : isOdeal ? 'Ödeal Ödeme' : isGetir ? 'Getir Çarşı' : isHepsiburada ? 'Hepsiburada' : 'Trendyol GO';
+    const headerTitle = isTgoYemek ? 'Yemek Siparişleri' : isOdeal ? 'Ödeal Ödeme' : isGetir ? 'Getir Çarşı' : isHepsiburada ? 'Hepsiburada' : isMarketplace ? 'Trendyol Pazaryeri' : 'Trendyol GO';
     const headerDesc = isTgoYemek
         ? 'Trendyol Yemek · Uber Eats · Getir • Canlı Sipariş • Bildirim'
         : isOdeal
         ? 'A910S POS • Kart Ödemesi • İşlem Takibi'
         : isGetir
             ? 'Siparişler • Ciro Analizi • Canlı Takip'
-            : isHepsiburada ? 'Siparişler • Kargo (HepsiJet dahil) • Ciro Analizi' : 'Siparişler • Ciro Analizi • Stok Senkronizasyonu';
+            : isHepsiburada ? 'Siparişler • Kargo (HepsiJet dahil) • Ciro Analizi' : isMarketplace ? 'Pazaryeri Siparişleri • Ciro • Stok Senkronizasyonu' : 'Siparişler • Ciro Analizi • Stok Senkronizasyonu';
 
     const iconWrapClass = isTgoYemek
         ? 'w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center border border-orange-500/20'
@@ -90,8 +92,8 @@ export default function IntegrationsDashboard({ integrationType }: { integration
             ? 'w-12 h-12 bg-purple-500/10 rounded-2xl flex items-center justify-center border border-purple-500/20'
             : isHepsiburada
                 ? 'w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center border border-amber-500/20'
-                : 'w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center border border-orange-500/20';
-    const iconClass = isTgoYemek ? 'w-6 h-6 text-orange-400' : isOdeal ? 'w-6 h-6 text-cyan-400' : isGetir ? 'w-6 h-6 text-purple-400' : isHepsiburada ? 'w-6 h-6 text-amber-500' : 'w-6 h-6 text-orange-500';
+                : isMarketplace ? 'w-12 h-12 bg-rose-500/10 rounded-2xl flex items-center justify-center border border-rose-500/20' : 'w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center border border-orange-500/20';
+    const iconClass = isTgoYemek ? 'w-6 h-6 text-orange-400' : isOdeal ? 'w-6 h-6 text-cyan-400' : isGetir ? 'w-6 h-6 text-purple-400' : isHepsiburada ? 'w-6 h-6 text-amber-500' : isMarketplace ? 'w-6 h-6 text-rose-400' : 'w-6 h-6 text-orange-500';
     const tabActiveClass = isTgoYemek
         ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20'
         : isOdeal
@@ -100,7 +102,7 @@ export default function IntegrationsDashboard({ integrationType }: { integration
             ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20'
             : isHepsiburada
                 ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20'
-                : 'bg-orange-500 text-white shadow-lg shadow-orange-500/20';
+                : isMarketplace ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20' : 'bg-orange-500 text-white shadow-lg shadow-orange-500/20';
 
     return (
         <div className="space-y-6">
@@ -109,7 +111,7 @@ export default function IntegrationsDashboard({ integrationType }: { integration
                 <div>
                     <div className="flex items-center gap-3 mb-2">
                         <div className={iconWrapClass}>
-                            {isOdeal ? <CreditCard className={iconClass} /> : isTgoYemek ? <ShoppingCart className={iconClass} /> : <Package className={iconClass} />}
+                            {isOdeal ? <CreditCard className={iconClass} /> : isTgoYemek ? <ShoppingCart className={iconClass} /> : isMarketplace ? <Store className={iconClass} /> : <Package className={iconClass} />}
                         </div>
                         <div>
                             <h1 className="text-2xl font-black tracking-tight text-white">{headerTitle}</h1>
@@ -153,6 +155,8 @@ export default function IntegrationsDashboard({ integrationType }: { integration
                     </div>
                 ) : isHepsiburada ? (
                     <HepsiburadaWidget activeSubTab={activeTab} />
+                ) : isMarketplace ? (
+                    <TrendyolMarketplaceWidget activeSubTab={activeTab} />
                 ) : (
                     <TrendyolGOWidget activeSubTab={activeTab} />
                 )}

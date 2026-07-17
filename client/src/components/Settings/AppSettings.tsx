@@ -97,6 +97,7 @@ export default function AppSettings({
     isStockSyncEnabled, setIsStockSyncEnabled,
     isWarehouseStockDeductionEnabled, setIsWarehouseStockDeductionEnabled,
     isCashDrawerEnabled, setIsCashDrawerEnabled,
+    isAdisyonReceiptEnabled, setIsAdisyonReceiptEnabled,
     cashDrawerPrinterName, setCashDrawerPrinterName,
     receiptPrinterName, setReceiptPrinterName,
     labelPrinterName, setLabelPrinterName,
@@ -272,6 +273,14 @@ export default function AppSettings({
 
                 {/* POS Donanımı / Yazıcılar */}
                 <SettingCard icon={Printer} title="POS Donanımı" delay={0.1}>
+                    <SettingToggle
+                        icon={Printer}
+                        iconClass="bg-amber-500/10 text-amber-500"
+                        title="Adisyon Fişi"
+                        description="Açık: nakit satışta da fiş yazdırılır. Kapalı: nakitte fiş çıkmaz, ekranda 'Satış Tamamlandı' + para üstü gösterilir."
+                        checked={isAdisyonReceiptEnabled}
+                        onChange={() => setIsAdisyonReceiptEnabled(!isAdisyonReceiptEnabled)}
+                    />
                     <SettingToggle
                         icon={Banknote}
                         iconClass="bg-violet-500/10 text-violet-500"

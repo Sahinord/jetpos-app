@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import {
-    Package, Plus, Save, Search, Trash2, Calculator, Ship
+    Package, Plus, Save, Search, Trash2, Calculator, Ship, RotateCcw
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useTenant } from '@/lib/tenant-context';
+import { useDraft } from '@/lib/useDraft';
+import DraftRestoreModal from '@/components/Common/DraftRestoreModal';
 
 interface WaybillItem {
     product_id?: string;
@@ -38,30 +40,31 @@ interface Waybill {
     grand_total?: number;
 }
 
+function emptyWaybill(): Waybill {
+    return {
+        waybill_date: new Date().toISOString().split('T')[0],
+        cari_id: '', cari_name: '', cari_vkn: '', cari_address: '',
+        warehouse_code: 'MERKEZ', order_no: '', tracking_no: '', shipping_company: '',
+        delivery_address: '', notes: '',
+        items: [{ product_name: '', product_code: '', quantity: 1, unit: 'ADET', unit_price: 0, vat_rate: 20 }]
+    };
+}
+
 export default function SevkIrsaliyesi() {
     const { currentTenant } = useTenant();
     const [cariList, setCariList] = useState<any[]>([]);
-    const [waybill, setWaybill] = useState<Waybill>({
-        waybill_date: new Date().toISOString().split('T')[0],
-        cari_id: '',
-        cari_name: '',
-        cari_vkn: '',
-        cari_address: '',
-        warehouse_code: 'MERKEZ',
-        order_no: '',
-        tracking_no: '',
-        shipping_company: '',
-        delivery_address: '',
-        notes: '',
-        items: [{
-            product_name: '',
-            product_code: '',
-            quantity: 1,
-            unit: 'ADET',
-            unit_price: 0,
-            vat_rate: 20
-        }]
-    });
+    const [waybill, setWaybill] = useState<Waybill>(emptyWaybill);
+
+    // Taslak + kaydetmeden çıkış koruması
+    const shouldSaveDraft = (v: Waybill) =>
+        !!v.cari_id || !!(v.order_no || '').trim() ||
+        (v.items || []).some(i => (i.product_name || '').trim() !== '' || (Number(i.unit_price) || 0) > 0);
+    const { draftFound, clearDraft, dismissPrompt } = useDraft('draft_sevk_irsaliyesi', waybill, shouldSaveDraft);
+    const handleResetForm = () => {
+        if (shouldSaveDraft(waybill) && !confirm('Formu sıfırla? Girilen tüm bilgiler silinecek.')) return;
+        setWaybill(emptyWaybill());
+        clearDraft();
+    };
     const [loading, setLoading] = useState(false);
     const [showCariSearch, setShowCariSearch] = useState(false);
     const [cariSearchTerm, setCariSearchTerm] = useState('');
@@ -188,28 +191,9 @@ export default function SevkIrsaliyesi() {
 
             alert('✅ Sevk irsaliyesi başarıyla kaydedildi!');
 
-            // Reset
-            setWaybill({
-                waybill_date: new Date().toISOString().split('T')[0],
-                cari_id: '',
-                cari_name: '',
-                cari_vkn: '',
-                cari_address: '',
-                warehouse_code: 'MERKEZ',
-                order_no: '',
-                tracking_no: '',
-                shipping_company: '',
-                delivery_address: '',
-                notes: '',
-                items: [{
-                    product_name: '',
-                    product_code: '',
-                    quantity: 1,
-                    unit: 'ADET',
-                    unit_price: 0,
-                    vat_rate: 20
-                }]
-            });
+            // Reset + taslağı temizle
+            setWaybill(emptyWaybill());
+            clearDraft();
         } catch (error: any) {
             console.error(error);
             alert('❌ Hata: ' + error.message);
@@ -229,7 +213,15 @@ export default function SevkIrsaliyesi() {
     return (
         <div className="space-y-4 max-w-[1800px] mx-auto p-4">
             {/* Actions */}
-            <div className="flex items-center justify-end">
+            <div className="flex items-center justify-end gap-2">
+                <button
+                    onClick={handleResetForm}
+                    className="bg-white/5 hover:bg-rose-500/15 text-white/70 hover:text-rose-400 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all border border-white/10 active:scale-95"
+                    title="Formu sıfırla (girilenleri temizle)"
+                >
+                    <RotateCcw className="w-4 h-4" />
+                    SIFIRLA
+                </button>
                 <button
                     onClick={saveWaybill}
                     disabled={loading}
@@ -239,6 +231,12 @@ export default function SevkIrsaliyesi() {
                     KAYDET
                 </button>
             </div>
+
+            <DraftRestoreModal
+                open={!!draftFound}
+                onRestore={() => { if (draftFound) setWaybill(draftFound); dismissPrompt(); }}
+                onDiscard={clearDraft}
+            />
 
             {/* Fiş Bilgileri */}
             <div className="glass-card p-4">

@@ -4,12 +4,14 @@ import { useState, useEffect, useRef } from 'react';
 import {
     FileText, Plus, Save, X, Search, Calendar, Building2,
     Package, Trash2, Calculator, Receipt, AlertCircle, Check, Sparkles,
-    Eye, EyeOff, LayoutPanelLeft, Type
+    Eye, EyeOff, LayoutPanelLeft, Type, RotateCcw
 } from 'lucide-react';
 import { useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useTenant } from '@/lib/tenant-context';
 import AIPDFInvoiceAnalyzer from './AIPDFInvoiceAnalyzer';
+import { useDraft } from '@/lib/useDraft';
+import DraftRestoreModal from '@/components/Common/DraftRestoreModal';
 
 interface InvoiceItem {
     id?: string;
@@ -74,11 +76,13 @@ interface Invoice {
     grand_total?: number;
 }
 
-export default function AlisFaturasi() {
-    const { currentTenant } = useTenant();
-    const [cariList, setCariList] = useState<any[]>([]);
-    const [productList, setProductList] = useState<any[]>([]);
-    const [invoice, setInvoice] = useState<Invoice>({
+// Türkçe-duyarsız normalizasyon: "yogurt" → "yoğurt" eşleşsin (İ/ı→i, ğ/ü/ş/ö/ç → g/u/s/o/c)
+function normTr(s: any): string {
+    return String(s ?? '').replace(/İ/g, 'i').replace(/ı/g, 'i').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+function emptyInvoice(): Invoice {
+    return {
         invoice_number: '',
         invoice_date: new Date().toISOString().split('T')[0],
         due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -89,17 +93,27 @@ export default function AlisFaturasi() {
         cari_address: '',
         notes: '',
         items: [
-            {
-                item_name: '',
-                item_code: '',
-                quantity: 1,
-                unit: 'ADET',
-                unit_price: 0,
-                discount_rate: 0,
-                vat_rate: 20
-            }
+            { item_name: '', item_code: '', quantity: 1, unit: 'ADET', unit_price: 0, discount_rate: 0, vat_rate: 20 }
         ]
-    });
+    };
+}
+
+export default function AlisFaturasi() {
+    const { currentTenant } = useTenant();
+    const [cariList, setCariList] = useState<any[]>([]);
+    const [productList, setProductList] = useState<any[]>([]);
+    const [invoice, setInvoice] = useState<Invoice>(emptyInvoice);
+
+    // Taslak + kaydetmeden çıkış koruması
+    const shouldSaveDraft = (v: Invoice) =>
+        !!v.cari_id || !!(v.invoice_number || '').trim() ||
+        (v.items || []).some(i => (i.item_name || '').trim() !== '' || (Number(i.unit_price) || 0) > 0);
+    const { draftFound, clearDraft, dismissPrompt } = useDraft('draft_alis_faturasi', invoice, shouldSaveDraft);
+    const handleResetForm = () => {
+        if (shouldSaveDraft(invoice) && !confirm('Formu sıfırla? Girilen tüm bilgiler silinecek.')) return;
+        setInvoice(emptyInvoice());
+        clearDraft();
+    };
     const [loading, setLoading] = useState(false);
     const isSavingRef = useRef(false);
     const [showCariSearch, setShowCariSearch] = useState(false);
@@ -490,27 +504,9 @@ export default function AlisFaturasi() {
 
             alert('✅ Alış faturası başarıyla kaydedildi!');
 
-            // Formu sıfırla
-            setInvoice({
-                invoice_number: '',
-                invoice_date: new Date().toISOString().split('T')[0],
-                due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-                cari_id: '',
-                cari_name: '',
-                cari_vkn: '',
-                cari_tax_office: '',
-                cari_address: '',
-                notes: '',
-                items: [{
-                    item_name: '',
-                    item_code: '',
-                    quantity: 1,
-                    unit: 'ADET',
-                    unit_price: 0,
-                    discount_rate: 0,
-                    vat_rate: 20
-                }]
-            });
+            // Formu sıfırla + taslağı temizle
+            setInvoice(emptyInvoice());
+            clearDraft();
         } catch (error: any) {
             console.error(error);
             if (error.code === '23505' && error.message?.includes('invoice_number')) {
@@ -528,13 +524,13 @@ export default function AlisFaturasi() {
         new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val || 0);
 
     const filteredCariList = cariList.filter(c =>
-        c.unvani.toLowerCase().includes(cariSearchTerm.toLowerCase()) ||
-        (c.vergi_no || '').includes(cariSearchTerm)
+        normTr(c.unvani).includes(normTr(cariSearchTerm)) ||
+        normTr(c.vergi_no).includes(normTr(cariSearchTerm))
     );
 
     const filteredProductList = productList.filter(p =>
-        p.name.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
-        (p.barcode || '').includes(productSearchTerm)
+        normTr(p.name).includes(normTr(productSearchTerm)) ||
+        normTr(p.barcode).includes(normTr(productSearchTerm))
     );
 
     return (
@@ -572,6 +568,14 @@ export default function AlisFaturasi() {
                     AI İLE ANALİZ ET
                 </button>
                 <button
+                    onClick={handleResetForm}
+                    className="bg-white/5 hover:bg-rose-500/15 text-white/70 hover:text-rose-400 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all border border-white/10 active:scale-95"
+                    title="Formu sıfırla (girilenleri temizle)"
+                >
+                    <RotateCcw className="w-4 h-4" />
+                    SIFIRLA
+                </button>
+                <button
                     onClick={saveInvoice}
                     disabled={loading}
                     className="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg transition-all active:scale-95 disabled:opacity-50"
@@ -580,6 +584,12 @@ export default function AlisFaturasi() {
                     FİŞİ KAYDET
                 </button>
             </div>
+
+            <DraftRestoreModal
+                open={!!draftFound}
+                onRestore={() => { if (draftFound) setInvoice(draftFound); dismissPrompt(); }}
+                onDiscard={clearDraft}
+            />
 
             {/* Main Content Area */}
             <div className={`grid grid-cols-1 ${showManualPdf ? 'lg:grid-cols-2' : ''} gap-4`}>
@@ -793,6 +803,10 @@ export default function AlisFaturasi() {
                                                         const parts = val.split('.');
                                                         const cleaned = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : val;
                                                         updateItem(index, 'quantity', cleaned);
+                                                    }}
+                                                    onKeyDown={(e) => {
+                                                        // Aşağı ok: son satırdaysa hemen yeni kalem ekle (numpad ile hızlı giriş)
+                                                        if (e.key === 'ArrowDown' && index === invoice.items.length - 1) { e.preventDefault(); addItem(); }
                                                     }}
                                                     className="w-full bg-primary/10 border border-primary/20 rounded-lg px-2 py-1.5 text-primary font-bold text-center outline-none focus:border-primary"
                                                 />
