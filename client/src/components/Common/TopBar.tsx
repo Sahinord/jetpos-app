@@ -35,6 +35,9 @@ export default function TopBar({ activeTab, onMenuClick }: { activeTab: string, 
         return () => window.removeEventListener('sidebar-position-changed', handlePositionChange);
     }, []);
 
+    // Sekme değişiminde de pozisyonu yeniden oku (event kaçarsa senkron kalsın)
+    useEffect(() => { setSidebarPosition(getSidebarPosition()); }, [activeTab]);
+
     const handleWindowAction = (action: 'window-minimize' | 'window-maximize' | 'window-close') => {
         if (typeof window !== 'undefined' && (window as any).electron) {
             try {
@@ -145,103 +148,107 @@ export default function TopBar({ activeTab, onMenuClick }: { activeTab: string, 
         return titles[tab] || "JetPos";
     };
 
+    const leftSection = (
+        <div className="flex items-center gap-3 lg:gap-4" style={{ WebkitAppRegion: 'no-drag' } as any}>
+            <button
+                onClick={onMenuClick}
+                className="p-2 -ml-2 text-secondary hover:text-primary transition-colors lg:hidden rounded-lg hover:bg-primary/5"
+            >
+                <Menu className="w-6 h-6" />
+            </button>
+
+            <TenantSwitcher />
+
+            <div className="hidden md:flex flex-col space-y-1">
+                <div className="flex items-center space-x-2 text-primary font-bold text-[10px] uppercase tracking-[2px]">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>JetPos v{process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0'}</span>
+                </div>
+                <h1 className="text-2xl font-bold text-foreground tracking-tight leading-tight">
+                    {getTitle(activeTab)}
+                </h1>
+            </div>
+
+            {typeof window !== 'undefined' && localStorage.getItem('licenseKey') === 'ADM257SA67' && currentTenant?.license_key !== 'ADM257SA67' && (
+                <button
+                    onClick={() => {
+                        localStorage.setItem('currentTenantId', '00000000-0000-0000-0000-000000000000');
+                        localStorage.removeItem('currentTenantId');
+                        window.location.reload();
+                    }}
+                    className="ml-4 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-rose-500/20 transition-all flex items-center gap-2 animate-pulse"
+                >
+                    <ShieldCheck className="w-4 h-4" />
+                    Yönetici Paneline Dön
+                </button>
+            )}
+        </div>
+    );
+
+    const rightSection = (
+        <div className={`flex items-center space-x-8 ${sidebarPosition === 'right' ? 'flex-row-reverse space-x-reverse' : ''}`} style={{ WebkitAppRegion: 'no-drag' } as any}>
+            {/* Tarih & Saat — stray "çizgi"yi önlemek için ayırıcı border kaldırıldı */}
+            <div className="hidden xl:flex flex-col items-end text-right space-y-1">
+                <div className="flex items-center space-x-2 text-secondary text-xs font-bold">
+                    <Calendar className="w-4 h-4" />
+                    <span>{currentTime.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                </div>
+                <div className="flex items-center space-x-2 text-foreground text-base font-black font-mono">
+                    <Clock className="w-4 h-4 text-primary" />
+                    <span>{currentTime.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+            </div>
+
+            <div className={`flex items-center space-x-6 ${sidebarPosition === 'right' ? 'flex-row-reverse space-x-reverse' : ''}`}>
+                <div className="flex items-center space-x-3">
+                    <NotificationCenter />
+                    <button
+                        onClick={() => window.location.hash = 'profile'}
+                        className="p-2.5 text-secondary hover:text-primary hover:bg-primary/5 rounded-xl transition-all"
+                    >
+                        <User className="w-6 h-6" />
+                    </button>
+                </div>
+
+                <div className="h-10 w-[1px] bg-border mx-2" />
+
+                {/* Pencere kontrolleri */}
+                <div className="flex items-center space-x-1">
+                    <button
+                        onClick={() => handleWindowAction('window-minimize')}
+                        className="p-2 text-secondary hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
+                        title="Küçült"
+                    >
+                        <Minus className="w-4 h-4" />
+                    </button>
+                    <button
+                        onClick={() => handleWindowAction('window-maximize')}
+                        className="p-2 text-secondary hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
+                        title="Büyült"
+                    >
+                        <Square className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                        onClick={() => handleWindowAction('window-close')}
+                        className="p-2 text-secondary hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all"
+                        title="Kapat"
+                    >
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+
     return (
         <header
             className="h-20 lg:h-24 border-b border-border bg-card/80 backdrop-blur-xl flex items-center justify-between px-4 lg:px-10 sticky top-0 z-40 select-none"
             style={{ WebkitAppRegion: 'drag' } as any}
         >
-            {/* Left Section: depends on sidebar position */}
-            <div className={`flex items-center gap-3 lg:gap-4 ${sidebarPosition === 'right' ? 'order-2' : ''}`} style={{ WebkitAppRegion: 'no-drag' } as any}>
-                <button
-                    onClick={onMenuClick}
-                    className="p-2 -ml-2 text-secondary hover:text-primary transition-colors lg:hidden rounded-lg hover:bg-primary/5"
-                >
-                    <Menu className="w-6 h-6" />
-                </button>
-
-                <TenantSwitcher />
-
-                <div className="hidden md:flex flex-col space-y-1">
-                    <div className="flex items-center space-x-2 text-primary font-bold text-[10px] uppercase tracking-[2px]">
-                        <ShieldCheck className="w-3.5 h-3.5" />
-                        <span>JetPos v{process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0'}</span>
-                    </div>
-                    <h1 className="text-2xl font-bold text-foreground tracking-tight leading-tight">
-                        {getTitle(activeTab)}
-                    </h1>
-                </div>
-
-                {/* Return to Admin Button (Impersonation check) */}
-                {typeof window !== 'undefined' && localStorage.getItem('licenseKey') === 'ADM257SA67' && currentTenant?.license_key !== 'ADM257SA67' && (
-                    <button
-                        onClick={() => {
-                            localStorage.setItem('currentTenantId', '00000000-0000-0000-0000-000000000000');
-                            localStorage.removeItem('currentTenantId');
-                            window.location.reload();
-                        }}
-                        className="ml-4 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-rose-500/20 transition-all flex items-center gap-2 animate-pulse"
-                    >
-                        <ShieldCheck className="w-4 h-4" />
-                        Yönetici Paneline Dön
-                    </button>
-                )}
-            </div>
-
-            {/* Right Section: Actions & Info - flips when sidebar is on right */}
-            <div className={`flex items-center space-x-8 ${sidebarPosition === 'right' ? 'order-1 flex-row-reverse space-x-reverse' : ''}`} style={{ WebkitAppRegion: 'no-drag' } as any}>
-                {/* Date & Time */}
-                <div className={`hidden xl:flex flex-col items-end text-right ${sidebarPosition === 'right' ? 'border-l border-border pl-8' : 'border-r border-border pr-8'} space-y-1`}>
-                    <div className="flex items-center space-x-2 text-secondary text-xs font-bold">
-                        <Calendar className="w-4 h-4" />
-                        <span>{currentTime.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-foreground text-base font-black font-mono">
-                        <Clock className="w-4 h-4 text-primary" />
-                        <span>{currentTime.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</span>
-                    </div>
-                </div>
-
-                {/* System Status & Windows Style Controls */}
-                <div className={`flex items-center space-x-6 ${sidebarPosition === 'right' ? 'flex-row-reverse space-x-reverse' : ''}`}>
-                    <div className="flex items-center space-x-3">
-                        <NotificationCenter />
-
-                        <button
-                            onClick={() => window.location.hash = 'profile'}
-                            className="p-2.5 text-secondary hover:text-primary hover:bg-primary/5 rounded-xl transition-all"
-                        >
-                            <User className="w-6 h-6" />
-                        </button>
-                    </div>
-
-                    <div className="h-10 w-[1px] bg-border mx-2" />
-
-                    {/* Classic Window Controls */}
-                    <div className="flex items-center space-x-1">
-                        <button
-                            onClick={() => handleWindowAction('window-minimize')}
-                            className="p-2 text-secondary hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
-                            title="Küçült"
-                        >
-                            <Minus className="w-4 h-4" />
-                        </button>
-                        <button
-                            onClick={() => handleWindowAction('window-maximize')}
-                            className="p-2 text-secondary hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
-                            title="Büyült"
-                        >
-                            <Square className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                            onClick={() => handleWindowAction('window-close')}
-                            className="p-2 text-secondary hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all"
-                            title="Kapat"
-                        >
-                            <X className="w-4 h-4" />
-                        </button>
-                    </div>
-                </div>
-            </div>
+            {/* Menü SAĞDAYSA swap: pencere tuşları solda, başlık menünün yanında (sağda) */}
+            {sidebarPosition === 'right'
+                ? <>{rightSection}{leftSection}</>
+                : <>{leftSection}{rightSection}</>}
         </header>
     );
 }

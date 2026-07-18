@@ -668,7 +668,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
 
 
     const effectiveWidth = isCollapsed ? COLLAPSED_WIDTH : sidebarWidth;
-    const sideClass = position === "left" ? "left-0 border-r border-r-[var(--color-border)]" : "right-0 border-l border-l-[var(--color-border)]";
+    const sideClass = position === "left" ? "left-0" : "right-0";
     const hiddenTranslate = position === "left" ? "-translate-x-full" : "translate-x-full";
 
     return (
