@@ -72,40 +72,47 @@ Vercel'de domain bağlamanın üç yöntemi var: **A kaydı**, **CNAME kaydı**,
 
 Burada kritik bir kısıt var: **wildcard domainler (`*.jetpos.shop`) yalnızca nameserver yöntemiyle çalışır.** Vercel'in wildcard SSL sertifikası üretebilmesi için DNS kayıtlarını kendisinin yönetmesi gerekiyor.
 
-Bizim QR menülerimiz `<isletme>.jetpos.shop` üzerinden yayınlandığına ve **bu şu an çalıştığına göre**, `jetpos.shop` büyük ihtimalle **zaten Vercel nameserver'larında.** Yani aktarımın zor kısmı geçmişte bir kere yapılmış.
+### 4.3 Mevcut durum (18.07.2026 tespiti)
 
-**Hangi durumda olduğunu 1 dakikada anla:**
+`jetpos.shop` ad sunucuları: `ns1.dns-parking.com` / `ns2.dns-parking.com` — yani **Hostinger'ın kendi ad sunucuları.** Domain Vercel'de değil, DNS'i Hostinger yönetiyor.
 
-Hostinger paneli → Domainler → `jetpos.shop` → Nameserver'lar. Orada `ns1.vercel-dns.com` benzeri bir değer görüyorsan **Senaryo A**'dasın. Hostinger'ın kendi nameserver'ları yazıyorsa **Senaryo B**.
+Ek tespit: QR menüler henüz bağlanmamış. Domain fiilen boşta.
 
-### 4.3 Senaryo A — Zaten Vercel nameserver'larındaysan (muhtemel)
+### 4.4 Karar: nameserver'ları ŞİMDİ Vercel'e taşı
 
-Hostinger'a hiç dokunmuyorsun. Her şey Vercel panelinden:
+Nameserver taşımanın tek gerçek riski, mevcut DNS kayıtlarının devre dışı kalmasıdır. **Şu an ortada korunacak kayıt yok** — domain boşta, QR menü bağlı değil, e-posta kurulu değil.
 
-1. Vercel → **client** projesi → Settings → Domains → `app.jetpos.shop` ekle
-2. Vercel DNS kaydını kendi otomatik oluşturur
-3. SSL sertifikası çıkar
-4. `https://app.jetpos.shop` aç, POS giriş ekranını gör
+Bu yüzden zamanlama tersine işliyor: taşımayı ertelemek riski **artırır**. Sonra e-posta kurulacak, QR menüler bağlanacak, işletmeler `<isletme>.jetpos.shop` adresli QR kodları bastıracak. O noktada aynı işlem gerçek bir kesinti riski taşır. En ucuz an şimdi.
 
-**Süre: 5-15 dakika.** DNS bekleme yok.
+İkinci sebep: kod zaten `<isletme>.jetpos.shop` adresleri üretiyor (`QRMenuManager.tsx`). Wildcard'a nasılsa ihtiyaç olacak ve wildcard **yalnızca** nameserver yöntemiyle mümkün. Şimdi taşırsak o iş de baştan çözülmüş olur.
 
-### 4.4 Senaryo B — Hâlâ Hostinger nameserver'larındaysan
+**Adımlar:**
 
-İki seçenek var:
+1. Hostinger → jetpos.shop → DNS bölgesine bak. Kayıt listesini **not al** (boş ya da varsayılan park kayıtları olmalı). MX kaydı varsa dur ve önce e-posta planını yap.
+2. Vercel → **jetpos-web** projesi → Settings → Domains → `jetpos.shop` ekle.
+3. Vercel "Nameservers" yöntemini gösterecek; verdiği iki değeri kopyala.
+4. Hostinger → Ad Sunucularını değiştir → "özel ad sunucuları" → Vercel'in değerlerini yaz, kaydet.
+5. Yayılmayı bekle (genelde 1-4 saat, resmi üst sınır 48 saat).
+6. Vercel panelinde domain "Valid" görünene kadar bekle, SSL otomatik çıkar.
 
-**B1 — Sadece `app` için CNAME ekle (hızlı, dar kapsamlı)**
-Hostinger DNS panelinde `app` adında bir CNAME kaydı açıp Vercel'in verdiği hedefi yazarsın.
-**Süre: kayıt 5 dakika + yayılma genelde 15 dakika–4 saat** (resmi üst sınır 48 saat).
-Not: Bu yöntem `app` için yeterli ama wildcard'ı çözmez.
+**Süre: 20 dakika aktif iş + 1-4 saat bekleme.**
 
-**B2 — Nameserver'ları Vercel'e çevir (kalıcı, önerilen)**
-Hostinger'da nameserver alanına Vercel'in verdiği değerleri yazarsın. Bundan sonra tüm DNS Vercel'den yönetilir ve wildcard da sorunsuz çalışır.
-**Süre: değişiklik 5 dakika + yayılma genelde 1-4 saat** (resmi üst sınır 48 saat).
-**Uyarı:** Nameserver değişince Hostinger'daki mevcut TÜM DNS kayıtları devre dışı kalır. Geçmeden önce oradaki kayıtların (özellikle **e-posta MX kayıtları**) listesini al ve Vercel tarafında birebir yeniden oluştur. Bu adımı atlarsan **kurumsal e-postan durur** — geçişin en riskli tek noktası budur.
+### 4.5 Domain → proje eşlemesi
 
-### 4.5 Yönlendirme çakışması kontrolü
+Nameserver'lar Vercel'e geçtikten sonra hepsi tek panelden yönetilir:
 
-`*.jetpos.shop` wildcard'ı `jetpos-web` projesine bağlıysa, `app.jetpos.shop` daha spesifik olduğu için Vercel onu client projesine yönlendirir. Yine de tarayıcıda açtığında gelen ekranın **tanıtım sitesi değil POS** olduğunu gözle doğrula. Tanıtım sitesi geliyorsa wildcard önceliği devrededir ve spesifik domainin öne alınması gerekir.
+| Adres | Vercel projesi | Ne için |
+|---|---|---|
+| `jetpos.shop` | jetpos-web | Tanıtım sitesi |
+| `www.jetpos.shop` | jetpos-web | Apex'e yönlendirme |
+| `*.jetpos.shop` | jetpos-web | QR menüler (`<isletme>.jetpos.shop`) |
+| `app.jetpos.shop` | **client** | POS uygulaması |
+
+İsteğe bağlı: `mobil.jetpos.shop` → jetpos-mobile (personel PWA'sı).
+
+### 4.6 Yönlendirme çakışması kontrolü
+
+`*.jetpos.shop` wildcard'ı `jetpos-web` projesine bağlıyken `app.jetpos.shop` client projesine bağlanacak. Vercel daha spesifik domaini önceliklendirir, dolayısıyla bu çalışır. Yine de tarayıcıda açtığında gelen ekranın **tanıtım sitesi değil POS** olduğunu gözle doğrula. Tanıtım sitesi geliyorsa wildcard önceliği devrededir ve spesifik domainin öne alınması gerekir.
 
 ---
 
@@ -198,9 +205,8 @@ Kritik nokta: **eski adres açık kaldığı sürece geri dönüş her zaman mü
 | Aşama 0 — kod hazırlığı | ✅ bitti | — |
 | Vercel'de domain ekleme | 5 dk | — |
 | SSL sertifikası çıkması | — | 2-10 dk |
-| DNS: zaten Vercel NS'teyse | — | yok |
-| DNS: CNAME eklenecekse (B1) | 5 dk | 15 dk – 4 saat |
-| DNS: nameserver değişecekse (B2) | 15 dk | 1-4 saat |
+| Nameserver'ları Vercel'e çevirme | 20 dk | 1-4 saat (üst sınır 48 saat) |
+| Domain → proje eşlemeleri (4 adet) | 15 dk | her biri 2-10 dk SSL |
 | `NEXT_PUBLIC_APP_URL` + yeniden dağıtım | 5 dk | 2-3 dk |
 | Doğrulama listesi (10 kontrol) | 20-30 dk | — |
 | `main.js` güncelleme + build + release | 45-60 dk | — |
@@ -210,9 +216,9 @@ Kritik nokta: **eski adres açık kaldığı sürece geri dönüş her zaman mü
 
 ### 10.2 Toplam süre
 
-**Senaryo A (zaten Vercel nameserver'larında):** Domain yayına alma yarım gün. Aynı gün içinde `app.jetpos.shop` çalışır durumda olur.
+**Domainin yayına girmesi: aynı gün.** Sabah nameserver'ları çevirirsen öğleden sonra `app.jetpos.shop` çalışıyor olur. Aktif iş yaklaşık 1 saat, gerisi DNS beklemesi.
 
-**Senaryo B (nameserver değişikliği gerekiyor):** 1-2 gün. Gecikmenin tamamı DNS yayılması ve MX kayıtlarını doğru taşımaktan geliyor.
+Domain boşta olduğu için taşınacak MX/e-posta kaydı yok — normalde en çok vakit alan ve en riskli kısım bizde tamamen devre dışı.
 
 **Registrar aktarımı seçilirse:** +5-7 gün, 60 gün kilidi varsa daha da uzun. **Gerekmiyor, önerilmiyor.**
 
@@ -227,9 +233,9 @@ Bu bir sorun değil — eski adres açık kaldığı için o kasalar sorunsuz ç
 1. Ödeal ödemesi uçtan uca çalışsın (stage'de manuel giriş engeli kalksın)
 2. Pilot işletmede birkaç gün sorunsuz kullanım
 3. Aşama 0 yayına alınsın (kod hazırlığı — zaten hazır)
-4. Hostinger'da nameserver durumunu kontrol et (§4.2) — hangi senaryodasın
-5. Senaryo B ise: **önce MX/e-posta kayıtlarını yedekle**
-6. Domain + env — hafta içi sabah, trafik düşükken
+4. Hostinger DNS bölgesini kontrol et — MX kaydı **yoksa** devam et
+5. Nameserver'ları Vercel'e çevir (§4.4) — hafta içi sabah
+6. Yayılma sonrası 4 domain eşlemesini yap (§4.5) + `NEXT_PUBLIC_APP_URL`
 7. Bir gün bekle, izle
 8. Yeni Electron sürümü
 9. Entegrasyon adresleri, birkaç güne yayarak
