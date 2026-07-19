@@ -17,11 +17,15 @@ import TenantSwitcher from "../Tenant/TenantSwitcher";
 import { useTenant } from "@/lib/tenant-context";
 import NotificationCenter from "../Notifications/NotificationCenter";
 import { getSidebarPosition, type SidebarPosition } from "./Sidebar";
+import { isImpersonating, IMPERSONATION_FLAG, ADMIN_URL } from "@/lib/admin-host";
 
 export default function TopBar({ activeTab, onMenuClick }: { activeTab: string, onMenuClick?: () => void }) {
     const [currentTime, setCurrentTime] = useState(new Date());
     const { currentTenant } = useTenant();
     const [sidebarPosition, setSidebarPosition] = useState<SidebarPosition>("left");
+    // Hydration uyuşmazlığı olmasın diye localStorage istemcide okunuyor
+    const [impersonating, setImpersonating] = useState(false);
+    useEffect(() => { setImpersonating(isImpersonating()); }, []);
 
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -169,12 +173,15 @@ export default function TopBar({ activeTab, onMenuClick }: { activeTab: string, 
                 </h1>
             </div>
 
-            {typeof window !== 'undefined' && localStorage.getItem('licenseKey') === 'ADM257SA67' && currentTenant?.license_key !== 'ADM257SA67' && (
+            {/* Yönetici bir işletme oturumundaysa panele dönüş butonu.
+                Not: lisans anahtarı karşılaştırması kaldırıldı (anahtar artık
+                istemci paketinde yok); bunun yerine impersonation bayrağı. */}
+            {impersonating && (
                 <button
                     onClick={() => {
-                        localStorage.setItem('currentTenantId', '00000000-0000-0000-0000-000000000000');
                         localStorage.removeItem('currentTenantId');
-                        window.location.reload();
+                        localStorage.removeItem(IMPERSONATION_FLAG);
+                        window.location.href = ADMIN_URL;
                     }}
                     className="ml-4 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-rose-500/20 transition-all flex items-center gap-2 animate-pulse"
                 >

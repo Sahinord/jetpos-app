@@ -23,6 +23,7 @@ import AdminPortal from "@/components/Admin/AdminPortal";
 import SalesHistory from "@/components/Dashboard/SalesHistory";
 import AppSettings from "@/components/Settings/AppSettings";
 import SuperAdmin from "@/components/Admin/SuperAdmin";
+import { isAdminHost, isImpersonating, ADMIN_URL } from "@/lib/admin-host";
 import PriceChangeHistory from "@/components/Products/PriceChangeHistory";
 import ProductChangeLogs from "@/components/Products/ProductChangeLogs";
 import TrendyolGOWidget from "@/components/Integrations/TrendyolGOWidget";
@@ -1342,7 +1343,11 @@ export default function Home() {
 
   // Normal App Rendering Logic (Wrapped to maintain Hook order)
   const isEmployeeLoginEnabled = currentTenant?.features?.employee_login === true && currentTenant?.features?.kds !== true;
-  const isAdmin = currentTenant?.license_key === 'ADM257SA67';
+  // Yönetici kontrolü artık koda gömülü lisans anahtarıyla DEĞİL, veritabanındaki
+  // is_super_admin bayrağıyla yapılıyor (anahtar istemci paketinden çıkarıldı).
+  const isSuperAdmin = currentTenant?.is_super_admin === true;
+  const onAdminHost = isAdminHost();
+  const impersonating = isImpersonating();
 
   if (!currentTenant && !tenantLoading) {
     return <LicenseGate onSuccess={() => window.location.reload()} />;
@@ -1359,31 +1364,91 @@ export default function Home() {
     );
   }
 
-  if (isAdmin) {
-    return (
-      <div className="min-h-screen text-white">
-        <div className="flex items-center justify-between p-6 border-b border-border bg-card/30 backdrop-blur-xl">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-primary to-blue-500 rounded-xl flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-lg">🔐</span>
+  // ══ YÖNETİCİ ALAN ADI (admin.jetpos.shop) ══
+  // Panel SADECE burada açılır. POS uygulamasının adresinde asla yüklenmez.
+  if (onAdminHost) {
+    if (isSuperAdmin) {
+      return (
+        <div className="min-h-screen text-white">
+          <div className="flex items-center justify-between p-6 border-b border-border bg-card/30 backdrop-blur-xl">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary to-blue-500 rounded-xl flex items-center justify-center shadow-lg">
+                <span className="text-white font-bold text-lg">🔐</span>
+              </div>
+              <div>
+                <h1 className="text-2xl font-black text-white">JetPos Admin</h1>
+                <p className="text-xs text-secondary">Super Admin Panel</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-black text-white">JetPos Admin</h1>
-              <p className="text-xs text-secondary">Super Admin Panel</p>
-            </div>
+            <button
+              onClick={() => {
+                localStorage.clear();
+                window.location.reload();
+              }}
+              className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-xl text-red-400 font-bold transition-all"
+            >
+              Çıkış Yap
+            </button>
           </div>
+          <div className="p-8 max-w-7xl mx-auto">
+            <SuperAdmin />
+          </div>
+        </div>
+      );
+    }
+
+    // Yönetici bir işletme oturumuna geçtiyse normal uygulama aşağıda açılsın.
+    // Aksi halde: yetkisiz. Normal POS ekranını burada ASLA gösterme.
+    if (!impersonating) {
+      return (
+        <div className="min-h-screen flex items-center justify-center p-6">
+          <div className="glass-card p-10 max-w-md text-center space-y-4">
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-3xl">
+              🔒
+            </div>
+            <h1 className="text-2xl font-black text-white">Yetkisiz Erişim</h1>
+            <p className="text-sm text-secondary leading-relaxed">
+              Bu adres yalnızca JetPos yöneticileri içindir. İşletme hesabınızla
+              giriş yapmak için POS uygulamasını kullanın.
+            </p>
+            <button
+              onClick={() => { localStorage.clear(); window.location.reload(); }}
+              className="w-full px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white font-bold transition-all"
+            >
+              Çıkış Yap
+            </button>
+          </div>
+        </div>
+      );
+    }
+  }
+
+  // ══ NORMAL ADRES + yönetici hesabı ══
+  // Panel taşındı; burada açmıyoruz, doğru adrese yönlendiriyoruz.
+  if (!onAdminHost && isSuperAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <div className="glass-card p-10 max-w-md text-center space-y-5">
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-3xl">
+            🔐
+          </div>
+          <h1 className="text-2xl font-black text-white">Yönetici Paneli Taşındı</h1>
+          <p className="text-sm text-secondary leading-relaxed">
+            Süper yönetici paneli artık ayrı bir adreste yayınlanıyor. Aşağıdaki
+            bağlantıdan devam edin.
+          </p>
+          <a
+            href={ADMIN_URL}
+            className="block w-full px-4 py-3 bg-primary hover:bg-primary/90 rounded-xl text-white font-bold transition-all"
+          >
+            admin.jetpos.shop&apos;a Git
+          </a>
           <button
-            onClick={() => {
-              localStorage.clear();
-              window.location.reload();
-            }}
-            className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-xl text-red-400 font-bold transition-all"
+            onClick={() => { localStorage.clear(); window.location.reload(); }}
+            className="w-full px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-slate-300 text-sm font-bold transition-all"
           >
             Çıkış Yap
           </button>
-        </div>
-        <div className="p-8 max-w-7xl mx-auto">
-          <SuperAdmin />
         </div>
       </div>
     );

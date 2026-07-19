@@ -3,12 +3,15 @@
 import { useState, useEffect } from 'react';
 import { Building2, Key, Check, X, Save, Edit, Trash2, Plus, MessageSquare, Bell, LifeBuoy, Send, User, Users, Trash, Sparkles, FileText, Home, MapPin, Store, Heart, Search, Globe, Shield } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { IMPERSONATION_FLAG } from '@/lib/admin-host';
 import { apiFetch } from '@/lib/api';
 
 interface Tenant {
     id: string;
     license_id: number;
     license_key: string;
+    /** Süper yönetici kaydı — listelerde gizlenir (eskiden lisans anahtarı karşılaştırılıyordu) */
+    is_super_admin?: boolean;
     company_name: string;
     logo_url: string | null;
     status: string;
@@ -177,9 +180,10 @@ export default function SuperAdmin() {
             const { data, error } = await supabase
                 .from('tenants')
                 .select(`
-                    id, 
-                    company_name, 
+                    id,
+                    company_name,
                     license_key,
+                    is_super_admin,
                     cari_hesaplar(count),
                     loyalty_points(count)
                 `)
@@ -1136,7 +1140,7 @@ export default function SuperAdmin() {
 
                     <div className="grid grid-cols-1 gap-4">
                         {tenants
-                            .filter(t => t.license_key !== 'ADM257SA67')
+                            .filter(t => !t.is_super_admin)
                             .filter(t => statusFilter === 'all' || t.status === statusFilter)
                             .filter(t =>
                                 !searchTerm ||
@@ -1403,9 +1407,11 @@ export default function SuperAdmin() {
                                             <button
                                                 onClick={() => {
                                                     if (confirm(`${tenant.company_name || tenant.license_key} oturumuna geçmek istiyor musunuz?`)) {
-                                                        // RLS bypass ile lisans doğrulama için ADM257SA67 anahtarını koru, tenant ID'yi değiştir.
+                                                        // Yalnızca tenant ID değişir. Yönetici lisans anahtarı zaten
+                                                        // localStorage'da (giriş sırasında yazıldı) — RLS onunla açılıyor.
+                                                        // Anahtarı BURAYA YAZMIYORUZ; koda gömülmesi güvenlik açığıydı.
                                                         localStorage.setItem('currentTenantId', tenant.id);
-                                                        localStorage.setItem('licenseKey', 'ADM257SA67');
+                                                        localStorage.setItem(IMPERSONATION_FLAG, '1');
                                                         window.location.reload();
                                                     }
                                                 }}
@@ -1445,7 +1451,7 @@ export default function SuperAdmin() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {crmStats.filter(t => t.license_key !== 'ADM257SA67').map((t) => (
+                        {crmStats.filter(t => !t.is_super_admin).map((t) => (
                             <div key={t.id} className="glass-card p-6 border-l-4 border-l-pink-500">
                                 <h3 className="text-xl font-bold text-white mb-4">{t.company_name || t.license_key}</h3>
                                 <div className="grid grid-cols-2 gap-4">
@@ -2870,7 +2876,7 @@ export default function SuperAdmin() {
                         </div>
                         <div className="p-8 space-y-4">
                             {tenants
-                                .filter(t => t.id !== groupModal.tenantId && t.license_key !== 'ADM257SA67')
+                                .filter(t => t.id !== groupModal.tenantId && !t.is_super_admin)
                                 .map((tenant) => {
                                     const isSelected = selectedGroupTenants.includes(tenant.id);
                                     return (
@@ -2908,7 +2914,7 @@ export default function SuperAdmin() {
                                     );
                                 })}
 
-                            {tenants.filter(t => t.id !== groupModal.tenantId && t.license_key !== 'ADM257SA67').length === 0 && (
+                            {tenants.filter(t => t.id !== groupModal.tenantId && !t.is_super_admin).length === 0 && (
                                 <div className="text-center py-12 text-slate-500">
                                     <Building2 className="w-12 h-12 mx-auto mb-3 opacity-20" />
                                     <p>Başka tenant bulunmuyor</p>

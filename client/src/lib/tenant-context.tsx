@@ -18,6 +18,14 @@ interface Tenant {
     fixed_warehouses?: any[];
     setup_completed?: boolean;
     module_setup?: any;
+    /**
+     * Süper yönetici mi? (tenants.is_super_admin kolonu)
+     * Bu bayrak, lisans anahtarını koda gömmenin yerini alır — anahtar artık
+     * istemci paketinde bulunmaz. Yetkinin ASIL zorlandığı yer RLS'tir
+     * (politikalar x-license-key header'ı + is_super_admin üzerinden kontrol
+     * eder), buradaki bayrak yalnızca hangi ekranın gösterileceğini belirler.
+     */
+    is_super_admin?: boolean;
 }
 
 interface Warehouse {
@@ -170,7 +178,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
             // Tam tenant verisini çek (RLS set edildikten SONRA yapılmalı!)
             const { data: fullTenant } = await supabase
                 .from('tenants')
-                .select('fixed_warehouses, openrouter_api_key, master_pin, expires_at')
+                .select('fixed_warehouses, openrouter_api_key, master_pin, expires_at, is_super_admin')
                 .eq('id', data.id)
                 .single();
 
@@ -180,6 +188,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
                 openrouter_api_key: fullTenant?.openrouter_api_key || data.openrouter_api_key,
                 master_pin: fullTenant?.master_pin || data.master_pin,
                 expires_at: fullTenant?.expires_at || data.expires_at,
+                is_super_admin: fullTenant?.is_super_admin === true,
             };
 
             setCurrentTenant(enrichedTenant);
