@@ -9,9 +9,12 @@ export function middleware(req: NextRequest) {
 
   // Define main domains that should NOT trigger QR Menu routing
   const mainDomains = [
-    'jetpos.shop', 
-    'www.jetpos.shop', 
-    'localhost:3000', 
+    'jetpos.shop',
+    'www.jetpos.shop',
+    // POS uygulamasının adresi — ayrı bir Vercel projesine bağlı olsa da,
+    // yanlış yönlenirse burada /qr/app'e rewrite EDİLMEMELİ (güvenlik ağı).
+    'app.jetpos.shop',
+    'localhost:3000',
     'localhost:3002', 
     '127.0.0.1:3000', 
     '127.0.0.1:3002'

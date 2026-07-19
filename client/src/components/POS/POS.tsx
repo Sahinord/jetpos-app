@@ -604,11 +604,23 @@ export default function POS({
     // ── ÖDEAL D2D kart ödemesi ──
     // status: idle | sending | waiting | success | failed
     const [odealPay, setOdealPay] = useState<{ status: string; ref?: string; message?: string }>({ status: "idle" });
-    const odealPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const odealPollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    // Realtime broadcast kanalı (webhook düşer düşmez sonucu iter)
+    const odealChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+    // MÜKERRER SATIŞ KORUMASI: sonuç realtime'dan da poll'dan da gelebilir;
+    // hangisi önce gelirse satışı O kapatır, ikincisi yok sayılır.
+    const odealDoneRef = useRef(false);
 
     const stopOdealPoll = () => {
-        if (odealPollRef.current) { clearInterval(odealPollRef.current); odealPollRef.current = null; }
+        if (odealPollRef.current) { clearTimeout(odealPollRef.current); odealPollRef.current = null; }
+        if (odealChannelRef.current) {
+            try { supabase.removeChannel(odealChannelRef.current); } catch { /* yut */ }
+            odealChannelRef.current = null;
+        }
     };
+
+    // Bileşen kapanırsa zamanlayıcı + kanal sızıntısı kalmasın
+    useEffect(() => () => { stopOdealPoll(); }, []);
 
     const handleOdealCard = async () => {
         if (cart.length === 0) return;
@@ -652,29 +664,69 @@ export default function POS({
             if (!ref) throw new Error("Referans alınamadı");
             setOdealPay({ status: "waiting", ref });
 
-            // Sonucu poll et (webhook düşene kadar) — 2 sn'de bir, ~3 dk timeout
-            let tries = 0;
+            // ══ Sonucu öğrenme: 1) Realtime broadcast (anında) 2) yedek poll (garanti) ══
             stopOdealPoll();
-            odealPollRef.current = setInterval(async () => {
-                tries++;
-                try {
-                    const st = await apiFetch(`/api/odeal/status/${ref}`);
-                    console.log("[ODEAL DEBUG] handleOdealCard poll", { try: tries, ref, status: st?.status });
-                    if (st?.status === "succeeded") {
-                        stopOdealPoll();
-                        setOdealPay({ status: "success", ref });
-                        handleCheckout("KART"); // satışı tamamla
-                        setTimeout(() => setOdealPay({ status: "idle" }), 1500);
-                    } else if (st?.status === "failed" || st?.status === "cancelled") {
-                        stopOdealPoll();
-                        setOdealPay({ status: "failed", message: st.status === "cancelled" ? "Ödeme iptal edildi." : "Ödeme başarısız." });
-                    }
-                } catch (pe) { console.warn("[ODEAL DEBUG] handleOdealCard poll hatası", pe); /* poll hatası yut */ }
-                if (tries > 90) { // ~3 dk
+            odealDoneRef.current = false;
+
+            // Sonucu TEK SEFER uygula — ilk gelen kazanır (mükerrer satış olmaz)
+            const finish = (st: string) => {
+                if (odealDoneRef.current) return;
+                odealDoneRef.current = true;
+                stopOdealPoll();
+                if (st === "succeeded") {
+                    setOdealPay({ status: "success", ref });
+                    handleCheckout("KART"); // satışı tamamla
+                    setTimeout(() => setOdealPay({ status: "idle" }), 1500);
+                } else {
+                    setOdealPay({ status: "failed", message: st === "cancelled" ? "Ödeme iptal edildi." : "Ödeme başarısız." });
+                }
+            };
+
+            // 1) REALTIME — Ödeal webhook'u sunucuya düşer düşmez sunucu bu kanala
+            //    yayın yapar; sonuç ~200 ms'de ekrana gelir (poll'u beklemeden).
+            //    Kanal adı tahmin edilemez referans içerir, yayında sadece durum var.
+            try {
+                odealChannelRef.current = supabase
+                    .channel(`odeal-tx-${ref}`)
+                    .on("broadcast", { event: "status" }, (msg: { payload?: { status?: string } }) => {
+                        const st = String(msg?.payload?.status || "");
+                        console.log("[ODEAL DEBUG] realtime broadcast geldi", { ref, st });
+                        if (st === "succeeded" || st === "failed" || st === "cancelled") finish(st);
+                    })
+                    .subscribe();
+            } catch (ce) {
+                // Realtime kurulamazsa sorun değil — yedek poll sonucu yine yakalar
+                console.warn("[ODEAL DEBUG] realtime abonelik kurulamadı, yedek poll devrede", ce);
+            }
+
+            // 2) YEDEK POLL — realtime gelmezse garanti ağ. Kademeli aralık:
+            //    ilk 30 sn: 2 sn (kart okutma anı, hızlı olmalı)
+            //    30–90 sn : 5 sn
+            //    90 sn +  : 10 sn   → boşa giden çağrılar ~3 kat azalır
+            const startedAt = Date.now();
+            const nextDelay = () => {
+                const el = Date.now() - startedAt;
+                return el < 30_000 ? 2000 : el < 90_000 ? 5000 : 10_000;
+            };
+            const tick = async () => {
+                if (odealDoneRef.current) return;
+                if (Date.now() - startedAt > 180_000) { // ~3 dk
+                    odealDoneRef.current = true;
                     stopOdealPoll();
                     setOdealPay({ status: "failed", message: "Zaman aşımı. Cihazdan sonucu kontrol edin." });
+                    return;
                 }
-            }, 2000);
+                try {
+                    const st = await apiFetch(`/api/odeal/status/${ref}`);
+                    console.log("[ODEAL DEBUG] yedek poll", { ref, status: st?.status });
+                    if (st?.status === "succeeded" || st?.status === "failed" || st?.status === "cancelled") {
+                        finish(st.status);
+                        return;
+                    }
+                } catch (pe) { console.warn("[ODEAL DEBUG] yedek poll hatası", pe); /* yut */ }
+                if (!odealDoneRef.current) odealPollRef.current = setTimeout(tick, nextDelay());
+            };
+            odealPollRef.current = setTimeout(tick, nextDelay());
         } catch (e: any) {
             // Ödeal kurulu/aktif değil (ayar yok / kapalı / anahtar eksik) → normal kart
             const msg = String(e?.message || "");
@@ -1581,7 +1633,7 @@ export default function POS({
                                 </p>
                                 <p className="text-2xl font-black text-cyan-400 mt-4">₺{total.toFixed(2)}</p>
                                 {odealPay.status === "waiting" && (
-                                    <button onClick={() => { stopOdealPoll(); setOdealPay({ status: "idle" }); }}
+                                    <button onClick={() => { odealDoneRef.current = true; stopOdealPoll(); setOdealPay({ status: "idle" }); }}
                                         className="mt-5 px-6 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-sm font-bold">
                                         Bekleme Ekranını Kapat
                                     </button>

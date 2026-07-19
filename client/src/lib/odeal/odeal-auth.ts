@@ -169,6 +169,26 @@ export async function processOdealWebhook(
         console.error("[odeal] webhook yazma hatası:", error.message);
         return json({ error: "persist_failed" }, 500);
     }
+
+    // ── Sonucu POS'a ANINDA ilet (Supabase Realtime Broadcast) ──
+    // POS, /pay dönüşünde `odeal-tx-<referenceCode>` kanalına abone oluyor.
+    // Böylece kasiyer sonucu poll'u beklemeden (~200 ms) görüyor ve
+    // sunucuya atılan boşa poll sayısı ciddi düşüyor.
+    // GÜVENLİK: kanal adı tahmin edilemez referans içerir (tenant+zaman+rastgele),
+    // yayında SADECE durum bilgisi var — tutar/kart/kişisel veri yok.
+    // DAYANIKLILIK: burada hata olursa YUTULUR — webhook yanıtı asla bundan
+    // dolayı başarısız olmamalı (yoksa Ödeal aynı callback'i tekrar tekrar yollar).
+    // POS'taki yedek poll sonucu zaten her hâlükârda yakalar.
+    if (status !== "einvoice") {
+        try {
+            const ch = supabaseAdmin.channel(`odeal-tx-${referenceCode}`);
+            await ch.send({ type: "broadcast", event: "status", payload: { status } });
+            await supabaseAdmin.removeChannel(ch);
+        } catch (be) {
+            console.warn("[odeal] realtime yayın atlandı:", (be as Error)?.message);
+        }
+    }
+
     return json({ success: true }, 200);
 }
 

@@ -5,11 +5,29 @@ const IS_ELECTRON = typeof window !== 'undefined' &&
                     navigator.userAgent.indexOf('Electron') >= 0 ||
                     (window as any).process?.versions?.electron);
 
-// Production Vercel URL (aktif domain)
+// Production yedek adres — SADECE sayfanın origin'i okunamazsa kullanılır.
+// (Normalde buraya hiç düşmeyiz; aşağıdaki resolveApiBase aynı origin'i seçer.)
 const PROD_API_BASE = 'https://jetpos-app-71jf.vercel.app';
 
-// Geliştirme modunda isek ve localde çalışıyorsak relative path kullanalım
-const API_BASE = (process.env.NODE_ENV === 'development') ? '' : PROD_API_BASE;
+/**
+ * API taban adresi.
+ *
+ * NEDEN SABİT DEĞİL: Electron penceresi uygulamayı bir URL'den yüklüyor
+ * (main.js → localhost:3005 ya da PROD_URL). API'yi hep AYNI ORIGIN'den
+ * çağırırsak:
+ *   • CORS hiç devreye girmez,
+ *   • domain değişince (örn. app.jetpos.shop) burayı güncellemek gerekmez,
+ *   • eski kurulumlar eski adresten, yeniler yeni adresten sorunsuz çalışır.
+ * Domain geçişindeki en büyük kırılma riski bu şekilde ortadan kalkıyor.
+ */
+function resolveApiBase(): string {
+    if (process.env.NODE_ENV === 'development') return '';
+    if (typeof window !== 'undefined') {
+        const origin = window.location?.origin || '';
+        if (origin.startsWith('http')) return ''; // aynı origin → göreli yol
+    }
+    return PROD_API_BASE; // file:// gibi beklenmedik durumlar için yedek
+}
 
 // Security Secret (Should match JETPOS_API_SECRET in Vercel Env)
 const APP_SECRET = 'jetpos_secure_v1_2_8_gatekeeper'; 
@@ -55,7 +73,7 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
 
     // Electron environment specific logic
     if (IS_ELECTRON && path.startsWith('/api/')) {
-        url = `${API_BASE}${path}`;
+        url = `${resolveApiBase()}${path}`;
 
         const timestamp = Date.now().toString();
         const deviceId = getDeviceId();
