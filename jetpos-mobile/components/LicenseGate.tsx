@@ -24,14 +24,18 @@ export default function LicenseGate({ onSuccess }: LicenseGateProps) {
         setLoading(true);
 
         try {
-            // SECURITY DEFINER RPC — anon'a doğrudan tenants tablosu okuma
-            // izni vermeden, sadece geçerli lisans için minimal alanları döner.
-            const { data, error } = await supabase.rpc('find_tenant_by_license', {
-                p_license_key: license.trim()
+            // Lisans arama — HIZ SINIRLI sunucu ucu üzerinden (kaba kuvvet
+            // koruması; doğrudan RPC'nin anon izni kaldırıldı).
+            const res = await fetch('/api/auth/license', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'find', licenseKey: license.trim() }),
             });
+            const payload = await res.json().catch(() => null);
+            const data = res.ok ? payload?.tenant : null;
 
-            if (error || !data) {
-                toast.error('Geçersiz lisans anahtarı!');
+            if (!data) {
+                toast.error(payload?.error || 'Geçersiz lisans anahtarı!');
                 setLoading(false);
                 return;
             }

@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { User, Lock, ArrowRight, X, Delete, ArrowLeft } from 'lucide-react';
 import { useTenant } from '@/lib/tenant-context';
 import { supabase } from '@/lib/supabase';
+import { apiFetch } from '@/lib/api';
 
 interface EmployeePinLoginProps {
     onSuccess?: (employee: any) => void;
@@ -58,14 +59,26 @@ export default function EmployeePinLogin({ onSuccess, onCancel, isModal = false 
 
         setLoading(true);
         try {
-            const { data, error: rpcError } = await supabase.rpc('verify_tenant_password', {
-                p_tenant_id: currentTenant?.id,
-                p_password: password
-            });
+            // Hız sınırlı uç üzerinden doğrulama (doğrudan RPC anon'a kapatıldı)
+            let ok = false;
+            try {
+                await apiFetch('/api/auth/license', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'verify',
+                        tenantId: currentTenant?.id,
+                        password,
+                    }),
+                });
+                ok = true;
+            } catch (ve: any) {
+                setError(ve?.message || 'Hatalı şifre');
+                setPassword('');
+                setLoading(false);
+                return;
+            }
 
-            if (rpcError) throw rpcError;
-            
-            if (data.success) {
+            if (ok) {
                 // Şifre ile girildiğinde "Patron" yetkisi veriyoruz (Virtual Employee)
                 const bossEmployee = {
                     id: 'boss-' + currentTenant?.id,
@@ -86,8 +99,6 @@ export default function EmployeePinLogin({ onSuccess, onCancel, isModal = false 
 
                 if (onSuccess) onSuccess(bossEmployee);
                 else window.location.reload(); // Başka yerde kullanılmıyorsa sayfayı yenile ki giriş yapılsın
-            } else {
-                setError(data.message || "Hatalı şifre");
             }
         } catch (err: any) {
             setError(err.message);

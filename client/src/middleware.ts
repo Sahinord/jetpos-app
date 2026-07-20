@@ -26,6 +26,9 @@ export function middleware(request: NextRequest) {
     // Not: Ödeal'de yalnızca WEBHOOK'lar public; pay/status/register-callbacks
     // POS tarafından x-tenant-id + x-license-key ile çağrılır, onlar korumada kalır.
     const PUBLIC_API_PATHS = [
+        // Lisans girişi — login ÖNCESİ çağrılır (kimlik henüz yok); kendini
+        // IP bazlı hız sınırıyla korur (bkz. api/auth/license/route.ts).
+        '/api/auth/license',
         '/api/getir-carsi/',
         '/api/odeal/payment-succeeded',
         '/api/odeal/payment-cancelled',

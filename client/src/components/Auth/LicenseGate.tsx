@@ -3,6 +3,21 @@
 import { useState, useEffect } from 'react';
 import { KeyRound, Sparkles, AlertCircle, Building2, Upload, Lock } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { apiFetch } from '@/lib/api';
+
+/**
+ * Lisans arama — HIZ SINIRLI sunucu ucu üzerinden.
+ * (Önceden find_tenant_by_license RPC'si doğrudan tarayıcıdan çağrılıyordu;
+ * deneme sınırı yoktu → kaba kuvvetle anahtar taranabiliyordu. Artık tüm
+ * denemeler /api/auth/license'tan geçer ve IP başına sınırlanır.)
+ */
+async function findTenantByLicense(searchKey: string): Promise<any> {
+    const res = await apiFetch('/api/auth/license', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'find', licenseKey: searchKey }),
+    });
+    return res?.tenant || null;
+}
 
 export default function LicenseGate({ onSuccess }: { onSuccess: () => void }) {
     const [step, setStep] = useState<'license' | 'password' | 'register'>('license');
@@ -54,10 +69,9 @@ export default function LicenseGate({ onSuccess }: { onSuccess: () => void }) {
                 searchKey = searchKey.substring(1);
             }
 
-            const { data, error: fetchError } = await supabase
-                .rpc('find_tenant_by_license', { p_license_key: searchKey });
+            const data = await findTenantByLicense(searchKey).catch(() => null);
 
-            if (fetchError || !data) {
+            if (!data) {
                 localStorage.removeItem('savedLicense');
                 setLicenseKey('');
                 setStep('license');
@@ -86,10 +100,9 @@ export default function LicenseGate({ onSuccess }: { onSuccess: () => void }) {
                 searchKey = searchKey.substring(1);
             }
 
-            const { data, error: fetchError } = await supabase
-                .rpc('find_tenant_by_license', { p_license_key: searchKey });
+            const data = await findTenantByLicense(searchKey).catch(() => null);
 
-            if (!fetchError && data) {
+            if (data) {
                 localStorage.setItem('licenseKey', license);
                 localStorage.setItem('currentTenantId', data.id);
                 onSuccess();
@@ -120,12 +133,19 @@ export default function LicenseGate({ onSuccess }: { onSuccess: () => void }) {
                 searchKey = searchKey.substring(1);
             }
 
-            const { data, error: fetchError } = await supabase
-                .rpc('find_tenant_by_license', { p_license_key: searchKey });
+            let data: any = null;
+            try {
+                data = await findTenantByLicense(searchKey);
+            } catch (fe: any) {
+                // 429 (çok fazla deneme) dahil sunucu mesajını aynen göster
+                setError(`❌ ${fe?.message || 'Geçersiz veya pasif lisans anahtarı!'}`);
+                setLicenseKey('');
+                setLoading(false);
+                return;
+            }
 
-            if (fetchError || !data) {
-                console.error('License check error:', fetchError);
-                setError(fetchError ? `❌ Bağlantı hatası: ${fetchError.message}` : '❌ Geçersiz veya pasif lisans anahtarı!');
+            if (!data) {
+                setError('❌ Geçersiz veya pasif lisans anahtarı!');
                 setLicenseKey('');
                 setLoading(false);
                 return;
@@ -158,15 +178,19 @@ export default function LicenseGate({ onSuccess }: { onSuccess: () => void }) {
         setError('');
 
         try {
-            // Server-side şifre doğrulama - plaintext client'a gelmiyor
-            const { data: ok, error: verifyError } = await supabase
-                .rpc('verify_tenant_password', {
-                    p_tenant_id: tenantData.id,
-                    p_password:  password
+            // Server-side şifre doğrulama (hız sınırlı uç üzerinden) —
+            // plaintext client'a gelmiyor, deneme sayısı IP başına sınırlı.
+            try {
+                await apiFetch('/api/auth/license', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'verify',
+                        tenantId: tenantData.id,
+                        password,
+                    }),
                 });
-
-            if (verifyError || !ok?.success) {
-                setError(ok?.message || '❌ Hatalı şifre!');
+            } catch (ve: any) {
+                setError(`❌ ${ve?.message || 'Hatalı şifre!'}`);
                 setPassword('');
                 setLoading(false);
                 return;

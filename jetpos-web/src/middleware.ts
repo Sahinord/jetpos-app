@@ -11,9 +11,12 @@ export function middleware(req: NextRequest) {
   const mainDomains = [
     'jetpos.shop',
     'www.jetpos.shop',
-    // POS uygulamasının adresi — ayrı bir Vercel projesine bağlı olsa da,
-    // yanlış yönlenirse burada /qr/app'e rewrite EDİLMEMELİ (güvenlik ağı).
+    // Uygulama alt alan adları — ayrı Vercel projelerine bağlı olsalar da,
+    // yanlış yönlenirlerse burada /qr/<isim>'e rewrite EDİLMEMELİ (güvenlik ağı).
     'app.jetpos.shop',
+    'admin.jetpos.shop',
+    'beta.jetpos.shop',
+    'mobile.jetpos.shop',
     'localhost:3000',
     'localhost:3002', 
     '127.0.0.1:3000', 

@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin, hasServiceRoleKey } from '@/lib/supabase-admin';
 
 // Login ile AYNI doğrulama için anon key + validate_license RPC kullanılır.
 // (validate_license RPC anon'a EXECUTE izinli; service-role key eksik/izinsiz
@@ -46,35 +47,51 @@ export async function verifyTenantAccess(
         return { ok: false, status: 403, error: 'Tenant uyuşmazlığı' };
     }
 
-    // 1) Süper admin kısa devre (ADM257SA67 / ADMIN_SECRET_TOKEN) — her tenant'ta işlem
-    const SUPER_ADMIN_KEY = 'ADM257SA67';
-    if (licenseKey === SUPER_ADMIN_KEY ||
-        (process.env.ADMIN_SECRET_TOKEN && licenseKey === process.env.ADMIN_SECRET_TOKEN)) {
-        console.log('[ODEAL DEBUG] verifyTenantAccess: SÜPER ADMIN bypass', { tenantId: headerTenantId });
+    // 1) Süper admin kısa devre — ortam değişkeniyle (ADMIN_SECRET_TOKEN).
+    //    GÜVENLİK: Eski sabit anahtar ('ADM257SA67') KALDIRILDI — istemci
+    //    paketinde yayınlandığı için ele geçmiş sayılıyor ve artık hiçbir
+    //    yerde geçerli olmamalı. Yeni anahtar koda değil env'e yazılır;
+    //    rotasyon Vercel panelinden, dağıtımsız yapılır.
+    if (process.env.ADMIN_SECRET_TOKEN && licenseKey === process.env.ADMIN_SECRET_TOKEN) {
         return { ok: true, tenantId: headerTenantId };
     }
 
     // 2) Normal tenant: LOGIN İLE AYNI RPC (anon key). validate_license, id+license
-    //    eşleşen aktif tenant'ı döner; süper admin bypass'ı da içerir.
+    //    eşleşen aktif tenant'ı döner.
     try {
         const anon = getAnonSupabase();
         const { data, error } = await anon.rpc('validate_license', {
             p_tenant_id: headerTenantId,
             p_license_key: licenseKey,
         });
-        console.log('[ODEAL DEBUG] verifyTenantAccess: validate_license sonucu', {
-            hasData: !!data,
-            data: data ?? null,
-            error: error?.message || null,
-        });
-        if (error || !data) {
-            console.warn(`[ODEAL DEBUG] verifyTenantAccess: Geçersiz lisans tenant=${headerTenantId} keyLen=${licenseKey.length} err=${error?.message || 'null'}`);
-            return { ok: false, status: 403, error: 'Geçersiz lisans bilgisi' };
+        if (!error && data) {
+            return { ok: true, tenantId: headerTenantId };
         }
-        console.log('[ODEAL DEBUG] verifyTenantAccess: OK', { tenantId: headerTenantId });
-        return { ok: true, tenantId: headerTenantId };
     } catch (e) {
-        console.error('[ODEAL DEBUG] verifyTenantAccess: validate_license çağrısı HATASI:', e);
-        return { ok: false, status: 403, error: 'Geçersiz lisans bilgisi' };
+        console.error('[auth] validate_license çağrısı hatası:', e);
     }
+
+    // 3) Süper admin (DB kontrollü): gönderilen anahtar, is_super_admin=true olan
+    //    aktif kayda aitse her tenant'ta işlem yapabilir (impersonation dahil —
+    //    o durumda headerTenantId hedef işletmedir, validate_license eşleşmez ve
+    //    buraya düşer). Anahtar rotasyonu DB'de yapıldığı an burada da geçerli olur.
+    if (hasServiceRoleKey) {
+        try {
+            const { data: adminRow } = await supabaseAdmin
+                .from('tenants')
+                .select('id')
+                .eq('license_key', licenseKey)
+                .eq('is_super_admin', true)
+                .eq('status', 'active')
+                .maybeSingle();
+            if (adminRow) {
+                return { ok: true, tenantId: headerTenantId };
+            }
+        } catch (e) {
+            console.error('[auth] süper admin DB kontrolü hatası:', e);
+        }
+    }
+
+    console.warn(`[auth] Geçersiz lisans: tenant=${headerTenantId} keyLen=${licenseKey.length}`);
+    return { ok: false, status: 403, error: 'Geçersiz lisans bilgisi' };
 }
