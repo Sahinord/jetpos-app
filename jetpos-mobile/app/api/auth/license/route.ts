@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Çok fazla istek. Lütfen bekleyin." }, { status: 429 });
     }
 
-    let body: { action?: string; licenseKey?: string };
+    let body: { action?: string; licenseKey?: string; tenantId?: string; password?: string };
     try { body = await req.json(); } catch {
         return NextResponse.json({ error: "Geçersiz istek." }, { status: 400 });
     }
@@ -94,6 +94,32 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Geçersiz veya pasif lisans anahtarı." }, { status: 403 });
         }
         return NextResponse.json({ tenant: data });
+    }
+
+    // ── action: verify — işletme şifresini doğrula (login 2. adım) ──
+    // GÜVENLİK: Mobil daha önce SADECE lisans anahtarıyla giriş yapıyordu;
+    // anahtarı bilen herkes (personel, eski çalışan, anahtarı gören biri)
+    // içeri girebiliyordu. Masaüstü uygulamayla aynı iki adımlı akışa çekildi.
+    if (body.action === "verify") {
+        const tenantId = String(body.tenantId || "");
+        const password = String(body.password || "");
+        if (!tenantId || !password || password.length > 200) {
+            return NextResponse.json({ error: "Geçersiz istek." }, { status: 400 });
+        }
+        const { data, error } = await client.rpc("verify_tenant_password", {
+            p_tenant_id: tenantId,
+            p_password: password,
+        });
+        const ok = !error && data?.success === true;
+        if (hasService) {
+            try {
+                await client.from("login_attempts").insert({ ip, key_hint: tenantId.slice(0, 4), success: ok });
+            } catch { /* yut */ }
+        }
+        if (!ok) {
+            return NextResponse.json({ error: data?.message || "Hatalı şifre." }, { status: 403 });
+        }
+        return NextResponse.json({ success: true });
     }
 
     return NextResponse.json({ error: "Bilinmeyen işlem." }, { status: 400 });

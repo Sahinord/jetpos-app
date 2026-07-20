@@ -15,13 +15,18 @@ const TICKER = [
 ];
 
 export default function LicenseGate({ onSuccess }: LicenseGateProps) {
+    // İki adımlı giriş: önce lisans, sonra ŞİFRE (masaüstü uygulamayla aynı).
+    const [step, setStep] = useState<'license' | 'password'>('license');
     const [license, setLicense] = useState('');
+    const [password, setPassword] = useState('');
+    const [tenantData, setTenantData] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     // Animasyonlar yalnızca istemcide başlasın (hydration uyuşmazlığı olmasın)
     const [mounted, setMounted] = useState(false);
     useEffect(() => { setMounted(true); }, []);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    /** 1. adım — lisans anahtarından işletmeyi bul (hız sınırlı uç üzerinden) */
+    const handleFindLicense = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (!license.trim()) {
@@ -30,10 +35,7 @@ export default function LicenseGate({ onSuccess }: LicenseGateProps) {
         }
 
         setLoading(true);
-
         try {
-            // Lisans arama — HIZ SINIRLI sunucu ucu üzerinden (kaba kuvvet
-            // koruması; doğrudan RPC'nin anon izni kaldırıldı).
             const res = await fetch('/api/auth/license', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -48,20 +50,58 @@ export default function LicenseGate({ onSuccess }: LicenseGateProps) {
                 return;
             }
 
-            // Başarılı - localStorage'a kaydet
+            // GÜVENLİK: burada GİRİŞ YAPMIYORUZ. Lisans yalnızca işletmeyi
+            // tanıtır; yetki için şifre şart. (Eskiden bu adımda doğrudan
+            // içeri alınıyordu — anahtarı bilen herkes girebiliyordu.)
+            setTenantData(data);
+            setStep('password');
+        } catch (error) {
+            console.error('License validation error:', error);
+            toast.error('Bir hata oluştu. Lütfen tekrar deneyin.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    /** 2. adım — işletme şifresini doğrula ve oturumu aç */
+    const handlePasswordLogin = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!password.trim()) {
+            toast.error('Lütfen şifrenizi giriniz');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const res = await fetch('/api/auth/license', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'verify', tenantId: tenantData.id, password }),
+            });
+            const payload = await res.json().catch(() => null);
+
+            if (!res.ok) {
+                toast.error(payload?.error || 'Hatalı şifre!');
+                setPassword('');
+                setLoading(false);
+                return;
+            }
+
+            // Şifre doğru — oturumu aç
             localStorage.setItem('licenseKey', license.trim());
-            localStorage.setItem('tenantId', data.id);
-            localStorage.setItem('companyName', data.company_name);
+            localStorage.setItem('tenantId', tenantData.id);
+            localStorage.setItem('companyName', tenantData.company_name);
 
             // RLS header'larını (x-tenant-id / x-license-key) hemen güncelle —
             // reload olmadan sonraki sorguların tenant verisini görebilmesi için şart.
-            await setCurrentTenant(data.id);
+            await setCurrentTenant(tenantData.id);
 
             // Fixed Warehouse Kontrolü (Mobil için sabitlenmiş mağaza var mı?)
             const { data: fixedWh } = await supabase
                 .from('fixed_warehouses')
                 .select('warehouse_id, warehouses(name)')
-                .eq('tenant_id', data.id)
+                .eq('tenant_id', tenantData.id)
                 .eq('platform', 'mobile')
                 .single();
 
@@ -71,11 +111,10 @@ export default function LicenseGate({ onSuccess }: LicenseGateProps) {
                 toast.success(`${(fixedWh.warehouses as any)?.name} mağazası otomatik atandı.`);
             }
 
-            toast.success(`Hoş geldiniz, ${data.company_name}!`);
-            onSuccess(data.id, data.company_name);
-
+            toast.success(`Hoş geldiniz, ${tenantData.company_name}!`);
+            onSuccess(tenantData.id, tenantData.company_name);
         } catch (error) {
-            console.error('License validation error:', error);
+            console.error('Password verification error:', error);
             toast.error('Bir hata oluştu. Lütfen tekrar deneyin.');
         } finally {
             setLoading(false);
@@ -95,9 +134,7 @@ export default function LicenseGate({ onSuccess }: LicenseGateProps) {
 
     return (
         <div
-            className="bg-[#020617] flex items-center justify-center relative overflow-hidden font-sans
-                       px-4 py-6 sm:p-6
-                       min-h-screen min-h-[100dvh]"
+            className="bg-[#020617] flex items-center justify-center relative overflow-hidden font-sans px-4 py-6 sm:p-6 min-h-screen min-h-[100dvh]"
             style={{
                 // Çentikli/gesture bar'lı telefonlarda içerik güvenli alanda kalsın
                 paddingTop: 'max(1.5rem, env(safe-area-inset-top))',
@@ -137,8 +174,7 @@ export default function LicenseGate({ onSuccess }: LicenseGateProps) {
                 Alçak ekranlarda (klavye açılınca) ve çok küçük telefonlarda gizlenir. */}
             {mounted && (
                 <div
-                    className="absolute inset-x-0 top-[10%] sm:top-[14%] pointer-events-none select-none
-                               hidden min-[380px]:block [@media(max-height:620px)]:hidden"
+                    className="absolute inset-x-0 top-[10%] sm:top-[14%] pointer-events-none select-none hidden min-[380px]:block [@media(max-height:620px)]:hidden"
                     aria-hidden="true"
                 >
                     <div className="jp-marquee">
@@ -171,56 +207,102 @@ export default function LicenseGate({ onSuccess }: LicenseGateProps) {
 
                 {/* Kart */}
                 <div className="bg-slate-900/40 backdrop-blur-2xl border border-white/10 rounded-[1.75rem] sm:rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden">
-                    <form onSubmit={handleSubmit} className="p-5 sm:p-8">
-                        <div className="space-y-6 sm:space-y-8">
-                            <div className="text-center space-y-1 sm:space-y-2">
-                                <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Hoş Geldiniz</h2>
-                                <p className="text-sm sm:text-base text-slate-400">Lisans anahtarınızı girerek başlayın</p>
-                            </div>
-
-                            <div className="space-y-5 sm:space-y-6">
-                                <div className="relative group">
-                                    <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl blur opacity-25 group-focus-within:opacity-50 transition duration-300" />
-                                    <input
-                                        type="text"
-                                        value={license}
-                                        onChange={(e) => setLicense(e.target.value.toUpperCase())}
-                                        placeholder="XXXX-XXXX-XXXX"
-                                        /* text-base (16px) ŞART: iOS Safari daha küçük yazıda
-                                           input'a odaklanınca sayfayı otomatik yakınlaştırıyor */
-                                        className="relative w-full px-4 sm:px-6 py-4 sm:py-5 bg-slate-950 border-none rounded-2xl
-                                                   text-white text-center text-base sm:text-xl font-mono
-                                                   placeholder:text-slate-700 outline-none transition-all"
-                                        disabled={loading}
-                                        autoFocus
-                                        inputMode="text"
-                                        autoCapitalize="characters"
-                                        autoCorrect="off"
-                                        spellCheck={false}
-                                        enterKeyHint="go"
-                                    />
+                    {step === 'license' ? (
+                        <form onSubmit={handleFindLicense} className="p-5 sm:p-8">
+                            <div className="space-y-6 sm:space-y-8">
+                                <div className="text-center space-y-1 sm:space-y-2">
+                                    <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Hoş Geldiniz</h2>
+                                    <p className="text-sm sm:text-base text-slate-400">Lisans anahtarınızı girerek başlayın</p>
                                 </div>
 
-                                <button
-                                    type="submit"
-                                    disabled={loading || !license.trim()}
-                                    /* min-h-[52px]: dokunma hedefi için önerilen asgari boyut */
-                                    className="relative w-full group overflow-hidden rounded-2xl p-[1px] min-h-[52px]
-                                               focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all
-                                               font-bold text-base sm:text-lg disabled:opacity-50"
-                                >
-                                    <div className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#3b82f6_0%,#6366f1_50%,#3b82f6_100%)]" />
-                                    <div className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-2xl bg-slate-950 px-6 sm:px-8 py-3.5 sm:py-4 text-white backdrop-blur-3xl group-hover:bg-slate-900 transition-all">
-                                        {loading ? 'Kontrol Ediliyor...' : 'Devam Et'}
+                                <div className="space-y-5 sm:space-y-6">
+                                    <div className="relative group">
+                                        <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl blur opacity-25 group-focus-within:opacity-50 transition duration-300" />
+                                        {/* text-base (16px) ŞART: iOS Safari daha küçük yazıda odaklanınca sayfayı yakınlaştırıyor */}
+                                        <input
+                                            type="text"
+                                            value={license}
+                                            onChange={(e) => setLicense(e.target.value.toUpperCase())}
+                                            placeholder="XXXX-XXXX-XXXX"
+                                            className="relative w-full px-4 sm:px-6 py-4 sm:py-5 bg-slate-950 border-none rounded-2xl text-white text-center text-base sm:text-xl font-mono placeholder:text-slate-700 outline-none transition-all"
+                                            disabled={loading}
+                                            autoFocus
+                                            inputMode="text"
+                                            autoCapitalize="characters"
+                                            autoCorrect="off"
+                                            spellCheck={false}
+                                            enterKeyHint="go"
+                                        />
                                     </div>
-                                </button>
 
-                                <p className="text-[11px] sm:text-xs text-slate-600 text-center leading-relaxed">
-                                    Lisans anahtarınızı bilmiyorsanız yöneticinizle iletişime geçin.
-                                </p>
+                                    {/* min-h-[52px]: dokunma hedefi için önerilen asgari boyut */}
+                                    <button
+                                        type="submit"
+                                        disabled={loading || !license.trim()}
+                                        className="relative w-full group overflow-hidden rounded-2xl p-[1px] min-h-[52px] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-bold text-base sm:text-lg disabled:opacity-50"
+                                    >
+                                        <div className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#3b82f6_0%,#6366f1_50%,#3b82f6_100%)]" />
+                                        <div className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-2xl bg-slate-950 px-6 sm:px-8 py-3.5 sm:py-4 text-white backdrop-blur-3xl group-hover:bg-slate-900 transition-all">
+                                            {loading ? 'Kontrol Ediliyor...' : 'Devam Et'}
+                                        </div>
+                                    </button>
+
+                                    <p className="text-[11px] sm:text-xs text-slate-600 text-center leading-relaxed">
+                                        Lisans anahtarınızı bilmiyorsanız yöneticinizle iletişime geçin.
+                                    </p>
+                                </div>
                             </div>
-                        </div>
-                    </form>
+                        </form>
+                    ) : (
+                        <form onSubmit={handlePasswordLogin} className="p-5 sm:p-8">
+                            <div className="space-y-6 sm:space-y-8">
+                                <div className="text-center space-y-1 sm:space-y-2">
+                                    <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Doğrulama</h2>
+                                    <p className="text-sm sm:text-base text-slate-400">{tenantData?.company_name || 'Şifrenizi girin'}</p>
+                                </div>
+
+                                <div className="space-y-5 sm:space-y-6">
+                                    <div className="bg-slate-950/50 border border-white/5 rounded-2xl px-4 py-2 text-center">
+                                        <span className="text-[10px] font-black tracking-widest text-emerald-500 uppercase block mb-1">✓ LİSANS DOĞRULANDI</span>
+                                        <span className="text-blue-400 font-mono text-sm tracking-wider">{license}</span>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Şifre</label>
+                                        <input
+                                            type="password"
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            placeholder="••••••••"
+                                            className="w-full px-4 sm:px-6 py-4 sm:py-5 bg-slate-950 border border-white/5 rounded-2xl text-white text-center text-base sm:text-xl placeholder:text-slate-800 outline-none focus:border-blue-500/50 transition-all"
+                                            disabled={loading}
+                                            autoFocus
+                                            enterKeyHint="go"
+                                        />
+                                    </div>
+
+                                    <button
+                                        type="submit"
+                                        disabled={loading || !password.trim()}
+                                        className="relative w-full group overflow-hidden rounded-2xl p-[1px] min-h-[52px] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-bold text-base sm:text-lg disabled:opacity-50"
+                                    >
+                                        <div className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#3b82f6_0%,#6366f1_50%,#3b82f6_100%)]" />
+                                        <div className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-2xl bg-slate-950 px-6 sm:px-8 py-3.5 sm:py-4 text-white backdrop-blur-3xl group-hover:bg-slate-900 transition-all">
+                                            {loading ? 'Doğrulanıyor...' : 'Giriş Yap'}
+                                        </div>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => { setStep('license'); setPassword(''); setTenantData(null); }}
+                                        className="w-full text-[11px] sm:text-xs text-slate-500 hover:text-slate-300 transition-colors py-2"
+                                    >
+                                        ← Farklı lisans gir
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    )}
                 </div>
             </div>
 
