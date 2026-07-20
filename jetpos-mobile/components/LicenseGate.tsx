@@ -84,32 +84,43 @@ export default function LicenseGate({ onSuccess }: LicenseGateProps) {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#020617] flex items-center justify-center">
-                <div className="text-center space-y-6">
-                    <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto shadow-[0_0_20px_rgba(59,130,246,0.5)]" />
-                    <p className="text-white font-bold text-xl tracking-tight">Bağlanıyor...</p>
+            <div className="min-h-screen min-h-[100dvh] bg-[#020617] flex items-center justify-center p-4">
+                <div className="text-center space-y-4 sm:space-y-6">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto shadow-[0_0_20px_rgba(59,130,246,0.5)]" />
+                    <p className="text-white font-bold text-lg sm:text-xl tracking-tight">Bağlanıyor...</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-[#020617] flex items-center justify-center p-4 relative overflow-hidden font-sans">
+        <div
+            className="bg-[#020617] flex items-center justify-center relative overflow-hidden font-sans
+                       px-4 py-6 sm:p-6
+                       min-h-screen min-h-[100dvh]"
+            style={{
+                // Çentikli/gesture bar'lı telefonlarda içerik güvenli alanda kalsın
+                paddingTop: 'max(1.5rem, env(safe-area-inset-top))',
+                paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))',
+            }}
+        >
             {/*
               ARKA PLAN — client (JetPos masaüstü) giriş ekranıyla birebir aynı dil.
               PERFORMANS NOTU: hepsi saf CSS (transform/opacity). JS döngüsü,
               canvas ya da requestAnimationFrame YOK — düşük donanımlı el
               terminallerinde bile CPU'yu meşgul etmez.
+
+              RESPONSIVE NOTU: min-h-[100dvh], mobil tarayıcıların adres çubuğu
+              açılıp kapanırken 100vh'in zıplamasını önler (iOS Safari klasiği).
             */}
 
-            {/* Grid deseni */}
+            {/* Grid deseni — küçük ekranda kareler de küçülür */}
             <div
-                className="absolute inset-0 opacity-[0.07]"
+                className="absolute inset-0 opacity-[0.07] bg-[length:32px_32px] sm:bg-[length:48px_48px]"
                 style={{
                     backgroundImage:
                         'linear-gradient(rgba(59,130,246,.7) 1px, transparent 1px),' +
                         'linear-gradient(90deg, rgba(59,130,246,.7) 1px, transparent 1px)',
-                    backgroundSize: '48px 48px',
                     maskImage: 'radial-gradient(ellipse at center, black 35%, transparent 75%)',
                     WebkitMaskImage: 'radial-gradient(ellipse at center, black 35%, transparent 75%)',
                 }}
@@ -122,9 +133,14 @@ export default function LicenseGate({ onSuccess }: LicenseGateProps) {
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.05)_0%,transparent_70%)]" />
             </div>
 
-            {/* Akan ufak yazılar — iki sıra, ters yönlerde, çok yavaş */}
+            {/* Akan ufak yazılar — iki sıra, ters yönlerde, çok yavaş.
+                Alçak ekranlarda (klavye açılınca) ve çok küçük telefonlarda gizlenir. */}
             {mounted && (
-                <div className="absolute inset-x-0 top-[14%] pointer-events-none select-none" aria-hidden="true">
+                <div
+                    className="absolute inset-x-0 top-[10%] sm:top-[14%] pointer-events-none select-none
+                               hidden min-[380px]:block [@media(max-height:620px)]:hidden"
+                    aria-hidden="true"
+                >
                     <div className="jp-marquee">
                         <div className="jp-marquee-track">
                             {[...TICKER, ...TICKER].map((t, i) => (
@@ -132,7 +148,7 @@ export default function LicenseGate({ onSuccess }: LicenseGateProps) {
                             ))}
                         </div>
                     </div>
-                    <div className="jp-marquee mt-3">
+                    <div className="jp-marquee mt-2 sm:mt-3">
                         <div className="jp-marquee-track jp-reverse">
                             {[...TICKER, ...TICKER].map((t, i) => (
                                 <span key={`b${i}`} className="jp-chip">{t}</span>
@@ -143,26 +159,26 @@ export default function LicenseGate({ onSuccess }: LicenseGateProps) {
             )}
 
             <div className="w-full max-w-md relative z-10">
-                {/* Marka */}
-                <div className="text-center mb-10">
-                    <h1 className="text-6xl font-black text-white tracking-tighter mb-2">
+                {/* Marka — küçük ekranda küçülür, alçak ekranda boşluk daralır */}
+                <div className="text-center mb-6 sm:mb-10 [@media(max-height:620px)]:mb-4">
+                    <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tighter mb-1 sm:mb-2">
                         Jet<span className="text-blue-500">Pos</span>
                     </h1>
-                    <p className="text-blue-200/50 text-sm font-bold uppercase tracking-[0.2em]">
+                    <p className="text-blue-200/50 text-[11px] sm:text-sm font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em]">
                         Mobil • Hızlı • Akıllı
                     </p>
                 </div>
 
                 {/* Kart */}
-                <div className="bg-slate-900/40 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden">
-                    <form onSubmit={handleSubmit} className="p-8">
-                        <div className="space-y-8">
-                            <div className="text-center space-y-2">
-                                <h2 className="text-3xl font-bold text-white tracking-tight">Hoş Geldiniz</h2>
-                                <p className="text-slate-400">Lisans anahtarınızı girerek başlayın</p>
+                <div className="bg-slate-900/40 backdrop-blur-2xl border border-white/10 rounded-[1.75rem] sm:rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden">
+                    <form onSubmit={handleSubmit} className="p-5 sm:p-8">
+                        <div className="space-y-6 sm:space-y-8">
+                            <div className="text-center space-y-1 sm:space-y-2">
+                                <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Hoş Geldiniz</h2>
+                                <p className="text-sm sm:text-base text-slate-400">Lisans anahtarınızı girerek başlayın</p>
                             </div>
 
-                            <div className="space-y-6">
+                            <div className="space-y-5 sm:space-y-6">
                                 <div className="relative group">
                                     <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl blur opacity-25 group-focus-within:opacity-50 transition duration-300" />
                                     <input
@@ -170,27 +186,36 @@ export default function LicenseGate({ onSuccess }: LicenseGateProps) {
                                         value={license}
                                         onChange={(e) => setLicense(e.target.value.toUpperCase())}
                                         placeholder="XXXX-XXXX-XXXX"
-                                        className="relative w-full px-6 py-5 bg-slate-950 border-none rounded-2xl text-white text-center text-xl font-mono placeholder:text-slate-700 outline-none transition-all"
+                                        /* text-base (16px) ŞART: iOS Safari daha küçük yazıda
+                                           input'a odaklanınca sayfayı otomatik yakınlaştırıyor */
+                                        className="relative w-full px-4 sm:px-6 py-4 sm:py-5 bg-slate-950 border-none rounded-2xl
+                                                   text-white text-center text-base sm:text-xl font-mono
+                                                   placeholder:text-slate-700 outline-none transition-all"
                                         disabled={loading}
                                         autoFocus
                                         inputMode="text"
                                         autoCapitalize="characters"
                                         autoCorrect="off"
+                                        spellCheck={false}
+                                        enterKeyHint="go"
                                     />
                                 </div>
 
                                 <button
                                     type="submit"
                                     disabled={loading || !license.trim()}
-                                    className="relative w-full group overflow-hidden rounded-2xl p-[1px] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-bold text-lg disabled:opacity-50"
+                                    /* min-h-[52px]: dokunma hedefi için önerilen asgari boyut */
+                                    className="relative w-full group overflow-hidden rounded-2xl p-[1px] min-h-[52px]
+                                               focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all
+                                               font-bold text-base sm:text-lg disabled:opacity-50"
                                 >
                                     <div className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#3b82f6_0%,#6366f1_50%,#3b82f6_100%)]" />
-                                    <div className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-2xl bg-slate-950 px-8 py-4 text-white backdrop-blur-3xl group-hover:bg-slate-900 transition-all">
+                                    <div className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-2xl bg-slate-950 px-6 sm:px-8 py-3.5 sm:py-4 text-white backdrop-blur-3xl group-hover:bg-slate-900 transition-all">
                                         {loading ? 'Kontrol Ediliyor...' : 'Devam Et'}
                                     </div>
                                 </button>
 
-                                <p className="text-xs text-slate-600 text-center">
+                                <p className="text-[11px] sm:text-xs text-slate-600 text-center leading-relaxed">
                                     Lisans anahtarınızı bilmiyorsanız yöneticinizle iletişime geçin.
                                 </p>
                             </div>
@@ -221,9 +246,9 @@ export default function LicenseGate({ onSuccess }: LicenseGateProps) {
                 }
                 .jp-chip {
                     flex: none;
-                    padding: 6px 14px;
+                    padding: 5px 12px;
                     border-radius: 9999px;
-                    font-size: 11px;
+                    font-size: 10px;
                     font-weight: 700;
                     letter-spacing: 0.08em;
                     text-transform: uppercase;
@@ -231,6 +256,9 @@ export default function LicenseGate({ onSuccess }: LicenseGateProps) {
                     border: 1px solid rgba(59, 130, 246, 0.12);
                     background: rgba(15, 23, 42, 0.4);
                     white-space: nowrap;
+                }
+                @media (min-width: 640px) {
+                    .jp-chip { padding: 6px 14px; font-size: 11px; }
                 }
                 @keyframes jp-scroll {
                     from { transform: translate3d(0, 0, 0); }
