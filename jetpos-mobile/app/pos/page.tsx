@@ -48,6 +48,8 @@ export default function POSPage() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [loading, setLoading] = useState(true);
+    // Ürün yükleme hatası — sessizce boş liste göstermek yerine ekranda belirt
+    const [loadError, setLoadError] = useState<string | null>(null);
 
     // UI State
     const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -140,22 +142,41 @@ export default function POSPage() {
             let page = 0;
             const PAGE_SIZE = 1000;
             let hasMore = true;
+            let loadErr: string | null = null;
 
             while (hasMore) {
-                const { data, error } = await supabase
+                const from = page * PAGE_SIZE;
+                const to = (page + 1) * PAGE_SIZE - 1;
+
+                // NOT: Burada `status = 'active'` FİLTRESİ YOK.
+                // Ürünler sayfasında da yok ve orada liste düzgün geliyordu; POS'ta
+                // olduğu için status'ü boş/null ya da farklı yazılmış (Active, aktif…)
+                // tüm ürünler POS'ta görünmüyordu. Eleme artık aşağıda, yalnızca
+                // AÇIKÇA pasif olanlar için yapılıyor.
+                let out = await supabase
                     .from('products')
                     .select('*')
                     .eq('tenant_id', tenantId)
-                    .eq('status', 'active')
                     .order('name', { ascending: true })
-                    .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+                    .range(from, to);
 
-                if (error) throw error;
-                if (data && data.length > 0) {
-                    allProducts = [...allProducts, ...data];
+                // Sıralı sorgu hata verirse (büyük tabloda statement timeout) sırasız dene
+                if (out.error) {
+                    out = await supabase
+                        .from('products')
+                        .select('*')
+                        .eq('tenant_id', tenantId)
+                        .range(from, to);
+                }
+
+                if (out.error) { loadErr = out.error.message; break; }
+
+                const rows = out.data || [];
+                if (rows.length > 0) {
+                    allProducts = [...allProducts, ...rows];
                     setProducts([...allProducts]);
                     if (page === 0) setLoading(false);
-                    if (data.length < PAGE_SIZE) hasMore = false;
+                    if (rows.length < PAGE_SIZE) hasMore = false;
                 } else {
                     hasMore = false;
                     if (page === 0) setLoading(false);
@@ -163,17 +184,39 @@ export default function POSPage() {
                 page++;
             }
 
+            // Yalnızca AÇIKÇA pasif işaretlenmiş ürünleri gizle.
+            // Boş/null status = göster (eski kayıtlar bu yüzden kayboluyordu).
+            const PASSIVE = ['passive', 'pasif', 'inactive', 'deleted', 'silindi', 'archived'];
+            const visible = allProducts.filter(p => {
+                const s = String((p as any).status ?? '').trim().toLowerCase();
+                return s === '' || !PASSIVE.includes(s);
+            });
+            setProducts(visible);
+
+            if (loadErr) {
+                setLoadError(`Ürünler eksik yüklendi: ${loadErr}`);
+            } else {
+                setLoadError(null);
+            }
+
             if (allProducts.length > 0) {
                 await offlineDB.products.clear();
                 await offlineDB.products.bulkAdd(allProducts.map(p => ({ ...p, tenant_id: tenantId })));
             }
 
-            const { data: licenseData } = await supabase.from('licenses').select('openrouter_api_key').limit(1).single();
-            if (licenseData?.openrouter_api_key) setOpenRouterKey(licenseData.openrouter_api_key);
+            // AI anahtarı — yoksa/hata verirse ürün yüklemesini ASLA bozmamalı.
+            // (Önceden .single() 0 satırda hata fırlatıyor, catch'e düşüp
+            //  ürünler gelmiş olsa bile ekrana hata basıyordu.)
+            try {
+                const { data: licenseData } = await supabase
+                    .from('licenses').select('openrouter_api_key').limit(1).maybeSingle();
+                if (licenseData?.openrouter_api_key) setOpenRouterKey(licenseData.openrouter_api_key);
+            } catch { /* yut */ }
 
         } catch (error: any) {
             console.error('POS Data Error:', error);
-            toast.error('Hata: ' + error.message);
+            setLoadError(error?.message || 'Ürünler yüklenemedi.');
+            toast.error('Hata: ' + (error?.message || 'Bilinmeyen hata'));
         } finally {
             setLoading(false);
         }
@@ -366,9 +409,31 @@ export default function POSPage() {
             </header>
 
             <div className="p-4 sm:p-6 grid grid-cols-2 gap-3 sm:gap-4 relative z-10">
+                {loadError && (
+                    <div className="col-span-2 flex items-start gap-3 px-4 py-3 bg-rose-500/10 border border-rose-500/20 rounded-2xl">
+                        <p className="text-[11px] font-bold text-rose-300 leading-relaxed flex-1">{loadError}</p>
+                        <button onClick={() => { setLoading(true); setLoadError(null); fetchData(); }}
+                            className="text-[10px] font-black uppercase tracking-widest text-rose-200 underline shrink-0">
+                            Tekrar Dene
+                        </button>
+                    </div>
+                )}
                 {loading ? (
                     <div className="col-span-2 flex justify-center py-20">
                         <div className="w-10 h-10 border-4 border-[#2563FF]/10 border-t-[#2563FF] rounded-full animate-spin" />
+                    </div>
+                ) : displayedProducts.length === 0 ? (
+                    <div className="col-span-2 text-center py-16 space-y-3">
+                        <Package className="w-12 h-12 mx-auto text-white/10" />
+                        <p className="text-sm font-bold text-white/40">
+                            {search || selectedCategory !== 'all' ? 'Aramanıza uygun ürün yok' : 'Bu işletmede kayıtlı ürün bulunamadı'}
+                        </p>
+                        {!search && selectedCategory === 'all' && (
+                            <button onClick={() => { setLoading(true); fetchData(); }}
+                                className="text-[10px] font-black uppercase tracking-widest text-[#5B8CFF] underline">
+                                Yeniden Yükle
+                            </button>
+                        )}
                     </div>
                 ) : (
                     displayedProducts.map((p) => (
