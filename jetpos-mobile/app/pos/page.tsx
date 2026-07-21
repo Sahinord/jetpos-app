@@ -15,6 +15,7 @@ import { BrowserMultiFormatReader } from '@zxing/browser';
 import { offlineDB } from '@/lib/offline-db';
 import { SyncService } from '@/lib/sync-service';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { apiFetch } from '@/lib/api';
 
 interface Product {
     id: string;
@@ -50,6 +51,12 @@ export default function POSPage() {
     const [loading, setLoading] = useState(true);
     // Ürün yükleme hatası — sessizce boş liste göstermek yerine ekranda belirt
     const [loadError, setLoadError] = useState<string | null>(null);
+    // Ödeal kart ödemesi: idle | sending | waiting
+    const [odealPay, setOdealPay] = useState<{ status: string; ref?: string }>({ status: 'idle' });
+    const odealPollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const odealChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+    // MÜKERRER SATIŞ KORUMASI: sonuç realtime'dan da poll'dan da gelebilir
+    const odealDoneRef = useRef(false);
 
     // UI State
     const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -312,7 +319,132 @@ export default function POSPage() {
         setCart((prev: CartItem[]) => prev.map((item: CartItem) => item.id === id ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item));
     };
 
+    // ══════════ ÖDEAL KART ÖDEMESİ ══════════
+    // Akış: sepeti cihaza gönder → sonucu BEKLE → başarılıysa satışı kapat.
+    // Sonuç iki yoldan gelebilir:
+    //   1) Supabase Broadcast (webhook masaüstüne düşünce oradan yayınlanır) — anında
+    //   2) Yedek poll — yayın gelmezse garanti ağ
+    // Hangisi önce gelirse satışı O kapatır (odealDoneRef), mükerrer satış olmaz.
+    const stopOdealWait = () => {
+        if (odealPollRef.current) { clearTimeout(odealPollRef.current); odealPollRef.current = null; }
+        if (odealChannelRef.current) {
+            try { supabase.removeChannel(odealChannelRef.current); } catch { /* yut */ }
+            odealChannelRef.current = null;
+        }
+    };
+
+    // Bileşen kapanırsa zamanlayıcı/kanal sızıntısı kalmasın
+    useEffect(() => () => { stopOdealWait(); }, []);
+
+    const handleOdealCard = async () => {
+        if (cart.length === 0) return;
+
+        const items = cart.map((c) => {
+            const qty = Number(c.quantity) || 1;
+            const unit = Number(c.sale_price) || 0;
+            return {
+                name: String(c.name || 'Ürün'),
+                quantity: qty,
+                grossPrice: Number((unit * qty).toFixed(2)), // satır toplamı, KDV dahil
+                referenceCode: String(c.id || c.barcode || ''),
+                vatRatio: 10,
+            };
+        });
+
+        if (items.some(it => !(it.grossPrice > 0))) {
+            toast.error('Sepette fiyatı 0 olan ürün var.');
+            return;
+        }
+
+        setIsCheckingOut(true);
+        setOdealPay({ status: 'sending' });
+
+        try {
+            const res = await apiFetch('/api/odeal/pay', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ total: totalAmount, items }),
+            });
+            const ref = res?.referenceCode;
+            if (!ref) throw new Error('Referans alınamadı');
+
+            setOdealPay({ status: 'waiting', ref });
+            stopOdealWait();
+            odealDoneRef.current = false;
+
+            const finish = (st: string) => {
+                if (odealDoneRef.current) return;   // ilk gelen kazanır
+                odealDoneRef.current = true;
+                stopOdealWait();
+                if (st === 'succeeded') {
+                    setOdealPay({ status: 'idle' });
+                    completeSale('KART');           // satışı normal akışla kapat
+                } else {
+                    setOdealPay({ status: 'idle' });
+                    setIsCheckingOut(false);
+                    toast.error(st === 'cancelled' ? 'Ödeme iptal edildi.' : 'Ödeme başarısız.');
+                }
+            };
+
+            // 1) Realtime — masaüstü webhook'u alınca bu kanala yayın yapar
+            try {
+                odealChannelRef.current = supabase
+                    .channel(`odeal-tx-${ref}`)
+                    .on('broadcast', { event: 'status' }, (msg: { payload?: { status?: string } }) => {
+                        const st = String(msg?.payload?.status || '');
+                        if (st === 'succeeded' || st === 'failed' || st === 'cancelled') finish(st);
+                    })
+                    .subscribe();
+            } catch { /* realtime kurulamazsa yedek poll devrede */ }
+
+            // 2) Yedek poll — kademeli: ilk 30 sn 2 sn, 30-90 sn 5 sn, sonra 10 sn
+            const startedAt = Date.now();
+            const nextDelay = () => {
+                const el = Date.now() - startedAt;
+                return el < 30_000 ? 2000 : el < 90_000 ? 5000 : 10_000;
+            };
+            const tick = async () => {
+                if (odealDoneRef.current) return;
+                if (Date.now() - startedAt > 180_000) {  // ~3 dk
+                    odealDoneRef.current = true;
+                    stopOdealWait();
+                    setOdealPay({ status: 'idle' });
+                    setIsCheckingOut(false);
+                    toast.error('Zaman aşımı. Cihazdan sonucu kontrol edin.');
+                    return;
+                }
+                try {
+                    const st = await apiFetch(`/api/odeal/status/${ref}`);
+                    if (st?.status === 'succeeded' || st?.status === 'failed' || st?.status === 'cancelled') {
+                        finish(st.status);
+                        return;
+                    }
+                } catch { /* poll hatası yut */ }
+                if (!odealDoneRef.current) odealPollRef.current = setTimeout(tick, nextDelay());
+            };
+            odealPollRef.current = setTimeout(tick, nextDelay());
+
+        } catch (e: any) {
+            const msg = String(e?.message || '');
+            setOdealPay({ status: 'idle' });
+            // Ödeal kurulu/aktif değilse sessizce normal KART satışına düş
+            if (/ayar yok|kapalı|eksik|tanımlı değil/i.test(msg)) {
+                completeSale('KART');
+            } else {
+                setIsCheckingOut(false);
+                toast.error(msg || 'Ödeal\'e gönderilemedi.');
+            }
+        }
+    };
+
     const handleCheckout = async (method: string) => {
+        if (cart.length === 0) return;
+        // KART → önce Ödeal cihazına gitmeyi dene
+        if (method === 'KART') { handleOdealCard(); return; }
+        completeSale(method);
+    };
+
+    const completeSale = async (method: string) => {
         if (cart.length === 0) return;
         setIsCheckingOut(true);
         const tenantId = localStorage.getItem('tenantId');
@@ -341,6 +473,48 @@ export default function POSPage() {
 
     return (
         <div className="relative min-h-screen bg-background pb-32 overflow-x-hidden container-safe">
+            {/* ══ ÖDEAL BEKLEME EKRANI — kart cihazda okutulurken ══ */}
+            <AnimatePresence>
+                {odealPay.status !== 'idle' && (
+                    <motion.div
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[9999] bg-[#020617]/95 backdrop-blur-md flex items-center justify-center p-6"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }}
+                            className="w-full max-w-sm text-center space-y-6"
+                        >
+                            <div className="relative w-24 h-24 mx-auto">
+                                <div className="absolute inset-0 rounded-full border-4 border-[#2563FF]/10" />
+                                <div className="absolute inset-0 rounded-full border-4 border-[#2563FF] border-t-transparent animate-spin" />
+                                <CreditCard className="absolute inset-0 m-auto w-10 h-10 text-[#6FD3FF]" />
+                            </div>
+                            <div className="space-y-2">
+                                <h2 className="text-2xl font-black text-white tracking-tight">
+                                    {odealPay.status === 'sending' ? 'Cihaza Gönderiliyor' : 'Kartı Okutun'}
+                                </h2>
+                                <p className="text-sm text-slate-400 leading-relaxed">
+                                    {odealPay.status === 'sending'
+                                        ? 'Sepet ödeme cihazına aktarılıyor...'
+                                        : 'Ödeme cihazında işlemi tamamlayın. Sonuç otomatik gelecek.'}
+                                </p>
+                            </div>
+                            <p className="text-3xl font-black text-[#6FD3FF] tracking-tighter">
+                                ₺{totalAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                            </p>
+                            {odealPay.status === 'waiting' && (
+                                <button
+                                    onClick={() => { odealDoneRef.current = true; stopOdealWait(); setOdealPay({ status: 'idle' }); setIsCheckingOut(false); }}
+                                    className="w-full py-3 rounded-2xl glass-dark border border-white/10 text-slate-300 text-sm font-bold active:scale-95 transition-all"
+                                >
+                                    Bekleme Ekranını Kapat
+                                </button>
+                            )}
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             <div className="fixed inset-0 pointer-events-none">
                 <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[40%] bg-[#2563FF]/10 rounded-full blur-[120px]" />
                 <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[40%] bg-[#1E90FF]/10 rounded-full blur-[120px]" />
