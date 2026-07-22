@@ -25,8 +25,9 @@ function headers(creds: OdealCreds): Record<string, string> {
 }
 
 async function post(url: string, creds: OdealCreds, body: unknown) {
-    // ═══ [ODEAL DEBUG] Ödeal'e giden tam istek (şimdilik) ═══
-    console.log("[ODEAL DEBUG] → POST", url, "body:", JSON.stringify(body));
+    // GÜVENLİK: Giden istek gövdesi ve Ödeal yanıtı ARTIK LOGLANMIYOR.
+    // Canlı ortamda body kart/tutar/işyeri verisi, header'lar da secret key
+    // içerdiği için bunları Vercel loglarına yazmak sızıntıydı.
     let last: { ok: boolean; status: number; body: unknown } = { ok: false, status: 0, body: "" };
     // Ödeal stage 5xx sık ve geçici (Ödeal doğruladı) → aynı referenceCode ile 1 kez daha dene (idempotent)
     for (let attempt = 0; attempt < 2; attempt++) {
@@ -34,8 +35,6 @@ async function post(url: string, creds: OdealCreds, body: unknown) {
         const text = await res.text();
         let json: unknown = null;
         try { json = text ? JSON.parse(text) : null; } catch { /* text kalır */ }
-        // 500'de gövde Tomcat HTML'i olur; ilk 300 karakteri logla
-        console.log(`[ODEAL DEBUG] ← POST sonuç (deneme ${attempt + 1})`, res.status, typeof (json ?? text) === "string" ? String(text).slice(0, 300) : json);
         last = { ok: res.ok, status: res.status, body: json ?? text };
         if (res.status >= 500 && attempt < 1) {
             await new Promise(r => setTimeout(r, 1500));

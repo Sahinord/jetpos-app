@@ -29,21 +29,12 @@ export async function verifyTenantAccess(
     const headerTenantId = request.headers.get('x-tenant-id');
     const licenseKey = request.headers.get('x-license-key');
 
-    // ═══ [ODEAL DEBUG] geçici hata ayıklama logları (şimdilik) ═══
-    console.log('[ODEAL DEBUG] verifyTenantAccess giriş', {
-        tenant: headerTenantId || '(yok)',
-        keyLen: (licenseKey || '').length,
-        hasAnonUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-        hasAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    });
 
     if (!headerTenantId || !licenseKey) {
-        console.warn('[ODEAL DEBUG] verifyTenantAccess: header EKSİK', { hasTenant: !!headerTenantId, hasKey: !!licenseKey });
         return { ok: false, status: 401, error: 'Kimlik bilgileri eksik (x-tenant-id / x-license-key)' };
     }
 
     if (claimedTenantId && claimedTenantId !== headerTenantId) {
-        console.warn('[ODEAL DEBUG] verifyTenantAccess: tenant uyuşmazlığı', { claimedTenantId, headerTenantId });
         return { ok: false, status: 403, error: 'Tenant uyuşmazlığı' };
     }
 

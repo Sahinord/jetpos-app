@@ -9,9 +9,7 @@ const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || DUMMY_KE
 // kontrol edip "Invalid API key" yerine anlamlı hata döndürebilir.
 export const hasServiceRoleKey = supabaseServiceRoleKey !== DUMMY_KEY;
 
-// ═══ [ODEAL DEBUG] service-role key eksikse net uyarı (şimdilik) ═══
 if (!hasServiceRoleKey) {
-    console.warn('[ODEAL DEBUG] ⚠️ SUPABASE_SERVICE_ROLE_KEY YOK — supabaseAdmin dummy key ile oluşturuldu. Tüm service-role sorguları "Invalid API key" verecek. Vercel > Settings > Environment Variables\'a ekleyin.');
 }
 
 // Server-side only client with bypass RLS

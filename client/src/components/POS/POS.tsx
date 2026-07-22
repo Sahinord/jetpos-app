@@ -643,23 +643,14 @@ export default function POS({
         });
         // Ödeal 0 TL ürünü reddediyor (code 1603). Fiyatsız satır varsa engelle.
         if (items.some(it => !(it.grossPrice > 0))) {
-            console.error("[ODEAL DEBUG] handleOdealCard: 0 TL ürün var, gönderilmiyor", items);
             setOdealPay({ status: "failed", message: "Sepette fiyatı 0 olan ürün var. Fiyatları kontrol edin." });
             return;
         }
-        // ═══ [ODEAL DEBUG] geçici hata ayıklama logları (şimdilik) ═══
-        console.log("[ODEAL DEBUG] handleOdealCard → /pay isteği", {
-            total,
-            itemCount: items.length,
-            tenant: (typeof localStorage !== "undefined" && localStorage.getItem("currentTenantId")) || "(yok)",
-            keyLen: ((typeof localStorage !== "undefined" && localStorage.getItem("licenseKey")) || "").length,
-        });
         try {
             const res = await apiFetch("/api/odeal/pay", {
                 method: "POST",
                 body: JSON.stringify({ total, items }),
             });
-            console.log("[ODEAL DEBUG] handleOdealCard ← /pay yanıtı", res);
             const ref = res?.referenceCode;
             if (!ref) throw new Error("Referans alınamadı");
             setOdealPay({ status: "waiting", ref });
@@ -690,13 +681,11 @@ export default function POS({
                     .channel(`odeal-tx-${ref}`)
                     .on("broadcast", { event: "status" }, (msg: { payload?: { status?: string } }) => {
                         const st = String(msg?.payload?.status || "");
-                        console.log("[ODEAL DEBUG] realtime broadcast geldi", { ref, st });
                         if (st === "succeeded" || st === "failed" || st === "cancelled") finish(st);
                     })
                     .subscribe();
             } catch (ce) {
                 // Realtime kurulamazsa sorun değil — yedek poll sonucu yine yakalar
-                console.warn("[ODEAL DEBUG] realtime abonelik kurulamadı, yedek poll devrede", ce);
             }
 
             // 2) YEDEK POLL — realtime gelmezse garanti ağ. Kademeli aralık:
@@ -718,12 +707,11 @@ export default function POS({
                 }
                 try {
                     const st = await apiFetch(`/api/odeal/status/${ref}`);
-                    console.log("[ODEAL DEBUG] yedek poll", { ref, status: st?.status });
                     if (st?.status === "succeeded" || st?.status === "failed" || st?.status === "cancelled") {
                         finish(st.status);
                         return;
                     }
-                } catch (pe) { console.warn("[ODEAL DEBUG] yedek poll hatası", pe); /* yut */ }
+                } catch { /* poll hatası yut */ }
                 if (!odealDoneRef.current) odealPollRef.current = setTimeout(tick, nextDelay());
             };
             odealPollRef.current = setTimeout(tick, nextDelay());
@@ -731,11 +719,9 @@ export default function POS({
             // Ödeal kurulu/aktif değil (ayar yok / kapalı / anahtar eksik) → normal kart
             const msg = String(e?.message || "");
             if (/ayar yok|aktif|eksik|tanımlı|değil/i.test(msg)) {
-                console.warn("[ODEAL DEBUG] handleOdealCard: Ödeal kurulu değil → normal KART satışına düşülüyor", { msg });
                 setOdealPay({ status: "idle" });
                 handleCheckout("KART");
             } else {
-                console.error("[ODEAL DEBUG] handleOdealCard: HATA (fallback DEĞİL, ekranda gösterilecek)", { msg, error: e });
                 setOdealPay({ status: "failed", message: msg || "Ödeal'e gönderilemedi." });
             }
         }

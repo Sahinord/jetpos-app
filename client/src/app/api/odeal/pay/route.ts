@@ -14,31 +14,13 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-    // ═══ [ODEAL DEBUG] geçici hata ayıklama logları (şimdilik) ═══
-    console.log("[ODEAL DEBUG] /pay çağrıldı", {
-        tenant: req.headers.get("x-tenant-id"),
-        keyLen: (req.headers.get("x-license-key") || "").length,
-        origin: req.nextUrl.origin,
-    });
 
     const auth = await verifyTenantAccess(req);
     if (!auth.ok) {
-        console.warn("[ODEAL DEBUG] /pay auth REDDEDİLDİ", { status: auth.status, error: auth.error });
         return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
-    console.log("[ODEAL DEBUG] /pay auth OK", { tenantId: auth.tenantId });
 
     const creds = await getTenantOdealCreds(auth.tenantId);
-    console.log("[ODEAL DEBUG] /pay creds", creds ? {
-        found: true,
-        active: creds.active,
-        hasPublic: !!creds.publicKey,
-        hasSecret: !!creds.secretKey,
-        externalDeviceKey: creds.externalDeviceKey || "(yok)",
-        paxId: creds.paxId || "(yok)",
-        environment: creds.environment,
-        baseUrl: creds.baseUrl || "(default)",
-    } : { found: false });
     if (!creds) {
         return NextResponse.json({
             error: `Bu işletmede Ödeal ayarı yok. SuperAdmin'de ÖDEAL bilgilerini bu işletmeye (tenant: ${auth.tenantId.slice(0, 8)}…) girip kaydettiğinden emin ol.`,
@@ -91,21 +73,17 @@ export async function POST(req: NextRequest) {
         basket: { total, items },
     }]);
 
-    console.log("[ODEAL DEBUG] /pay sendBasket gönderiliyor", { referenceCode, total, itemCount: items.length });
     const result = await sendBasket(creds, {
         referenceCode,
         total,
         items,
         receiptInfo: body.siparisNo ? { siparisNo: body.siparisNo } : undefined,
     });
-    console.log("[ODEAL DEBUG] /pay sendBasket sonucu", { ok: result.ok, status: result.status, body: result.body });
 
     if (!result.ok) {
-        console.warn("[ODEAL DEBUG] /pay sendBasket BAŞARISIZ", { referenceCode, status: result.status, body: result.body });
         await supabaseAdmin.from("odeal_transactions")
             .update({ status: "failed", result: { error: result.body }, updated_at: new Date().toISOString() })
             .eq("tenant_id", auth.tenantId).eq("reference_code", referenceCode);
-        // [ODEAL DEBUG] Ödeal'in gerçek red sebebini mesaja koy (şimdilik) — tarayıcı konsolunda görünsün
         const detailStr = typeof result.body === "string" ? result.body : JSON.stringify(result.body);
         return NextResponse.json({
             error: `Ödeal sepet gönderilemedi (HTTP ${result.status}): ${(detailStr || "boş yanıt").slice(0, 400)}`,
@@ -115,7 +93,6 @@ export async function POST(req: NextRequest) {
         }, { status: 502 });
     }
 
-    console.log("[ODEAL DEBUG] /pay BAŞARILI — cihaza gönderildi", { referenceCode });
     // Cihaz uyanacak; POS sonuç için status'u poll eder ya da webhook düşer
     return NextResponse.json({ success: true, referenceCode });
 }
