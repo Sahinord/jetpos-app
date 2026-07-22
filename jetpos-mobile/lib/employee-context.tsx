@@ -45,6 +45,14 @@ interface EmployeeContextType {
     employee: ActiveEmployee | null;
     ready: boolean;              // localStorage okundu mu (hydration)
     loginWithPin: (pin: string) => Promise<{ ok: boolean; error?: string; locked?: boolean }>;
+    /**
+     * LİSANSSIZ personel girişi (garson/mutfak). İşletme kodu + PIN ile;
+     * cihaz bağlı değilse staffCode zorunlu, bağlıysa sadece PIN yeterli.
+     * Başarılıysa cihazı tenant'a bağlar (provisioning) + oturumu açar.
+     */
+    staffLogin: (pin: string, staffCode?: string) => Promise<{ ok: boolean; error?: string; locked?: boolean }>;
+    /** Cihaz bir işletmeye bağlı mı? (tenantId localStorage'da var mı) */
+    deviceBound: boolean;
     logout: () => void;
     can: (perm: PermKey) => boolean;
     touch: () => void;          // hareketsizlik sayacını sıfırla
@@ -155,6 +163,47 @@ export function EmployeeProvider({ children }: { children: ReactNode }) {
         }
     }, []);
 
+    // Cihaz bir işletmeye bağlı mı (tenantId var mı)
+    const [deviceBound, setDeviceBound] = useState(false);
+    useEffect(() => {
+        try { setDeviceBound(!!localStorage.getItem("tenantId")); } catch { /* yoksay */ }
+    }, [ready]);
+
+    const staffLogin = useCallback(async (pin: string, staffCode?: string) => {
+        try {
+            const tenantId = localStorage.getItem("tenantId") || undefined;
+            const res = await fetch("/api/auth/staff-login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ pin, staffCode, tenantId }),
+            });
+            const data = await res.json().catch(() => null);
+            if (!res.ok || !data?.success) {
+                return { ok: false, error: data?.error || "Giriş başarısız", locked: data?.locked === true };
+            }
+            // Cihazı işletmeye bağla (provisioning) — personel bunu görmez/girmez
+            try {
+                localStorage.setItem("tenantId", data.tenantId);
+                localStorage.setItem("licenseKey", data.provisioningKey);
+                if (data.companyName) localStorage.setItem("companyName", data.companyName);
+            } catch { /* yoksay */ }
+            setDeviceBound(true);
+
+            const emp: ActiveEmployee = {
+                id: data.employee.id,
+                name: data.employee.name,
+                position: data.employee.position,
+                role: data.employee.role,
+                permissions: data.employee.permissions || {},
+            };
+            setEmployee(emp);
+            persist(emp);
+            return { ok: true };
+        } catch (e: any) {
+            return { ok: false, error: e?.message || "Bağlantı hatası" };
+        }
+    }, []);
+
     const can = useCallback((perm: PermKey) => {
         if (!employee) return false;
         // Patron/işletme sahibi rolü her şeyi görebilir
@@ -164,7 +213,7 @@ export function EmployeeProvider({ children }: { children: ReactNode }) {
     }, [employee]);
 
     return (
-        <EmployeeContext.Provider value={{ employee, ready, loginWithPin, logout, can, touch }}>
+        <EmployeeContext.Provider value={{ employee, ready, loginWithPin, staffLogin, deviceBound, logout, can, touch }}>
             {children}
         </EmployeeContext.Provider>
     );
