@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import BottomNav from '@/components/BottomNav';
+import { useEmployee } from '@/lib/employee-context';
 
 interface Table {
     id: string;
@@ -28,7 +29,11 @@ interface OrderItem {
 
 export default function AdisyonMobile() {
     const router = useRouter();
+    // Global çalışan oturumu (PIN sistemiyle birleşik). Varsa adisyon bunu kullanır.
+    const { employee, loginWithPin } = useEmployee();
     const [tables, setTables] = useState<Table[]>([]);
+    // Başka garsonun masasını açarken devralma uyarısı
+    const [takeoverTable, setTakeoverTable] = useState<Table | null>(null);
     const [sections, setSections] = useState<string[]>(['Genel']);
     const [activeSection, setActiveSection] = useState('Genel');
     const [loading, setLoading] = useState(true);
@@ -195,33 +200,19 @@ export default function AdisyonMobile() {
 
         setSaving(true);
         try {
-            const { data, error } = await supabase.rpc('verify_employee_pin', {
-                p_tenant_id: tenantId,
-                p_pin_code: enteredPin
-            });
+            // GÜVENLİK: PIN artık doğrudan RPC yerine global çalışan oturumu
+            // üzerinden (hız sınırlı /api/auth/pin) doğrulanıyor — POS/diğer
+            // sayfalarla TEK oturum. Böylece bir kez PIN giren garson her yerde geçerli.
+            const res = await loginWithPin(enteredPin);
 
-            if (error) throw error;
-
-            if (data.success && data.employee) {
-                const emp = data.employee;
-                localStorage.setItem('activeWaiterId', emp.id);
-                localStorage.setItem('activeWaiterName', emp.name);
-                localStorage.setItem('activeWaiterRole', emp.role);
-                
-                setActiveWaiterId(emp.id);
-                setActiveWaiterName(emp.name);
-                setActiveWaiterRole(emp.role);
+            if (res.ok) {
                 setWaiterPin("");
                 setPinError("");
                 setShowWaiterModal(false);
-                toast.success(`Hoş geldiniz, ${emp.name}!`);
-
-                const role = emp.role || emp.position;
-                if (role === 'Kitchen' || role === 'Mutfak') {
-                    router.push('/kds');
-                }
+                // employee context güncellendi; yerel state'i de senkronla (köprü)
+                // employee değeri bir sonraki render'da gelir; localStorage'a da yazıldı.
             } else {
-                setPinError(data.message || "Geçersiz PIN kodu");
+                setPinError(res.error || "Geçersiz PIN kodu");
                 setWaiterPin("");
             }
         } catch (err: any) {
@@ -279,9 +270,10 @@ export default function AdisyonMobile() {
         // Set RLS context
         supabase.rpc('set_current_tenant', { tenant_id: tenantId });
 
-        const wId = localStorage.getItem('activeWaiterId');
-        const wName = localStorage.getItem('activeWaiterName');
-        const wRole = localStorage.getItem('activeWaiterRole');
+        // Kimlik önceliği: global çalışan oturumu (PIN sistemi) → yoksa eski localStorage.
+        const wId = employee?.id || localStorage.getItem('activeWaiterId');
+        const wName = employee?.name || localStorage.getItem('activeWaiterName');
+        const wRole = employee?.role || employee?.position || localStorage.getItem('activeWaiterRole');
 
         if (wRole) {
             setActiveWaiterRole(wRole);
@@ -295,6 +287,12 @@ export default function AdisyonMobile() {
         if (wId && wName) {
             setActiveWaiterId(wId);
             setActiveWaiterName(wName);
+            // Eski kod localStorage okuyor; köprü için yansıt
+            try {
+                localStorage.setItem('activeWaiterId', wId);
+                localStorage.setItem('activeWaiterName', wName);
+                if (wRole) localStorage.setItem('activeWaiterRole', wRole);
+            } catch { /* yoksay */ }
             // Mark online immediately
             supabase
                 .from('employees')
@@ -385,6 +383,63 @@ export default function AdisyonMobile() {
             setTableOrders([]);
         }
     }, [selectedTable?.id]);
+
+    // ── Masa açma + garson claim'i ──
+    // Boş/sahipsiz masayı açan garson onu ANINDA claim'ler (assigned_waiter_id).
+    // Başka garsonun (dolu) masasına dokunulursa devralma uyarısı çıkar.
+    const openTable = async (table: Table) => {
+        // Başka garsonun masası mı? (dolu + atanmış + ben değilim)
+        const claimedByOther =
+            table.status === 'occupied' &&
+            table.assigned_waiter_id &&
+            activeWaiterId &&
+            table.assigned_waiter_id !== activeWaiterId;
+
+        if (claimedByOther) {
+            setTakeoverTable(table);   // onaya sun, direkt açma
+            return;
+        }
+
+        // Boş/sahipsiz masa → beni claim'le (sipariş kaydını beklemeden görünür olsun)
+        if (activeWaiterId && (table.status === 'empty' || !table.assigned_waiter_id)) {
+            try {
+                await supabase.from('restaurant_tables')
+                    .update({ assigned_waiter_id: activeWaiterId, assigned_waiter_name: activeWaiterName })
+                    .eq('id', table.id);
+                table = { ...table, assigned_waiter_id: activeWaiterId || undefined, assigned_waiter_name: activeWaiterName || undefined };
+            } catch { /* claim başarısızsa yine de açalım */ }
+        }
+        setSelectedTable(table);
+    };
+
+    // Devralmayı onayla: masayı bana geçir, aç.
+    const confirmTakeover = async () => {
+        const table = takeoverTable;
+        if (!table) return;
+        try {
+            await supabase.from('restaurant_tables')
+                .update({ assigned_waiter_id: activeWaiterId, assigned_waiter_name: activeWaiterName })
+                .eq('id', table.id);
+        } catch { /* yoksay */ }
+        setTakeoverTable(null);
+        setSelectedTable({ ...table, assigned_waiter_id: activeWaiterId || undefined, assigned_waiter_name: activeWaiterName || undefined });
+        toast.success(`${table.name} masası size geçti`);
+    };
+
+    // Global çalışan oturumu değişince yerel garson state'ini senkronla (PIN köprüsü)
+    useEffect(() => {
+        if (!employee) return;
+        const role = employee.role || employee.position || '';
+        setActiveWaiterId(employee.id);
+        setActiveWaiterName(employee.name);
+        setActiveWaiterRole(role);
+        try {
+            localStorage.setItem('activeWaiterId', employee.id);
+            localStorage.setItem('activeWaiterName', employee.name);
+            if (role) localStorage.setItem('activeWaiterRole', role);
+        } catch { /* yoksay */ }
+        if (role === 'Kitchen' || role === 'Mutfak') router.push('/kds');
+    }, [employee]);
 
     const addToOrder = (product: any) => {
         const existing = tableOrders.find(item => item.product_id === product.id);
@@ -894,15 +949,17 @@ export default function AdisyonMobile() {
                                 <motion.button
                                     key={table.id}
                                     whileTap={{ scale: 0.95 }}
-                                    onClick={() => setSelectedTable(table)}
+                                    onClick={() => openTable(table)}
                                     className={`flex flex-col items-center justify-center p-4 rounded-3xl border-2 transition-all h-32 ${getStatusColor(table)} relative overflow-hidden`}
                                 >
                                     <Utensils className={`w-8 h-8 mb-2 opacity-80 ${table.status === 'empty' ? 'text-emerald-400' : table.status === 'occupied' ? 'text-rose-400' : 'text-amber-400'}`} />
                                     <h3 className="font-black text-lg">{table.name}</h3>
                                     
                                     {table.assigned_waiter_name && (
-                                        <span className="text-[8px] font-bold text-slate-400 mt-0.5 truncate max-w-full">
-                                            🤵 {table.assigned_waiter_name}
+                                        <span className={`text-[8px] font-bold mt-0.5 truncate max-w-full ${
+                                            table.assigned_waiter_id === activeWaiterId ? 'text-emerald-300' : 'text-amber-300'
+                                        }`}>
+                                            🤵 {table.assigned_waiter_id === activeWaiterId ? 'Ben' : table.assigned_waiter_name}
                                         </span>
                                     )}
 
@@ -1443,6 +1500,34 @@ export default function AdisyonMobile() {
                             </div>
                         </motion.div>
                     </div>
+                )}
+            </AnimatePresence>
+
+            {/* Devralma onayı — başka garsonun masasına dokunulduğunda */}
+            <AnimatePresence>
+                {takeoverTable && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[10000] bg-black/70 backdrop-blur-sm flex items-center justify-center p-6"
+                        onClick={() => setTakeoverTable(null)}>
+                        <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }}
+                            className="w-full max-w-sm bg-slate-900 border border-amber-500/30 rounded-3xl p-6 space-y-4 text-center"
+                            onClick={e => e.stopPropagation()}>
+                            <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-3xl">🤵</div>
+                            <div>
+                                <h2 className="text-xl font-black text-white">{takeoverTable.name} başka garsonda</h2>
+                                <p className="text-sm text-slate-400 mt-1">
+                                    Bu masa <span className="text-amber-300 font-bold">{takeoverTable.assigned_waiter_name}</span> tarafından açılmış.
+                                    Devralmak istiyor musunuz?
+                                </p>
+                            </div>
+                            <div className="flex gap-2">
+                                <button onClick={() => setTakeoverTable(null)}
+                                    className="flex-1 py-3 rounded-2xl bg-white/5 border border-white/10 text-slate-300 font-bold active:scale-95 transition-all">Vazgeç</button>
+                                <button onClick={confirmTakeover}
+                                    className="flex-1 py-3 rounded-2xl bg-amber-600 text-white font-bold active:scale-95 transition-all">Devral</button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
                 )}
             </AnimatePresence>
 
