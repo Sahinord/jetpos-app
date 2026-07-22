@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { clearOfflineTenantData } from '@/lib/offline-db';
 import { SyncService } from '@/lib/sync-service';
 import { toast } from 'sonner';
+import { useEmployee, EmployeePermissions } from '@/lib/employee-context';
 
 export default function BottomNav() {
     const pathname = usePathname();
@@ -16,7 +17,8 @@ export default function BottomNav() {
     const [features, setFeatures] = useState<any>({});
     const [companyName, setCompanyName] = useState('JetPOS Mobile');
 
-    const waiterRole = typeof window !== 'undefined' ? localStorage.getItem('activeWaiterRole') : null;
+    const { employee, can } = useEmployee();
+    const waiterRole = (employee?.role || employee?.position || (typeof window !== 'undefined' ? localStorage.getItem('activeWaiterRole') : null)) || null;
     const isKitchen = waiterRole === 'Kitchen' || waiterRole === 'Mutfak';
 
     useEffect(() => {
@@ -69,30 +71,40 @@ export default function BottomNav() {
         { name: 'Ürünler', icon: Package, path: '/products' },
     ];
 
+    // Çalışan girişi açık ve oturum varsa menü YETKİYE göre de filtrelenir.
+    // Oturum yoksa (ya da özellik kapalıysa) yetki filtresi uygulanmaz —
+    // sayfa açılışında RequirePermission zaten PIN/engel gösterir.
+    const gate = (perm?: keyof EmployeePermissions) => {
+        if (!perm) return true;
+        if (!employee) return true;      // henüz giriş yok → menüde görünsün, tıklayınca PIN çıkar
+        return can(perm);
+    };
+
     const sidebarItems = [
-        { name: 'Pano', icon: LayoutDashboard, path: '/dashboard', show: true },
-        { name: 'JetKasa (POS)', icon: Wallet, path: '/pos', show: true },
+        { name: 'Pano', icon: LayoutDashboard, path: '/dashboard', show: gate('can_access_reports') },
+        { name: 'JetKasa (POS)', icon: Wallet, path: '/pos', show: gate('can_access_pos') },
         { name: 'Barkod Okuyucu', icon: ScanLine, path: '/scanner', show: true },
-        { name: 'Ürün Yönetimi', icon: Package, path: '/products', show: true },
-        { name: 'Entegrasyonlar', icon: Globe, path: '/entegre', show: true },
-        { name: 'Cari Hesaplar', icon: Users, path: '/cari', show: true },
-        { name: 'Banka Hesapları', icon: CreditCard, path: '/banka', show: true },
-        { name: 'Kasa İşlemleri', icon: Calculator, path: '/kasa', show: true },
-        { name: 'Envanter Sayımı', icon: ClipboardCheck, path: '/inventory-count', show: true },
-        { name: 'Depo Transferi', icon: ArrowLeftRight, path: '/warehouse-transfer', show: true },
-        { name: 'Alış Faturası (AI)', icon: Receipt, path: '/alis-faturasi', show: true },
-        { name: 'Ayarlar', icon: Settings, path: '/ayarlar', show: true },
+        { name: 'Ürün Yönetimi', icon: Package, path: '/products', show: gate('can_access_inventory') },
+        { name: 'Entegrasyonlar', icon: Globe, path: '/entegre', show: gate('can_access_settings') },
+        { name: 'Cari Hesaplar', icon: Users, path: '/cari', show: gate('can_access_crm') },
+        { name: 'Banka Hesapları', icon: CreditCard, path: '/banka', show: gate('can_access_reports') },
+        { name: 'Kasa İşlemleri', icon: Calculator, path: '/kasa', show: gate('can_access_reports') },
+        { name: 'Envanter Sayımı', icon: ClipboardCheck, path: '/inventory-count', show: gate('can_access_inventory') },
+        { name: 'Depo Transferi', icon: ArrowLeftRight, path: '/warehouse-transfer', show: gate('can_access_inventory') },
+        { name: 'Alış Faturası (AI)', icon: Receipt, path: '/alis-faturasi', show: gate('can_manage_invoices') },
+        { name: 'Satış Geçmişi', icon: Receipt, path: '/satis-gecmisi', show: gate('can_access_pos') },
+        { name: 'Ayarlar', icon: Settings, path: '/ayarlar', show: gate('can_access_settings') },
         {
             name: 'Adisyon Sistemi',
-            icon: Utensils, 
-            path: '/adisyon', 
-            show: hasFeature('mobile_adisyon') || hasFeature('adisyon') 
+            icon: Utensils,
+            path: '/adisyon',
+            show: (hasFeature('mobile_adisyon') || hasFeature('adisyon')) && gate('can_access_adisyon')
         },
-        { 
-            name: 'Mutfak Ekranı (KDS)', 
-            icon: ChefHat, 
-            path: '/kds', 
-            show: hasFeature('kds') 
+        {
+            name: 'Mutfak Ekranı (KDS)',
+            icon: ChefHat,
+            path: '/kds',
+            show: hasFeature('kds') && gate('can_access_adisyon')
         },
     ];
 
