@@ -45,12 +45,14 @@ export default function OrderNotifier({ tenantId, showToast }: { tenantId?: stri
             if (typeof Notification !== "undefined" && Notification.permission === "default") Notification.requestPermission();
         } catch { /* yoksay */ }
 
-        const onInsert = (kind: "getir" | "tgo") => (payload: any) => {
+        const onInsert = (kind: "getir" | "tgo" | "yemeksepeti") => (payload: any) => {
             const r = payload?.new || {};
-            const id = String(r.id || r.tgo_order_id || r.getir_order_id || "");
+            const id = String(r.id || r.tgo_order_id || r.getir_order_id || r.ys_order_id || "");
             if (!id || seen.current.has(id)) return;
             seen.current.add(id);
-            const brand = kind === "getir" ? "Getir Çarşı" : (r.store_name || "Yemek");
+            const brand = kind === "getir" ? "Getir Çarşı"
+                : kind === "yemeksepeti" ? "Yemeksepeti"
+                : (r.store_name || "Yemek");
             notify(`🔔 Yeni ${brand} siparişi`, `${r.customer_name || "Müşteri"} · ${money(r.total_price)} ₺`);
         };
 
@@ -58,6 +60,7 @@ export default function OrderNotifier({ tenantId, showToast }: { tenantId?: stri
             .channel(`client_order_notifier_${tid}`)
             .on("postgres_changes", { event: "INSERT", schema: "public", table: "getir_carsi_orders", filter: `tenant_id=eq.${tid}` }, onInsert("getir"))
             .on("postgres_changes", { event: "INSERT", schema: "public", table: "tgo_yemek_orders", filter: `tenant_id=eq.${tid}` }, onInsert("tgo"))
+            .on("postgres_changes", { event: "INSERT", schema: "public", table: "yemeksepeti_orders", filter: `tenant_id=eq.${tid}` }, onInsert("yemeksepeti"))
             .subscribe();
 
         return () => { supabase.removeChannel(ch); };
