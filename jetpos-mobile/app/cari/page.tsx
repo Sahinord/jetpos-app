@@ -6,6 +6,7 @@ import { supabase, setCurrentTenant } from '@/lib/supabase';
 import { Search, Users, ArrowLeft, ArrowUpRight, ArrowDownLeft, Wallet } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import { motion, AnimatePresence } from 'framer-motion';
+import RequirePermission from '@/components/RequirePermission';
 
 interface Cari {
     id: string;
@@ -18,7 +19,7 @@ interface Cari {
     durum: string;
 }
 
-export default function CariPage() {
+function CariPageInner() {
     const router = useRouter();
     const [cariler, setCariler] = useState<Cari[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -150,5 +151,14 @@ export default function CariPage() {
 
             <BottomNav />
         </div>
+    );
+}
+
+// Yetki koruması: çalışan girişi açıksa PIN + can_access_crm zorunlu.
+export default function CariPage() {
+    return (
+        <RequirePermission perm="can_access_crm" title="Cari Hesaplar">
+            <CariPageInner />
+        </RequirePermission>
     );
 }

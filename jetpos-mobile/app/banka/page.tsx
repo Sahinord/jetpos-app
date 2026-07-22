@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { Wallet, Search, ArrowLeft, ArrowUpRight, ArrowDownLeft, Building2, CreditCard } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import { motion, AnimatePresence } from 'framer-motion';
+import RequirePermission from '@/components/RequirePermission';
 
 interface Banka {
     id: string;
@@ -18,7 +19,7 @@ interface Banka {
     balance?: number;
 }
 
-export default function BankaPage() {
+function BankaPageInner() {
     const router = useRouter();
     const [bankalar, setBankalar] = useState<Banka[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -169,5 +170,14 @@ export default function BankaPage() {
 
             <BottomNav />
         </div>
+    );
+}
+
+// Yetki koruması: çalışan girişi açıksa PIN + can_access_reports zorunlu.
+export default function BankaPage() {
+    return (
+        <RequirePermission perm="can_access_reports" title="Banka">
+            <BankaPageInner />
+        </RequirePermission>
     );
 }

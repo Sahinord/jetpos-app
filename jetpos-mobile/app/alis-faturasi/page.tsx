@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import { toast } from 'sonner';
+import RequirePermission from '@/components/RequirePermission';
 
 interface InvoiceItem {
     product_id?: string;
@@ -58,7 +59,7 @@ const emptyItem = (): InvoiceItem => ({
 
 type Step = 'upload' | 'analyzing' | 'review' | 'done';
 
-export default function AlisFaturasiPage() {
+function AlisFaturasiPageInner() {
     const router = useRouter();
     const isSavingRef = useRef(false);
 
@@ -622,5 +623,14 @@ export default function AlisFaturasiPage() {
 
             <BottomNav />
         </div>
+    );
+}
+
+// Yetki koruması: çalışan girişi açıksa PIN + can_manage_invoices zorunlu.
+export default function AlisFaturasiPage() {
+    return (
+        <RequirePermission perm="can_manage_invoices" title="Alış Faturası">
+            <AlisFaturasiPageInner />
+        </RequirePermission>
     );
 }

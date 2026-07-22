@@ -4,6 +4,7 @@ import PWARegister from "@/components/PWARegister";
 import ThemeApplier from "@/components/ThemeApplier";
 import SessionGuard from "@/components/SessionGuard";
 import OrderNotifier from "@/components/OrderNotifier";
+import { EmployeeProvider } from "@/lib/employee-context";
 
 import { Toaster } from "sonner";
 
@@ -46,7 +47,9 @@ export default function RootLayout({
         <PWARegister />
         <OrderNotifier />
         <Toaster position="top-center" richColors theme="dark" />
-        {children}
+        <EmployeeProvider>
+          {children}
+        </EmployeeProvider>
       </body>
     </html>
   );

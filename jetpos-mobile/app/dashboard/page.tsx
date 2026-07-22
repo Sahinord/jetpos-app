@@ -14,6 +14,7 @@ import BottomNav from '@/components/BottomNav';
 import { motion } from 'framer-motion';
 import { clearOfflineTenantData } from '@/lib/offline-db';
 import { SyncService } from '@/lib/sync-service';
+import RequirePermission from '@/components/RequirePermission';
 
 interface DashboardStats {
     activeProducts: number;
@@ -32,7 +33,7 @@ interface DashboardStats {
     salesMonth: number;
 }
 
-export default function DashboardPage() {
+function DashboardPageInner() {
     const router = useRouter();
     const [stats, setStats] = useState<DashboardStats>({
         activeProducts: 0, inactiveProducts: 0, allProducts: 0,
@@ -389,5 +390,14 @@ export default function DashboardPage() {
 
             <BottomNav />
         </div>
+    );
+}
+
+// Yetki koruması: çalışan girişi açıksa PIN + can_access_reports zorunlu.
+export default function DashboardPage() {
+    return (
+        <RequirePermission perm="can_access_reports" title="Panel">
+            <DashboardPageInner />
+        </RequirePermission>
     );
 }

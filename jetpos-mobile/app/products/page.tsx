@@ -6,6 +6,7 @@ import { supabase, setCurrentTenant } from '@/lib/supabase';
 import { Search, Package, MoreVertical, Edit3, ArrowUpRight, Store } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import ProductEditModal from '@/components/ProductEditModal';
+import RequirePermission from '@/components/RequirePermission';
 
 interface Product {
     id: string;
@@ -18,7 +19,7 @@ interface Product {
     category_id?: string;
 }
 
-export default function ProductsPage() {
+function ProductsPageInner() {
     const router = useRouter();
     const [products, setProducts] = useState<Product[]>([]);
     const [searchInput, setSearchInput] = useState('');
@@ -307,5 +308,14 @@ function ProductItemCard({ product, onUpdate }: { product: Product; onUpdate: ()
                 />
             )}
         </>
+    );
+}
+
+// Yetki koruması: çalışan girişi açıksa PIN + can_access_inventory zorunlu.
+export default function ProductsPage() {
+    return (
+        <RequirePermission perm="can_access_inventory" title="Ürün Yönetimi">
+            <ProductsPageInner />
+        </RequirePermission>
     );
 }

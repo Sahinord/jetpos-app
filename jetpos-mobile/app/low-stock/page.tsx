@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { AlertTriangle, Package } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
+import RequirePermission from '@/components/RequirePermission';
 
 interface Product {
     id: string;
@@ -14,7 +15,7 @@ interface Product {
     critical_stock_level: number;
 }
 
-export default function LowStockPage() {
+function LowStockPageInner() {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -179,5 +180,14 @@ export default function LowStockPage() {
 
             <BottomNav />
         </div >
+    );
+}
+
+// Yetki koruması: çalışan girişi açıksa PIN + can_access_inventory zorunlu.
+export default function LowStockPage() {
+    return (
+        <RequirePermission perm="can_access_inventory" title="Stok">
+            <LowStockPageInner />
+        </RequirePermission>
     );
 }

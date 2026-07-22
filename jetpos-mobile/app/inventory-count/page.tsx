@@ -7,8 +7,9 @@ import { ClipboardCheck, ArrowRight, Building2, Plus, ArrowLeft } from 'lucide-r
 import BottomNav from '@/components/BottomNav';
 import InventoryCounter from '@/components/InventoryCounter';
 import { toast } from 'sonner';
+import RequirePermission from '@/components/RequirePermission';
 
-export default function InventoryCountPage() {
+function InventoryCountPageInner() {
     const router = useRouter();
     const [warehouses, setWarehouses] = useState<any[]>([]);
     const [counts, setCounts] = useState<any[]>([]);
@@ -187,5 +188,14 @@ export default function InventoryCountPage() {
 
             <BottomNav />
         </div>
+    );
+}
+
+// Yetki koruması: çalışan girişi açıksa PIN + can_access_inventory zorunlu.
+export default function InventoryCountPage() {
+    return (
+        <RequirePermission perm="can_access_inventory" title="Envanter Sayımı">
+            <InventoryCountPageInner />
+        </RequirePermission>
     );
 }

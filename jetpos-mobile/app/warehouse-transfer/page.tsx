@@ -7,8 +7,9 @@ import { ArrowLeft, Send, Building2, Plus, ArrowRight, PackageCheck, History } f
 import BottomNav from '@/components/BottomNav';
 import TransferPortal from '@/components/TransferPortal';
 import { toast } from 'sonner';
+import RequirePermission from '@/components/RequirePermission';
 
-export default function TransfersPage() {
+function TransfersPageInner() {
     const router = useRouter();
     const [warehouses, setWarehouses] = useState<any[]>([]);
     const [activeTransfers, setActiveTransfers] = useState<any[]>([]);
@@ -203,5 +204,14 @@ export default function TransfersPage() {
             </div>
             <BottomNav />
         </div>
+    );
+}
+
+// Yetki koruması: çalışan girişi açıksa PIN + can_access_inventory zorunlu.
+export default function TransfersPage() {
+    return (
+        <RequirePermission perm="can_access_inventory" title="Depo Transferi">
+            <TransfersPageInner />
+        </RequirePermission>
     );
 }

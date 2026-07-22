@@ -16,6 +16,7 @@ import { offlineDB } from '@/lib/offline-db';
 import { SyncService } from '@/lib/sync-service';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { apiFetch } from '@/lib/api';
+import RequirePermission from '@/components/RequirePermission';
 
 interface Product {
     id: string;
@@ -43,7 +44,7 @@ interface Customer {
     phone?: string;
 }
 
-export default function POSPage() {
+function POSPageInner() {
     // Data State
     const [products, setProducts] = useState<Product[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
@@ -701,5 +702,14 @@ export default function POSPage() {
 
             <BottomNav />
         </div>
+    );
+}
+
+// Yetki koruması: işletmede çalışan girişi açıksa PIN + can_access_pos zorunlu.
+export default function POSPage() {
+    return (
+        <RequirePermission perm="can_access_pos" title="Satış Girişi">
+            <POSPageInner />
+        </RequirePermission>
     );
 }

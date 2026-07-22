@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { Calculator, Search, ArrowLeft, ArrowUpRight, ArrowDownLeft, Store, DollarSign } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import { motion, AnimatePresence } from 'framer-motion';
+import RequirePermission from '@/components/RequirePermission';
 
 interface Kasa {
     id: string;
@@ -15,7 +16,7 @@ interface Kasa {
     balance?: number;
 }
 
-export default function KasaPage() {
+function KasaPageInner() {
     const router = useRouter();
     const [kasalar, setKasalar] = useState<Kasa[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -158,5 +159,14 @@ export default function KasaPage() {
 
             <BottomNav />
         </div>
+    );
+}
+
+// Yetki koruması: çalışan girişi açıksa PIN + can_access_reports zorunlu.
+export default function KasaPage() {
+    return (
+        <RequirePermission perm="can_access_reports" title="Kasa İşlemleri">
+            <KasaPageInner />
+        </RequirePermission>
     );
 }
