@@ -6,13 +6,41 @@ import { motion, AnimatePresence } from "framer-motion";
 import { calculateProfit, suggestSalePrice } from "@/lib/calculations";
 import PriceCalculator from "./PriceCalculator";
 
-export default function ProductModal({ isOpen, onClose, onSave, product, categories, isSaving }: any) {
+// Platform kayıt defteri — tenant'ta açık olanlar modalda gösterilir.
+// key = fixed_warehouses.platform değeri.
+const PLATFORM_REGISTRY: { key: string; label: string; color: string }[] = [
+    { key: "trendyol",    label: "Trendyol Pazaryeri",  color: "orange" },
+    { key: "trendyol_go", label: "Trendyol GO",         color: "orange" },
+    { key: "getir",       label: "Getir Çarşı",         color: "violet" },
+    { key: "hepsiburada", label: "Hepsiburada",         color: "orange" },
+    { key: "yemeksepeti", label: "Yemeksepeti",         color: "rose" },
+    { key: "tgo_yemek",   label: "Trendyol · Uber Yemek", color: "orange" },
+];
+
+export default function ProductModal({ isOpen, onClose, onSave, product, categories, isSaving, enabledPlatforms }: any) {
+    // Tenant'ta açık platformlar (fixed_warehouses'tan gelir). Boşsa geriye
+    // uyumluluk için sadece Trendyol gösterilir (eski davranış).
+    const activePlatforms: string[] = (Array.isArray(enabledPlatforms) && enabledPlatforms.length)
+        ? enabledPlatforms
+        : ["trendyol"];
+    const shownPlatforms = PLATFORM_REGISTRY.filter(p => activePlatforms.includes(p.key));
+
     const [formData, setFormData] = useState({
         name: "", barcode: "", purchase_price: "" as any, sale_price: "" as any,
         vat_rate: 20, stock_quantity: "" as any, category_id: "", unit: "Adet",
         status: "active", is_campaign: false, image_url: "", external_price: "" as any,
         sync_trendyol: false,
     });
+
+    // Platform-özel fiyat/durum: { [platform]: { active, price } }
+    const [platformPrices, setPlatformPrices] = useState<Record<string, { active: boolean; price: string }>>({});
+
+    const setPlatform = (key: string, patch: Partial<{ active: boolean; price: string }>) => {
+        setPlatformPrices(prev => {
+            const cur = prev[key] || { active: false, price: "0" };
+            return { ...prev, [key]: { ...cur, ...patch } };
+        });
+    };
 
     const [pricingPrefs, setPricingPrefs] = useState({
         margin: "30" as any, commission: "0" as any, withholding: "0" as any,
@@ -57,6 +85,19 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
             stock_quantity: "", category_id: "", unit: "Adet", status: "active",
             is_campaign: false, image_url: "", external_price: "", sync_trendyol: false,
         });
+
+        // Platform fiyatlarını yükle. GERİYE UYUMLU: kayıtlı platform_prices.trendyol
+        // yoksa eski external_price/sync_trendyol'dan tohumla.
+        const pp: Record<string, { active: boolean; price: string }> = {};
+        const stored = (product?.platform_prices && typeof product.platform_prices === "object") ? product.platform_prices : {};
+        for (const p of PLATFORM_REGISTRY) {
+            const s = stored[p.key];
+            if (s) pp[p.key] = { active: s.active === true, price: String(s.price ?? 0) };
+        }
+        if (!pp.trendyol) {
+            pp.trendyol = { active: product?.sync_trendyol === true, price: String(product?.external_price || 0) };
+        }
+        setPlatformPrices(pp);
     }, [product, isOpen]);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -128,16 +169,31 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
         }
     };
 
-    const handleSaveAndClose = () => {
-        const finalData = {
+    // Kaydedilecek nihai veri (platform_prices dahil + Trendyol geriye uyum)
+    const buildFinalData = () => {
+        // platform_prices JSON'ı normalize et (yalnızca gösterilen platformlar)
+        const pp: Record<string, { active: boolean; price: number }> = {};
+        for (const p of shownPlatforms) {
+            const v = platformPrices[p.key];
+            if (v) pp[p.key] = { active: v.active === true, price: Number(v.price) || 0 };
+        }
+        // GERİYE UYUM: Trendyol Pazaryeri hâlâ external_price/sync_trendyol'dan
+        // okunuyor (mevcut senkron). platform_prices.trendyol ile aynı anda yaz.
+        const tr = pp.trendyol;
+        return {
             ...formData,
             purchase_price: Number(formData.purchase_price) || 0,
             sale_price: Number(formData.sale_price) || 0,
-            external_price: Number(formData.external_price) || 0,
-            stock_quantity: Number(formData.stock_quantity) || 0
+            stock_quantity: Number(formData.stock_quantity) || 0,
+            external_price: tr ? tr.price : (Number(formData.external_price) || 0),
+            sync_trendyol: tr ? tr.active : (formData.sync_trendyol === true),
+            platform_prices: pp,
         };
+    };
+
+    const handleSaveAndClose = () => {
         setShowDiscardModal(false);
-        onSave(finalData);
+        onSave(buildFinalData());
     };
 
     const handleDiscardAndClose = () => {
@@ -377,34 +433,59 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                         {/* Divider */}
                         <div className="h-px bg-white/[0.04]" />
 
-                        {/* ─── SECTION: Trendyol ─── */}
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <p className="text-[9px] font-bold text-orange-400 uppercase tracking-[2px]">Trendyol</p>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" className="sr-only peer" checked={formData.sync_trendyol}
-                                        onChange={e => setFormData({ ...formData, sync_trendyol: e.target.checked })} />
-                                    <div className="w-8 h-[18px] bg-white/[0.06] rounded-full peer peer-checked:bg-orange-500 after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:after:translate-x-[14px] transition-colors" />
-                                    <span className="ml-2 text-[9px] font-bold text-orange-400/70">Satışta</span>
-                                </label>
-                            </div>
-                            <div className={`transition-all ${formData.sync_trendyol ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}>
-                                <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-orange-400">₺</span>
-                                    <input
-                                        type="text" inputMode="decimal" disabled={!formData.sync_trendyol}
-                                        className="w-full bg-orange-500/[0.04] border border-orange-500/10 rounded-xl pl-7 pr-3 py-2.5 text-sm font-bold text-white outline-none focus:border-orange-500/30 transition-all tabular-nums"
-                                        value={formData.external_price} onFocus={e => e.target.select()}
-                                        onChange={e => handleNumericInput('external_price', e.target.value)}
-                                        placeholder="Trendyol fiyatı"
-                                    />
+                        {/* ─── SECTION: Platform Fiyatları (tenant'ta açık mağazalar) ─── */}
+                        {shownPlatforms.length > 0 && (
+                            <>
+                                <div className="space-y-4">
+                                    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[2px]">Platform Fiyatları</p>
+                                    {shownPlatforms.map((pf) => {
+                                        const pv = platformPrices[pf.key] || { active: false, price: "0" };
+                                        const c = pf.color; // orange | violet | rose
+                                        const txt = c === 'violet' ? 'text-violet-400' : c === 'rose' ? 'text-rose-400' : 'text-orange-400';
+                                        const dot = c === 'violet' ? 'peer-checked:bg-violet-500' : c === 'rose' ? 'peer-checked:bg-rose-500' : 'peer-checked:bg-orange-500';
+                                        const fieldBg = c === 'violet' ? 'bg-violet-500/[0.04] border-violet-500/10 focus:border-violet-500/30'
+                                            : c === 'rose' ? 'bg-rose-500/[0.04] border-rose-500/10 focus:border-rose-500/30'
+                                            : 'bg-orange-500/[0.04] border-orange-500/10 focus:border-orange-500/30';
+                                        return (
+                                            <div key={pf.key} className="space-y-2">
+                                                <div className="flex items-center justify-between">
+                                                    <p className={`text-[9px] font-bold uppercase tracking-[2px] ${txt}`}>{pf.label}</p>
+                                                    <label className="relative inline-flex items-center cursor-pointer">
+                                                        <input type="checkbox" className="sr-only peer"
+                                                            checked={pv.active}
+                                                            onChange={e => setPlatform(pf.key, { active: e.target.checked })} />
+                                                        <div className={`w-8 h-[18px] bg-white/[0.06] rounded-full peer ${dot} after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:after:translate-x-[14px] transition-colors`} />
+                                                        <span className={`ml-2 text-[9px] font-bold ${txt} opacity-70`}>Satışta</span>
+                                                    </label>
+                                                </div>
+                                                <div className={`transition-all ${pv.active ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="relative flex-1">
+                                                            <span className={`absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold ${txt}`}>₺</span>
+                                                            <input
+                                                                type="text" inputMode="decimal" disabled={!pv.active}
+                                                                className={`w-full ${fieldBg} border rounded-xl pl-7 pr-3 py-2.5 text-sm font-bold text-white outline-none transition-all tabular-nums`}
+                                                                value={pv.price}
+                                                                onFocus={e => e.target.select()}
+                                                                onChange={e => setPlatform(pf.key, { price: e.target.value.replace(/[^0-9.,]/g, '').replace(',', '.') })}
+                                                                placeholder={`${pf.label} fiyatı`}
+                                                            />
+                                                        </div>
+                                                        <PriceCalculator
+                                                            baseValue={Number(pv.price) || Number(formData.sale_price) || 0}
+                                                            onApply={(v) => setPlatform(pf.key, { price: String(v) })}
+                                                            label={`${pf.label} fiyatı hesapla`}
+                                                        />
+                                                    </div>
+                                                    <p className="text-[8px] text-slate-600 mt-1">Dükkan fiyatından bağımsız, sadece {pf.label}&apos;a gönderilir</p>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
-                                <p className="text-[8px] text-slate-600 mt-1">Dükkan fiyatından bağımsız, sadece Trendyol'a gönderilir</p>
-                            </div>
-                        </div>
-
-                        {/* Divider */}
-                        <div className="h-px bg-white/[0.04]" />
+                                <div className="h-px bg-white/[0.04]" />
+                            </>
+                        )}
 
                         {/* ─── SECTION: Stok & Durum ─── */}
                         <div className="space-y-3">
@@ -488,16 +569,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                 İptal
                             </button>
                             <button
-                                onClick={() => {
-                                    const finalData = {
-                                        ...formData,
-                                        purchase_price: Number(formData.purchase_price) || 0,
-                                        sale_price: Number(formData.sale_price) || 0,
-                                        external_price: Number(formData.external_price) || 0,
-                                        stock_quantity: Number(formData.stock_quantity) || 0
-                                    };
-                                    onSave(finalData);
-                                }}
+                                onClick={() => onSave(buildFinalData())}
                                 disabled={isSaving}
                                 className="px-6 py-2.5 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-primary/20 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
                             >

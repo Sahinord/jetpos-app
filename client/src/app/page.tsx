@@ -732,6 +732,15 @@ export default function Home() {
         tenant_id: currentTenant.id
       };
 
+      // Platform bazlı fiyatlar (modal'dan gelir). Trendyol geriye uyum alanları
+      // (external_price/sync_trendyol) modal içinde zaten formData'ya işleniyor;
+      // burada JSON'ı da kalıcı yaz.
+      if (formData.platform_prices !== undefined) {
+        productPayload.platform_prices = formData.platform_prices;
+      }
+      if (formData.external_price !== undefined) productPayload.external_price = Number(formData.external_price) || 0;
+      if (formData.sync_trendyol !== undefined) productPayload.sync_trendyol = formData.sync_trendyol === true;
+
       const effectivePriceSync = activeWarehouse?.platform ? false : isPriceSyncEnabled;
       const effectiveStockSync = activeWarehouse?.platform ? false : isStockSyncEnabled;
 
@@ -2223,6 +2232,11 @@ export default function Home() {
         product={editingProduct}
         categories={categories}
         isSaving={isSaving}
+        enabledPlatforms={Array.from(new Set(
+          (currentTenant?.fixed_warehouses || [])
+            .map((w: any) => w?.platform)
+            .filter(Boolean)
+        ))}
       />
 
       {
