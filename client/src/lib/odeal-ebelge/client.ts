@@ -1,92 +1,125 @@
 import type { InvoiceData, InvoiceResult, DocumentStatus } from "@/lib/invoice-providers/types";
+import { generateUBL } from "@/lib/qnb/ubl-builder";
 
 /**
  * Ödeal e-Belge (e-Fatura / e-Arşiv / e-İrsaliye) REST istemcisi.
  * POS dışı (online/cihazsız) satışlarda belge kesimi için.
  *
- * Kimlik: Basic auth (kullanıcı adı + şifre → base64).
- * Kimlik bilgileri ASLA koda gömülmez — env / tenant ayarından gelir:
- *   ODEAL_EBELGE_USERNAME, ODEAL_EBELGE_PASSWORD, ODEAL_EBELGE_BASE_URL
- * (ya da tenants.settings.odealEbelge.{username,password,baseUrl,environment})
+ * MİMARİ (Ödeal e-Belge doküman + API Bilgileri.docx'ten teyitli):
+ *   1. Login  → POST {base}/api/login  → jwt token
+ *   2. Fatura → POST {base}/api/ubl-restapi
+ *              { jwt, method:"saveInvoiceUBL", invoice: base64(UBL-TR XML), responseObject:"1" }
+ *              → { StatusCode:"200", Result:<belgeUUID>, Success:true }
+ *   3. İşletme kaydı → method:"addTaxpayer" (her işletmenin VKN'sini entegratör
+ *      "1997" altına açar; per-tenant e-belge için — TEST'te atlanır, test hesabı VKN kullanılır)
  *
- * ⚠️⚠️ ENDPOINT YOLLARI + PAYLOAD ŞEMASI DOLDURULACAK ⚠️⚠️
- * Ödeal e-Belge API doküman/RAR'ı elimize geçince (fatura.odeal.com/api/document)
- * aşağıdaki EP.* yolları ve buildInvoicePayload() gerçek şemaya göre yazılacak.
- * Şu an TAHMİN YOK — endpoint tanımsızsa açık hata döner (yanlış belge kesilmesin).
+ * UBL XML'i mevcut generateUBL(invoiceData, erpCode, vkn) ile üretilir (QNB ile ortak).
+ * Kimlik ASLA koda gömülmez — env / tenant ayarından gelir.
  */
 
 export interface OdealEbelgeConfig {
     username?: string;
     password?: string;
+    vkn?: string;            // Belgeyi kesen işletmenin VKN'si (test: test hesabı VKN'si)
+    erpCode?: string;
     baseUrl?: string;
     environment?: "stage" | "prod";
 }
 
-// Stage portal: https://fatura-stg.odeal.com/  → API adresleri RAR'dan teyit edilecek.
-const STAGE_BASE = "https://fatura-stg.odeal.com/api";
-const PROD_BASE = "https://fatura.odeal.com/api";
-
-// ⚠️ RAR/Swagger'dan doldurulacak gerçek yollar:
-const EP = {
-    sendInvoice: "",   // örn. "/v1/invoice" — TEYİT BEKLİYOR
-    status: "",        // örn. "/v1/invoice/{id}/status" — TEYİT BEKLİYOR
-};
+const STAGE_BASE = "https://fatura-stg.odeal.com";
+const PROD_BASE = "https://fatura.odeal.com";
 
 export class OdealEbelgeClient {
     private base: string;
-    private authHeader: string;
+    private username: string;
+    private password: string;
+    private vkn: string;
+    private erpCode: string;
+    private token: string | null = null;
+    private tokenAt = 0;
     private configured: boolean;
 
     constructor(config?: OdealEbelgeConfig) {
         const c = config || {};
-        const username = c.username || process.env.ODEAL_EBELGE_USERNAME || "";
-        const password = c.password || process.env.ODEAL_EBELGE_PASSWORD || "";
+        this.username = c.username || process.env.ODEAL_EBELGE_USERNAME || "";
+        this.password = c.password || process.env.ODEAL_EBELGE_PASSWORD || "";
+        this.vkn = c.vkn || process.env.ODEAL_EBELGE_VKN || "";
+        this.erpCode = c.erpCode || process.env.ODEAL_EBELGE_ERP_CODE || "JETPOS";
         this.base = (c.baseUrl || process.env.ODEAL_EBELGE_BASE_URL ||
             (c.environment === "prod" ? PROD_BASE : STAGE_BASE)).replace(/\/+$/, "");
-        this.configured = !!(username && password);
-        this.authHeader = this.configured
-            ? "Basic " + Buffer.from(`${username}:${password}`).toString("base64")
-            : "";
+        this.configured = !!(this.username && this.password);
     }
 
-    private headers(): Record<string, string> {
-        return { "Content-Type": "application/json", Authorization: this.authHeader };
-    }
-
-    /** ⚠️ Gerçek şema RAR'dan gelince yazılacak (UBL/JSON alan eşlemesi). */
-    private buildInvoicePayload(_data: InvoiceData): Record<string, unknown> {
-        // TODO: Ödeal e-Belge şemasına göre eşle (müşteri VKN, satırlar, KDV, docType…)
-        throw new Error("Ödeal e-Belge payload şeması henüz tanımlı değil (RAR bekleniyor).");
-    }
-
-    async sendInvoice(data: InvoiceData): Promise<InvoiceResult> {
-        if (!this.configured) return { success: false, error: "Ödeal e-Belge kimlik bilgileri eksik (env/ayar)." };
-        if (!EP.sendInvoice) return { success: false, error: "Ödeal e-Belge endpoint'i tanımlı değil (RAR bekleniyor)." };
+    /** Login → jwt token (1 saat cache). */
+    private async getToken(): Promise<string | null> {
+        const now = Date.now();
+        if (this.token && now - this.tokenAt < 55 * 60 * 1000) return this.token;
         try {
-            const body = this.buildInvoicePayload(data);
-            const res = await fetch(`${this.base}${EP.sendInvoice}`, {
-                method: "POST", headers: this.headers(), body: JSON.stringify(body),
+            const res = await fetch(`${this.base}/api/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username: this.username, password: this.password }),
             });
-            const text = await res.text();
-            let json: any = null; try { json = text ? JSON.parse(text) : null; } catch { /* düz metin */ }
-            if (!res.ok) return { success: false, error: `Ödeal e-Belge HTTP ${res.status}: ${String(text).slice(0, 200)}` };
-            // ⚠️ Alan adları (ettn/pdfUrl/listId) yanıt şemasına göre eşlenecek
-            return { success: true, ettn: json?.ettn, pdfUrl: json?.pdfUrl, listId: json?.id };
+            const json: any = await res.json().catch(() => null);
+            // token alanı: doküman "Login'den alınan token" diyor; yaygın alanlar denenir
+            const tok = json?.jwt || json?.token || json?.Result || json?.access_token || json?.data?.token;
+            if (!tok) { console.error("[odeal-ebelge] login token alınamadı:", res.status); return null; }
+            this.token = String(tok);
+            this.tokenAt = now;
+            return this.token;
+        } catch (e) {
+            console.error("[odeal-ebelge] login hatası:", (e as Error)?.message);
+            return null;
+        }
+    }
+
+    /** ubl-restapi'ye method-dispatch istek. */
+    private async ublApi(method: string, extra: Record<string, unknown>): Promise<any> {
+        const jwt = await this.getToken();
+        if (!jwt) throw new Error("Ödeal e-Belge login başarısız (token yok).");
+        const res = await fetch(`${this.base}/api/ubl-restapi`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ jwt, method, ...extra }),
+        });
+        const text = await res.text();
+        let json: any = null; try { json = text ? JSON.parse(text) : null; } catch { /* düz metin */ }
+        return json ?? { StatusCode: String(res.status), Message: text };
+    }
+
+    async sendInvoice(invoiceData: InvoiceData): Promise<InvoiceResult> {
+        if (!this.configured) return { success: false, error: "Ödeal e-Belge kimlik bilgileri eksik (env/ayar)." };
+        try {
+            // 1) UBL-TR XML üret (GİB standardı) + base64
+            const ublXml = generateUBL(invoiceData, this.erpCode, this.vkn);
+            const invoiceB64 = Buffer.from(ublXml, "utf8").toString("base64");
+
+            // 2) saveInvoiceUBL
+            const r = await this.ublApi("saveInvoiceUBL", { invoice: invoiceB64, responseObject: "1" });
+
+            const ok = String(r?.StatusCode) === "200" && (r?.Success === true || r?.Success === "true");
+            if (!ok) {
+                return { success: false, error: r?.Message || r?.ErrorMessage || `Ödeal e-Belge hata (StatusCode ${r?.StatusCode})` };
+            }
+            // Result = belge UUID
+            return { success: true, listId: r?.Result, ettn: r?.Result };
         } catch (e: any) {
             return { success: false, error: e?.message || "Ödeal e-Belge gönderim hatası" };
         }
     }
 
     async checkStatus(docNo: string, _docType: string): Promise<DocumentStatus | null> {
-        if (!this.configured || !EP.status) return null;
+        if (!this.configured) return null;
         try {
-            const res = await fetch(`${this.base}${EP.status.replace("{id}", encodeURIComponent(docNo))}`, {
-                method: "GET", headers: this.headers(),
-            });
-            if (!res.ok) return null;
-            const json: any = await res.json().catch(() => null);
-            if (!json) return null;
-            return { belgeNo: docNo, durum: json?.status ?? "", ettn: json?.ettn ?? "", pdfUrl: json?.pdfUrl };
+            // Ödeal e-Belge durum sorgu method'u (InvoiceStatus.txt: "" kuyruk, 0 hata, 1 GİB'e gitti, 2 iletildi)
+            const r = await this.ublApi("getInvoiceStatus", { uuid: docNo });
+            if (!r) return null;
+            return {
+                belgeNo: docNo,
+                durum: String(r?.Result?.status ?? r?.status ?? r?.StatusCode ?? ""),
+                ettn: r?.Result?.uuid ?? docNo,
+                pdfUrl: r?.Result?.pdfUrl,
+            };
         } catch { return null; }
     }
 }
