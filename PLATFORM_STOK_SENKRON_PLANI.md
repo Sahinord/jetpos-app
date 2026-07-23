@@ -106,9 +106,14 @@ Her platform için "şu an kaç ürün / hangi ürünler satışta aktif" görü
 
 ---
 
-## 7. Karar bekleyen
+## 7. Kararlar
 
-1. **Stok kaynağı:** Getir/YS için hangi stok? Ana `stock_quantity` mi, o platform mağazasının `warehouse_stock.quantity`'si mi? (Önerim: platform mağazasının warehouse stoğu — çünkü o mağazaya ayrılan stok.)
+1. **Stok kaynağı: ✅ KARAR VERİLDİ — ana fiziksel stok (`products.stock_quantity`).**
+   Tüm platformlar TEK fiziksel stoğu paylaşır. Trendyol'da satılınca da fiziksel
+   stok düşer (ortak); fiziksel stok 0 olunca Getir/YS'de offline, >0 olunca aktif.
+   Warehouse bazlı ayrım YOK — tek kaynak, basit.
+
+## 7-b. Kalan karar
 2. **Eşik:** "bitince offline" = stok `<= 0` mı, yoksa bir alt eşik (`<= min_quantity`) mı?
 3. **İlk sürüm tetikleme:** Outbox mu, yoksa basit realtime tetik mi? (Önerim: outbox — sağlam.)
 
