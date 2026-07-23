@@ -19,6 +19,7 @@ export default function ProductMapping({ platform }: { platform: string }) {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [mappingLoading, setMappingLoading] = useState(false); // New state for auto-mapping loading
+    const [mapProgress, setMapProgress] = useState<string>(""); // Eşleme ilerleme metni (5000 üründe kullanıcı bilgisi)
 
     // Modal & Picking States
     const [isPickerOpen, setIsPickerOpen] = useState(false);
@@ -66,7 +67,7 @@ export default function ProductMapping({ platform }: { platform: string }) {
 
             // 2. Ürünleri ve Mevcut Eşleşmeleri çek
             const [productsRes, mappingsRes] = await Promise.all([
-                supabase.from('products').select('id, name, barcode, stock_quantity').eq('tenant_id', currentTenant?.id).limit(100),
+                supabase.from('products').select('id, name, barcode, stock_quantity').eq('tenant_id', currentTenant?.id).order('name').limit(2000),
                 supabase.from('external_mappings').select('*').eq('tenant_id', currentTenant?.id).eq('platform', platform)
             ]);
 
@@ -170,61 +171,119 @@ export default function ProductMapping({ platform }: { platform: string }) {
         if (!error) setSettings(data);
     };
 
+    // ── OTOMATİK BARKOD EŞLEME (5000+ ürün için ölçekli) ──
+    // SADECE bu butona basınca çalışır (mount'ta tetiklenmez).
+    // GÜVENLİK: Bu işlem YALNIZCA eşleme kaydı (external_mappings) oluşturur;
+    // Trendyol'a HİÇBİR stok/fiyat GÖNDERMEZ. Stok gönderimi ayrı "Stok
+    // Senkronize Et" butonuyla, sen istediğinde olur. Yani eşleme stokları bozmaz.
     const autoMapByBarcode = async () => {
         if (!settings || !currentTenant) return;
+
+        if (!confirm(
+            "Barkod üzerinden otomatik eşleme başlatılsın mı?\n\n" +
+            "• Tüm ürünlerin barkodları Trendyol ürünleriyle karşılaştırılır.\n" +
+            "• Yalnızca eşleşme kaydı oluşturulur — Trendyol'a stok GÖNDERİLMEZ.\n" +
+            "• Stok gönderimi ayrıca 'Stok Senkronize Et' ile yapılır."
+        )) return;
+
         setMappingLoading(true);
+        setMapProgress("Başlıyor...");
         try {
             const client = createTrendyolGoClient({
                 trendyolGo: settings.api_config || settings.settings
             });
 
-            // 1. Trendyol'daki tüm aktif ürünleri çek
-            const externalProducts = await client.getProducts('ON_SALE', undefined, 0, 500);
+            // 1) TRENDYOL tarafı — TÜM aktif ürünleri sayfalı çek (500'lük)
+            setMapProgress("Trendyol ürünleri çekiliyor...");
+            const trendyolBarcodes = new Map<string, any>();
+            const PAGE = 500;
+            for (let page = 0; page < 200; page++) { // güvenlik üst sınırı: 100k ürün
+                const batch = await client.getProducts('ON_SALE', undefined, page, PAGE);
+                if (!batch || batch.length === 0) break;
+                for (const p of batch) {
+                    if (p.barcode) trendyolBarcodes.set(String(p.barcode).toLowerCase(), p);
+                }
+                setMapProgress(`Trendyol ürünleri: ${trendyolBarcodes.size} çekildi...`);
+                if (batch.length < PAGE) break; // son sayfa
+            }
 
-            if (!externalProducts.length) {
-                alert("❌ Trendyol'da aktif ürün bulunamadı.");
+            if (trendyolBarcodes.size === 0) {
+                alert("❌ Trendyol'da aktif ürün bulunamadı. Kimlik/mağaza ayarlarını kontrol edin.");
                 return;
             }
 
-            // 2. Barkodları bir sete alalım (Hız için)
-            const trendyolBarcodes = new Map(externalProducts.map(p => [p.barcode.toLowerCase(), p]));
+            // 2) JETPOS tarafı — barkodu olan TÜM ürünleri sayfalı çek (1000'lik range)
+            setMapProgress("JetPos ürünleri çekiliyor...");
+            const jetProducts: any[] = [];
+            const RANGE = 1000;
+            for (let i = 0; i < 100; i++) { // güvenlik üst sınırı: 100k ürün
+                const from = i * RANGE;
+                const to = from + RANGE - 1;
+                const { data, error } = await supabase
+                    .from('products')
+                    .select('id, barcode')
+                    .eq('tenant_id', currentTenant.id)
+                    .not('barcode', 'is', null)
+                    .range(from, to);
+                if (error) throw error;
+                if (!data || data.length === 0) break;
+                jetProducts.push(...data);
+                setMapProgress(`JetPos ürünleri: ${jetProducts.length} tarandı...`);
+                if (data.length < RANGE) break;
+            }
 
-            // 3. JetPOS'taki barkodu olan ürünlerle karşılaştır
+            // 3) Barkod eşleştir
+            setMapProgress("Barkodlar eşleştiriliyor...");
             const matches: any[] = [];
-            products.forEach(p => {
-                if (p.barcode) {
-                    const extProduct = trendyolBarcodes.get(p.barcode.toLowerCase());
-                    if (extProduct) {
-                        matches.push({
-                            tenant_id: currentTenant.id,
-                            platform: platform,
-                            product_id: p.id,
-                            external_product_id: extProduct.barcode, // Trendyol GO için barcode genelde id yerine geçer
-                            external_sku: extProduct.barcode,
-                            sync_enabled: true
-                        });
-                    }
+            let unmatched = 0;
+            for (const p of jetProducts) {
+                const bc = String(p.barcode || "").toLowerCase();
+                if (!bc) { unmatched++; continue; }
+                const ext = trendyolBarcodes.get(bc);
+                if (ext) {
+                    matches.push({
+                        tenant_id: currentTenant.id,
+                        platform: platform,
+                        product_id: p.id,
+                        external_product_id: ext.barcode, // Trendyol GO'da barcode id yerine geçer
+                        external_sku: ext.barcode,
+                        sync_enabled: true,
+                    });
+                } else {
+                    unmatched++;
                 }
-            });
+            }
 
             if (matches.length === 0) {
-                alert("🤷 Barkodu aynı olan hiçbir ürün bulunamadı.");
+                alert(`🤷 Barkodu aynı olan hiçbir ürün bulunamadı.\n\nTaranan: ${jetProducts.length} JetPos ürünü, ${trendyolBarcodes.size} Trendyol ürünü.\nBarkodların iki tarafta da aynı olduğundan emin olun.`);
                 return;
             }
 
-            // 4. Veritabanına topluca (Upsert) kaydet
-            const { error } = await supabase
-                .from('external_mappings')
-                .upsert(matches, { onConflict: 'tenant_id,platform,product_id' });
+            // 4) Batch'ler halinde upsert (5000'i tek seferde göndermek başarısız olabilir)
+            const UPSERT_BATCH = 500;
+            let saved = 0;
+            for (let i = 0; i < matches.length; i += UPSERT_BATCH) {
+                const chunk = matches.slice(i, i + UPSERT_BATCH);
+                const { error } = await supabase
+                    .from('external_mappings')
+                    .upsert(chunk, { onConflict: 'tenant_id,platform,product_id' });
+                if (error) throw error;
+                saved += chunk.length;
+                setMapProgress(`Kaydediliyor: ${saved}/${matches.length}...`);
+            }
 
-            if (error) throw error;
-
-            alert(`✅ ${matches.length} ürün barkod üzerinden otomatik olarak eşleştirildi!`);
+            alert(
+                `✅ Eşleme tamamlandı!\n\n` +
+                `• Eşleşen: ${matches.length} ürün\n` +
+                `• Eşleşmeyen (barkodu Trendyol'da yok): ${unmatched} ürün\n\n` +
+                `Not: Trendyol'a stok gönderilmedi. Hazır olunca "Stok Senkronize Et" ile gönderin.`
+            );
             fetchData();
         } catch (err: any) {
             alert("Hata: " + err.message);
         } finally {
             setMappingLoading(false);
+            setMapProgress("");
         }
     };
     const toggleProductSync = async (mapping: any) => {
@@ -371,7 +430,7 @@ export default function ProductMapping({ platform }: { platform: string }) {
                         className="flex items-center gap-2 px-6 py-2.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 rounded-xl font-bold transition-all border border-blue-500/20 disabled:opacity-50"
                     >
                         {mappingLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Link className="w-4 h-4" />}
-                        Barkodu Tutarsa Bağla
+                        {mappingLoading ? (mapProgress || "Eşleşiyor...") : "Barkodu Tutarsa Bağla"}
                     </button>
                     <button
                         onClick={toggleStockSync}
