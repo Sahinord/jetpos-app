@@ -22,10 +22,23 @@ export function isAdminHost(): boolean {
     if (typeof window === "undefined") return false;
     const host = (window.location.hostname || "").toLowerCase();
 
-    // Geliştirme ortamı: panel localhost'ta da açılabilsin
-    if (host === "localhost" || host === "127.0.0.1") return true;
+    // GERÇEK yönetici alan adı: admin.jetpos.shop
+    if (host.startsWith("admin.")) return true;
 
-    return host.startsWith("admin.");
+    // GELİŞTİRME: localhost/127.0.0.1 VARSAYILAN olarak NORMAL app'tir
+    // (yoksa localde her işletme girişi "Yetkisiz Erişim" alır — bkz. düzeltme).
+    // Admin panelini localde test etmek için AÇIK opt-in gerekir:
+    //   • URL'de ?admin=1   ya da
+    //   • localStorage'da jp_dev_admin='1'
+    if (host === "localhost" || host === "127.0.0.1") {
+        try {
+            if (new URLSearchParams(window.location.search).get("admin") === "1") return true;
+            if (localStorage.getItem("jp_dev_admin") === "1") return true;
+        } catch { /* yoksay */ }
+        return false;
+    }
+
+    return false;
 }
 
 /**
