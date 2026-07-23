@@ -7,7 +7,7 @@ const IS_ELECTRON = typeof window !== 'undefined' &&
 
 // Production yedek adres — SADECE sayfanın origin'i okunamazsa kullanılır.
 // (Normalde buraya hiç düşmeyiz; aşağıdaki resolveApiBase aynı origin'i seçer.)
-const PROD_API_BASE = 'https://jetpos-app-71jf.vercel.app';
+const PROD_API_BASE = 'https://app.jetpos.shop';
 
 /**
  * API taban adresi.
