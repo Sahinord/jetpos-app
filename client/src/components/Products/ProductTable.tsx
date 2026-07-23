@@ -25,7 +25,8 @@ import {
     RotateCcw,
     Archive,
     ArchiveRestore,
-    ChevronDown
+    ChevronDown,
+    SlidersHorizontal
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { exportToExcel, importFromExcel } from "@/lib/excel";
@@ -53,6 +54,24 @@ export default function ProductTable({ products, categories = [], onEdit, onDele
     const [isBulkStockModalOpen, setIsBulkStockModalOpen] = useState(false);
     const [bulkStockValue, setBulkStockValue] = useState("0");
     const [isRandomStock, setIsRandomStock] = useState(false);
+
+    // NEW: Toplu Alan Düzenleme (seçili ürünlerin ortak alanlarını topluca değiştir)
+    // Her alanın "değiştir mi?" bayrağı + yeni değeri. Sadece işaretlenen alanlar uygulanır;
+    // işaretlenmeyenlere DOKUNULMAZ (yanlışlıkla üzerine yazmayı önler).
+    const [isBulkEditOpen, setIsBulkEditOpen] = useState(false);
+    const [bulkEdit, setBulkEdit] = useState<{
+        category: { on: boolean; value: string };
+        vat: { on: boolean; value: string };
+        unit: { on: boolean; value: string };
+        salePrice: { on: boolean; value: string };
+        purchasePrice: { on: boolean; value: string };
+    }>({
+        category: { on: false, value: "" },
+        vat: { on: false, value: "20" },
+        unit: { on: false, value: "Adet" },
+        salePrice: { on: false, value: "" },
+        purchasePrice: { on: false, value: "" },
+    });
     const [viewingProduct, setViewingProduct] = useState<any>(null);
     const [showBulkImport, setShowBulkImport] = useState(false);
 
@@ -230,6 +249,73 @@ export default function ProductTable({ products, categories = [], onEdit, onDele
             setSelectedProducts([]);
         } else {
             setSelectedProducts(sortedAndFilteredProducts.map((p: any) => p.id));
+        }
+    };
+
+    // ── Toplu Alan Düzenleme ──
+    // İşaretli alanlardan bir güncelleme nesnesi kurar, seçili ürünlere batch'ler halinde uygular.
+    const handleBulkEditApply = async () => {
+        if (selectedProducts.length === 0) return;
+
+        // Sadece işaretli alanları güncelleme nesnesine koy
+        const patch: Record<string, any> = {};
+        if (bulkEdit.category.on) patch.category_id = bulkEdit.category.value || null;
+        if (bulkEdit.vat.on) patch.vat_rate = Number(bulkEdit.vat.value) || 0;
+        if (bulkEdit.unit.on) patch.unit = bulkEdit.unit.value || "Adet";
+        if (bulkEdit.salePrice.on) {
+            const v = Number(bulkEdit.salePrice.value);
+            if (!isNaN(v)) patch.sale_price = v;
+        }
+        if (bulkEdit.purchasePrice.on) {
+            const v = Number(bulkEdit.purchasePrice.value);
+            if (!isNaN(v)) patch.purchase_price = v;
+        }
+
+        if (Object.keys(patch).length === 0) {
+            if (showToast) showToast("Değiştirilecek en az bir alan seçin.", "error");
+            return;
+        }
+
+        if (!confirm(`${selectedProducts.length} ürünün seçili alanları güncellenecek. Emin misiniz?`)) return;
+
+        try {
+            const savedTenantId = localStorage.getItem('currentTenantId');
+            if (savedTenantId) await setCurrentTenant(savedTenantId);
+
+            const total = selectedProducts.length;
+            const BATCH_SIZE = 50;
+            let successCount = 0;
+
+            isCancelledRef.current = false;
+            setProcessing({ active: true, current: 0, total, label: "Ürünler topluca güncelleniyor..." });
+
+            for (let i = 0; i < selectedProducts.length; i += BATCH_SIZE) {
+                if (isCancelledRef.current) break;
+                const batchIds = selectedProducts.slice(i, i + BATCH_SIZE);
+                setProcessing(prev => ({ ...prev, current: Math.min(i + BATCH_SIZE, total) }));
+
+                // Tek sorguda batch güncelleme (aynı patch tüm batch'e)
+                const { error, count } = await supabase
+                    .from('products')
+                    .update({ ...patch, updated_at: new Date().toISOString() }, { count: 'exact' })
+                    .in('id', batchIds)
+                    .eq('tenant_id', savedTenantId);
+
+                if (error) {
+                    console.error("Toplu düzenleme hatası:", error.message);
+                } else {
+                    successCount += (count ?? batchIds.length);
+                }
+            }
+
+            setProcessing({ active: false, current: 0, total: 0, label: "" });
+            setIsBulkEditOpen(false);
+            setSelectedProducts([]);
+            if (showToast) showToast(`${successCount} ürün güncellendi.`, "success");
+            if (onRefresh) onRefresh();
+        } catch (e: any) {
+            setProcessing({ active: false, current: 0, total: 0, label: "" });
+            if (showToast) showToast("Hata: " + (e?.message || ""), "error");
         }
     };
 
@@ -880,6 +966,13 @@ export default function ProductTable({ products, categories = [], onEdit, onDele
                                             <span>STOK GÜNCELLE</span>
                                         </button>
                                         <button
+                                            onClick={() => setIsBulkEditOpen(true)}
+                                            className="flex items-center space-x-2 bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/30 px-4 py-2.5 rounded-xl text-xs font-bold text-violet-500 transition-all hover:scale-105"
+                                        >
+                                            <SlidersHorizontal className="w-4 h-4" />
+                                            <span>TOPLU DÜZENLE</span>
+                                        </button>
+                                        <button
                                             onClick={handleSendToLabel}
                                             className="flex items-center space-x-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-4 py-2.5 rounded-xl text-xs font-bold text-amber-500 transition-all hover:scale-105"
                                         >
@@ -1336,6 +1429,118 @@ export default function ProductTable({ products, categories = [], onEdit, onDele
                                     className="py-4 px-6 rounded-2xl font-black text-xs tracking-widest bg-blue-500 hover:bg-blue-600 text-white shadow-xl shadow-blue-500/30 transition-all active:scale-95"
                                 >
                                     UYGULA
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* TOPLU DÜZENLE — seçili ürünlerin ortak alanlarını topluca değiştir */}
+            <AnimatePresence>
+                {isBulkEditOpen && (
+                    <div
+                        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+                        onClick={() => setIsBulkEditOpen(false)}
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="glass-card max-w-lg w-full p-8 space-y-6 relative shadow-2xl border border-violet-500/20 max-h-[90vh] overflow-y-auto"
+                        >
+                            <div className="text-center space-y-2">
+                                <div className="w-16 h-16 bg-violet-500/10 rounded-3xl flex items-center justify-center text-violet-400 mx-auto border border-violet-500/20">
+                                    <SlidersHorizontal className="w-8 h-8" />
+                                </div>
+                                <h3 className="text-2xl font-black text-white tracking-tight">TOPLU DÜZENLE</h3>
+                                <p className="text-secondary text-sm font-medium leading-relaxed">
+                                    Seçili <strong className="text-violet-400">{selectedProducts.length} ürün</strong> için değiştirmek istediğiniz alanları işaretleyin.
+                                    <br /><span className="text-[11px] text-secondary/60">İşaretlemediğiniz alanlara dokunulmaz.</span>
+                                </p>
+                            </div>
+
+                            <div className="space-y-3">
+                                {/* Kategori */}
+                                <div className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${bulkEdit.category.on ? 'bg-violet-500/5 border-violet-500/30' : 'bg-white/5 border-white/10'}`}>
+                                    <button onClick={() => setBulkEdit(b => ({ ...b, category: { ...b.category, on: !b.category.on } }))}
+                                        className={`w-11 h-6 rounded-full transition-all relative shrink-0 ${bulkEdit.category.on ? 'bg-violet-500' : 'bg-slate-700'}`}>
+                                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${bulkEdit.category.on ? 'right-1' : 'left-1'}`} />
+                                    </button>
+                                    <span className="text-sm font-bold text-foreground w-28 shrink-0">Kategori</span>
+                                    <select disabled={!bulkEdit.category.on} value={bulkEdit.category.value}
+                                        onChange={e => setBulkEdit(b => ({ ...b, category: { ...b.category, value: e.target.value } }))}
+                                        className="flex-1 bg-primary/5 border border-border rounded-xl px-3 py-2 text-sm text-foreground outline-none focus:border-violet-500/50 disabled:opacity-40">
+                                        <option value="">— Kategorisiz —</option>
+                                        {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                    </select>
+                                </div>
+
+                                {/* KDV */}
+                                <div className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${bulkEdit.vat.on ? 'bg-violet-500/5 border-violet-500/30' : 'bg-white/5 border-white/10'}`}>
+                                    <button onClick={() => setBulkEdit(b => ({ ...b, vat: { ...b.vat, on: !b.vat.on } }))}
+                                        className={`w-11 h-6 rounded-full transition-all relative shrink-0 ${bulkEdit.vat.on ? 'bg-violet-500' : 'bg-slate-700'}`}>
+                                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${bulkEdit.vat.on ? 'right-1' : 'left-1'}`} />
+                                    </button>
+                                    <span className="text-sm font-bold text-foreground w-28 shrink-0">KDV Oranı %</span>
+                                    <select disabled={!bulkEdit.vat.on} value={bulkEdit.vat.value}
+                                        onChange={e => setBulkEdit(b => ({ ...b, vat: { ...b.vat, value: e.target.value } }))}
+                                        className="flex-1 bg-primary/5 border border-border rounded-xl px-3 py-2 text-sm text-foreground outline-none focus:border-violet-500/50 disabled:opacity-40">
+                                        {[0, 1, 10, 20].map(v => <option key={v} value={v}>%{v}</option>)}
+                                    </select>
+                                </div>
+
+                                {/* Birim */}
+                                <div className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${bulkEdit.unit.on ? 'bg-violet-500/5 border-violet-500/30' : 'bg-white/5 border-white/10'}`}>
+                                    <button onClick={() => setBulkEdit(b => ({ ...b, unit: { ...b.unit, on: !b.unit.on } }))}
+                                        className={`w-11 h-6 rounded-full transition-all relative shrink-0 ${bulkEdit.unit.on ? 'bg-violet-500' : 'bg-slate-700'}`}>
+                                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${bulkEdit.unit.on ? 'right-1' : 'left-1'}`} />
+                                    </button>
+                                    <span className="text-sm font-bold text-foreground w-28 shrink-0">Birim</span>
+                                    <select disabled={!bulkEdit.unit.on} value={bulkEdit.unit.value}
+                                        onChange={e => setBulkEdit(b => ({ ...b, unit: { ...b.unit, value: e.target.value } }))}
+                                        className="flex-1 bg-primary/5 border border-border rounded-xl px-3 py-2 text-sm text-foreground outline-none focus:border-violet-500/50 disabled:opacity-40">
+                                        {["Adet", "KG"].map(u => <option key={u} value={u}>{u}</option>)}
+                                    </select>
+                                </div>
+
+                                {/* Satış Fiyatı */}
+                                <div className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${bulkEdit.salePrice.on ? 'bg-violet-500/5 border-violet-500/30' : 'bg-white/5 border-white/10'}`}>
+                                    <button onClick={() => setBulkEdit(b => ({ ...b, salePrice: { ...b.salePrice, on: !b.salePrice.on } }))}
+                                        className={`w-11 h-6 rounded-full transition-all relative shrink-0 ${bulkEdit.salePrice.on ? 'bg-violet-500' : 'bg-slate-700'}`}>
+                                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${bulkEdit.salePrice.on ? 'right-1' : 'left-1'}`} />
+                                    </button>
+                                    <span className="text-sm font-bold text-foreground w-28 shrink-0">Satış Fiyatı ₺</span>
+                                    <input disabled={!bulkEdit.salePrice.on} type="number" step="0.01" value={bulkEdit.salePrice.value}
+                                        onChange={e => setBulkEdit(b => ({ ...b, salePrice: { ...b.salePrice, value: e.target.value } }))}
+                                        placeholder="Yeni fiyat"
+                                        className="flex-1 bg-primary/5 border border-border rounded-xl px-3 py-2 text-sm text-foreground outline-none focus:border-violet-500/50 disabled:opacity-40" />
+                                </div>
+
+                                {/* Alış Fiyatı */}
+                                <div className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${bulkEdit.purchasePrice.on ? 'bg-violet-500/5 border-violet-500/30' : 'bg-white/5 border-white/10'}`}>
+                                    <button onClick={() => setBulkEdit(b => ({ ...b, purchasePrice: { ...b.purchasePrice, on: !b.purchasePrice.on } }))}
+                                        className={`w-11 h-6 rounded-full transition-all relative shrink-0 ${bulkEdit.purchasePrice.on ? 'bg-violet-500' : 'bg-slate-700'}`}>
+                                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${bulkEdit.purchasePrice.on ? 'right-1' : 'left-1'}`} />
+                                    </button>
+                                    <span className="text-sm font-bold text-foreground w-28 shrink-0">Alış Fiyatı ₺</span>
+                                    <input disabled={!bulkEdit.purchasePrice.on} type="number" step="0.01" value={bulkEdit.purchasePrice.value}
+                                        onChange={e => setBulkEdit(b => ({ ...b, purchasePrice: { ...b.purchasePrice, value: e.target.value } }))}
+                                        placeholder="Yeni alış fiyatı"
+                                        className="flex-1 bg-primary/5 border border-border rounded-xl px-3 py-2 text-sm text-foreground outline-none focus:border-violet-500/50 disabled:opacity-40" />
+                                </div>
+
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <button onClick={() => setIsBulkEditOpen(false)}
+                                    className="py-4 px-6 rounded-2xl font-black text-xs tracking-widest bg-primary/5 hover:bg-primary/10 text-secondary transition-all active:scale-95">
+                                    VAZGEÇ
+                                </button>
+                                <button onClick={handleBulkEditApply}
+                                    className="py-4 px-6 rounded-2xl font-black text-xs tracking-widest bg-violet-500 hover:bg-violet-600 text-white shadow-xl shadow-violet-500/30 transition-all active:scale-95">
+                                    {selectedProducts.length} ÜRÜNE UYGULA
                                 </button>
                             </div>
                         </motion.div>
