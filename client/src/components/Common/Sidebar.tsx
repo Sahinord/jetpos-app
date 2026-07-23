@@ -467,10 +467,22 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
             return category;
         }
 
-        // --- TRENDYOL GO / PLATFORM MAĞ.AZA İZOLASYONU ---
-        if (activeWarehouse?.platform === 'trendyol_go' || activeWarehouse?.platform === 'trendyol' || activeWarehouse?.platform === 'hepsiburada') {
-            const platformLabel = activeWarehouse.platform === 'trendyol_go' ? 'Trendyol GO' : activeWarehouse.platform === 'trendyol' ? 'Trendyol Pazaryeri' : 'Hepsiburada';
-            const integrationId = activeWarehouse.platform === 'trendyol_go' ? 'trendyol_go_integration' : activeWarehouse.platform === 'trendyol' ? 'trendyol_integration' : 'hepsiburada_integration';
+        // --- PLATFORM MAĞAZA İZOLASYONU (TÜM sabit mağazalar) ---
+        // Platform mağazasına geçince menü daraltılır: sadece Ürün Listesi + o
+        // platformun entegrasyon paneli görünür (diğer kategoriler gizlenir).
+        // TEK harita: yeni platform eklemek = bir satır eklemek (hardcode dağınıklığı yok).
+        const PLATFORM_MAP: Record<string, { label: string; tab: string }> = {
+            trendyol_go:  { label: 'Trendyol GO',        tab: 'trendyol_go_integration' },
+            trendyol:     { label: 'Trendyol Pazaryeri', tab: 'trendyol_integration' },
+            hepsiburada:  { label: 'Hepsiburada',        tab: 'hepsiburada_integration' },
+            getir:        { label: 'Getir Çarşı',        tab: 'getir_integration' },
+            yemeksepeti:  { label: 'Yemeksepeti',        tab: 'yemeksepeti_integration' },
+            tgo_yemek:    { label: 'Trendyol · Uber Yemek', tab: 'tgo_yemek_integration' },
+        };
+        const pf = activeWarehouse?.platform ? PLATFORM_MAP[activeWarehouse.platform] : undefined;
+        if (pf) {
+            const platformLabel = pf.label;
+            const integrationId = pf.tab;
 
             // Sadece izin verilen kategoriler
             if (category.id === 'main') {

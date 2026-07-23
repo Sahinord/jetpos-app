@@ -165,17 +165,19 @@ export default function Home() {
     }
   }, [activeEmployee]);
 
-  // Platform mağazası seçildiğinde otomatik entegrasyon paneline yönlendir
+  // Platform mağazası seçildiğinde otomatik entegrasyon paneline yönlendir.
+  // TEK harita — Sidebar'daki PLATFORM_MAP ile birebir aynı; yeni platform = bir satır.
   useEffect(() => {
-    if (activeWarehouse?.platform === 'trendyol_go') {
-      setActiveTab('trendyol_go_integration');
-    } else if (activeWarehouse?.platform === 'trendyol') {
-      setActiveTab('trendyol_integration');
-    } else if (activeWarehouse?.platform === 'hepsiburada') {
-      setActiveTab('hepsiburada_integration');
-    } else if (activeWarehouse?.platform === 'getir') {
-      setActiveTab('getir_integration');
-    }
+    const PLATFORM_TAB: Record<string, string> = {
+      trendyol_go: 'trendyol_go_integration',
+      trendyol: 'trendyol_integration',
+      hepsiburada: 'hepsiburada_integration',
+      getir: 'getir_integration',
+      yemeksepeti: 'yemeksepeti_integration',
+      tgo_yemek: 'tgo_yemek_integration',
+    };
+    const tab = activeWarehouse?.platform ? PLATFORM_TAB[activeWarehouse.platform] : undefined;
+    if (tab) setActiveTab(tab);
   }, [activeWarehouse]);
 
   // Initialize Sync Service
