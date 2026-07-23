@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { X, Calculator, Zap, Upload, Image as ImageIcon, RefreshCcw, Package, Barcode, Tag, DollarSign, Box, ChevronDown, Sparkles, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { calculateProfit, suggestSalePrice } from "@/lib/calculations";
+import PriceCalculator from "./PriceCalculator";
 
 export default function ProductModal({ isOpen, onClose, onSave, product, categories, isSaving }: any) {
     const [formData, setFormData] = useState({
@@ -251,7 +252,14 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
 
                             <div className="grid grid-cols-3 gap-2">
                                 <div>
-                                    <label className="text-[9px] font-bold text-slate-500 mb-1 block">ALIŞ (₺)</label>
+                                    <div className="flex items-center justify-between mb-1">
+                                        <label className="text-[9px] font-bold text-slate-500">ALIŞ (₺)</label>
+                                        <PriceCalculator
+                                            baseValue={Number(formData.purchase_price) || 0}
+                                            onApply={(v) => setFormData((f: any) => ({ ...f, purchase_price: String(v) }))}
+                                            label="Alış fiyatı hesapla (% / ₺)"
+                                        />
+                                    </div>
                                     <input
                                         type="text" inputMode="decimal"
                                         className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-3 py-2.5 text-sm font-bold text-white outline-none focus:border-primary/30 transition-all tabular-nums"
@@ -262,9 +270,16 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                 <div>
                                     <div className="flex items-center justify-between mb-1">
                                         <label className="text-[9px] font-bold text-slate-500">SATIŞ (₺)</label>
-                                        <button onClick={handleSuggestPrice} className="text-[9px] text-primary font-bold flex items-center gap-0.5 hover:underline">
-                                            <Sparkles size={9} /> Öneri
-                                        </button>
+                                        <div className="flex items-center gap-1.5">
+                                            <button onClick={handleSuggestPrice} className="text-[9px] text-primary font-bold flex items-center gap-0.5 hover:underline">
+                                                <Sparkles size={9} /> Öneri
+                                            </button>
+                                            <PriceCalculator
+                                                baseValue={Number(formData.sale_price) || 0}
+                                                onApply={(v) => setFormData((f: any) => ({ ...f, sale_price: String(v) }))}
+                                                label="Satış fiyatı hesapla (% / ₺)"
+                                            />
+                                        </div>
                                     </div>
                                     <input
                                         type="text" inputMode="decimal"
