@@ -43,18 +43,27 @@
 
 ---
 
-## 4. ⏳ Getir (Çarşı + Yemek)
+## 4. 🟡 Getir (Çarşı) — YANIT GELDİ (20.07.2026)
 
-- **Sorduğumuz:**
-  1. GetirÇarşı test hesabı (API kimliği + test mağazası)
-  2. **KRİTİK:** Çarşı'da ürün **adet stoğu** mu var, yoksa sadece **satışta/kapalı (availability)** mı? Stok bitince otomatik kapatma için hangi endpoint?
-  3. Mevcut Çarşı webhook entegrasyonunda eksik var mı?
-  4. Güncel ürün/stok dokümanı
-- **Bekleyen:** Test hesabı + availability API teyidi
-- **Gelince açılır:** Platform stok/availability senkron motoru (bkz. `PLATFORM_STOK_SENKRON_PLANI.md` dilim 3)
-- **Durum:** ⏳ Mail gönderildi, yanıt bekleniyor
-- **Kod durumu:** Getir Çarşı bizde sadece **webhook-inbound** (sipariş alıyoruz). Ürün aç/kapat (availability) ucu **YOK** — Getir'in modelini teyit etmeden kodlanmayacak.
-- **Doküman notu:** developers.getir.com JavaScript-render SPA → fetch ile okunamıyor, endpoint'ler buradan doğrulanamadı. Bu yüzden test hesabı + doğrudan soru şart.
+Getir cevapladı. Soruların çoğu netleşti; sadece **test ortamı** bekleniyor.
+
+- ✅ **Stok/availability API TEYİTLİ:** `POST /products/price-and-quantity`.
+  `quantity=0` → satışa kapanır, `quantity>0` → açılır. **Buffer istiyorlar:** stok
+  eşiğin (örn. 5) altına düşünce **quantity ve price = 0** gönder.
+- ✅ **Sipariş webhook'u sorunsuz** — eksik yok.
+- ⏳ **Test ortamı gecikmiş** — API kimliği + test işletmesi "en kısa sürede" gelecek.
+- 📄 **Doküman:** GetirÇarşı API Google Doc + Swagger `product` servisleri → test ortamı tanımlanınca erişilecek.
+
+- **Gelince açılır:** Getir Çarşı stok/availability push (`PLATFORM_STOK_SENKRON_PLANI.md` dilim 3). Endpoint + buffer mantığı KESİN; sadece outbound auth (base URL + kimlik header'ı) test env'den gelecek.
+
+### 🔴 DİKKAT — canlıya geçerken düzeltilecek
+- Getir'e verilen webhook adresi **`jetpos-client-test.vercel.app/api/getir-carsi/new-order`** — bu **ESKİ test domaini!** Artık POS `app.jetpos.shop`'ta. Canlıya geçerken Getir'e:
+  - **Doğru webhook URL'i:** `https://app.jetpos.shop/api/getir-carsi/new-order`
+  - Belirlenen **`x-api-key`** değeri
+  yeniden bildirilmeli (Getir bunu özellikle hatırlattı).
+
+## 4-b. ⏳ Getir Yemek
+- Ayrı kanal; test hesabı aynı Getir sürecinde istenebilir. Kod TGO/Getir modelinde hazır.
 
 ---
 

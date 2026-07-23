@@ -13,7 +13,7 @@ Kullanıcının dediği gibi **hepsi ayrı sistem.** Doğru kurmanın yolu, plat
 |---|---|---|
 | Trendyol Pazaryeri | **Sayısal stok** | adet + fiyat (`price-and-inventory`) — MEVCUT |
 | Trendyol GO | **Sayısal stok** | adet + fiyat (grocery `price-and-inventory`) — MEVCUT |
-| **Getir Çarşı** | **Var/Yok (availability)** | ürün aktif / offline — **YOK, kurulacak** |
+| **Getir Çarşı** | **Quantity=0 ile aç/kapa** | `/products/price-and-quantity` — ✅ TEYİTLİ (aşağıda) |
 | **Yemeksepeti** | **Var/Yok (availability)** | ürün available true/false — **YOK, kimlik bekliyor** |
 
 **Availability mantığı (Getir + Yemeksepeti):**
@@ -21,7 +21,19 @@ Kullanıcının dediği gibi **hepsi ayrı sistem.** Doğru kurmanın yolu, plat
 JetPos stok > 0  VE  platform_prices[x].active == true   →  o platformda AKTİF (satışta)
 JetPos stok <= 0  (ya da active=false)                    →  o platformda OFFLINE
 ```
-Yani adet göndermiyoruz; sadece "aç/kapa" sinyali.
+
+### ✅ GETİR ÇARŞI — TEYİTLİ (Getir yanıtı, 20.07.2026)
+- **Endpoint:** `POST /products/price-and-quantity`
+- **quantity = 0** gönder → ürün **satışa kapanır (offline)**
+- **quantity > 0** gönder → ürün **satışa açılır**
+- **BUFFER ZORUNLU:** Getir, stok bir eşiğin (örn. 5) altına düşünce **quantity VE price = 0** gönderilmesini istiyor. Yani "kapat" = quantity 0 **ve** price 0.
+- Model: aslında quantity endpoint'i ama sıfır = kapalı olarak kullanılıyor. Bizim mantığımız:
+  ```
+  fiziksel stok <= BUFFER (varsayılan 5)  →  quantity=0, price=0   (KAPAT)
+  fiziksel stok >  BUFFER                 →  quantity=stok, price=platform fiyatı (AÇIK)
+  ```
+- **Kalan:** OUTBOUND auth (base URL + kimlik header'ı) test ortamıyla + Swagger/Google Doc'tan gelecek. Endpoint yolu ve semantiği KESİN; sadece auth detayı test env bekliyor.
+- Doküman: Google Doc + Swagger (test ortamı tanımlanınca erişilecek).
 
 ---
 
