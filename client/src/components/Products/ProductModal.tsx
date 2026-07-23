@@ -49,6 +49,8 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
     });
 
     const [showAdvancedPricing, setShowAdvancedPricing] = useState(false);
+    // Platform Fiyatları bölümü açık/kapalı (kalabalık olmasın diye katlanabilir)
+    const [showPlatformPrices, setShowPlatformPrices] = useState(true);
 
     useEffect(() => {
         const saved = localStorage.getItem('pricingPrefs');
@@ -437,8 +439,21 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                         {shownPlatforms.length > 0 && (
                             <>
                                 <div className="space-y-4">
-                                    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[2px]">Platform Fiyatları</p>
-                                    {shownPlatforms.map((pf) => {
+                                    {/* Soldaki ok ile açılır/kapanır — kalabalık olmasın diye */}
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPlatformPrices(v => !v)}
+                                        className="flex items-center gap-2 w-full text-left group"
+                                    >
+                                        <ChevronDown className={`w-3.5 h-3.5 text-slate-500 transition-transform ${showPlatformPrices ? '' : '-rotate-90'}`} />
+                                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[2px] group-hover:text-slate-300 transition-colors">
+                                            Platform Fiyatları
+                                        </p>
+                                        <span className="text-[8px] text-slate-600 ml-auto">
+                                            {shownPlatforms.filter(p => platformPrices[p.key]?.active).length} aktif
+                                        </span>
+                                    </button>
+                                    {showPlatformPrices && shownPlatforms.map((pf) => {
                                         const pv = platformPrices[pf.key] || { active: false, price: "0" };
                                         const c = pf.color; // orange | violet | rose
                                         const txt = c === 'violet' ? 'text-violet-400' : c === 'rose' ? 'text-rose-400' : 'text-orange-400';
