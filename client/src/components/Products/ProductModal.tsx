@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { X, Calculator, Zap, Upload, Image as ImageIcon, RefreshCcw, Package, Barcode, Tag, DollarSign, Box, ChevronDown, Sparkles, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { calculateProfit, suggestSalePrice } from "@/lib/calculations";
-import PriceCalculator from "./PriceCalculator";
+import AdvancedPriceCalculator from "./AdvancedPriceCalculator";
 
 // Platform kayıt defteri — tenant'ta açık olanlar modalda gösterilir.
 // key = fixed_warehouses.platform değeri.
@@ -312,11 +312,6 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                 <div>
                                     <div className="flex items-center justify-between mb-1">
                                         <label className="text-[9px] font-bold text-slate-500">ALIŞ (₺)</label>
-                                        <PriceCalculator
-                                            baseValue={Number(formData.purchase_price) || 0}
-                                            onApply={(v) => setFormData((f: any) => ({ ...f, purchase_price: String(v) }))}
-                                            label="Alış fiyatı hesapla (% / ₺)"
-                                        />
                                     </div>
                                     <input
                                         type="text" inputMode="decimal"
@@ -332,10 +327,12 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                             <button onClick={handleSuggestPrice} className="text-[9px] text-primary font-bold flex items-center gap-0.5 hover:underline">
                                                 <Sparkles size={9} /> Öneri
                                             </button>
-                                            <PriceCalculator
-                                                baseValue={Number(formData.sale_price) || 0}
+                                            <AdvancedPriceCalculator
+                                                purchasePrice={Number(formData.purchase_price) || 0}
+                                                vatRate={Number(formData.vat_rate) || 0}
+                                                defaults={{ margin: Number(pricingPrefs.margin) || 30, posCommission: Number(pricingPrefs.commission) || 0, platformCommission: Number(pricingPrefs.platform_commission) || 0, shipping: Number(pricingPrefs.shipping_cost) || 0, withholding: Number(pricingPrefs.withholding) || 0, includeVat: pricingPrefs.includeVat }}
                                                 onApply={(v) => setFormData((f: any) => ({ ...f, sale_price: String(v) }))}
-                                                label="Satış fiyatı hesapla (% / ₺)"
+                                                label="Gelişmiş satış fiyatı hesapla"
                                             />
                                         </div>
                                     </div>
@@ -486,10 +483,12 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                                                 placeholder={`${pf.label} fiyatı`}
                                                             />
                                                         </div>
-                                                        <PriceCalculator
-                                                            baseValue={Number(pv.price) || Number(formData.sale_price) || 0}
+                                                        <AdvancedPriceCalculator
+                                                            purchasePrice={Number(formData.purchase_price) || 0}
+                                                            vatRate={Number(formData.vat_rate) || 0}
+                                                            defaults={{ margin: Number(pricingPrefs.margin) || 30, posCommission: Number(pricingPrefs.commission) || 0, platformCommission: Number(pricingPrefs.platform_commission) || 0, shipping: Number(pricingPrefs.shipping_cost) || 0, withholding: Number(pricingPrefs.withholding) || 0, includeVat: pricingPrefs.includeVat }}
                                                             onApply={(v) => setPlatform(pf.key, { price: String(v) })}
-                                                            label={`${pf.label} fiyatı hesapla`}
+                                                            label={`${pf.label} gelişmiş fiyat hesapla`}
                                                         />
                                                     </div>
                                                     <p className="text-[8px] text-slate-600 mt-1">Dükkan fiyatından bağımsız, sadece {pf.label}&apos;a gönderilir</p>
