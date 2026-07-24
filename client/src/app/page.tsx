@@ -83,6 +83,8 @@ export default function Home() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isPOSAuthorized, setIsPOSAuthorized] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  // Arka plana alınmış ürün düzenleme taslakları (kaydedilmeden bekletilenler)
+  const [editDrafts, setEditDrafts] = useState<any[]>([]);
   const [saleItems, setSaleItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -670,21 +672,54 @@ export default function Home() {
     if (!currentTenant) return;
     setIsSaving(true);
     try {
-      // Duplicate Barcode Check
-      if (formData.barcode && formData.barcode.trim() !== "") {
-        const barcodeExists = products.some(p =>
-          p.barcode === formData.barcode &&
+      // "Mevcut ürün mü?" — geçerli bir id varsa. Arka plandan (taslak) geri
+      // yüklenen YENİ ürün, editingProduct'ı truthy yapar ama id'si yoktur;
+      // bu durumda yeni ürün gibi davranmalı (insert). isExisting bunu ayırır.
+      const isExisting = !!(editingProduct && (editingProduct as any).id);
+      // Duplicate Barcode Check & Auto-handling
+      let finalBarcode = formData.barcode ? String(formData.barcode).trim() : "";
+      let finalCategoryId = !formData.category_id || formData.category_id === "undefined" ? null : formData.category_id;
+      let isDuplicateHandled = false;
+
+      if (finalBarcode !== "") {
+        const duplicateProduct = products.find(p =>
+          p.barcode?.trim() === finalBarcode &&
           (!editingProduct || (editingProduct as any).id !== p.id)
         );
 
-        if (barcodeExists) {
-          throw new Error("Bu barkod numarası başka bir üründe kullanılıyor!");
+        if (duplicateProduct) {
+          // Find or create "Hatalı Ürünler" category
+          let errorCategory = categories.find(c => c.name?.toLowerCase() === "hatalı ürünler");
+          if (!errorCategory) {
+            // Create "Hatalı Ürünler" category
+            const { data: newCat, error: catError } = await supabase
+              .from('categories')
+              .insert([{ name: "Hatalı Ürünler", tenant_id: currentTenant.id }])
+              .select()
+              .single();
+
+            if (catError) {
+              console.error("Hatalı Ürünler kategorisi oluşturulurken hata:", catError);
+            } else {
+              errorCategory = newCat;
+              // Add to local state so we don't recreate it next time
+              setCategories(prev => [...prev, newCat]);
+            }
+          }
+
+          if (errorCategory) {
+            finalCategoryId = errorCategory.id;
+          }
+
+          // Modify the barcode to avoid database unique constraint failure
+          finalBarcode = `${finalBarcode}-hatali`;
+          isDuplicateHandled = true;
         }
       }
 
       // UUID Debug & Validation Checks
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      const catId = !formData.category_id || formData.category_id === "undefined" ? null : formData.category_id;
+      const catId = finalCategoryId;
 
       if (catId !== null && !uuidRegex.test(catId)) {
         throw new Error(`category_id geçersiz UUID: ${catId}`);
@@ -692,13 +727,13 @@ export default function Home() {
       if (!currentTenant.id || !uuidRegex.test(currentTenant.id)) {
         throw new Error(`tenant_id geçersiz UUID: ${currentTenant.id}`);
       }
-      if (editingProduct && (!(editingProduct as any).id || !uuidRegex.test((editingProduct as any).id))) {
+      if (isExisting && !uuidRegex.test((editingProduct as any).id)) {
         throw new Error(`editingProduct.id geçersiz UUID: ${(editingProduct as any).id}`);
       }
 
-      const productId = editingProduct ? (editingProduct as any).id : null;
+      const productId = isExisting ? (editingProduct as any).id : null;
       let needsLabel = false;
-      if (!editingProduct) {
+      if (!isExisting) {
         needsLabel = true; // new product always needs label
       } else {
         // Check master price change
@@ -720,9 +755,13 @@ export default function Home() {
         }
       }
 
+      // Boş barkod null gönderilmeli — DB'de empty string unique constraint'i ihlal eder,
+      // NULL ise birden fazla olabilir (PostgreSQL NULLS NOT DISTINCT olmadıkça).
+      const barcodeValue = finalBarcode !== "" ? finalBarcode : null;
+
       const productPayload: any = {
         name: formData.name,
-        barcode: formData.barcode,
+        barcode: barcodeValue,
         vat_rate: formData.vat_rate,
         category_id: catId,
         unit: formData.unit,
@@ -757,7 +796,7 @@ export default function Home() {
 
       let savedProductId = productId;
 
-      if (editingProduct) {
+      if (isExisting) {
         const { error: pError } = await supabase
           .from('products')
           .update(productPayload)
@@ -814,14 +853,14 @@ export default function Home() {
         } catch (e) { }
       }
 
-      const oldStock = editingProduct ? (Number((editingProduct as any).stock_quantity) || 0) : 0;
+      const oldStock = isExisting ? (Number((editingProduct as any).stock_quantity) || 0) : 0;
       const newStock = Number(formData.stock_quantity) || 0;
 
-      if (!editingProduct || oldStock !== newStock) {
+      if (!isExisting || oldStock !== newStock) {
         auditLog(
           currentTenant.id,
-          editingProduct ? 'STOCK_CHANGE' : 'PRODUCT_CREATE',
-          editingProduct
+          isExisting ? 'STOCK_CHANGE' : 'PRODUCT_CREATE',
+          isExisting
             ? `"${formData.name}" ürününün stoku güncellendi: ${oldStock} -> ${newStock}`
             : `Yeni ürün eklendi: "${formData.name}" (Başlangıç Stoku: ${newStock})`,
           {
@@ -841,7 +880,7 @@ export default function Home() {
       // ekranını besliyor; şimdiye kadar yalnızca fatura/irsaliye fiyat değişimleri
       // yazdığı için manuel düzenlemeler geçmişte hiç görünmüyordu. field_name'ler
       // geri-alma mantığının beklediği products kolon adlarıyla birebir aynı.
-      if (editingProduct) {
+      if (isExisting) {
         try {
           const ep = editingProduct as any;
           const operator = activeEmployee ? `${activeEmployee.first_name} ${activeEmployee.last_name}` : 'Yönetici';
@@ -882,14 +921,49 @@ export default function Home() {
         }
       }
 
-      showToast(editingProduct ? "Ürün güncellendi" : "Yeni ürün eklendi");
+      if (isDuplicateHandled) {
+        showToast("Barkod çakışması! Ürün 'Hatalı Ürünler' kategorisine kaydedildi.", "warning");
+      } else {
+        showToast(isExisting ? "Ürün güncellendi" : "Yeni ürün eklendi");
+      }
+      // Kaydedilen ürünün açık taslağını (varsa) arka plan çubuğundan kaldır.
+      setEditDrafts(prev => prev.filter(d =>
+        d.__draftId !== (editingProduct as any)?.__draftId &&
+        (!isExisting || d.id !== (editingProduct as any)?.id)
+      ));
       await fetchData();
       setIsModalOpen(false);
     } catch (error: any) {
-      showToast(error.message, "error");
+      let errorMessage = error.message || "Bir hata oluştu";
+      if (errorMessage.includes("products_tenant_barcode_unique")) {
+        errorMessage = "Bu barkod numarası zaten başka bir üründe kullanılıyor!";
+      }
+      showToast(errorMessage, "error");
     } finally {
       setIsSaving(false);
     }
+  };
+
+  // ─── Ürün düzenleme taslakları (arka plana al / geri yükle) ───
+  // Modal "Arka plana al" deyince mevcut düzenlemeyi taslak olarak saklar,
+  // modalı kapatır. Aynı __draftId tekrar gelirse üzerine yazar (mükerrer olmaz).
+  const handleMinimizeEdit = (snapshot: any) => {
+    setEditDrafts(prev => {
+      const rest = prev.filter(d => d.__draftId !== snapshot.__draftId);
+      return [...rest, snapshot];
+    });
+    setEditingProduct(null);
+    setIsModalOpen(false);
+  };
+
+  const restoreDraft = (draft: any) => {
+    setEditDrafts(prev => prev.filter(d => d.__draftId !== draft.__draftId));
+    setEditingProduct(draft);
+    setIsModalOpen(true);
+  };
+
+  const discardDraft = (draftId: string) => {
+    setEditDrafts(prev => prev.filter(d => d.__draftId !== draftId));
   };
 
   const handleDelete = async (id: string) => {
@@ -901,7 +975,8 @@ export default function Home() {
       const { error } = await supabase.from('products')
         .update({
           status: 'passive',
-          deleted_at: new Date().toISOString()
+          deleted_at: new Date().toISOString(),
+          barcode: null  // unique constraint'in silinmiş kayıtlara takılmaması için
         })
         .eq('id', id)
         .eq('tenant_id', currentTenant.id);
@@ -2229,6 +2304,7 @@ export default function Home() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSave}
+        onMinimize={handleMinimizeEdit}
         product={editingProduct}
         categories={categories}
         isSaving={isSaving}
@@ -2238,6 +2314,55 @@ export default function Home() {
             .filter(Boolean)
         ))}
       />
+
+      {/* Arka plandaki ürün düzenleme taslakları — alt köşe çubuğu */}
+      {editDrafts.length > 0 && (
+        <div className="fixed bottom-3 left-3 z-40 flex flex-col gap-2 max-w-[min(92vw,420px)]">
+          <div className="flex items-center gap-2 px-1">
+            <span className="text-[10px] font-bold uppercase tracking-[1.5px] text-slate-400">
+              Taslaklar · {editDrafts.length}
+            </span>
+            <button
+              onClick={() => setEditDrafts([])}
+              className="text-[10px] text-slate-500 hover:text-rose-400 transition-colors"
+              title="Tüm taslakları kapat"
+            >
+              tümünü kapat
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {editDrafts.map((d) => (
+              <div
+                key={d.__draftId}
+                className="group flex items-center gap-2 pl-3 pr-1.5 py-1.5 rounded-xl bg-[#0c1222] border border-white/10 shadow-lg hover:border-primary/50 transition-all"
+              >
+                <button
+                  onClick={() => restoreDraft(d)}
+                  className="flex items-center gap-2 max-w-[220px]"
+                  title="Düzenlemeye devam et"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0 animate-pulse" />
+                  <span className="text-xs font-medium text-white truncate">
+                    {d.__draftName || d.name || "İsimsiz ürün"}
+                  </span>
+                  {d.__isNew && (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 font-bold flex-shrink-0">
+                      YENİ
+                    </span>
+                  )}
+                </button>
+                <button
+                  onClick={() => discardDraft(d.__draftId)}
+                  className="w-6 h-6 rounded-lg flex items-center justify-center text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all flex-shrink-0"
+                  title="Taslağı kapat (kaydetmeden sil)"
+                >
+                  <X size={13} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {
         isCatModalOpen && (

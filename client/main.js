@@ -159,6 +159,26 @@ function createWindow() {
         // DevTools otomatik açılmıyor (manuel: F12)
     });
 
+    // Sağ Tık (Context Menu) - Kes, Kopyala, Yapıştır
+    mainWindow.webContents.on('context-menu', (e, props) => {
+        const { selectionText, isEditable } = props;
+        if (isEditable) {
+            const menu = Menu.buildFromTemplate([
+                { label: 'Kes', role: 'cut' },
+                { label: 'Kopyala', role: 'copy' },
+                { label: 'Yapıştır', role: 'paste' },
+                { type: 'separator' },
+                { label: 'Tümünü Seç', role: 'selectAll' }
+            ]);
+            menu.popup(mainWindow);
+        } else if (selectionText && selectionText.trim() !== '') {
+            const menu = Menu.buildFromTemplate([
+                { label: 'Kopyala', role: 'copy' }
+            ]);
+            menu.popup(mainWindow);
+        }
+    });
+
     // Production'da DevTools tamamen engelle
     mainWindow.webContents.on('devtools-opened', () => {
         if (!isDev) {

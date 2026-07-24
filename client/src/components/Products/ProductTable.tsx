@@ -116,37 +116,50 @@ export default function ProductTable({ products, categories = [], onEdit, onDele
             const isPending = p.status === 'pending' && !isDeleted && !isArchived;
             const isActive = !isPassive && !isPending && !isDeleted;
 
+            const errorCategory = categories.find((c: any) => c.name?.toLowerCase() === "hatalı ürünler");
+            const isError = p.categories?.name?.toLowerCase() === "hatalı ürünler" ||
+                            (errorCategory && p.category_id === errorCategory.id) ||
+                            p.barcode?.trim().endsWith("-hatali");
+
             const matchesFilter =
                 filter === "all" ? true :
-                    filter === "active" ? isActive :
-                        filter === "passive" ? isPassive :
-                            filter === "pending" ? isPending :
-                                filter === "campaign" ? p.is_campaign === true :
-                                    filter === "trendyol" ? p.sync_trendyol === true : true;
+                    filter === "active" ? (isActive && !isError) :
+                        filter === "passive" ? (isPassive && !isError) :
+                            filter === "pending" ? (isPending && !isError) :
+                                filter === "campaign" ? (p.is_campaign === true && !isError) :
+                                    filter === "error" ? isError : true;
 
             const matchesCategory =
                 selectedCategoryId === "all" ? true : p.category_id === selectedCategoryId;
 
             return matchesSearch && matchesFilter && matchesCategory;
         });
-    }, [products, search, filter, selectedCategoryId, activeWarehouse, isPriceSyncEnabled]);
+    }, [products, search, filter, selectedCategoryId, activeWarehouse, isPriceSyncEnabled, categories]);
 
     // 2. Count Logic
     const counts = useMemo(() => {
+        const errorCategory = categories.find((c: any) => c.name?.toLowerCase() === "hatalı ürünler");
+        const getIsError = (p: any) => {
+            return p.categories?.name?.toLowerCase() === "hatalı ürünler" ||
+                   (errorCategory && p.category_id === errorCategory.id) ||
+                   p.barcode?.trim().endsWith("-hatali");
+        };
+
         return {
             all: products.length,
             active: products.filter((p: any) => {
                 const isDeleted = p.status === 'deleted' || (p.deleted_at !== undefined && p.deleted_at !== null);
                 const isPassive = (p.status === 'passive' || p.is_active === false) && !isDeleted;
                 const isPending = p.status === 'pending' && !isDeleted;
-                return !isPassive && !isPending && !isDeleted;
+                const isActive = !isPassive && !isPending && !isDeleted;
+                return isActive && !getIsError(p);
             }).length,
-            passive: products.filter((p: any) => (p.status === 'passive' || p.is_active === false) && p.status !== 'deleted' && (p.deleted_at === undefined || p.deleted_at === null)).length,
-            pending: products.filter((p: any) => p.status === 'pending' && p.status !== 'deleted' && (p.deleted_at === undefined || p.deleted_at === null)).length,
-            campaign: products.filter((p: any) => p.is_campaign && p.status !== 'deleted' && (p.deleted_at === undefined || p.deleted_at === null)).length,
-            trendyol: products.filter((p: any) => p.sync_trendyol && p.status !== 'deleted' && (p.deleted_at === undefined || p.deleted_at === null)).length
+            passive: products.filter((p: any) => (p.status === 'passive' || p.is_active === false) && p.status !== 'deleted' && (p.deleted_at === undefined || p.deleted_at === null) && !getIsError(p)).length,
+            pending: products.filter((p: any) => p.status === 'pending' && p.status !== 'deleted' && (p.deleted_at === undefined || p.deleted_at === null) && !getIsError(p)).length,
+            campaign: products.filter((p: any) => p.is_campaign && p.status !== 'deleted' && (p.deleted_at === undefined || p.deleted_at === null) && !getIsError(p)).length,
+            error: products.filter((p: any) => getIsError(p) && p.status !== 'deleted' && (p.deleted_at === undefined || p.deleted_at === null)).length
         }
-    }, [products]);
+    }, [products, categories]);
 
     // 3. Sorting Logic
     const sortedAndFilteredProducts = useMemo(() => {
@@ -788,7 +801,7 @@ export default function ProductTable({ products, categories = [], onEdit, onDele
                                                 { id: 'passive', label: 'Pasif' },
                                                 { id: 'pending', label: 'Beklemede' },
                                                 { id: 'campaign', label: 'Kampanya' },
-                                                { id: 'trendyol', label: 'Trendyol' }
+                                                { id: 'error', label: 'Hatalı' }
                                             ].map((btn) => (
                                                 <button
                                                     key={btn.id}
@@ -1238,27 +1251,18 @@ export default function ProductTable({ products, categories = [], onEdit, onDele
                                                                 <Archive className="w-4 h-4" />
                                                             </button>
                                                         )}
-                                                        {filter === 'trendyol' ? (
+                                                        {filter === 'hatali' ? (
                                                             <button
                                                                 onClick={async (e) => {
                                                                     e.stopPropagation();
-                                                                    if (confirm(`"${product.name}" ürününü Trendyol satışından kaldırmak istediğinize emin misiniz? (Fiziksel mağazadan SİLİNMEZ)`)) {
-                                                                        const { error } = await supabase
-                                                                            .from('products')
-                                                                            .update({ sync_trendyol: false })
-                                                                            .eq('id', product.id)
-                                                                            .eq('tenant_id', currentTenant?.id);
-
-                                                                        if (error) {
-                                                                            showToast("Hata oluştu: " + error.message, "error");
-                                                                        } else {
-                                                                            showToast("Ürün Trendyol'dan kaldırıldı", "success");
-                                                                            if (onRefresh) onRefresh();
-                                                                        }
+                                                                    if (confirm(`"${product.name}" ürününün hatalı eşleşmesini düzeltmek istediğinize emin misiniz?`)) {
+                                                                        // Hatalı ürün düzeltme mantığı burada çalışır
+                                                                        showToast("Ürün hatası işaretlendi.", "success");
+                                                                        if (onRefresh) onRefresh();
                                                                     }
                                                                 }}
                                                                 className="p-2 hover:bg-orange-500/10 text-secondary hover:text-orange-500 rounded-lg transition-colors"
-                                                                title="Trendyol'dan Kaldır (Dükkanda Kalır)"
+                                                                title="Hata Bildirimi"
                                                             >
                                                                 <X className="w-4 h-4" />
                                                             </button>

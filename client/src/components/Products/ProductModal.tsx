@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { X, Calculator, Zap, Upload, Image as ImageIcon, RefreshCcw, Package, Barcode, Tag, DollarSign, Box, ChevronDown, Sparkles, AlertTriangle } from "lucide-react";
+import { X, Calculator, Zap, Upload, Image as ImageIcon, RefreshCcw, Package, Barcode, Tag, DollarSign, Box, ChevronDown, Sparkles, AlertTriangle, Minimize2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { calculateProfit, suggestSalePrice } from "@/lib/calculations";
 import AdvancedPriceCalculator from "./AdvancedPriceCalculator";
@@ -17,7 +17,7 @@ const PLATFORM_REGISTRY: { key: string; label: string; color: string }[] = [
     { key: "tgo_yemek",   label: "Trendyol · Uber Yemek", color: "orange" },
 ];
 
-export default function ProductModal({ isOpen, onClose, onSave, product, categories, isSaving, enabledPlatforms }: any) {
+export default function ProductModal({ isOpen, onClose, onSave, product, categories, isSaving, enabledPlatforms, onMinimize }: any) {
     // Tenant'ta açık platformlar (fixed_warehouses'tan gelir). Boşsa geriye
     // uyumluluk için sadece Trendyol gösterilir (eski davranış).
     const activePlatforms: string[] = (Array.isArray(enabledPlatforms) && enabledPlatforms.length)
@@ -171,6 +171,25 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
         }
     };
 
+    // "Arka plana al" — düzenlemeyi taslak olarak dışarı verir, modalı kapatır.
+    // Snapshot ürün-benzeri bir nesnedir; geri açılınca aynı init'ten yüklenir.
+    const handleMinimize = () => {
+        if (!onMinimize) return;
+        const draftId = (formData as any).__draftId
+            || (product && (product.id || (product as any).__draftId))
+            || `new-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        const snapshot = {
+            ...(product || {}),
+            ...formData,
+            platform_prices: platformPrices,   // {key:{active,price(string)}} — init bunu okur
+            __draftId: draftId,
+            __draftName: (formData.name || (product && product.name) || "İsimsiz ürün"),
+            __isNew: !(product && product.id),
+            __savedAt: Date.now(),
+        };
+        onMinimize(snapshot);
+    };
+
     // Kaydedilecek nihai veri (platform_prices dahil + Trendyol geriye uyum)
     const buildFinalData = () => {
         // platform_prices JSON'ı normalize et (yalnızca gösterilen platformlar)
@@ -182,8 +201,15 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
         // GERİYE UYUM: Trendyol Pazaryeri hâlâ external_price/sync_trendyol'dan
         // okunuyor (mevcut senkron). platform_prices.trendyol ile aynı anda yaz.
         const tr = pp.trendyol;
+        // Taslak iç anahtarlarını (__draftId, __draftName, __isNew, __savedAt) ve
+        // restore sırasında sızmış platform_prices'ı kayıt payload'ından çıkar.
+        const cleanForm: any = {};
+        for (const k of Object.keys(formData)) {
+            if (k.startsWith("__") || k === "platform_prices") continue;
+            cleanForm[k] = (formData as any)[k];
+        }
         return {
-            ...formData,
+            ...cleanForm,
             purchase_price: Number(formData.purchase_price) || 0,
             sale_price: Number(formData.sale_price) || 0,
             stock_quantity: Number(formData.stock_quantity) || 0,
@@ -231,9 +257,30 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                 {product && <p className="text-[10px] text-slate-500 font-mono">{product.barcode || "—"}</p>}
                             </div>
                         </div>
-                        <button onClick={(e) => { e.stopPropagation(); handleAttemptClose(); }} className="w-8 h-8 hover:bg-white/[0.06] rounded-lg flex items-center justify-center text-slate-500 hover:text-white transition-all active:scale-90">
-                            <X size={16} />
-                        </button>
+                        <div className="flex items-center gap-1">
+                            {onMinimize && (
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleMinimize(); }}
+                                    title="Arka plana al (taslak) — kaydetmeden bırak, sonra devam et"
+                                    className="hidden sm:flex items-center gap-1.5 h-8 px-2.5 hover:bg-white/[0.06] rounded-lg text-slate-400 hover:text-white transition-all active:scale-90 text-[11px] font-medium"
+                                >
+                                    <Minimize2 size={14} />
+                                    <span>Arka plana al</span>
+                                </button>
+                            )}
+                            {onMinimize && (
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleMinimize(); }}
+                                    title="Arka plana al (taslak)"
+                                    className="sm:hidden w-8 h-8 hover:bg-white/[0.06] rounded-lg flex items-center justify-center text-slate-400 hover:text-white transition-all active:scale-90"
+                                >
+                                    <Minimize2 size={15} />
+                                </button>
+                            )}
+                            <button onClick={(e) => { e.stopPropagation(); handleAttemptClose(); }} className="w-8 h-8 hover:bg-white/[0.06] rounded-lg flex items-center justify-center text-slate-500 hover:text-white transition-all active:scale-90">
+                                <X size={16} />
+                            </button>
+                        </div>
                     </div>
 
                     {/* Scrollable Body */}
@@ -308,11 +355,32 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                         <div className="space-y-3">
                             <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[2px]">Fiyatlandırma</p>
 
+                            <div className="grid grid-cols-3 gap-2 items-end mb-1">
+                                <div>
+                                    <label className="text-[9px] font-bold text-slate-500 block pb-0.5">ALIŞ (₺)</label>
+                                </div>
+                                <div className="flex items-center justify-between pb-0.5">
+                                    <label className="text-[9px] font-bold text-slate-500">SATIŞ (₺)</label>
+                                    <div className="flex items-center gap-1.5">
+                                        <button onClick={handleSuggestPrice} className="text-[9px] text-primary font-bold flex items-center gap-0.5 hover:underline">
+                                            <Sparkles size={9} /> Öneri
+                                        </button>
+                                        <AdvancedPriceCalculator
+                                            purchasePrice={Number(formData.purchase_price) || 0}
+                                            vatRate={Number(formData.vat_rate) || 0}
+                                            defaults={{ margin: Number(pricingPrefs.margin) || 30, posCommission: Number(pricingPrefs.commission) || 0, platformCommission: Number(pricingPrefs.platform_commission) || 0, shipping: Number(pricingPrefs.shipping_cost) || 0, withholding: Number(pricingPrefs.withholding) || 0, includeVat: pricingPrefs.includeVat }}
+                                            onApply={(v) => setFormData((f: any) => ({ ...f, sale_price: String(v) }))}
+                                            label="Gelişmiş satış fiyatı hesapla"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-[9px] font-bold text-slate-500 block pb-0.5">KDV</label>
+                                </div>
+                            </div>
+
                             <div className="grid grid-cols-3 gap-2">
                                 <div>
-                                    <div className="flex items-center justify-between mb-1">
-                                        <label className="text-[9px] font-bold text-slate-500">ALIŞ (₺)</label>
-                                    </div>
                                     <input
                                         type="text" inputMode="decimal"
                                         className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-3 py-2.5 text-sm font-bold text-white outline-none focus:border-primary/30 transition-all tabular-nums"
@@ -321,21 +389,6 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                     />
                                 </div>
                                 <div>
-                                    <div className="flex items-center justify-between mb-1">
-                                        <label className="text-[9px] font-bold text-slate-500">SATIŞ (₺)</label>
-                                        <div className="flex items-center gap-1.5">
-                                            <button onClick={handleSuggestPrice} className="text-[9px] text-primary font-bold flex items-center gap-0.5 hover:underline">
-                                                <Sparkles size={9} /> Öneri
-                                            </button>
-                                            <AdvancedPriceCalculator
-                                                purchasePrice={Number(formData.purchase_price) || 0}
-                                                vatRate={Number(formData.vat_rate) || 0}
-                                                defaults={{ margin: Number(pricingPrefs.margin) || 30, posCommission: Number(pricingPrefs.commission) || 0, platformCommission: Number(pricingPrefs.platform_commission) || 0, shipping: Number(pricingPrefs.shipping_cost) || 0, withholding: Number(pricingPrefs.withholding) || 0, includeVat: pricingPrefs.includeVat }}
-                                                onApply={(v) => setFormData((f: any) => ({ ...f, sale_price: String(v) }))}
-                                                label="Gelişmiş satış fiyatı hesapla"
-                                            />
-                                        </div>
-                                    </div>
                                     <input
                                         type="text" inputMode="decimal"
                                         className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-3 py-2.5 text-sm font-bold text-white outline-none focus:border-primary/30 transition-all tabular-nums"
@@ -344,7 +397,6 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-[9px] font-bold text-slate-500 mb-1 block">KDV</label>
                                     <select
                                         className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-3 py-2.5 text-sm font-bold text-white outline-none focus:border-primary/30 transition-all appearance-none cursor-pointer"
                                         value={formData.vat_rate}
