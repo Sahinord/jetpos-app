@@ -94,12 +94,19 @@ export default function ProductTable({ products, categories = [], onEdit, onDele
 
     // 1. Filter Logic
     const filteredProducts = useMemo(() => {
-        return products.filter((p: any) => {
-            const searchLower = search.toLocaleLowerCase('tr-TR');
-            const nameMatch = p.name?.toLocaleLowerCase('tr-TR').includes(searchLower);
-            const barcodeMatch = p.barcode?.toLocaleLowerCase('tr-TR').includes(searchLower);
+        // Türkçe-duyarsız normalize: İ/I/ı→i + diğer Türkçe karakterleri ASCII'ye katla
+        // (ç→c, ş→s, ğ→g, ü→u, ö→o). Böylece "PILIC BAGET" → "PİLİÇ BAGET" ürününü bulur.
+        const normTr = (s: any) => String(s ?? '')
+            .replace(/İ/g, 'i').replace(/I/g, 'i').replace(/ı/g, 'i')
+            .toLowerCase()
+            .normalize('NFD').replace(/[̀-ͯ]/g, '');
 
-            if (search.length >= 3 && p.barcode?.toLocaleLowerCase('tr-TR') === searchLower) return true;
+        return products.filter((p: any) => {
+            const searchLower = normTr(search);
+            const nameMatch = normTr(p.name).includes(searchLower);
+            const barcodeMatch = normTr(p.barcode).includes(searchLower);
+
+            if (search.length >= 3 && normTr(p.barcode) === searchLower) return true;
 
             const matchesSearch = nameMatch || barcodeMatch;
 
