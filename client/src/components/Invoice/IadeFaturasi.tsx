@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useTenant } from '@/lib/tenant-context';
+import CariSearchModal from '@/components/Cari/CariSearchModal';
 
 interface ReturnItem {
     id: string;
@@ -313,50 +314,12 @@ export default function IadeFaturasi() {
                                     <Search className="w-4 h-4 text-secondary/40" />
                                 </button>
 
-                                {showCustomerModal && (
-                                    <div className="absolute z-50 top-full mt-2 w-full bg-card border border-border rounded-xl shadow-2xl max-h-72 overflow-y-auto">
-                                        <div className="sticky top-0 bg-card p-3 border-b border-border">
-                                            <input
-                                                type="text"
-                                                value={customerSearch}
-                                                onChange={(e) => setCustomerSearch(e.target.value)}
-                                                placeholder="Müşteri ara..."
-                                                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-orange-500"
-                                                autoFocus
-                                            />
-                                        </div>
-                                        <div>
-                                            {customers
-                                                .filter(c => (c.unvani || '').toLowerCase().includes(customerSearch.toLowerCase()))
-                                                .map(customer => (
-                                                    <button
-                                                        key={customer.id}
-                                                        onClick={() => {
-                                                            setSelectedCustomer(customer);
-                                                            setShowCustomerModal(false);
-                                                            setCustomerSearch('');
-                                                        }}
-                                                        className="w-full px-4 py-3 text-left hover:bg-orange-500/10 transition-colors border-b border-border/50 last:border-0"
-                                                    >
-                                                        <div className="font-bold text-sm text-foreground">{customer.unvani}</div>
-                                                        <div className="text-xs text-secondary">{customer.vergi_no || customer.tc_no || 'Kimlik bilgisi yok'}</div>
-                                                    </button>
-                                                ))
-                                            }
-                                            {customers.filter(c => (c.unvani || '').toLowerCase().includes(customerSearch.toLowerCase())).length === 0 && (
-                                                <div className="p-4 text-center text-secondary text-sm">Müşteri bulunamadı</div>
-                                            )}
-                                        </div>
-                                        <div className="sticky bottom-0 bg-card p-2 border-t border-border">
-                                            <button
-                                                onClick={() => setShowCustomerModal(false)}
-                                                className="w-full px-3 py-2 bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 rounded-lg text-xs font-bold transition-all"
-                                            >
-                                                Kapat
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
+                                <CariSearchModal
+                                    isOpen={showCustomerModal}
+                                    onClose={() => setShowCustomerModal(false)}
+                                    onSelect={(c) => { setSelectedCustomer(c); setShowCustomerModal(false); setCustomerSearch(''); }}
+                                    title="Müşteri Seç"
+                                />
                             </div>
 
                             <div className="space-y-2">

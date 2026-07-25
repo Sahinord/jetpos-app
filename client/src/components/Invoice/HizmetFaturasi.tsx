@@ -8,6 +8,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import { useTenant } from '@/lib/tenant-context';
 import { motion, AnimatePresence } from 'framer-motion';
+import CariSearchModal from '@/components/Cari/CariSearchModal';
 
 export type HizmetFaturaTipi = 'alinan_hizmet' | 'yapilan_hizmet' | 'yapilan_hizmet_iadesi' | 'alinan_hizmet_iadesi';
 
@@ -311,35 +312,15 @@ export default function HizmetFaturasi({ type }: Props) {
                                     <Layers className={`w-4 h-4 text-${config.color}-500`} />
                                 </button>
 
-                                {showCariSearch && (
-                                    <div className="absolute z-50 top-full mt-2 w-full bg-card/95 backdrop-blur-xl border border-border rounded-2xl shadow-2xl overflow-hidden max-h-80 flex flex-col animate-in fade-in slide-in-from-top-2">
-                                        <div className="p-3 border-b border-border bg-white/5">
-                                            <input
-                                                type="text"
-                                                value={cariSearchTerm}
-                                                onChange={(e) => setCariSearchTerm(e.target.value)}
-                                                placeholder="İsim veya VKN ile ara..."
-                                                className="w-full bg-background/50 border border-border rounded-xl px-4 py-2 text-sm outline-none focus:border-primary"
-                                                autoFocus
-                                            />
-                                        </div>
-                                        <div className="overflow-y-auto flex-1 h-60">
-                                            {filteredCariList.map(cari => (
-                                                <button
-                                                    key={cari.id}
-                                                    onClick={() => {
-                                                        setFatura(prev => ({ ...prev, cari_id: cari.id, cari_name: cari.unvani }));
-                                                        setShowCariSearch(false);
-                                                    }}
-                                                    className="w-full px-4 py-3 text-left hover:bg-primary/10 transition-colors border-b border-border/50 last:border-0"
-                                                >
-                                                    <div className="font-bold text-sm">{cari.unvani}</div>
-                                                    <div className="text-[10px] text-secondary font-mono">{cari.vergi_no}</div>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
+                                <CariSearchModal
+                                    isOpen={showCariSearch}
+                                    onClose={() => setShowCariSearch(false)}
+                                    onSelect={(cari) => {
+                                        setFatura(prev => ({ ...prev, cari_id: cari.id, cari_name: cari.unvani }));
+                                        setShowCariSearch(false);
+                                    }}
+                                    title={`${config.cari_type} Seç`}
+                                />
                             </div>
                         </div>
 

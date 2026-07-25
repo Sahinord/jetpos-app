@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useTenant } from '@/lib/tenant-context';
+import CariSearchModal from '@/components/Cari/CariSearchModal';
 
 export default function IadeFiyatFarkiFisi() {
     const { currentTenant } = useTenant();
@@ -76,7 +77,7 @@ export default function IadeFiyatFarkiFisi() {
                 invoice_no: documentNo,
                 invoice_date: documentDate,
                 cari_id: selectedCustomer.id,
-                cari_name: selectedCustomer.unvan,
+                cari_name: selectedCustomer.unvani,
                 subtotal: -priceDifference,
                 vat_total: 0,
                 total_amount: -priceDifference,
@@ -158,7 +159,7 @@ export default function IadeFiyatFarkiFisi() {
                             className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-left hover:border-amber-500 transition-colors"
                         >
                             {selectedCustomer ? (
-                                <span className="text-white font-medium">{selectedCustomer.unvan}</span>
+                                <span className="text-white font-medium">{selectedCustomer.unvani}</span>
                             ) : (
                                 <span className="text-secondary">Cari Seç...</span>
                             )}
@@ -225,7 +226,7 @@ export default function IadeFiyatFarkiFisi() {
                                 <span className="text-sm text-secondary">İade Edilecek Tutar</span>
                                 <span className="text-3xl font-black text-amber-400">-{priceDifference.toFixed(2)} ₺</span>
                             </div>
-                            <p className="text-xs text-secondary">Müşterinin {selectedCustomer?.unvan || 'seçilen cari'} alacağı artacak</p>
+                            <p className="text-xs text-secondary">Müşterinin {selectedCustomer?.unvani || 'seçilen cari'} alacağı artacak</p>
                         </div>
                     </div>
                 )}
@@ -248,52 +249,13 @@ export default function IadeFiyatFarkiFisi() {
                 </div>
             </div>
 
-            {/* Customer Modal */}
-            {showCustomerModal && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-card border border-border rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
-                        <div className="p-6 border-b border-border">
-                            <h3 className="text-xl font-bold text-white">Cari Seç</h3>
-                        </div>
-                        <div className="p-4">
-                            <input
-                                type="text"
-                                value={customerSearch}
-                                onChange={(e) => setCustomerSearch(e.target.value)}
-                                placeholder="Cari ara..."
-                                className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white mb-4"
-                            />
-                            <div className="max-h-96 overflow-y-auto">
-                                {customers
-                                    .filter(c => c.unvan.toLowerCase().includes(customerSearch.toLowerCase()))
-                                    .map(customer => (
-                                        <button
-                                            key={customer.id}
-                                            onClick={() => {
-                                                setSelectedCustomer(customer);
-                                                setShowCustomerModal(false);
-                                                setCustomerSearch('');
-                                            }}
-                                            className="w-full px-4 py-3 hover:bg-white/5 text-left border-b border-border last:border-0"
-                                        >
-                                            <p className="font-medium text-white">{customer.unvan}</p>
-                                            <p className="text-xs text-secondary">{customer.hesap_tipi?.toUpperCase()}</p>
-                                        </button>
-                                    ))
-                                }
-                            </div>
-                        </div>
-                        <div className="p-4 border-t border-border">
-                            <button
-                                onClick={() => setShowCustomerModal(false)}
-                                className="w-full px-4 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-white transition-colors"
-                            >
-                                Kapat
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* Cari Seç (ortak kompakt modal) */}
+            <CariSearchModal
+                isOpen={showCustomerModal}
+                onClose={() => setShowCustomerModal(false)}
+                onSelect={(c) => { setSelectedCustomer(c); setShowCustomerModal(false); setCustomerSearch(''); }}
+                title="Cari Seç"
+            />
         </div>
     );
 }

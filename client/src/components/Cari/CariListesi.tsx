@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useTenant } from "@/lib/tenant-context";
+import CariDetayModal from "./CariDetayModal";
 
 interface CariListesiProps {
     showToast?: (message: string, type: "success" | "error" | "info" | "warning") => void;
@@ -55,6 +56,8 @@ export default function CariListesi({ showToast }: CariListesiProps) {
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [visibleColumns, setVisibleColumns] = useState(KOLONLAR);
     const [showColumnSelector, setShowColumnSelector] = useState(false);
+    // Görüntüle/Düzenle modalı
+    const [detay, setDetay] = useState<{ cari: any; tab: "bilgiler" | "hareketler" | "fiyat" } | null>(null);
 
     // Pagination
     const [currentPage, setCurrentPage] = useState(1);
@@ -331,10 +334,12 @@ export default function CariListesi({ showToast }: CariListesiProps) {
                                     ))}
                                     <td className="px-3 py-2">
                                         <div className="flex items-center gap-1">
-                                            <button className="p-1 hover:bg-primary/10 rounded text-secondary hover:text-foreground">
+                                            <button onClick={() => setDetay({ cari, tab: "hareketler" })} title="Görüntüle"
+                                                className="p-1 hover:bg-primary/10 rounded text-secondary hover:text-foreground">
                                                 <Eye className="w-4 h-4" />
                                             </button>
-                                            <button className="p-1 hover:bg-primary/10 rounded text-secondary hover:text-blue-500">
+                                            <button onClick={() => setDetay({ cari, tab: "bilgiler" })} title="Düzenle"
+                                                className="p-1 hover:bg-primary/10 rounded text-secondary hover:text-blue-500">
                                                 <Edit className="w-4 h-4" />
                                             </button>
                                             <button
@@ -418,6 +423,16 @@ export default function CariListesi({ showToast }: CariListesiProps) {
                     </div>
                 </div>
             </div>
+
+            {detay && (
+                <CariDetayModal
+                    cari={detay.cari}
+                    initialTab={detay.tab}
+                    showToast={showToast}
+                    onClose={() => setDetay(null)}
+                    onSaved={() => { loadCariler(); }}
+                />
+            )}
         </div>
     );
 }

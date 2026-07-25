@@ -58,103 +58,63 @@ export default function CariSearchModal({ isOpen, onClose, onSelect, title = "Ca
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={onClose}>
-            <div className="bg-[#0d1b2e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[80vh] overflow-hidden" onClick={e => e.stopPropagation()}>
-                {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-white/10 bg-white/5">
-                    <div className="flex items-center gap-2">
-                        <Users className="w-5 h-5 text-primary" />
-                        <h2 className="text-white font-bold text-lg tracking-tight">{title}</h2>
+        <div className="fixed inset-0 z-[100] flex items-start justify-center bg-black/60 backdrop-blur-sm p-4 pt-[10vh]" onClick={onClose}>
+            <div className="bg-[#0d1b2e] border border-white/10 rounded-xl shadow-2xl w-full max-w-md flex flex-col max-h-[70vh] overflow-hidden" onClick={e => e.stopPropagation()}>
+                {/* Header + Search (kompakt) */}
+                <div className="p-3 border-b border-white/10 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <Users className="w-4 h-4 text-primary" />
+                            <h2 className="text-white font-semibold text-sm">{title}</h2>
+                        </div>
+                        <button onClick={onClose} className="p-1.5 hover:bg-white/10 rounded-lg transition-colors text-secondary hover:text-white">
+                            <X className="w-4 h-4" />
+                        </button>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors text-secondary hover:text-white">
-                        <X className="w-5 h-5" />
-                    </button>
-                </div>
-
-                {/* Search Bar */}
-                <div className="p-4 border-b border-white/10 bg-white/[0.02]">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary" />
                         <input
                             autoFocus
                             type="text"
-                            placeholder="Cari kodu veya ünvanı ile ara..."
+                            placeholder="Kod veya ünvan ile ara…"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full bg-[#0a1628] border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-white text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                            className="w-full bg-[#0a1628] border border-white/10 rounded-lg pl-9 pr-3 py-2 text-white text-sm focus:border-primary outline-none transition-all"
                         />
                     </div>
                 </div>
 
                 {/* List */}
-                <div className="flex-1 overflow-auto">
+                <div className="flex-1 overflow-auto p-1.5">
                     {loading && cariler.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-12 gap-3 text-secondary">
-                            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                            <span className="text-sm font-medium">Yükleniyor...</span>
+                        <div className="flex flex-col items-center justify-center py-10 gap-2 text-secondary">
+                            <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                            <span className="text-xs">Yükleniyor…</span>
                         </div>
                     ) : cariler.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-12 text-secondary">
-                            <List className="w-12 h-12 opacity-10 mb-2" />
-                            <span className="text-sm">Cari bulunamadı</span>
+                        <div className="flex flex-col items-center justify-center py-10 text-secondary">
+                            <List className="w-9 h-9 opacity-10 mb-1.5" />
+                            <span className="text-xs">Cari bulunamadı</span>
                         </div>
                     ) : (
-                        <table className="w-full text-sm">
-                            <thead className="sticky top-0 bg-[#0d1b2e] shadow-sm">
-                                <tr className="text-left text-secondary border-b border-white/5">
-                                    <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider">Cari Kodu</th>
-                                    <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider">Ünvanı</th>
-                                    <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider text-right">Bakiye</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-white/5">
-                                {cariler.map((cari) => (
-                                    <tr 
-                                        key={cari.id} 
-                                        className="hover:bg-primary/10 cursor-pointer transition-colors group"
-                                        onClick={() => onSelect(cari)}
-                                    >
-                                        <td className="px-4 py-3">
-                                            <span className="text-primary font-mono font-bold group-hover:text-primary-light transition-colors">{cari.cari_kodu}</span>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <div className="flex flex-col">
-                                                <span className="text-white font-medium group-hover:text-primary transition-colors">{cari.unvani}</span>
-                                                <div className="flex items-center gap-2 mt-0.5">
-                                                    <span className="text-[9px] text-secondary/60 bg-white/5 px-1.5 py-0.5 rounded font-mono uppercase tracking-tighter">
-                                                        {cari.cari_kodu}
-                                                    </span>
-                                                    {cari.vergi_no && (
-                                                        <span className="text-[9px] text-secondary/60">
-                                                            {cari.vergi_no}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-3 text-right">
-                                            <div className="flex flex-col items-end">
-                                                <span className={`font-mono font-bold text-sm ${cari.bakiye >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                                    {Number(cari.bakiye || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
-                                                </span>
-                                                {cari.loyalty_points_total !== undefined && (
-                                                    <span className="text-[8px] font-black text-amber-500 uppercase tracking-widest mt-0.5">
-                                                        Puan: {Number(cari.loyalty_points_total).toLocaleString('tr-TR')}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                        cariler.map((cari) => (
+                            <button
+                                key={cari.id}
+                                onClick={() => onSelect(cari)}
+                                className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg hover:bg-primary/10 text-left transition-colors group"
+                            >
+                                <div className="min-w-0">
+                                    <p className="text-sm text-white font-medium truncate group-hover:text-primary transition-colors">{cari.unvani || "—"}</p>
+                                    <p className="text-[11px] text-secondary font-mono truncate">
+                                        {cari.cari_kodu}{cari.vergi_no ? ` · ${cari.vergi_no}` : ""}
+                                    </p>
+                                </div>
+                                <span className={`text-xs font-mono font-bold flex-shrink-0 ${(cari.bakiye || 0) >= 0 ? "text-rose-400" : "text-emerald-400"}`}>
+                                    {Number(cari.bakiye || 0).toLocaleString("tr-TR", { minimumFractionDigits: 2 })} ₺
+                                </span>
+                            </button>
+                        ))
                     )}
-                </div>
-
-                {/* Footer */}
-                <div className="p-3 border-t border-white/10 bg-white/5 flex justify-between items-center text-[10px] text-secondary font-bold uppercase tracking-widest">
-                    <span>{cariler.length} kayıt listeleniyor</span>
-                    <span>JetPOS Cari Sistemi</span>
                 </div>
             </div>
         </div>
