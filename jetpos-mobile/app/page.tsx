@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import LicenseGate from '@/components/LicenseGate';
 import { Toaster } from 'sonner';
+import { modeHomePath } from '@/lib/role-host';
 
 export default function Home() {
   const [hasLicense, setHasLicense] = useState(false);
@@ -16,16 +17,17 @@ export default function Home() {
     const tenantId = localStorage.getItem('tenantId');
 
     if (license && tenantId) {
-      // License exists, redirect to dashboard
-      router.push('/dashboard');
+      // Lisans var → host moduna göre yönlendir:
+      // garson.* → /adisyon, mutfak.* → /kds, diğeri → /dashboard
+      router.push(modeHomePath());
     } else {
       setLoading(false);
     }
   }, [router]);
 
   const handleLicenseSuccess = (tenantId: string, companyName: string) => {
-    // License validated successfully, redirect to dashboard
-    router.push('/dashboard');
+    // Lisans doğrulandı → host moduna göre yönlendir
+    router.push(modeHomePath());
   };
 
   if (loading) {

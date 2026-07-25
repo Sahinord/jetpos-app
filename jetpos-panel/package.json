@@ -1,0 +1,22 @@
+{
+  "name": "jetpos-panel",
+  "version": "1.0.0",
+  "description": "JetPos rol panelleri (Patron / Mutfak / Garson) için PC masaüstü kabuğu",
+  "author": "JetPos",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "dev:patron": "node scripts/set-role.js patron && cross-env ROLE=patron electron .",
+    "dev:mutfak": "node scripts/set-role.js mutfak && cross-env ROLE=mutfak electron .",
+    "dev:garson": "node scripts/set-role.js garson && cross-env ROLE=garson electron .",
+    "build:patron": "node scripts/set-role.js patron && electron-builder --config electron-builder.config.js",
+    "build:mutfak": "node scripts/set-role.js mutfak && electron-builder --config electron-builder.config.js",
+    "build:garson": "node scripts/set-role.js garson && electron-builder --config electron-builder.config.js",
+    "build:all": "npm run build:patron && npm run build:mutfak && npm run build:garson"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8"
+  }
+}

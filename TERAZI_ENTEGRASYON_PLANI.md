@@ -12,6 +12,7 @@ Sektörde "terazi entegrasyonu" iki çok farklı şeyi kastediyor. İkisi ayrı 
 
 ### Tür A — Barkod Basan Terazi (Label-printing scale)
 Reyonda durur. Personel malı koyar, ürüne basar, terazi **ağırlık + fiyatı gömülü bir barkod etiketi** basar. Müşteri malı kasaya getirir, kasiyer o barkodu okutur, ürün ağırlık ve fiyatıyla **otomatik sepete düşer.**
+
 - Örnek cihazlar: Dijital/Desis/Baykon/CAS reyon terazileri
 - **Entegrasyon noktası: barkod formatı.** Terazi ile JetPos konuşmaz; ortak dil bastığı barkoddur.
 - Manav/kasap için **en yaygın** senaryo budur.

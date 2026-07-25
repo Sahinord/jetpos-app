@@ -14,7 +14,6 @@ import BottomNav from '@/components/BottomNav';
 import { motion } from 'framer-motion';
 import { clearOfflineTenantData } from '@/lib/offline-db';
 import { SyncService } from '@/lib/sync-service';
-import RequirePermission from '@/components/RequirePermission';
 
 interface DashboardStats {
     activeProducts: number;
@@ -393,11 +392,10 @@ function DashboardPageInner() {
     );
 }
 
-// Yetki koruması: çalışan girişi açıksa PIN + can_access_reports zorunlu.
+// Normal mobil uygulama (full mod) açılış panosu — PIN İSTEMEZ.
+// Çalışan girişi ayrımı garson.jetpos.shop'a ait; oraya root'tan yönlendiriliyor.
+// Hassas işlemler (POS, Kasa, Banka, Ürünler, Cari…) kendi RequirePermission
+// kilitlerini zaten taşıyor; pano bunları içermediği için serbest açılır.
 export default function DashboardPage() {
-    return (
-        <RequirePermission perm="can_access_reports" title="Panel">
-            <DashboardPageInner />
-        </RequirePermission>
-    );
+    return <DashboardPageInner />;
 }

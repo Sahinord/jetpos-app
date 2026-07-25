@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Cihaz kodu (externalDeviceKey) tanımlı değil. SuperAdmin > Ödeal'den girin." }, { status: 400 });
     }
 
-    let body: { total?: number; items?: OdealBasketItem[]; siparisNo?: string };
+    let body: { total?: number; items?: OdealBasketItem[]; siparisNo?: string; paymentType?: string };
     try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid_json" }, { status: 400 }); }
 
     const total = Number(body.total) || 0;
@@ -44,6 +44,12 @@ export async function POST(req: NextRequest) {
     if (total <= 0 || items.length === 0) {
         return NextResponse.json({ error: "Geçerli tutar ve ürünler gerekli." }, { status: 400 });
     }
+
+    // Ödeme tipi: CASH → tutarın tamamı cihaza NAKİT olarak bildirilir; cihaz
+    // karttan çekmeden fişi (belgeyi) basar. Varsayılan CARD → paymentOptions boş,
+    // tüm tutar cihazda karttan tahsil edilir (mevcut davranış).
+    const paymentType = String(body.paymentType || "CARD").toUpperCase() === "CASH" ? "CASH" : "CARD";
+    const paymentOptions = paymentType === "CASH" ? [{ type: "CASH", amount: total }] : undefined;
 
     // Callback URL'lerini Ödeal'e kaydet (bu tenant için ilk sefer; sonuçların
     // webhook'la gelmesi için gerekir). Ödeme akışını bloklamaması için await'siz.
@@ -70,7 +76,7 @@ export async function POST(req: NextRequest) {
         reference_code: referenceCode,
         status: "pending",
         amount: total,
-        basket: { total, items },
+        basket: { total, items, paymentType },
     }]);
 
     const result = await sendBasket(creds, {
@@ -78,6 +84,7 @@ export async function POST(req: NextRequest) {
         total,
         items,
         receiptInfo: body.siparisNo ? { siparisNo: body.siparisNo } : undefined,
+        paymentOptions,
     });
 
     if (!result.ok) {

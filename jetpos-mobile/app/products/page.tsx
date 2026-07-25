@@ -258,6 +258,11 @@ function ProductItemCard({ product, onUpdate }: { product: Product; onUpdate: ()
                                     <span className="text-[7px] font-black text-rose-400 uppercase tracking-tighter leading-none">PASİF</span>
                                 </div>
                             )}
+                            {product.barcode?.endsWith('-hatali') && (
+                                <div className="px-1.5 py-0.5 bg-amber-500/10 border border-amber-500/20 rounded-lg shrink-0 animate-pulse">
+                                    <span className="text-[7px] font-black text-amber-400 uppercase tracking-tighter leading-none">HATALI</span>
+                                </div>
+                            )}
                         </div>
                         
                         <div className="flex items-center gap-2">

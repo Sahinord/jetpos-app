@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, Package, ScanLine, Wallet, ClipboardCheck, Menu, X, Utensils, LogOut, ArrowLeftRight, Users, CreditCard, Calculator, Zap, Globe, ChefHat, Receipt, Settings } from 'lucide-react';
+import { LayoutDashboard, Package, ScanLine, Wallet, ClipboardCheck, Menu, X, Utensils, LogOut, ArrowLeftRight, Users, CreditCard, Calculator, Zap, Globe, ChefHat, Receipt, Settings, Crown } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
@@ -9,6 +9,7 @@ import { clearOfflineTenantData } from '@/lib/offline-db';
 import { SyncService } from '@/lib/sync-service';
 import { toast } from 'sonner';
 import { useEmployee, EmployeePermissions } from '@/lib/employee-context';
+import { isRoleLockedHost } from '@/lib/role-host';
 
 export default function BottomNav() {
     const pathname = usePathname();
@@ -16,6 +17,10 @@ export default function BottomNav() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [features, setFeatures] = useState<any>({});
     const [companyName, setCompanyName] = useState('JetPOS Mobile');
+    // Garson/mutfak modunda alt menü gizlenir (tek ekrana kilitli kalsın).
+    // mounted ile client'ta çözülür; SSR/hydration uyumsuzluğu olmaz.
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => { setMounted(true); }, []);
 
     const { employee, can } = useEmployee();
     const waiterRole = (employee?.role || employee?.position || (typeof window !== 'undefined' ? localStorage.getItem('activeWaiterRole') : null)) || null;
@@ -42,6 +47,10 @@ export default function BottomNav() {
 
     // Hooks'lardan SONRA koşullu çıkış — aksi halde React hooks sırası bozulur
     if (isKitchen) {
+        return null;
+    }
+    // Garson/mutfak/patron alan adında alt menü yok (rol netliği + kiosk).
+    if (mounted && isRoleLockedHost()) {
         return null;
     }
 
@@ -81,6 +90,7 @@ export default function BottomNav() {
     };
 
     const sidebarItems = [
+        { name: 'Patron Paneli', icon: Crown, path: '/patron', show: gate('can_manage_employees') },
         { name: 'Pano', icon: LayoutDashboard, path: '/dashboard', show: gate('can_access_reports') },
         { name: 'JetKasa (POS)', icon: Wallet, path: '/pos', show: gate('can_access_pos') },
         { name: 'Barkod Okuyucu', icon: ScanLine, path: '/scanner', show: true },

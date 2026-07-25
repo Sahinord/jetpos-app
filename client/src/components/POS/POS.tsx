@@ -140,7 +140,7 @@ export default function POS({
     const searchInputRef = useRef<HTMLInputElement>(null);
     // Stable refs so the global barcode listener always sees fresh values without stale closures
     const barcodeMapRef = useRef<Map<string, any>>(new Map());
-    const addToCartRef = useRef<(product: any) => void>(() => {});
+    const addToCartRef = useRef<(product: any, manualQty?: number) => void>(() => {});
     const { currentTenant, activeWarehouse, warehouses, setActiveWarehouse, activeEmployee } = useTenant();
 
     // We use activeWarehouse directly from context for better reactivity
@@ -346,12 +346,19 @@ export default function POS({
             if (e.ctrlKey || e.altKey || e.metaKey) return;
 
             const now = Date.now();
-            // Reset buffer if there was a long pause (user typing, not scanner)
-            if (now - lastKeyTime > 500) buffer = "";
+            // Uzun duraklamada buffer'ı sıfırla — AMA "barkod×miktar" yazımı sürüyorsa
+            // (buffer'da ayırıcı var) elle yavaş yazıma izin vermek için koru.
+            if (now - lastKeyTime > 500 && !/[*xX]/.test(buffer)) buffer = "";
             lastKeyTime = now;
 
             if (e.key === "Enter") {
                 if (buffer.length >= 3) {
+                    // "barkod*miktar" (ör. 2701097*1,5) manuel girişi
+                    if (tryWeightedEntry(buffer)) {
+                        searchInputRef.current?.focus();
+                        buffer = "";
+                        return;
+                    }
                     const product = barcodeMapRef.current.get(buffer.toLowerCase());
                     if (product) {
                         addToCartRef.current(product);
@@ -443,6 +450,38 @@ export default function POS({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     addToCartRef.current = addToCart;
 
+    // "barkod*miktar" hızlı satış girişi. Sol taraf barkod, sağ taraf miktar.
+    // AKILLI BİRİM (yalnızca KG ürünlerde):
+    //   • Ondalık (2701097*1,5 / *0,25)      → kg olarak alınır (1,5 kg)
+    //   • Tam sayı ve ≥100 (2701097*1000)    → GRAM kabul edilir, kg'a çevrilir (1 kg)
+    //   • Tam sayı ve <100 (2701097*2)       → kg olarak alınır (2 kg)
+    // ADET ürünlerde sayı her zaman adettir (2701097*1000 → 1000 adet, çevrim yok).
+    // Fiyat: kg ürününde birim fiyat = kilo fiyatı; miktarla (kg) çarpılır → kilo fiyatından hesaplanır.
+    // Eşleşme olduysa (ya da '*' olup barkod bulunamadıysa) girişi tüketir → true.
+    const tryWeightedEntry = (raw: string): boolean => {
+        const s = (raw || "").trim();
+        // Ayırıcı: '*' VEYA 'x'/'X' (bazı klavyelerde * zor yazılıyor). İlk ayırıcı.
+        const sep = s.search(/[*xX]/);
+        if (sep < 1) return false;                        // ayırıcı yok ya da barkod boş → normal akış
+        const code = s.slice(0, sep).trim();
+        const qtyRaw = s.slice(sep + 1).trim();
+        // Barkod kısmı TAMAMEN rakam olmalı → ürün adı aramalarını (ör. "Max Cola") bozmaz
+        if (!/^\d+$/.test(code) || !qtyRaw) return false;
+        const hadDecimal = /[.,]/.test(qtyRaw);
+        let qty = parseFloat(qtyRaw.replace(",", "."));
+        if (!isFinite(qty) || qty <= 0) return false;
+        const product = barcodeMapRef.current.get(code.toLowerCase());
+        if (!product) {
+            showToast("Barkod bulunamadı: " + code, "error");
+            return true;
+        }
+        const isKG = String(product.unit || "").toLowerCase() === "kg";
+        // KG ürününde ondalıksız ve ≥100 ise gram girilmiş demektir → kg'a çevir.
+        if (isKG && !hadDecimal && qty >= 100) qty = qty / 1000;
+        addToCartRef.current(product, qty);
+        return true;
+    };
+
     const handleWeightSubmit = () => {
         const grams = parseFloat(weightInput.replace(',', '.'));
         if (isNaN(grams) || grams <= 0) return showToast("Geçerli gramaj girin!", "error");
@@ -502,6 +541,13 @@ export default function POS({
     };
 
     const applyNumpadAction = () => {
+        // "barkod×miktar" (ör. 2701097*1000 / 2701097x1000) → ürünü miktarla sepete ekle. Öncelikli.
+        if (/[*xX]/.test(numpadValue)) {
+            tryWeightedEntry(numpadValue); // eşleşme yoksa kendi uyarısını verir
+            setNumpadValue("");
+            return;
+        }
+
         const val = parseFloat(numpadValue.replace(',', '.'));
         if (isNaN(val)) return;
 
@@ -622,6 +668,54 @@ export default function POS({
     // Bileşen kapanırsa zamanlayıcı + kanal sızıntısı kalmasın
     useEffect(() => () => { stopOdealPoll(); }, []);
 
+    // Sepeti Ödeal formatına çevir (kart + nakit ortak)
+    const buildOdealItems = () => cart.map((c: any) => {
+        const qty = Number(c.quantity ?? c.miktar ?? 1) || 1;
+        // Sepet fiyatı `sale_price` alanında tutuluyor (bkz. addToCart / subtotal).
+        const unit = Number(c.sale_price ?? c.price ?? c.fiyat ?? 0) || 0;
+        return {
+            name: String(c.name || c.ad || "Ürün"),
+            quantity: qty,
+            grossPrice: Number((unit * qty).toFixed(2)), // satır toplamı (KDV dahil), > 0 olmalı
+            vatRatio: Number(c.vat_rate ?? c.kdv ?? c.vat ?? 10),
+            referenceCode: String(c.id || c.barcode || c.barkod || ""),
+        };
+    });
+
+    // NAKİT → Ödeal cihazına CASH olarak gönder; cihaz karttan çekmeden FİŞ basar.
+    // Ödeal kurulu/aktif değilse sessizce normal nakit satışına (fişsiz) düşer.
+    // Para fiziksel olarak alındığı için satış her hâlükârda tamamlanır; fiş yan etki.
+    const handleOdealCash = async () => {
+        if (cart.length === 0) return;
+        const items = buildOdealItems();
+        if (items.some(it => !(it.grossPrice > 0))) {
+            showToast("Sepette fiyatı 0 olan ürün var. Fiyatları kontrol edin.", "error");
+            return;
+        }
+        setOdealPay({ status: "sending" });
+        try {
+            await apiFetch("/api/odeal/pay", {
+                method: "POST",
+                body: JSON.stringify({ total, items, paymentType: "CASH" }),
+            });
+            // Sepet cihaza gitti → cihaz nakit fişi basıyor. Satışı tamamla.
+            setOdealPay({ status: "idle" });
+            showToast("Nakit fiş Ödeal cihazından yazdırılıyor.", "success");
+            handleCheckout("NAKİT");
+        } catch (e: any) {
+            const msg = String(e?.message || "");
+            setOdealPay({ status: "idle" });
+            if (/ayar yok|aktif|eksik|tanımlı|değil/i.test(msg)) {
+                // Ödeal yok/kapalı → normal nakit (fiş çıkmaz, mevcut davranış)
+                handleCheckout("NAKİT");
+            } else {
+                // Ödeal var ama cihaza gönderilemedi → satışı yine de tamamla, uyar
+                showToast("Nakit fiş cihaza gönderilemedi: " + (msg || "bilinmeyen hata"), "error");
+                handleCheckout("NAKİT");
+            }
+        }
+    };
+
     const handleOdealCard = async () => {
         if (cart.length === 0) return;
         // Sunucu-otoriter: her zaman /pay dene. Ödeal kurulu/aktif değilse
@@ -629,18 +723,7 @@ export default function POS({
         // bayat settings'e güvenmiyoruz).
         setOdealPay({ status: "sending" });
         // Sepeti Ödeal formatına çevir
-        const items = cart.map((c: any) => {
-            const qty = Number(c.quantity ?? c.miktar ?? 1) || 1;
-            // Sepet fiyatı `sale_price` alanında tutuluyor (bkz. addToCart / subtotal).
-            const unit = Number(c.sale_price ?? c.price ?? c.fiyat ?? 0) || 0;
-            return {
-                name: String(c.name || c.ad || "Ürün"),
-                quantity: qty,
-                grossPrice: Number((unit * qty).toFixed(2)), // satır toplamı (KDV dahil), > 0 olmalı
-                vatRatio: Number(c.vat_rate ?? c.kdv ?? c.vat ?? 10),
-                referenceCode: String(c.id || c.barcode || c.barkod || ""),
-            };
-        });
+        const items = buildOdealItems();
         // Ödeal 0 TL ürünü reddediyor (code 1603). Fiyatsız satır varsa engelle.
         if (items.some(it => !(it.grossPrice > 0))) {
             setOdealPay({ status: "failed", message: "Sepette fiyatı 0 olan ürün var. Fiyatları kontrol edin." });
@@ -1121,6 +1204,12 @@ export default function POS({
                                     autoFocus
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter' && search.trim() !== "") {
+                                            // Önce "barkod*miktar" (ör. 2701097*1,5) dene
+                                            if (tryWeightedEntry(search)) {
+                                                setSearch("");
+                                                setTimeout(() => searchInputRef.current?.focus(), 0);
+                                                return;
+                                            }
                                             const p = barcodeMap.get(search.toLowerCase());
                                             if (p) {
                                                 addToCart(p);
@@ -1339,7 +1428,8 @@ export default function POS({
                                     value={numpadValue}
                                     onChange={(e) => {
                                         const val = e.target.value.replace(',', '.');
-                                        if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                                        // Barkod×miktar için tek ayırıcı ('*' veya 'x'/'X') de kabul: 2701097x1.5
+                                        if (val === '' || /^\d*[*xX]?\d*\.?\d*$/.test(val)) {
                                             setNumpadValue(val);
                                         }
                                     }}
@@ -1381,9 +1471,13 @@ export default function POS({
                                         );
                                     })}
                                 </div>
-                                <div className="grid grid-rows-3 gap-2">
+                                <div className="grid grid-rows-4 gap-2">
                                     <button onClick={() => setNumpadValue(prev => prev.slice(0, -1))} className={`row-span-1 w-full rounded-xl ${(theme === 'light' || theme === 'mavi') ? 'bg-white border-primary/20 text-slate-600 hover:bg-slate-50' : 'bg-slate-800/40 border-white/5 text-secondary hover:bg-slate-800/60'} flex items-center justify-center transition-all active:scale-90 border shadow-inner`}>
                                         <Delete size={20} />
+                                    </button>
+                                    {/* Barkod × Miktar: 2701097 × 1000 → sepete ekle */}
+                                    <button onClick={() => setNumpadValue(prev => (!prev || prev.includes('*')) ? prev : prev + '*')} title="Barkod × Miktar" className="row-span-1 w-full rounded-xl bg-amber-500/15 border border-amber-500/25 text-amber-400 flex items-center justify-center text-2xl font-black transition-all active:scale-90 hover:bg-amber-500/25 shadow-inner">
+                                        ×
                                     </button>
                                     <button onClick={applyNumpadAction} className="row-span-2 w-full rounded-2xl bg-gradient-to-br from-primary to-blue-600 text-white flex items-center justify-center hover:shadow-[0_0_20px_rgba(59,130,246,0.4)] hover:scale-[1.02] active:scale-95 transition-all outline-none border border-white/10">
                                         <div className="flex flex-col items-center gap-1 font-black uppercase tracking-widest text-[10px]">
@@ -1400,7 +1494,8 @@ export default function POS({
                                     onClick={() => {
                                         if (cart.length === 0) return;
                                         updateDisplayStatus('payment', { paymentMethod: 'NAKİT' });
-                                        setTimeout(() => handleCheckout("NAKİT"), 800);
+                                        // Ödeal aktifse cihaza NAKİT gönderir (fiş basar); değilse normal nakit
+                                        setTimeout(() => handleOdealCash(), 800);
                                     }}
                                     className="group relative flex flex-col items-center justify-center p-3 rounded-xl bg-primary text-white hover:scale-[1.01] transition-all shadow-md shadow-primary/20 active:scale-95 border border-primary/20 overflow-hidden"
                                 >

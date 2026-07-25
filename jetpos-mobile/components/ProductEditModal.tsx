@@ -84,21 +84,63 @@ export default function ProductEditModal({ product, onClose, onSaved }: ProductE
 
             const finalStock = previewStock < 0 ? 0 : previewStock;
 
+            // Duplicate Barcode Check & Auto-handling
+            let finalBarcode = productBarcode.trim();
+            let finalCategoryId = formData.category_id || null;
+            let isDuplicateHandled = false;
+
+            if (finalBarcode && finalBarcode !== product.barcode) {
+                // Veritabanında bu barkoda sahip aktif başka bir ürün var mı kontrol et
+                const { data: existingProducts } = await supabase
+                    .from('products')
+                    .select('id, name, barcode')
+                    .eq('tenant_id', tenantId)
+                    .eq('barcode', finalBarcode)
+                    .neq('id', product.id)
+                    .is('deleted_at', null);
+
+                if (existingProducts && existingProducts.length > 0) {
+                    // "Hatalı Ürünler" kategorisini bul veya oluştur
+                    let errorCategory = categories.find(c => c.name?.toLowerCase() === "hatalı ürünler");
+                    if (!errorCategory) {
+                        const { data: newCat, error: catError } = await supabase
+                            .from('categories')
+                            .insert([{ name: "Hatalı Ürünler", tenant_id: tenantId }])
+                            .select()
+                            .single();
+
+                        if (catError) {
+                            console.error("Hatalı Ürünler kategorisi oluşturulurken hata:", catError);
+                        } else {
+                            errorCategory = newCat;
+                            setCategories(prev => [...prev, newCat]);
+                        }
+                    }
+
+                    if (errorCategory) {
+                        finalCategoryId = errorCategory.id;
+                    }
+
+                    finalBarcode = `${finalBarcode}-hatali`;
+                    isDuplicateHandled = true;
+                }
+            }
+
+            const finalBarcodeValue = finalBarcode ? finalBarcode : null;
+
             const updateData: any = {
                 stock_quantity: finalStock,
                 sale_price: Number(formData.sale_price) || 0,
                 purchase_price: Number(formData.purchase_price) || 0,
-                category_id: formData.category_id || null,
+                category_id: finalCategoryId,
                 status: formData.status,
                 updated_at: new Date().toISOString(),
+                barcode: finalBarcodeValue
             };
 
-            // Include name/barcode if changed
+            // Include name if changed
             if (productName.trim() && productName !== product.name) {
                 updateData.name = productName.trim();
-            }
-            if (productBarcode.trim() && productBarcode !== product.barcode) {
-                updateData.barcode = productBarcode.trim();
             }
 
             const { data, error } = await supabase
@@ -148,11 +190,19 @@ export default function ProductEditModal({ product, onClose, onSaved }: ProductE
                 console.warn('Log kaydetme hatası (göz ardı edildi):', logError);
             }
 
-            toast.success('Ürün güncellendi!', { id: 'product-update' });
+            if (isDuplicateHandled) {
+                toast.warning('Barkod çakışması! Ürün "Hatalı Ürünler" kategorisine taşındı.', { id: 'product-update' });
+            } else {
+                toast.success('Ürün güncellendi!', { id: 'product-update' });
+            }
             await onSaved();
         } catch (error: any) {
             console.error('Update Error:', error);
-            toast.error(error?.message || 'Güncelleme başarısız!', { id: 'product-update' });
+            let errMsg = error?.message || 'Güncelleme başarısız!';
+            if (errMsg.includes('products_tenant_barcode_unique')) {
+                errMsg = 'Bu barkod numarası zaten başka bir üründe kullanılıyor!';
+            }
+            toast.error(errMsg, { id: 'product-update' });
         } finally {
             setLoading(false);
         }
