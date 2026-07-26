@@ -307,13 +307,31 @@ function POSPageInner() {
         } catch (e) { toast.error("AI Hatası"); } finally { setIsProcessingAI(false); }
     };
 
-    const addToCart = (product: Product) => {
+    const addToCart = (product: Product, qty: number = 1) => {
+        const add = qty > 0 ? qty : 1;
         setCart((prev: CartItem[]) => {
             const existing = prev.find((p: CartItem) => p.id === product.id);
-            if (existing) return prev.map((p: CartItem) => p.id === product.id ? { ...p, quantity: p.quantity + 1 } : p);
-            return [...prev, { ...product, quantity: 1 }];
+            if (existing) return prev.map((p: CartItem) => p.id === product.id ? { ...p, quantity: p.quantity + add } : p);
+            return [...prev, { ...product, quantity: add }];
         });
         toast.success(`${product.name} sepette`);
+    };
+
+    // TERAZİ (ağırlık gömülü) BARKODU: 13 hane, "2" ile başlar, ilk 7 hane ürün
+    // barkodu, sonraki 5 hane GRAM, son hane kontrol. Örn: 2701040 00526 7 → 0,526 kg.
+    // Yalnızca tam eşleşme YOKSA ve prefix KG ürüne denk gelirse uygulanır.
+    const tryScaleBarcode = (raw: string): boolean => {
+        const s = String(raw || "").trim();
+        if (!/^2\d{12}$/.test(s)) return false;
+        if (barcodeMap.get(s.toLowerCase())) return false;
+        const itemCode = s.slice(0, 7);
+        const grams = parseInt(s.slice(7, 12), 10);
+        if (!grams || grams <= 0) return false;
+        const product = barcodeMap.get(itemCode.toLowerCase());
+        if (!product) return false;
+        if (String((product as any).unit || "").toLowerCase() !== "kg") return false;
+        addToCart(product, grams / 1000);
+        return true;
     };
 
     const updateQuantity = (id: string, delta: number) => {
@@ -559,6 +577,13 @@ function POSPageInner() {
                             placeholder="Ürün veya barkod..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key !== 'Enter' || !search.trim()) return;
+                                // Barkod okuyucu / elle giriş: terazi barkodu → exact barkod → filtre
+                                if (tryScaleBarcode(search)) { setSearch(""); return; }
+                                const p = barcodeMap.get(search.trim().toLowerCase());
+                                if (p) { addToCart(p); setSearch(""); }
+                            }}
                             className="w-full h-12 glass-dark border border-[#2D6BFF]/20 rounded-2xl pl-11 pr-24 text-xs font-black text-white placeholder-slate-600 outline-none focus:border-[#2563FF]/50"
                         />
                         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
