@@ -461,7 +461,10 @@ function POSPageInner() {
             return;
         }
         try {
-            const invoiceData = { invoice_number: `PER-${Date.now()}`, invoice_type: 'retail', grand_total: totalAmount, cari_id: selectedCustomer?.id || null, payment_status: 'paid', notes: `Mobil POS - ${method}` };
+            // Satışı yapan personel (patron performansı → günlük ciro için)
+            let empId: string | null = null;
+            try { empId = JSON.parse(localStorage.getItem('jp_active_employee') || 'null')?.id || null; } catch { empId = null; }
+            const invoiceData = { invoice_number: `PER-${Date.now()}`, invoice_type: 'retail', grand_total: totalAmount, cari_id: selectedCustomer?.id || null, payment_status: 'paid', notes: `Mobil POS - ${method}`, employee_id: empId };
             const itemsData = cart.map(i => ({ product_id: i.id, item_name: i.name, quantity: i.quantity, unit_price: i.sale_price, line_total: i.sale_price * i.quantity }));
             const { error } = await supabase.rpc('create_pos_invoice', { p_tenant_id: tenantId, p_invoice_data: invoiceData, p_items_data: itemsData });
             if (error) throw error;

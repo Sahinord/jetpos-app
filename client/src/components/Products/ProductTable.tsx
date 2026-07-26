@@ -546,6 +546,12 @@ export default function ProductTable({ products, categories = [], onEdit, onDele
             const savedTenantId = localStorage.getItem('currentTenantId') || '';
             if (savedTenantId) await setTenant(savedTenantId);
 
+            // Depo seçiliyken ve stok senkron kapalıyken stok DEPO-YEREL tutulur
+            // (warehouse_stock). Aksi halde master products.stock_quantity. Tek ürün
+            // kaydıyla (handleSave) aynı mantık — yoksa değişiklik ekrana yansımaz.
+            const effectiveStockSync = activeWarehouse?.platform ? false : isStockSyncEnabled;
+            const useMaster = effectiveStockSync || !activeWarehouse;
+
             let successCount = 0;
             const total = selectedProducts.length;
             const BATCH_SIZE = 50;
@@ -565,7 +571,9 @@ export default function ProductTable({ products, categories = [], onEdit, onDele
                     const oldStock = product ? (Number(product.stock_quantity) || 0) : 0;
                     const productName = product ? product.name : 'Bilinmeyen Ürün';
 
-                    const { error } = await sb.from('products').update({ stock_quantity: finalStock }).eq('id', id).eq('tenant_id', savedTenantId);
+                    const { error } = useMaster
+                        ? await sb.from('products').update({ stock_quantity: finalStock }).eq('id', id).eq('tenant_id', savedTenantId)
+                        : await sb.from('warehouse_stock').upsert({ tenant_id: savedTenantId, warehouse_id: activeWarehouse!.id, product_id: id, quantity: finalStock }, { onConflict: 'warehouse_id,product_id' });
                     if (error) {
                         console.error(`Error updating product ${id}:`, error.message);
                         throw new Error(error.message);
@@ -591,7 +599,13 @@ export default function ProductTable({ products, categories = [], onEdit, onDele
                     const batchIds = selectedProducts.slice(i, i + BATCH_SIZE);
                     setProcessing(prev => ({ ...prev, current: Math.min(i + BATCH_SIZE, total) }));
 
-                    const { error } = await sb.from('products').update({ stock_quantity: value }).in('id', batchIds).eq('tenant_id', savedTenantId);
+                    let error: any;
+                    if (useMaster) {
+                        ({ error } = await sb.from('products').update({ stock_quantity: value }).in('id', batchIds).eq('tenant_id', savedTenantId));
+                    } else {
+                        const rows = batchIds.map(id => ({ tenant_id: savedTenantId, warehouse_id: activeWarehouse!.id, product_id: id, quantity: value }));
+                        ({ error } = await sb.from('warehouse_stock').upsert(rows, { onConflict: 'warehouse_id,product_id' }));
+                    }
 
                     if (error) {
                         console.error("Batch stock error:", error.message);

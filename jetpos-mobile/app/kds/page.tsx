@@ -52,6 +52,30 @@ export default function MobileKDS() {
     const [activeCol, setActiveCol] = useState<'new' | 'preparing' | 'ready'>('new');
     const prevOrdersCountRef = useRef<number>(0);
 
+    // Ekranı uyanık tut — mutfak ekranı sürekli açık kalmalı (Screen Wake Lock API).
+    // Sekme tekrar görünür olunca kilidi yeniden alır. Desteklenmeyen tarayıcıda sessizce atlar.
+    useEffect(() => {
+        let wakeLock: any = null;
+        let released = false;
+        const request = async () => {
+            try {
+                if ("wakeLock" in navigator) {
+                    wakeLock = await (navigator as any).wakeLock.request("screen");
+                }
+            } catch { /* desteklenmiyor / başarısız — yok say */ }
+        };
+        const onVisible = () => {
+            if (document.visibilityState === "visible" && !released) request();
+        };
+        request();
+        document.addEventListener("visibilitychange", onVisible);
+        return () => {
+            released = true;
+            document.removeEventListener("visibilitychange", onVisible);
+            try { wakeLock?.release?.(); } catch { /* yok say */ }
+        };
+    }, []);
+
     useEffect(() => {
         const tid = localStorage.getItem('tenantId');
         if (tid) {

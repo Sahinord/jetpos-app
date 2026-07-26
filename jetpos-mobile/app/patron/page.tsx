@@ -530,14 +530,14 @@ function PerformansTab({ tenantId }: { tenantId: string }) {
                 byId[e.id] = {
                     id: e.id, name: `${e.first_name || ""} ${e.last_name || ""}`.trim() || "Personel",
                     position: e.position || "", online: e.last_seen ? e.last_seen >= since : false,
-                    tables: new Set<string>(), orders: 0, activeTables: 0, openTotal: 0,
+                    tables: new Set<string>(), orders: 0, activeTables: 0, openTotal: 0, revenue: 0,
                 };
             }
         } catch { /* yok say */ }
 
         const ensure = (id: string) => {
             if (!id) return null;
-            if (!byId[id]) byId[id] = { id, name: "Bilinmeyen", position: "", online: false, tables: new Set<string>(), orders: 0, activeTables: 0, openTotal: 0 };
+            if (!byId[id]) byId[id] = { id, name: "Bilinmeyen", position: "", online: false, tables: new Set<string>(), orders: 0, activeTables: 0, openTotal: 0, revenue: 0 };
             return byId[id];
         };
 
@@ -579,6 +579,19 @@ function PerformansTab({ tenantId }: { tenantId: string }) {
             }
         } catch { /* yok say */ }
 
+        // Bugünkü faturalar → garson başına günlük ciro (invoices.employee_id).
+        // employee_id kolonu yoksa (migration çalışmadıysa) sessizce atlanır.
+        try {
+            const { data: inv } = await supabase.from("invoices")
+                .select("employee_id, grand_total, created_at")
+                .eq("tenant_id", tenantId)
+                .gte("created_at", startToday);
+            for (const i of (inv || []) as any[]) {
+                const r = i.employee_id ? byId[i.employee_id] : null;
+                if (r) r.revenue += Number(i.grand_total) || 0;
+            }
+        } catch { /* yok say */ }
+
         const arr = Object.values(byId)
             .map((r: any) => ({ ...r, tablesServed: r.tables.size }))
             // sadece bugün aktivitesi olan ya da online olanları öne al
@@ -592,7 +605,7 @@ function PerformansTab({ tenantId }: { tenantId: string }) {
     if (loading) return <PanelSpinner />;
 
     const maxOrders = Math.max(1, ...rows.map(r => r.orders));
-    const withActivity = rows.filter(r => r.orders > 0 || r.activeTables > 0 || r.online);
+    const withActivity = rows.filter(r => r.orders > 0 || r.activeTables > 0 || r.online || r.revenue > 0);
 
     return (
         <div className="space-y-3">
@@ -618,10 +631,19 @@ function PerformansTab({ tenantId }: { tenantId: string }) {
                             </p>
                             <p className="text-[10px] text-slate-500">{r.position || "—"}</p>
                         </div>
-                        {r.openTotal > 0 && (
+                        {(r.revenue > 0 || r.openTotal > 0) && (
                             <div className="text-right flex-shrink-0">
-                                <p className="text-sm font-black text-amber-300">{money(r.openTotal)}</p>
-                                <p className="text-[9px] text-slate-500 uppercase tracking-wide">açık hesap</p>
+                                {r.revenue > 0 ? (
+                                    <>
+                                        <p className="text-sm font-black text-emerald-300">{money(r.revenue)}</p>
+                                        <p className="text-[9px] text-slate-500 uppercase tracking-wide">bugünkü ciro</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="text-sm font-black text-amber-300">{money(r.openTotal)}</p>
+                                        <p className="text-[9px] text-slate-500 uppercase tracking-wide">açık hesap</p>
+                                    </>
+                                )}
                             </div>
                         )}
                     </div>
