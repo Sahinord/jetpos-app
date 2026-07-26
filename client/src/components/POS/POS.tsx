@@ -264,6 +264,10 @@ export default function POS({
                     showToast(`${product.name} sepete eklendi`, "success");
                     setIsScannerOpen(false);
                     scanner.clear();
+                } else if (tryScaleBarcode(decodedText)) {
+                    // Terazi barkodu → ürün gömülü ağırlıkla eklendi
+                    setIsScannerOpen(false);
+                    scanner.clear();
                 } else {
                     showToast("Ürün bulunamadı: " + decodedText, "error");
                 }
@@ -363,6 +367,11 @@ export default function POS({
                     if (product) {
                         addToCartRef.current(product);
                         searchInputRef.current?.focus();
+                    } else if (tryScaleBarcode(buffer)) {
+                        // Terazi (ağırlık gömülü) barkodu → gömülü kg ile eklendi
+                        searchInputRef.current?.focus();
+                        buffer = "";
+                        return;
                     } else {
                         // Show buffer in search so user can see what was scanned
                         searchInputRef.current?.focus();
@@ -479,6 +488,27 @@ export default function POS({
         // KG ürününde ondalıksız ve ≥100 ise gram girilmiş demektir → kg'a çevir.
         if (isKG && !hadDecimal && qty >= 100) qty = qty / 1000;
         addToCartRef.current(product, qty);
+        return true;
+    };
+
+    // TERAZİ (ağırlık gömülü) BARKODU. Türkiye yaygın format: 13 hane, "2" ile başlar,
+    // ilk 7 hane ürün barkodu, sonraki 5 hane GRAM, son hane kontrol.
+    //   Örn: 2701040 00526 7  →  ürün 2701040, 526 g = 0,526 kg
+    // Fiyat kilo fiyatından hesaplanır (addToCart kg ürününde birim fiyat × kg).
+    // Güvenlik: yalnızca tam eşleşme YOKSA ve prefix'i KG ürüne denk gelirse uygulanır;
+    // aksi halde false döner → normal akış (tam barkod araması) bozulmaz.
+    const tryScaleBarcode = (raw: string): boolean => {
+        const s = String(raw || "").trim();
+        if (!/^2\d{12}$/.test(s)) return false;                 // 13 hane, 2 ile başlamalı
+        if (barcodeMapRef.current.get(s.toLowerCase())) return false; // gerçek 13-hane ürün barkodu
+        const itemCode = s.slice(0, 7);
+        const grams = parseInt(s.slice(7, 12), 10);
+        if (!grams || grams <= 0) return false;
+        const product = barcodeMapRef.current.get(itemCode.toLowerCase());
+        if (!product) return false;
+        // Sadece tartılan (KG) ürünlerde uygula — yanlış eşleşmeyi önler.
+        if (String(product.unit || "").toLowerCase() !== "kg") return false;
+        addToCartRef.current(product, grams / 1000);
         return true;
     };
 
@@ -1213,6 +1243,9 @@ export default function POS({
                                             const p = barcodeMap.get(search.toLowerCase());
                                             if (p) {
                                                 addToCart(p);
+                                                setSearch("");
+                                            } else if (tryScaleBarcode(search)) {
+                                                // Terazi (ağırlık gömülü) barkodu → gömülü kg ile eklendi
                                                 setSearch("");
                                             }
                                             // Return focus to search so next scan lands here
