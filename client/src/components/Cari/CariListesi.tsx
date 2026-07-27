@@ -40,8 +40,8 @@ const KOLONLAR = [
     { id: 'cari_tipi', label: 'Cari Tipi', visible: false },
     { id: 'grup_kodu', label: 'Grup Kodu', visible: false },
     { id: 'para_birimi', label: 'Para Birimi', visible: false },
-    { id: 'borc_toplami', label: 'Borç', visible: true },
-    { id: 'alacak_toplami', label: 'Alacak', visible: true },
+    { id: 'borc_toplami', label: 'Alacak', visible: true },
+    { id: 'alacak_toplami', label: 'Verecek', visible: true },
     { id: 'bakiye', label: 'Bakiye', visible: true },
     { id: 'email', label: 'E-posta', visible: false },
 ];
@@ -316,9 +316,9 @@ export default function CariListesi({ showToast }: CariListesiProps) {
                                     {visibleColumns.filter(c => c.visible).map(col => (
                                         <td key={col.id} className="px-3 py-2 text-foreground">
                                             {col.id === 'borc_toplami' || col.id === 'alacak_toplami' || col.id === 'bakiye' ? (
-                                                <span className={`font-mono ${col.id === 'borc_toplami' ? 'text-red-400' :
-                                                    col.id === 'alacak_toplami' ? 'text-emerald-400' :
-                                                        (cari.bakiye || 0) >= 0 ? 'text-red-400' : 'text-emerald-400'
+                                                <span className={`font-mono ${col.id === 'borc_toplami' ? 'text-emerald-400' :
+                                                    col.id === 'alacak_toplami' ? 'text-rose-400' :
+                                                        (cari.bakiye || 0) > 0 ? 'text-emerald-400' : (cari.bakiye || 0) < 0 ? 'text-rose-400' : 'text-slate-300'
                                                     }`}>
                                                     {((cari as any)[col.id] || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
                                                 </span>
@@ -403,20 +403,20 @@ export default function CariListesi({ showToast }: CariListesiProps) {
                     {/* Toplamlar */}
                     <div className="flex items-center gap-6">
                         <div className="text-right">
-                            <div className="text-secondary text-xs">Toplam Borç</div>
-                            <div className="text-lg font-black text-red-500 font-mono">
+                            <div className="text-secondary text-xs">Toplam Alacak</div>
+                            <div className="text-lg font-black text-emerald-500 font-mono">
                                 {toplamlar.borc.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
                             </div>
                         </div>
                         <div className="text-right">
-                            <div className="text-secondary text-xs">Toplam Alacak</div>
-                            <div className="text-lg font-black text-emerald-500 font-mono">
+                            <div className="text-secondary text-xs">Toplam Verecek</div>
+                            <div className="text-lg font-black text-rose-500 font-mono">
                                 {toplamlar.alacak.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
                             </div>
                         </div>
                         <div className="text-right">
                             <div className="text-secondary text-xs">Net Bakiye</div>
-                            <div className={`text-lg font-black font-mono ${toplamlar.bakiye >= 0 ? 'text-red-500' : 'text-emerald-500'}`}>
+                            <div className={`text-lg font-black font-mono ${toplamlar.bakiye > 0 ? 'text-emerald-500' : toplamlar.bakiye < 0 ? 'text-red-500' : 'text-slate-400'}`}>
                                 {toplamlar.bakiye.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
                             </div>
                         </div>

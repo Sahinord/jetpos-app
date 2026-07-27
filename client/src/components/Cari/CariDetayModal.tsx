@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
-    X, User, Receipt, TrendingUp, Save, Search, RefreshCw, Loader2,
+    X, User, Receipt, TrendingUp, Save, Search, RefreshCw, Loader2, ArrowLeftRight, Info,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useTenant } from "@/lib/tenant-context";
+import CariSearchModal from "./CariSearchModal";
 
 type Tab = "bilgiler" | "hareketler" | "fiyat";
 
@@ -43,6 +44,14 @@ export default function CariDetayModal({ cari, initialTab = "hareketler", onClos
     const [loadingFiy, setLoadingFiy] = useState(false);
     const [urunAra, setUrunAra] = useState("");
 
+    // ── Hızlı borç aktarma (virman kısayolu) ──
+    const [transferOpen, setTransferOpen] = useState(false);
+    const [transferPickerOpen, setTransferPickerOpen] = useState(false);
+    const [transferTarget, setTransferTarget] = useState<any>(null);
+    const [transferAmount, setTransferAmount] = useState("");
+    const [transferDesc, setTransferDesc] = useState("");
+    const [transferSaving, setTransferSaving] = useState(false);
+
     // Tam cari kaydını çek (liste kısmi kolon taşıyor)
     useEffect(() => {
         if (!tenantId || !cari?.id) return;
@@ -74,38 +83,76 @@ export default function CariDetayModal({ cari, initialTab = "hareketler", onClos
         finally { setLoadingHar(false); }
     }, [tenantId, cari?.id]);
 
-    // Ürün fiyat geçmişi (bu cariye kesilen faturaların kalemleri)
+    // Bu cariye satılan ürünler: hem FATURA kalemleri hem HIZLI SATIŞ (veresiye dahil).
     const loadFiyatlar = useCallback(async () => {
         if (!tenantId || !cari?.id) return;
         setLoadingFiy(true);
+        const rows: any[] = [];
+
+        // 1) Faturalar + kalemleri
         try {
             const { data: invs } = await supabase
                 .from("invoices")
                 .select("id, invoice_number, invoice_type, invoice_date, created_at")
-                .eq("tenant_id", tenantId)
-                .eq("cari_id", cari.id)
-                .order("created_at", { ascending: false })
-                .limit(500);
+                .eq("tenant_id", tenantId).eq("cari_id", cari.id)
+                .order("created_at", { ascending: false }).limit(500);
             const list = invs || [];
-            if (list.length === 0) { setFiyatlar([]); return; }
-            const invMap: Record<string, any> = {};
-            for (const i of list) invMap[i.id] = i;
-            const { data: items } = await supabase
-                .from("invoice_items")
-                .select("invoice_id, product_name, unit, quantity, unit_price, total_amount")
-                .in("invoice_id", list.map(i => i.id));
-            const rows = (items || []).map((it: any) => {
-                const inv = invMap[it.invoice_id] || {};
-                return {
-                    ...it,
-                    tarih: inv.invoice_date || inv.created_at,
-                    belge_no: inv.invoice_number,
-                    tip: inv.invoice_type,
-                };
-            }).sort((a, b) => String(b.tarih).localeCompare(String(a.tarih)));
-            setFiyatlar(rows);
-        } catch { setFiyatlar([]); }
-        finally { setLoadingFiy(false); }
+            if (list.length) {
+                const invMap: Record<string, any> = {};
+                for (const i of list) invMap[i.id] = i;
+                const { data: items } = await supabase
+                    .from("invoice_items")
+                    .select("invoice_id, product_name, unit, quantity, unit_price, total_amount")
+                    .in("invoice_id", list.map(i => i.id));
+                for (const it of (items || []) as any[]) {
+                    const inv = invMap[it.invoice_id] || {};
+                    rows.push({
+                        product_name: it.product_name, unit: it.unit, quantity: it.quantity,
+                        unit_price: it.unit_price, total_amount: it.total_amount,
+                        tarih: inv.invoice_date || inv.created_at, tip: "Fatura",
+                    });
+                }
+            }
+        } catch { /* yok say */ }
+
+        // 2) Hızlı satışlar (sales) + kalemleri (sale_items) — veresiye buradan görünür
+        try {
+            const { data: sls } = await supabase
+                .from("sales")
+                .select("id, created_at, payment_method")
+                .eq("tenant_id", tenantId).eq("customer_id", cari.id)
+                .order("created_at", { ascending: false }).limit(500);
+            const slist = sls || [];
+            if (slist.length) {
+                const sMap: Record<string, any> = {};
+                for (const s of slist) sMap[s.id] = s;
+                const { data: sitems } = await supabase
+                    .from("sale_items")
+                    .select("sale_id, product_id, quantity, unit_price")
+                    .in("sale_id", slist.map(s => s.id));
+                const its = (sitems || []) as any[];
+                const pids = Array.from(new Set(its.map(x => x.product_id).filter(Boolean)));
+                const nameMap: Record<string, any> = {};
+                if (pids.length) {
+                    const { data: prods } = await supabase.from("products").select("id, name, unit").in("id", pids);
+                    for (const p of (prods || []) as any[]) nameMap[p.id] = p;
+                }
+                for (const it of its) {
+                    const s = sMap[it.sale_id] || {};
+                    const p = nameMap[it.product_id] || {};
+                    rows.push({
+                        product_name: p.name || "Ürün", unit: p.unit || "",
+                        quantity: it.quantity, unit_price: it.unit_price,
+                        total_amount: (Number(it.quantity) || 0) * (Number(it.unit_price) || 0),
+                        tarih: s.created_at, tip: s.payment_method === "VERESİYE" ? "Veresiye" : "Satış",
+                    });
+                }
+            }
+        } catch { /* yok say */ }
+
+        rows.sort((a, b) => String(b.tarih).localeCompare(String(a.tarih)));
+        setFiyatlar(rows);
+        setLoadingFiy(false);
     }, [tenantId, cari?.id]);
 
     useEffect(() => { if (tab === "hareketler") loadHareketler(); }, [tab, loadHareketler]);
@@ -134,6 +181,38 @@ export default function CariDetayModal({ cari, initialTab = "hareketler", onClos
         } finally { setSaving(false); }
     };
 
+    // Hızlı borç aktarma (virman kısayolu). SADECE INSERT — veri kaybı yok.
+    // Bu cariden (kaynak) seçilen cariye (hedef) `tutar` aktarılır:
+    //   kaynak → alacak = tutar (bu carinin bakiyesi düşer)
+    //   hedef  → borç   = tutar (hedef carinin bakiyesi artar)
+    // Toplam borç = toplam alacak → dengeli virman. İkisi de cari_hareketler'e (log) düşer.
+    const borcAktar = async () => {
+        if (!tenantId) return;
+        const tutar = parseFloat(String(transferAmount).replace(",", "."));
+        if (!transferTarget?.id) { showToast?.("Hedef cari seçin", "error"); return; }
+        if (transferTarget.id === cari.id) { showToast?.("Aynı cariye aktarılamaz", "error"); return; }
+        if (!isFinite(tutar) || tutar <= 0) { showToast?.("Geçerli tutar girin", "error"); return; }
+        setTransferSaving(true);
+        try {
+            const belgeNo = `AKT-${Date.now()}`;
+            const now = new Date().toISOString();
+            const acik = transferDesc.trim() ||
+                `Borç aktarma: ${cari?.unvani || cari?.cari_kodu} → ${transferTarget.unvani || transferTarget.cari_kodu}`;
+            const rows = [
+                { tenant_id: tenantId, cari_id: cari.id, hareket_tipi: "VIRMAN_DEKONTU", tarih: now, belge_no: belgeNo, aciklama: acik, borc: 0, alacak: tutar, para_birimi: "TRY" },
+                { tenant_id: tenantId, cari_id: transferTarget.id, hareket_tipi: "VIRMAN_DEKONTU", tarih: now, belge_no: belgeNo, aciklama: acik, borc: tutar, alacak: 0, para_birimi: "TRY" },
+            ];
+            const { error } = await supabase.from("cari_hareketler").insert(rows);
+            if (error) throw error;
+            showToast?.(`${money(tutar)} ₺ aktarıldı`, "success");
+            setTransferOpen(false); setTransferTarget(null); setTransferAmount(""); setTransferDesc("");
+            loadHareketler();
+            onSaved?.();
+        } catch (e: any) {
+            showToast?.(e?.message || "Aktarım başarısız", "error");
+        } finally { setTransferSaving(false); }
+    };
+
     const bakiye = Number(cari?.bakiye) || 0;
     const fiyatFiltre = fiyatlar.filter(f =>
         !urunAra.trim() || String(f.product_name || "").toLowerCase().includes(urunAra.toLowerCase()));
@@ -145,6 +224,7 @@ export default function CariDetayModal({ cari, initialTab = "hareketler", onClos
     ];
 
     return (
+        <>
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
             <div onClick={e => e.stopPropagation()}
                 className="bg-card border border-border w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
@@ -161,10 +241,21 @@ export default function CariDetayModal({ cari, initialTab = "hareketler", onClos
                         </div>
                     </div>
                     <div className="flex items-center gap-3 flex-shrink-0">
+                        <button
+                            onClick={() => { setTransferAmount(bakiye > 0 ? String(bakiye) : ""); setTransferOpen(true); }}
+                            title="Bu carinin bakiyesini başka bir cariye aktar (virman kısayolu)"
+                            className="hidden sm:flex items-center gap-1.5 h-9 px-3 rounded-lg bg-primary/10 border border-primary/20 text-primary text-xs font-bold hover:bg-primary/20 active:scale-95 transition-all">
+                            <ArrowLeftRight className="w-4 h-4" /> Borç Aktar
+                        </button>
                         <div className="text-right">
-                            <p className="text-[10px] uppercase tracking-wider text-secondary">Bakiye</p>
-                            <p className={`text-lg font-black font-mono ${bakiye >= 0 ? "text-red-400" : "text-emerald-400"}`}>
-                                {money(Math.abs(bakiye))} <span className="text-[10px]">{bakiye >= 0 ? "B" : "A"}</span>
+                            <p className="text-[10px] uppercase tracking-wider text-secondary flex items-center gap-1 justify-end">
+                                {bakiye > 0 ? "Alacak · size borçlu" : bakiye < 0 ? "Verecek · siz borçlu" : "Bakiye"}
+                                <span title="Alacak: cari SİZE borçlu (tahsil edeceksiniz). Verecek: SİZ cariye borçlusunuz (ödeyeceksiniz)." className="inline-flex cursor-help">
+                                    <Info className="w-3 h-3 text-secondary/60" />
+                                </span>
+                            </p>
+                            <p className={`text-lg font-black font-mono ${bakiye > 0 ? "text-emerald-400" : bakiye < 0 ? "text-rose-400" : "text-slate-300"}`}>
+                                {money(Math.abs(bakiye))}
                             </p>
                         </div>
                         <button onClick={onClose} className="w-9 h-9 rounded-lg hover:bg-primary/10 flex items-center justify-center text-secondary hover:text-foreground transition-all">
@@ -241,8 +332,8 @@ export default function CariDetayModal({ cari, initialTab = "hareketler", onClos
                                             <th className="py-2 pr-3 font-medium">Tarih</th>
                                             <th className="py-2 px-3 font-medium">Belge</th>
                                             <th className="py-2 px-3 font-medium">İşlem</th>
-                                            <th className="py-2 px-3 font-medium text-right">Borç</th>
-                                            <th className="py-2 px-3 font-medium text-right">Alacak</th>
+                                            <th className="py-2 px-3 font-medium text-right" title="Cari SİZE borçlandı (tahsil edeceksiniz)">Alacak</th>
+                                            <th className="py-2 px-3 font-medium text-right" title="SİZ cariye borçlandınız / ödeme (ödeyeceksiniz)">Verecek</th>
                                             <th className="py-2 pl-3 font-medium text-right">Bakiye</th>
                                         </tr>
                                     </thead>
@@ -252,9 +343,9 @@ export default function CariDetayModal({ cari, initialTab = "hareketler", onClos
                                                 <td className="py-2 pr-3 whitespace-nowrap text-foreground">{h.tarih ? new Date(h.tarih).toLocaleDateString("tr-TR") : "—"}</td>
                                                 <td className="py-2 px-3 font-mono text-xs text-secondary">{h.belge_no || "—"}</td>
                                                 <td className="py-2 px-3 text-foreground">{HAREKET_ETIKET[h.hareket_tipi] || h.hareket_tipi || h.aciklama || "—"}</td>
-                                                <td className="py-2 px-3 text-right font-mono text-red-400">{h.borc > 0 ? money(h.borc) : "—"}</td>
-                                                <td className="py-2 px-3 text-right font-mono text-emerald-400">{h.alacak > 0 ? money(h.alacak) : "—"}</td>
-                                                <td className={`py-2 pl-3 text-right font-mono font-bold ${h._bakiye >= 0 ? "text-red-400" : "text-emerald-400"}`}>{money(Math.abs(h._bakiye))}</td>
+                                                <td className="py-2 px-3 text-right font-mono text-emerald-400">{h.borc > 0 ? money(h.borc) : "—"}</td>
+                                                <td className="py-2 px-3 text-right font-mono text-rose-400">{h.alacak > 0 ? money(h.alacak) : "—"}</td>
+                                                <td className={`py-2 pl-3 text-right font-mono font-bold ${h._bakiye > 0 ? "text-emerald-400" : h._bakiye < 0 ? "text-rose-400" : "text-slate-300"}`}>{money(Math.abs(h._bakiye))}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -289,7 +380,12 @@ export default function CariDetayModal({ cari, initialTab = "hareketler", onClos
                                             {fiyatFiltre.map((f, i) => (
                                                 <tr key={i} className="border-b border-border/50 hover:bg-primary/5">
                                                     <td className="py-2 pr-3 whitespace-nowrap text-foreground">{f.tarih ? new Date(f.tarih).toLocaleDateString("tr-TR") : "—"}</td>
-                                                    <td className="py-2 px-3 text-foreground">{f.product_name || "—"}</td>
+                                                    <td className="py-2 px-3 text-foreground">
+                                                        {f.product_name || "—"}
+                                                        {f.tip && (
+                                                            <span className={`ml-2 text-[9px] px-1.5 py-0.5 rounded font-bold ${f.tip === "Veresiye" ? "bg-amber-500/15 text-amber-400" : f.tip === "Satış" ? "bg-emerald-500/15 text-emerald-400" : "bg-slate-500/15 text-slate-400"}`}>{f.tip}</span>
+                                                        )}
+                                                    </td>
                                                     <td className="py-2 px-3 text-right font-mono text-secondary">{money(f.quantity)} {f.unit || ""}</td>
                                                     <td className="py-2 px-3 text-right font-mono font-bold text-primary">{money(f.unit_price)}</td>
                                                     <td className="py-2 pl-3 text-right font-mono text-foreground">{money(f.total_amount)}</td>
@@ -304,6 +400,52 @@ export default function CariDetayModal({ cari, initialTab = "hareketler", onClos
                 </div>
             </div>
         </div>
+
+        {/* Hızlı Borç Aktarma (virman kısayolu) */}
+        {transferOpen && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setTransferOpen(false)}>
+                <div onClick={e => e.stopPropagation()} className="bg-card border border-border w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden">
+                    <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+                        <h3 className="font-bold text-foreground flex items-center gap-2"><ArrowLeftRight className="w-4 h-4 text-primary" /> Borç Aktar</h3>
+                        <button onClick={() => setTransferOpen(false)} className="w-8 h-8 rounded-lg hover:bg-primary/10 flex items-center justify-center text-secondary"><X className="w-4 h-4" /></button>
+                    </div>
+                    <div className="p-5 space-y-4">
+                        <div className="text-xs text-secondary bg-primary/5 border border-primary/10 rounded-lg px-3 py-2 flex gap-2">
+                            <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                            <span><b className="text-foreground">{cari?.unvani}</b> bakiyesinden seçtiğiniz cariye tutar aktarılır. İki tarafa da kayıt (log) düşer, mevcut hareketler silinmez.</span>
+                        </div>
+                        <Field label="Hedef Cari">
+                            <button onClick={() => setTransferPickerOpen(true)} className={`${inp} text-left flex items-center justify-between`}>
+                                <span className={transferTarget ? "text-foreground" : "text-secondary"}>{transferTarget?.unvani || "Cari seç…"}</span>
+                                <Search className="w-4 h-4 text-secondary" />
+                            </button>
+                        </Field>
+                        <Field label="Tutar (₺)">
+                            <input value={transferAmount} inputMode="decimal"
+                                onChange={e => setTransferAmount(e.target.value.replace(/[^0-9.,]/g, ""))}
+                                className={`${inp} font-mono`} placeholder="0,00" />
+                        </Field>
+                        <Field label="Açıklama (opsiyonel)">
+                            <input value={transferDesc} onChange={e => setTransferDesc(e.target.value)} className={inp} placeholder="Borç aktarma" />
+                        </Field>
+                        <button onClick={borcAktar} disabled={transferSaving}
+                            className="w-full py-3 rounded-xl bg-primary text-white font-bold flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 transition-all">
+                            {transferSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowLeftRight className="w-4 h-4" />} Aktar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {transferPickerOpen && (
+            <CariSearchModal
+                isOpen={transferPickerOpen}
+                title="Hedef Cari Seç"
+                onClose={() => setTransferPickerOpen(false)}
+                onSelect={(c) => { setTransferTarget(c); setTransferPickerOpen(false); }}
+            />
+        )}
+        </>
     );
 }
 
