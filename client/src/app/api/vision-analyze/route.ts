@@ -13,7 +13,10 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Görüntü verisi eksik!' }, { status: 400 });
         }
 
-        const OPENROUTER_API_KEY = api_key || process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
+        // GÜVENLİK: Anahtar SUNUCU tarafında tutulmalı. NEXT_PUBLIC_ önekli değişken
+        // tarayıcı paketine gömülür ve ele geçer → server-only OPENROUTER_API_KEY tercih
+        // edilir. (NEXT_PUBLIC fallback yalnızca geçiş için; kaldırıp anahtarı ROTE edin.)
+        const OPENROUTER_API_KEY = api_key || process.env.OPENROUTER_API_KEY || process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
 
         const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: 'POST',

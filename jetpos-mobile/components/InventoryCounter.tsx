@@ -174,14 +174,17 @@ export default function InventoryCounter({ countId, warehouseId, onClose }: Inve
             // 1. Find product
             const { data: product, error: pError } = await supabase
                 .from('products')
-                .select('id, name, barcode, unit, warehouse_stock(quantity)')
+                .select('id, name, barcode, unit, stock_quantity, warehouse_stock(quantity)')
                 .eq('barcode', barcode)
                 .eq('tenant_id', tenantId)
                 .eq('warehouse_stock.warehouse_id', warehouseId)
                 .single();
 
             if (product) {
-                const system_qty = product.warehouse_stock?.[0]?.quantity || 0;
+                // Depo-yerel satır varsa onu, YOKSA master stoğa düş — böylece stok
+                // master'da tutulan ürünler sayımda 0 görünmez (mobil↔PC tutarlı).
+                const wsQty = product.warehouse_stock?.[0]?.quantity;
+                const system_qty = (wsQty !== undefined && wsQty !== null) ? wsQty : (Number(product.stock_quantity) || 0);
                 await updateCountItem(product.id, 1, system_qty, product.name, product.barcode, product.unit);
             } else {
                 toast.error('Ürün bulunamadı: ' + barcode);
@@ -301,17 +304,26 @@ export default function InventoryCounter({ countId, warehouseId, onClose }: Inve
             
             if (error) throw error;
 
-            // Trigger actual stock update (Same logic as desktop)
+            // Sayım stoğu HEM depo-yerel HEM master'a yazılır. Böylece PC ister depo
+            // görünümünde (warehouse_stock) ister master (products.stock_quantity)
+            // okusun, sayılan miktar her yerde görünür — "mobilde girildi PC'de yok" biter.
+            const tId = localStorage.getItem('tenantId');
             for (const item of items) {
                 await supabase
                     .from('warehouse_stock')
                     .upsert([{
-                        tenant_id: localStorage.getItem('tenantId'),
+                        tenant_id: tId,
                         warehouse_id: warehouseId,
                         product_id: item.product_id,
                         quantity: item.counted_quantity,
                         updated_at: new Date().toISOString()
                     }], { onConflict: 'warehouse_id,product_id' });
+
+                await supabase
+                    .from('products')
+                    .update({ stock_quantity: item.counted_quantity, updated_at: new Date().toISOString() })
+                    .eq('id', item.product_id)
+                    .eq('tenant_id', tId);
             }
 
             toast.success('Sayım başarıyla tamamlandı!');

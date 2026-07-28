@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 import { getInvoiceProvider } from '@/lib/invoice-providers';
 import { getTenantSettings } from '@/lib/tenant-settings';
+import { verifyTenantAccess } from '@/lib/server-tenant-auth';
 import crypto from 'crypto';
 
 export async function POST(req: NextRequest) {
@@ -18,6 +19,15 @@ export async function POST(req: NextRequest) {
         }
 
         const { tenantId } = invoiceData;
+
+        // GÜVENLİK: Bu uç, tenant'ın e-fatura kimlik bilgileriyle GİB'e resmi belge
+        // keser. Kimlik doğrulanmadan body'deki tenantId'ye güvenmek IDOR'dur
+        // (başkası adına fatura kesme). x-tenant-id + x-license-key doğrulanır ve
+        // body'deki tenantId ile aynı olmak zorundadır.
+        const auth = await verifyTenantAccess(req, tenantId);
+        if (!auth.ok) {
+            return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
+        }
         const tenantSettings = await getTenantSettings(tenantId);
         
         console.log(`[Invoice API] Tenant: ${tenantId}`);

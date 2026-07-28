@@ -96,9 +96,11 @@ export const calculateStockMetrics = (
       ? product.warehouse_stock.find((ws: any) => ws.warehouse_id === activeWarehouseId)
       : null;
 
+    // Depo-yerel satır YOKSA master stoğa düş (yoksa master'da tutulan stok
+    // depo aktifken toplamda 0 sayılıp toplam stok eksik çıkıyordu).
     const qty = (isStockSyncEnabled || !activeWarehouseId)
       ? (Number(product.stock_quantity) || 0)
-      : (Number(wsData?.quantity) || 0);
+      : (wsData ? (Number(wsData.quantity) || 0) : (Number(product.stock_quantity) || 0));
 
     const purchasePrice = (!isPriceSyncEnabled && wsData && wsData.purchase_price !== undefined && wsData.purchase_price !== null)
       ? (Number(wsData.purchase_price) || 0)

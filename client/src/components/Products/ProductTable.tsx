@@ -166,7 +166,11 @@ export default function ProductTable({ products, categories = [], onEdit, onDele
         return [...filteredProducts].sort((a: any, b: any) => {
             const getEffectiveStock = (product: any) => {
                 const wsData = product.warehouse_stock?.find((ws: any) => ws.warehouse_id === activeWarehouse?.id);
-                return (isStockSyncEnabled || !activeWarehouse) ? (Number(product.stock_quantity) || 0) : (Number(wsData?.quantity) || 0);
+                // Depo-yerel satır YOKSA master stoğa düş (yoksa mobilde master'a girilen
+                // stok PC depo görünümünde 0 görünüyordu).
+                return (isStockSyncEnabled || !activeWarehouse)
+                    ? (Number(product.stock_quantity) || 0)
+                    : (wsData ? (Number(wsData.quantity) || 0) : (Number(product.stock_quantity) || 0));
             };
 
             const getEffectiveSalePrice = (product: any) => {
@@ -1095,7 +1099,7 @@ export default function ProductTable({ products, categories = [], onEdit, onDele
                                 const wsData = product.warehouse_stock?.find((ws: any) => ws.warehouse_id === activeWarehouse?.id);
                                 const currentSalePrice = ((!isPriceSyncEnabled && wsData?.sale_price) ? wsData.sale_price : product.sale_price) || product.external_price || 0;
                                 const currentPurchasePrice = (!isPriceSyncEnabled && wsData?.purchase_price) ? wsData.purchase_price : product.purchase_price;
-                                const currentStock = (isStockSyncEnabled || !activeWarehouse) ? (product.stock_quantity || 0) : (wsData?.quantity || 0);
+                                const currentStock = (isStockSyncEnabled || !activeWarehouse) ? (product.stock_quantity || 0) : (wsData ? (Number(wsData.quantity) || 0) : (product.stock_quantity || 0));
 
                                 const profit = currentSalePrice - currentPurchasePrice;
                                 const profitPercent = currentPurchasePrice > 0 ? (profit / currentPurchasePrice) * 100 : 0;
