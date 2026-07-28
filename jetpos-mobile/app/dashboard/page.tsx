@@ -88,7 +88,7 @@ function DashboardPageInner() {
             const [activeCountRes, inactiveCountRes, allLowStockRes] = await Promise.all([
                 supabase.from('products').select('*', { count: 'exact', head: true }).eq('tenant_id', tenantId).or('status.eq.active,status.is.null'),
                 supabase.from('products').select('*', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('status', 'inactive'),
-                supabase.from('products').select('*', { count: 'exact', head: true }).eq('tenant_id', tenantId).lte('stock_quantity', 10),
+                supabase.from('products').select('*', { count: 'exact', head: true }).eq('tenant_id', tenantId).or('status.eq.active,status.is.null').lte('stock_quantity', 10),
             ]);
 
             // Envanter değeri için tüm ürünleri çek (Maliyet üzerinden hesapla)
@@ -102,7 +102,7 @@ function DashboardPageInner() {
                 while (hasMore) {
                     const { data: chunk } = await supabase
                         .from('products')
-                        .select('stock_quantity, purchase_price, status')
+                        .select('stock_quantity, purchase_price, status, unit')
                         .eq('tenant_id', tenantId)
                         .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
                     if (chunk && chunk.length > 0) {
@@ -118,7 +118,11 @@ function DashboardPageInner() {
             
             // Envanter değeri = Stok Adedi * Alış Fiyatı (PC ile aynı mantık)
             const calculateValue = (list: any[]) => list.reduce((sum, p) => sum + ((Number(p.stock_quantity) || 0) * (Number(p.purchase_price) || 0)), 0);
-            const totalStockCount = products.reduce((sum, p) => sum + (Number(p.stock_quantity) || 0), 0);
+            // TOPLAM STOK = yalnızca AKTİF + ADET birimli ürünlerin stok toplamı (PC ile aynı).
+            // Eskiden tüm ürünleri (pasif dahil) ve kg+adet'i karıştırıp topluyordu → yanlış/ondalıklı.
+            const totalStockCount = activeOnes
+                .filter(p => String(p.unit || '').toUpperCase() !== 'KG')
+                .reduce((sum, p) => sum + (Number(p.stock_quantity) || 0), 0);
 
             // Satışları çek
             const startOfToday = new Date(new Date().setHours(0, 0, 0, 0)).toISOString();

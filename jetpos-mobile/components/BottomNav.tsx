@@ -90,7 +90,9 @@ export default function BottomNav() {
     };
 
     const sidebarItems = [
-        { name: 'Patron Paneli', icon: Crown, path: '/patron', show: gate('can_manage_employees') },
+        // Patron Paneli YALNIZCA gerçek patron/müdür oturumu açıkken görünür.
+        // (gate() çalışan yokken true döndüğü için normal girişte de çıkıyordu — düzeltildi.)
+        { name: 'Patron Paneli', icon: Crown, path: '/patron', show: !!employee && can('can_manage_employees') },
         { name: 'Pano', icon: LayoutDashboard, path: '/dashboard', show: gate('can_access_reports') },
         { name: 'JetKasa (POS)', icon: Wallet, path: '/pos', show: gate('can_access_pos') },
         { name: 'Barkod Okuyucu', icon: ScanLine, path: '/scanner', show: true },

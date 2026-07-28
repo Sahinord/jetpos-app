@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import BottomNav from '@/components/BottomNav';
+import RequireFeature from '@/components/RequireFeature';
 import { useEmployee } from '@/lib/employee-context';
 
 interface Table {
@@ -27,7 +28,7 @@ interface OrderItem {
     notes?: string;
 }
 
-export default function AdisyonMobile() {
+function AdisyonMobile() {
     const router = useRouter();
     // Global çalışan oturumu (PIN sistemiyle birleşik). Varsa adisyon bunu kullanır.
     const { employee, loginWithPin } = useEmployee();
@@ -1533,5 +1534,13 @@ export default function AdisyonMobile() {
 
             <BottomNav />
         </div>
+    );
+}
+
+export default function AdisyonPage() {
+    return (
+        <RequireFeature features={["adisyon", "mobile_adisyon"]} title="Adisyon Kapalı">
+            <AdisyonMobile />
+        </RequireFeature>
     );
 }

@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import BottomNav from "@/components/BottomNav";
+import RequireFeature from "@/components/RequireFeature";
 
 interface KitchenOrder {
     id: string;
@@ -40,7 +41,7 @@ interface KitchenOrderItem {
     cancelled_by?: string;
 }
 
-export default function MobileKDS() {
+function MobileKDS() {
     const router = useRouter();
     const [tenantId, setTenantId] = useState<string | null>(null);
     const [waiterRole, setWaiterRole] = useState<string | null>(null);
@@ -506,5 +507,13 @@ export default function MobileKDS() {
 
             <BottomNav />
         </div>
+    );
+}
+
+export default function KDSPage() {
+    return (
+        <RequireFeature features={["kds"]} title="Mutfak Ekranı Kapalı">
+            <MobileKDS />
+        </RequireFeature>
     );
 }

@@ -17,6 +17,7 @@ import { SyncService } from '@/lib/sync-service';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { apiFetch } from '@/lib/api';
 import RequirePermission from '@/components/RequirePermission';
+import RequireFeature from '@/components/RequireFeature';
 
 interface Product {
     id: string;
@@ -736,8 +737,10 @@ function POSPageInner() {
 // Yetki koruması: işletmede çalışan girişi açıksa PIN + can_access_pos zorunlu.
 export default function POSPage() {
     return (
-        <RequirePermission perm="can_access_pos" title="Satış Girişi">
-            <POSPageInner />
-        </RequirePermission>
+        <RequireFeature features={["pos"]} title="JetKasa Kapalı">
+            <RequirePermission perm="can_access_pos" title="Satış Girişi">
+                <POSPageInner />
+            </RequirePermission>
+        </RequireFeature>
     );
 }
