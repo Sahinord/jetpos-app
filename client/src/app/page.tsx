@@ -133,10 +133,13 @@ export default function Home() {
 
   const [toast, setToast] = useState({ isVisible: false, message: "", type: "success" as ToastType });
 
+  // Dashboard ÖZETİ TÜM işletme stoğunu (master products.stock_quantity) gösterir —
+  // aktif mağaza/depo veya senkron ayarına bağlı DEĞİL. Böylece mobil ile aynı
+  // gerçek toplamı verir (depo görünümünde eksik/0 sayma sorunu burada olmaz).
   const stats = calculateStockMetrics(
     products,
-    activeWarehouse?.id,
-    activeWarehouse?.platform ? false : isStockSyncEnabled,
+    undefined,   // depo yok → master okunur
+    true,        // senkron açıkmış gibi → master
     isPriceSyncEnabled
   );
 

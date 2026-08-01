@@ -85,10 +85,12 @@ function DashboardPageInner() {
 
             await supabase.rpc('set_current_tenant', { tenant_id: tenantId });
 
+            // Silinmis urunleri (deleted_at) HARIC tut — PC dashboard ile ayni.
+            // (Aksi halde silinmis urunlerin stogu toplama girip sayiyi sisiriyordu.)
             const [activeCountRes, inactiveCountRes, allLowStockRes] = await Promise.all([
-                supabase.from('products').select('*', { count: 'exact', head: true }).eq('tenant_id', tenantId).or('status.eq.active,status.is.null'),
-                supabase.from('products').select('*', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('status', 'inactive'),
-                supabase.from('products').select('*', { count: 'exact', head: true }).eq('tenant_id', tenantId).or('status.eq.active,status.is.null').lte('stock_quantity', 10),
+                supabase.from('products').select('*', { count: 'exact', head: true }).eq('tenant_id', tenantId).is('deleted_at', null).or('status.eq.active,status.is.null'),
+                supabase.from('products').select('*', { count: 'exact', head: true }).eq('tenant_id', tenantId).is('deleted_at', null).eq('status', 'inactive'),
+                supabase.from('products').select('*', { count: 'exact', head: true }).eq('tenant_id', tenantId).is('deleted_at', null).or('status.eq.active,status.is.null').lte('stock_quantity', 10),
             ]);
 
             // Envanter değeri için tüm ürünleri çek (Maliyet üzerinden hesapla)
@@ -104,6 +106,7 @@ function DashboardPageInner() {
                         .from('products')
                         .select('stock_quantity, purchase_price, status, unit')
                         .eq('tenant_id', tenantId)
+                        .is('deleted_at', null)
                         .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
                     if (chunk && chunk.length > 0) {
                         products.push(...chunk);
@@ -118,9 +121,11 @@ function DashboardPageInner() {
             
             // Envanter değeri = Stok Adedi * Alış Fiyatı (PC ile aynı mantık)
             const calculateValue = (list: any[]) => list.reduce((sum, p) => sum + ((Number(p.stock_quantity) || 0) * (Number(p.purchase_price) || 0)), 0);
-            // TOPLAM STOK = yalnızca AKTİF + ADET birimli ürünlerin stok toplamı (PC ile aynı).
-            // Eskiden tüm ürünleri (pasif dahil) ve kg+adet'i karıştırıp topluyordu → yanlış/ondalıklı.
-            const totalStockCount = activeOnes
+            // TOPLAM STOK = PC dashboard ile BIREBIR ayni kural:
+            // silinmemis (deleted_at IS NULL) + ADET birimli (KG haric) tum urunler.
+            // Not: PC pasif urunleri de toplama katiyor; senkron icin mobil de ayni yapar.
+            // (products dizisi zaten deleted_at IS NULL ile cekiliyor.)
+            const totalStockCount = products
                 .filter(p => String(p.unit || '').toUpperCase() !== 'KG')
                 .reduce((sum, p) => sum + (Number(p.stock_quantity) || 0), 0);
 
