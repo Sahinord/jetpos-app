@@ -112,8 +112,10 @@ export default function BorcDekontu({ showToast }: BorcDekontuProps) {
                 vade_tarihi: kalem.belgeTarihi || formData.fisTarihi,
                 belge_no: formData.fisNo,
                 aciklama: kalem.aciklama || formData.aciklama,
-                borc: kalem.tutar,
-                alacak: 0,
+                // Verecek Dekontu = SENİN vereceğin artar (sen cariye borçlanırsın).
+                // Düzen: bakiye = borç − alacak; alacak>0 → "Verecek" tarafı. DB 'alacak'a yazılır.
+                borc: 0,
+                alacak: kalem.tutar,
                 para_birimi: kalem.paraBirimi,
             }));
 
@@ -123,7 +125,7 @@ export default function BorcDekontu({ showToast }: BorcDekontuProps) {
 
             if (error) throw error;
 
-            showToast?.("Borç dekontu kaydedildi", "success");
+            showToast?.("Verecek dekontu kaydedildi", "success");
             handleClear();
         } catch (err: any) {
             console.error('Kayıt hatası:', err);
@@ -170,7 +172,7 @@ export default function BorcDekontu({ showToast }: BorcDekontuProps) {
         printWindow.document.write(`
             <html>
                 <head>
-                    <title>Borç Dekontu - ${formData.fisNo}</title>
+                    <title>Verecek Dekontu - ${formData.fisNo}</title>
                     <style>
                         body { font-family: Arial, sans-serif; padding: 40px; color: #000; }
                         .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 10px; }
@@ -192,7 +194,7 @@ export default function BorcDekontu({ showToast }: BorcDekontuProps) {
                 </head>
                 <body>
                     <div class="header">
-                        <div class="title">BORÇ DEKONTU</div>
+                        <div class="title">VERECEK DEKONTU</div>
                     </div>
                     
                     <div class="info-grid">
@@ -283,7 +285,7 @@ export default function BorcDekontu({ showToast }: BorcDekontuProps) {
                     <div className="flex items-center gap-2 text-secondary">
                         {loading && <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />}
                         <FileText className="w-4 h-4 text-red-500" />
-                        <span className="text-sm font-medium text-[var(--color-foreground)]">Borç Dekontu</span>
+                        <span className="text-sm font-medium text-[var(--color-foreground)]">Verecek Dekontu</span>
                     </div>
                 </div>
             </div>

@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useTenant } from "@/lib/tenant-context";
+import { apiFetch } from "@/lib/api";
 
 type SubTab = "overview" | "orders" | "finance" | "settings" | "mapping";
 
@@ -29,6 +30,7 @@ type GetirOrder = {
     customer_name: string | null;
     total_price: number | null;
     getir_status_code: number | null;
+    delivery_type: number | null;
     is_cancelled: boolean;
     items: unknown[];
     created_at: string;
@@ -55,6 +57,9 @@ export default function GetirCarsiWidget({ activeSubTab = "overview" }: { active
     const [rangeDays, setRangeDays] = useState<1 | 7 | 30>(30);
     const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "preparing" | "onway" | "delivered" | "cancelled">("all");
     const [search, setSearch] = useState("");
+    const [syncing, setSyncing] = useState(false);
+    const [busyId, setBusyId] = useState<string | null>(null);
+    const [flash, setFlash] = useState<string | null>(null);
 
     const fetchOrders = useCallback(async () => {
         if (!currentTenant?.id) return;
@@ -62,7 +67,7 @@ export default function GetirCarsiWidget({ activeSubTab = "overview" }: { active
         try {
             const { data, error } = await supabase
                 .from("getir_carsi_orders")
-                .select("id, getir_order_id, getir_shop_id, order_number, customer_name, total_price, getir_status_code, is_cancelled, items, created_at")
+                .select("id, getir_order_id, getir_shop_id, order_number, customer_name, total_price, getir_status_code, delivery_type, is_cancelled, items, created_at")
                 .eq("tenant_id", currentTenant.id)
                 .order("created_at", { ascending: false })
                 .limit(500);
@@ -83,6 +88,84 @@ export default function GetirCarsiWidget({ activeSubTab = "overview" }: { active
             .subscribe();
         return () => { supabase.removeChannel(ch); };
     }, [currentTenant?.id, fetchOrders]);
+
+    // Yeni sipariş sesi
+    const beep = useCallback(() => {
+        try {
+            const AC = (window.AudioContext || (window as any).webkitAudioContext);
+            if (!AC) return;
+            const ctx = new AC();
+            const o = ctx.createOscillator(); const g = ctx.createGain();
+            o.connect(g); g.connect(ctx.destination);
+            o.type = "sine"; o.frequency.value = 880;
+            g.gain.setValueAtTime(0.001, ctx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 0.02);
+            g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+            o.start(); o.stop(ctx.currentTime + 0.5);
+        } catch { /* ses yoksa yut */ }
+    }, []);
+
+    // Getir'den siparişleri çek (poll) — token + /unapproved + /cancelled
+    const sync = useCallback(async () => {
+        setSyncing(true);
+        try {
+            const res = await apiFetch("/api/getir-carsi/sync-orders", { method: "POST", body: JSON.stringify({}) });
+            if (res?.newCount > 0) {
+                beep();
+                setFlash(`🔔 ${res.newCount} yeni Getir Çarşı siparişi`);
+                setTimeout(() => setFlash(null), 6000);
+            }
+            await fetchOrders();
+        } catch (e: any) {
+            setFlash(`Senkron hatası: ${e?.message || "bilinmeyen"}`);
+            setTimeout(() => setFlash(null), 5000);
+        } finally {
+            setSyncing(false);
+        }
+    }, [beep, fetchOrders]);
+
+    // 30 sn'de bir otomatik poll (widget açıkken)
+    useEffect(() => {
+        if (!currentTenant?.id) return;
+        const t = setInterval(() => { sync(); }, 30000);
+        return () => clearInterval(t);
+    }, [currentTenant?.id, sync]);
+
+    // Sipariş aksiyonu (onayla/hazırla/kuryeye/teslim/iptal)
+    const doAction = useCallback(async (o: GetirOrder, action: string) => {
+        setBusyId(o.getir_order_id);
+        try {
+            if (action === "cancel") {
+                // İptal nedenlerini çek, ilkini seç (basit akış)
+                const opt = await apiFetch("/api/getir-carsi/order-action", {
+                    method: "POST",
+                    body: JSON.stringify({ orderId: o.getir_order_id, action: "cancel-options" }),
+                });
+                const options: any[] = opt?.options || [];
+                if (options.length === 0) { setFlash("İptal nedeni bulunamadı."); setTimeout(() => setFlash(null), 4000); return; }
+                const list = options.map((r, i) => `${i + 1}) ${r.name || r.label || r.reason || r.id}`).join("\n");
+                const pick = window.prompt(`İptal nedeni seçin:\n${list}\n\nNumara girin:`, "1");
+                const idx = Number(pick) - 1;
+                const chosen = options[idx];
+                if (!chosen) return;
+                await apiFetch("/api/getir-carsi/order-action", {
+                    method: "POST",
+                    body: JSON.stringify({ orderId: o.getir_order_id, action: "cancel", cancelReasonId: chosen.id || chosen.cancelReasonId }),
+                });
+            } else {
+                await apiFetch("/api/getir-carsi/order-action", {
+                    method: "POST",
+                    body: JSON.stringify({ orderId: o.getir_order_id, action }),
+                });
+            }
+            await fetchOrders();
+        } catch (e: any) {
+            setFlash(`İşlem hatası: ${e?.message || "bilinmeyen"}`);
+            setTimeout(() => setFlash(null), 5000);
+        } finally {
+            setBusyId(null);
+        }
+    }, [fetchOrders]);
 
     // Zaman aralığına göre filtre
     const ranged = useMemo(() => {
@@ -140,9 +223,28 @@ export default function GetirCarsiWidget({ activeSubTab = "overview" }: { active
         { v: "cancelled", label: "İptal", count: cancelled.length, icon: XCircle },
     ];
 
+    // Statüye + teslimat modeline göre sonraki aksiyon(lar)
+    const nextActions = (o: GetirOrder): { key: string; label: string; cls: string }[] => {
+        if (o.is_cancelled) return [];
+        const code = o.getir_status_code || 400;
+        const dt = o.delivery_type || 1;
+        const cancelBtn = { key: "cancel", label: "İptal", cls: "bg-rose-500/15 text-rose-300 hover:bg-rose-500/25" };
+        if (code === 400) return [{ key: "verify", label: "Onayla", cls: "bg-emerald-500 text-white hover:bg-emerald-600" }, cancelBtn];
+        if (code === 500) return [{ key: "prepare", label: dt === 2 ? "Müşteriye Gönder" : "Hazırla", cls: "bg-purple-500 text-white hover:bg-purple-600" }, cancelBtn];
+        if (code === 550 || code === 560 || code === 570) {
+            return dt === 2
+                ? [{ key: "deliver", label: "Müşteriye Teslim", cls: "bg-blue-500 text-white hover:bg-blue-600" }]
+                : [{ key: "handover", label: "Kuryeye Teslim", cls: "bg-blue-500 text-white hover:bg-blue-600" }, cancelBtn];
+        }
+        if ((code === 600 || code === 700) && dt === 2) return [{ key: "deliver", label: "Müşteriye Teslim", cls: "bg-blue-500 text-white hover:bg-blue-600" }];
+        return [];
+    };
+
     const OrderCard = ({ o }: { o: GetirOrder }) => {
         const st = statusInfo(o);
         const itemCount = Array.isArray(o.items) ? o.items.length : 0;
+        const actions = nextActions(o);
+        const busy = busyId === o.getir_order_id;
         return (
             <div className="p-4 bg-white/[0.02] border border-white/[0.05] rounded-2xl">
                 <div className="flex items-center justify-between gap-3 mb-2">
@@ -157,7 +259,7 @@ export default function GetirCarsiWidget({ activeSubTab = "overview" }: { active
                     <div className="min-w-0">
                         <div className="font-bold text-white text-sm truncate">{o.customer_name || "Müşteri"}</div>
                         <div className="text-[11px] text-secondary/40">
-                            {itemCount > 0 ? `${itemCount} ürün · ` : ""}{timeAgo(o.created_at)}
+                            {itemCount > 0 ? `${itemCount} ürün · ` : ""}{o.delivery_type === 2 ? "İşletme Getirsin · " : o.delivery_type === 1 ? "Getir Getirsin · " : ""}{timeAgo(o.created_at)}
                         </div>
                     </div>
                     <div className="text-right flex-shrink-0">
@@ -165,6 +267,20 @@ export default function GetirCarsiWidget({ activeSubTab = "overview" }: { active
                         <div className="text-lg font-black text-white">₺{money(Number(o.total_price) || 0)}</div>
                     </div>
                 </div>
+                {actions.length > 0 && (
+                    <div className="flex gap-2 mt-3">
+                        {actions.map(a => (
+                            <button
+                                key={a.key}
+                                disabled={busy}
+                                onClick={() => doAction(o, a.key)}
+                                className={`flex-1 py-2 rounded-xl text-xs font-black transition-all disabled:opacity-50 ${a.cls}`}
+                            >
+                                {busy ? "…" : a.label}
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
         );
     };
@@ -229,10 +345,11 @@ export default function GetirCarsiWidget({ activeSubTab = "overview" }: { active
                 </div>
 
                 <button
-                    onClick={fetchOrders}
-                    className="w-full py-4 rounded-2xl bg-purple-500 hover:bg-purple-600 text-white font-black flex items-center justify-center gap-2 transition-all shadow-lg shadow-purple-500/30"
+                    onClick={sync}
+                    disabled={syncing}
+                    className="w-full py-4 rounded-2xl bg-purple-500 hover:bg-purple-600 text-white font-black flex items-center justify-center gap-2 transition-all shadow-lg shadow-purple-500/30 disabled:opacity-60"
                 >
-                    <RefreshCw className={`w-5 h-5 ${loading ? "animate-spin" : ""}`} /> SİPARİŞLERİ YENİLE
+                    <RefreshCw className={`w-5 h-5 ${syncing || loading ? "animate-spin" : ""}`} /> GETİR'DEN SİPARİŞ ÇEK
                 </button>
             </div>
         );
@@ -242,6 +359,11 @@ export default function GetirCarsiWidget({ activeSubTab = "overview" }: { active
     if (activeSubTab === "orders") {
         return (
             <div className="space-y-4 animate-in fade-in duration-300">
+                {flash && (
+                    <div className="px-4 py-3 rounded-2xl bg-purple-500/15 border border-purple-500/30 text-purple-200 text-sm font-bold">
+                        {flash}
+                    </div>
+                )}
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                     <div className="flex gap-1 bg-white/[0.03] p-1 rounded-xl border border-white/5">
                         {RANGES.map(r => (
@@ -251,9 +373,9 @@ export default function GetirCarsiWidget({ activeSubTab = "overview" }: { active
                             </button>
                         ))}
                     </div>
-                    <button onClick={fetchOrders}
-                        className="px-5 py-2.5 rounded-xl bg-purple-500 hover:bg-purple-600 text-white text-sm font-black flex items-center gap-2 transition-all shadow-lg shadow-purple-500/25">
-                        <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /> Siparişleri Yenile
+                    <button onClick={sync} disabled={syncing}
+                        className="px-5 py-2.5 rounded-xl bg-purple-500 hover:bg-purple-600 text-white text-sm font-black flex items-center gap-2 transition-all shadow-lg shadow-purple-500/25 disabled:opacity-60">
+                        <RefreshCw className={`w-4 h-4 ${syncing || loading ? "animate-spin" : ""}`} /> Getir'den Çek
                     </button>
                 </div>
 

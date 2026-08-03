@@ -103,7 +103,8 @@ export default function AlacakDekontu({ showToast }: AlacakDekontuProps) {
 
         setLoading(true);
         try {
-            // Her kalem için cari hareket oluştur - ALACAK tarafa yazılır
+            // Alacak Dekontu = SENİN ALACAĞIN artar (müşteri sana borçlanır).
+            // Düzen: bakiye = borç − alacak, borç>0 → "Alacak" tarafı. Bu yüzden DB 'borç'a yazılır.
             const hareketler = kalemler.map(kalem => ({
                 tenant_id: currentTenant.id,
                 cari_id: kalem.cariId,
@@ -112,8 +113,8 @@ export default function AlacakDekontu({ showToast }: AlacakDekontuProps) {
                 vade_tarihi: kalem.belgeTarihi || formData.fisTarihi,
                 belge_no: formData.fisNo,
                 aciklama: kalem.aciklama || formData.aciklama,
-                borc: 0,
-                alacak: kalem.tutar,
+                borc: kalem.tutar,
+                alacak: 0,
                 para_birimi: kalem.paraBirimi,
             }));
 

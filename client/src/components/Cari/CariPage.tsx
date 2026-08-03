@@ -69,8 +69,8 @@ const PAGE_INFO: Record<string, { title: string; description: string; icon: Luci
         category: "Tanımlamalar"
     },
     cari_borc: {
-        title: "Borç Dekontu",
-        description: "Cari hesaba borç kaydı oluşturun.",
+        title: "Verecek Dekontu",
+        description: "Sizin cariye borcunuzu (verecek) kaydedin.",
         icon: FileOutput,
         color: "from-red-500 to-red-600",
         category: "İşlemler"
@@ -222,7 +222,7 @@ export default function CariPage({ pageId, showToast }: CariPageProps) {
                     </div>
                     <div className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Toplam Alacak</div>
                     <div className="text-2xl font-black text-foreground font-mono">
-                        {stats.loading ? "..." : `₺${stats.alacak.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}`}
+                        {stats.loading ? "..." : `₺${stats.borc.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}`}
                     </div>
                 </div>
 
@@ -230,9 +230,9 @@ export default function CariPage({ pageId, showToast }: CariPageProps) {
                     <div className="absolute -bottom-2 -right-2 opacity-10 group-hover:scale-110 transition-transform">
                         <TrendingUp className="w-16 h-16 text-rose-500" />
                     </div>
-                    <div className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-1">Toplam Borç</div>
+                    <div className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-1">Toplam Verecek</div>
                     <div className="text-2xl font-black text-foreground font-mono">
-                        {stats.loading ? "..." : `₺${stats.borc.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}`}
+                        {stats.loading ? "..." : `₺${stats.alacak.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}`}
                     </div>
                 </div>
             </div>
@@ -280,8 +280,8 @@ export default function CariPage({ pageId, showToast }: CariPageProps) {
                         </div>
                         <div className="flex flex-col">
                             <span className="text-[10px] text-secondary font-bold uppercase tracking-wider">Net Bakiye</span>
-                            <span className={`text-lg font-black ${stats.alacak - stats.borc >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                ₺{(stats.alacak - stats.borc).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                            <span className={`text-lg font-black ${stats.borc - stats.alacak >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                ₺{(stats.borc - stats.alacak).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
                             </span>
                         </div>
                     </div>

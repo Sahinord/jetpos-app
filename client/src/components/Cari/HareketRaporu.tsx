@@ -138,17 +138,20 @@ export default function HareketRaporu({ showToast }: HareketRaporuProps) {
 
     const getHareketLabel = (tip: string) => {
         switch (tip) {
-            case 'BORC_DEKONTU': return 'Borç';
-            case 'ALACAK_DEKONTU': return 'Alacak';
-            case 'VIRMAN': return 'Virman';
+            case 'BORC_DEKONTU': return 'Verecek Dekontu';
+            case 'ALACAK_DEKONTU': return 'Alacak Dekontu';
+            case 'VIRMAN': case 'VIRMAN_DEKONTU': return 'Virman';
             case 'DEVIR': return 'Devir';
+            case 'MAHSUP': return 'Mahsup';
+            case 'GERI_ALMA': return 'Geri Alma';
+            case 'SATIS': return 'Satış';
             default: return tip;
         }
     };
 
     // CSV Export
     const exportToCSV = () => {
-        const headers = 'Tarih;Belge No;Hareket Tipi;Açıklama;Borç;Alacak;Bakiye';
+        const headers = 'Tarih;Belge No;Hareket Tipi;Açıklama;Alacak;Verecek;Bakiye';
         const rows = hareketler.map(h =>
             `${h.tarih};${h.belge_no || ''};${getHareketLabel(h.hareket_tipi)};${h.aciklama || ''};${h.borc || 0};${h.alacak || 0};${h.bakiye || 0}`
         ).join('\n');
@@ -242,7 +245,7 @@ export default function HareketRaporu({ showToast }: HareketRaporuProps) {
                                 className="w-full bg-white/5 border border-white/10 rounded px-3 py-1.5 text-white text-sm"
                             >
                                 <option value="all">Tümü</option>
-                                <option value="BORC_DEKONTU">Borç Dekontu</option>
+                                <option value="BORC_DEKONTU">Verecek Dekontu</option>
                                 <option value="ALACAK_DEKONTU">Alacak Dekontu</option>
                                 <option value="VIRMAN">Virman</option>
                                 <option value="DEVIR">Devir</option>
@@ -356,8 +359,8 @@ export default function HareketRaporu({ showToast }: HareketRaporuProps) {
                                     <th className="px-3 py-2 w-32">Belge No</th>
                                     <th className="px-3 py-2 w-24">Tip</th>
                                     <th className="px-3 py-2">Açıklama</th>
-                                    <th className="px-3 py-2 w-28 text-right bg-red-500/10">Borç</th>
                                     <th className="px-3 py-2 w-28 text-right bg-emerald-500/10">Alacak</th>
+                                    <th className="px-3 py-2 w-28 text-right bg-red-500/10">Verecek</th>
                                     <th className="px-3 py-2 w-32 text-right">Bakiye</th>
                                     <th className="px-3 py-2 w-28">Vade Tarihi</th>
                                     <th className="px-3 py-2 w-16">P.B.</th>
@@ -387,13 +390,13 @@ export default function HareketRaporu({ showToast }: HareketRaporuProps) {
                                         <td className="px-3 py-2 text-secondary text-sm truncate max-w-xs">
                                             {hareket.aciklama || '-'}
                                         </td>
-                                        <td className="px-3 py-2 text-right text-red-400 font-mono bg-red-500/5">
+                                        <td className="px-3 py-2 text-right text-emerald-400 font-mono bg-emerald-500/5">
                                             {hareket.borc > 0 ? hareket.borc.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) : '-'}
                                         </td>
-                                        <td className="px-3 py-2 text-right text-emerald-400 font-mono bg-emerald-500/5">
+                                        <td className="px-3 py-2 text-right text-red-400 font-mono bg-red-500/5">
                                             {hareket.alacak > 0 ? hareket.alacak.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) : '-'}
                                         </td>
-                                        <td className={`px-3 py-2 text-right font-mono font-bold ${hareket.bakiye > 0 ? 'text-red-500' : hareket.bakiye < 0 ? 'text-emerald-500' : 'text-secondary'
+                                        <td className={`px-3 py-2 text-right font-mono font-bold ${hareket.bakiye > 0 ? 'text-emerald-500' : hareket.bakiye < 0 ? 'text-red-500' : 'text-secondary'
                                             }`}>
                                             {(hareket.bakiye || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
                                         </td>
@@ -454,20 +457,20 @@ export default function HareketRaporu({ showToast }: HareketRaporuProps) {
                         {/* Toplamlar */}
                         <div className="flex items-center gap-6">
                             <div className="text-right">
-                                <div className="text-secondary text-xs">Toplam Borç</div>
-                                <div className="text-lg font-black text-red-500 font-mono">
+                                <div className="text-secondary text-xs">Toplam Alacak</div>
+                                <div className="text-lg font-black text-emerald-500 font-mono">
                                     {toplamlar.borc.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
                                 </div>
                             </div>
                             <div className="text-right">
-                                <div className="text-secondary text-xs">Toplam Alacak</div>
-                                <div className="text-lg font-black text-emerald-500 font-mono">
+                                <div className="text-secondary text-xs">Toplam Verecek</div>
+                                <div className="text-lg font-black text-red-500 font-mono">
                                     {toplamlar.alacak.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
                                 </div>
                             </div>
                             <div className="text-right">
                                 <div className="text-secondary text-xs">Bakiye</div>
-                                <div className={`text-lg font-black font-mono ${toplamlar.bakiye >= 0 ? 'text-red-500' : 'text-emerald-500'}`}>
+                                <div className={`text-lg font-black font-mono ${toplamlar.bakiye >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                                     {toplamlar.bakiye.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
                                 </div>
                             </div>

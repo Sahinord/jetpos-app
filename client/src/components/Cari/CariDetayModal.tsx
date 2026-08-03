@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
-    X, User, Receipt, TrendingUp, Save, Search, RefreshCw, Loader2, ArrowLeftRight, Info,
+    X, User, Receipt, TrendingUp, Save, Search, RefreshCw, Loader2, ArrowLeftRight, Info, Undo2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useTenant } from "@/lib/tenant-context";
@@ -22,8 +22,12 @@ const money = (n: number) =>
     (Number(n) || 0).toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const HAREKET_ETIKET: Record<string, string> = {
-    borc: "Borç Dekontu", alacak: "Alacak Dekontu", satis: "Satış",
+    borc: "Verecek Dekontu", alacak: "Alacak Dekontu", satis: "Satış",
     tahsilat: "Tahsilat", odeme: "Ödeme", virman: "Virman", devir: "Devir", fatura: "Fatura",
+    // Gerçek hareket_tipi değerleri:
+    BORC_DEKONTU: "Verecek Dekontu", ALACAK_DEKONTU: "Alacak Dekontu", SATIS: "Satış",
+    VIRMAN_DEKONTU: "Virman", DEVIR: "Devir", MAHSUP: "Mahsup / Yön Aktarımı", GERI_ALMA: "Geri Alma",
+    TAHSILAT: "Tahsilat", ODEME: "Ödeme",
 };
 
 export default function CariDetayModal({ cari, initialTab = "hareketler", onClose, onSaved, showToast }: Props) {
@@ -51,6 +55,13 @@ export default function CariDetayModal({ cari, initialTab = "hareketler", onClos
     const [transferAmount, setTransferAmount] = useState("");
     const [transferDesc, setTransferDesc] = useState("");
     const [transferSaving, setTransferSaving] = useState(false);
+    const [geriAlId, setGeriAlId] = useState<string | null>(null);
+    // Aynı cari içinde Alacak ↔ Verecek yön aktarımı (mahsup)
+    const [yonOpen, setYonOpen] = useState(false);
+    const [yonDir, setYonDir] = useState<"a2v" | "v2a">("a2v"); // a2v: Alacaktan Vereceğe, v2a: tersi
+    const [yonAmount, setYonAmount] = useState("");
+    const [yonDesc, setYonDesc] = useState("");
+    const [yonSaving, setYonSaving] = useState(false);
 
     // Tam cari kaydını çek (liste kısmi kolon taşıyor)
     useEffect(() => {
@@ -60,6 +71,15 @@ export default function CariDetayModal({ cari, initialTab = "hareketler", onClos
             setForm(data || cari);
         })();
     }, [tenantId, cari?.id]);
+
+    // ESC ile kapat (X tıklaması bir sebeple yenirse garanti kaçış yolu)
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === "Escape") { e.preventDefault(); onClose(); }
+        };
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [onClose]);
 
     // Hesap hareketleri + yürüyen bakiye
     const loadHareketler = useCallback(async () => {
@@ -213,7 +233,84 @@ export default function CariDetayModal({ cari, initialTab = "hareketler", onClos
         } finally { setTransferSaving(false); }
     };
 
-    const bakiye = Number(cari?.bakiye) || 0;
+    // Bir hareketi GERİ AL: silmek yerine TERS KAYIT (mirror) atar — borç↔alacak yer değişir,
+    // etki nötrlenir, geçmiş (log) silinmez. Zaten geri alınmış bir kaydı tekrar almaz.
+    const geriAl = async (h: any) => {
+        if (!tenantId || !cari?.id || !h?.id) return;
+        if (String(h.hareket_tipi || "").includes("GERI_ALMA")) {
+            showToast?.("Bu kayıt zaten bir geri alma işlemi.", "error"); return;
+        }
+        const borc = Number(h.borc) || 0;
+        const alacak = Number(h.alacak) || 0;
+        if (borc === 0 && alacak === 0) { showToast?.("Tutarsız kayıt, geri alınacak bir şey yok.", "error"); return; }
+        if (!window.confirm(`Bu işlem geri alınsın mı?\n\n${HAREKET_ETIKET[h.hareket_tipi] || h.hareket_tipi || h.aciklama || "İşlem"} · ${money(borc || alacak)} ₺\n\nKayıt silinmez; dengeleyen bir ters kayıt oluşturulur.`)) return;
+        setGeriAlId(h.id);
+        try {
+            const now = new Date().toISOString();
+            const ref = h.belge_no || String(h.id).slice(0, 8);
+            const { error } = await supabase.from("cari_hareketler").insert([{
+                tenant_id: tenantId,
+                cari_id: cari.id,
+                hareket_tipi: "GERI_ALMA",
+                tarih: now,
+                belge_no: `GERI-${ref}`,
+                aciklama: `İşlem geri alındı: ${h.aciklama || HAREKET_ETIKET[h.hareket_tipi] || ref}`,
+                borc: alacak,   // ters kayıt: yer değiştir
+                alacak: borc,
+                para_birimi: h.para_birimi || "TRY",
+            }]);
+            if (error) throw error;
+            showToast?.("İşlem geri alındı (ters kayıt oluşturuldu).", "success");
+            await loadHareketler();
+            onSaved?.();
+        } catch (e: any) {
+            showToast?.(e?.message || "Geri alma başarısız", "error");
+        } finally { setGeriAlId(null); }
+    };
+
+    // Aynı cari içinde Alacak ↔ Verecek arasında tutar aktar (mahsup).
+    //   a2v (Alacaktan Vereceğe): alacak += tutar → bakiye DÜŞER (Verecek yönüne)
+    //   v2a (Verecekten Alacağa) : borç  += tutar → bakiye ARTAR (Alacak yönüne)
+    // Tek satır cari_hareket yazılır; trigger toplamları/bakiyeyi otomatik günceller.
+    const yonAktar = async () => {
+        if (!tenantId || !cari?.id) return;
+        const tutar = Number(String(yonAmount).replace(",", "."));
+        if (!tutar || tutar <= 0) { showToast?.("Geçerli bir tutar girin.", "error"); return; }
+        setYonSaving(true);
+        try {
+            const now = new Date().toISOString();
+            const belgeNo = `MAHSUP-${Date.now().toString().slice(-8)}`;
+            const acik = (yonDesc || "").trim() ||
+                (yonDir === "a2v" ? "Alacaktan vereceğe aktarım (mahsup)" : "Verecekten alacağa aktarım (mahsup)");
+            const row = yonDir === "a2v"
+                ? { borc: 0, alacak: tutar }   // Alacaktan Vereceğe
+                : { borc: tutar, alacak: 0 };  // Verecekten Alacağa
+            const { error } = await supabase.from("cari_hareketler").insert([{
+                tenant_id: tenantId,
+                cari_id: cari.id,
+                hareket_tipi: "MAHSUP",
+                tarih: now,
+                belge_no: belgeNo,
+                aciklama: acik,
+                ...row,
+                para_birimi: "TRY",
+            }]);
+            if (error) throw error;
+            showToast?.(`${money(tutar)} ₺ ${yonDir === "a2v" ? "vereceğe" : "alacağa"} aktarıldı`, "success");
+            setYonOpen(false); setYonAmount(""); setYonDesc("");
+            await loadHareketler();
+            onSaved?.();
+        } catch (e: any) {
+            showToast?.(e?.message || "Aktarım başarısız", "error");
+        } finally { setYonSaving(false); }
+    };
+
+    // Bakiyeyi kayıtlı (bayat olabilen) cari.bakiye yerine HAREKETLERDEN canlı hesapla.
+    // hareketler en yeni üstte; rows[0]._bakiye = yürüyen toplam (borç − alacak).
+    // Böylece "Alacak cari ama Verecek görünüyor" tutarsızlığı yaşanmaz.
+    const bakiye = hareketler.length > 0
+        ? (Number(hareketler[0]?._bakiye) || 0)
+        : (Number(cari?.bakiye) || 0);
     const fiyatFiltre = fiyatlar.filter(f =>
         !urunAra.trim() || String(f.product_name || "").toLowerCase().includes(urunAra.toLowerCase()));
 
@@ -242,10 +339,20 @@ export default function CariDetayModal({ cari, initialTab = "hareketler", onClos
                     </div>
                     <div className="flex items-center gap-3 flex-shrink-0">
                         <button
+                            onClick={() => {
+                                setYonDir(bakiye >= 0 ? "a2v" : "v2a");
+                                setYonAmount(bakiye !== 0 ? String(Math.abs(bakiye)) : "");
+                                setYonOpen(true);
+                            }}
+                            title="Aynı cari içinde Alacak ↔ Verecek arasında tutar aktar (mahsup)"
+                            className="hidden sm:flex items-center gap-1.5 h-9 px-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-bold hover:bg-amber-500/20 active:scale-95 transition-all">
+                            <RefreshCw className="w-4 h-4" /> Alacak↔Verecek
+                        </button>
+                        <button
                             onClick={() => { setTransferAmount(bakiye > 0 ? String(bakiye) : ""); setTransferOpen(true); }}
                             title="Bu carinin bakiyesini başka bir cariye aktar (virman kısayolu)"
                             className="hidden sm:flex items-center gap-1.5 h-9 px-3 rounded-lg bg-primary/10 border border-primary/20 text-primary text-xs font-bold hover:bg-primary/20 active:scale-95 transition-all">
-                            <ArrowLeftRight className="w-4 h-4" /> Borç Aktar
+                            <ArrowLeftRight className="w-4 h-4" /> Bakiye Aktar
                         </button>
                         <div className="text-right">
                             <p className="text-[10px] uppercase tracking-wider text-secondary flex items-center gap-1 justify-end">
@@ -258,8 +365,12 @@ export default function CariDetayModal({ cari, initialTab = "hareketler", onClos
                                 {money(Math.abs(bakiye))}
                             </p>
                         </div>
-                        <button onClick={onClose} className="w-9 h-9 rounded-lg hover:bg-primary/10 flex items-center justify-center text-secondary hover:text-foreground transition-all">
-                            <X className="w-5 h-5" />
+                        <button
+                            type="button"
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClose(); }}
+                            aria-label="Kapat"
+                            className="relative z-10 w-9 h-9 rounded-lg hover:bg-primary/10 flex items-center justify-center text-secondary hover:text-foreground transition-all cursor-pointer">
+                            <X className="w-5 h-5 pointer-events-none" />
                         </button>
                     </div>
                 </div>
@@ -334,20 +445,35 @@ export default function CariDetayModal({ cari, initialTab = "hareketler", onClos
                                             <th className="py-2 px-3 font-medium">İşlem</th>
                                             <th className="py-2 px-3 font-medium text-right" title="Cari SİZE borçlandı (tahsil edeceksiniz)">Alacak</th>
                                             <th className="py-2 px-3 font-medium text-right" title="SİZ cariye borçlandınız / ödeme (ödeyeceksiniz)">Verecek</th>
-                                            <th className="py-2 pl-3 font-medium text-right">Bakiye</th>
+                                            <th className="py-2 px-3 font-medium text-right">Bakiye</th>
+                                            <th className="py-2 pl-3 font-medium text-right"></th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {hareketler.map((h, i) => (
+                                        {hareketler.map((h, i) => {
+                                            const undone = String(h.hareket_tipi || "").includes("GERI_ALMA");
+                                            return (
                                             <tr key={h.id || i} className="border-b border-border/50 hover:bg-primary/5">
                                                 <td className="py-2 pr-3 whitespace-nowrap text-foreground">{h.tarih ? new Date(h.tarih).toLocaleDateString("tr-TR") : "—"}</td>
                                                 <td className="py-2 px-3 font-mono text-xs text-secondary">{h.belge_no || "—"}</td>
                                                 <td className="py-2 px-3 text-foreground">{HAREKET_ETIKET[h.hareket_tipi] || h.hareket_tipi || h.aciklama || "—"}</td>
                                                 <td className="py-2 px-3 text-right font-mono text-emerald-400">{h.borc > 0 ? money(h.borc) : "—"}</td>
                                                 <td className="py-2 px-3 text-right font-mono text-rose-400">{h.alacak > 0 ? money(h.alacak) : "—"}</td>
-                                                <td className={`py-2 pl-3 text-right font-mono font-bold ${h._bakiye > 0 ? "text-emerald-400" : h._bakiye < 0 ? "text-rose-400" : "text-slate-300"}`}>{money(Math.abs(h._bakiye))}</td>
+                                                <td className={`py-2 px-3 text-right font-mono font-bold ${h._bakiye > 0 ? "text-emerald-400" : h._bakiye < 0 ? "text-rose-400" : "text-slate-300"}`}>{money(Math.abs(h._bakiye))}</td>
+                                                <td className="py-2 pl-3 text-right">
+                                                    {!undone && (
+                                                        <button
+                                                            onClick={() => geriAl(h)}
+                                                            disabled={geriAlId === h.id}
+                                                            title="Bu işlemi geri al (dengeleyen ters kayıt; geçmiş silinmez)"
+                                                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold text-rose-400 hover:bg-rose-500/10 disabled:opacity-50 transition-all"
+                                                        >
+                                                            {geriAlId === h.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Undo2 className="w-3.5 h-3.5" />} Geri Al
+                                                        </button>
+                                                    )}
+                                                </td>
                                             </tr>
-                                        ))}
+                                        );})}
                                     </tbody>
                                 </table>
                             </div>
@@ -406,7 +532,7 @@ export default function CariDetayModal({ cari, initialTab = "hareketler", onClos
             <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setTransferOpen(false)}>
                 <div onClick={e => e.stopPropagation()} className="bg-card border border-border w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden">
                     <div className="px-5 py-4 border-b border-border flex items-center justify-between">
-                        <h3 className="font-bold text-foreground flex items-center gap-2"><ArrowLeftRight className="w-4 h-4 text-primary" /> Borç Aktar</h3>
+                        <h3 className="font-bold text-foreground flex items-center gap-2"><ArrowLeftRight className="w-4 h-4 text-primary" /> Bakiye Aktar</h3>
                         <button onClick={() => setTransferOpen(false)} className="w-8 h-8 rounded-lg hover:bg-primary/10 flex items-center justify-center text-secondary"><X className="w-4 h-4" /></button>
                     </div>
                     <div className="p-5 space-y-4">
@@ -444,6 +570,48 @@ export default function CariDetayModal({ cari, initialTab = "hareketler", onClos
                 onClose={() => setTransferPickerOpen(false)}
                 onSelect={(c) => { setTransferTarget(c); setTransferPickerOpen(false); }}
             />
+        )}
+
+        {/* Alacak ↔ Verecek yön aktarımı (aynı cari içinde mahsup) */}
+        {yonOpen && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setYonOpen(false)}>
+                <div onClick={e => e.stopPropagation()} className="bg-card border border-border w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden">
+                    <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+                        <h3 className="font-bold text-foreground flex items-center gap-2"><RefreshCw className="w-4 h-4 text-amber-400" /> Alacak ↔ Verecek Aktar</h3>
+                        <button type="button" onClick={() => setYonOpen(false)} className="w-8 h-8 rounded-lg hover:bg-primary/10 flex items-center justify-center text-secondary"><X className="w-4 h-4 pointer-events-none" /></button>
+                    </div>
+                    <div className="p-5 space-y-4">
+                        <div className="text-xs text-secondary bg-amber-500/5 border border-amber-500/10 rounded-lg px-3 py-2 flex gap-2">
+                            <Info className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                            <span>Aynı carinin bakiyesini bir yönden diğerine taşır (mahsup). Dengeleyen bir kayıt düşer, geçmiş silinmez.</span>
+                        </div>
+                        <Field label="Yön">
+                            <div className="grid grid-cols-2 gap-2">
+                                <button type="button" onClick={() => setYonDir("a2v")}
+                                    className={`py-2.5 rounded-lg text-xs font-bold border transition-all ${yonDir === "a2v" ? "bg-amber-500/15 border-amber-500/40 text-amber-300" : "bg-background border-border text-secondary hover:text-foreground"}`}>
+                                    Alacaktan → Vereceğe
+                                </button>
+                                <button type="button" onClick={() => setYonDir("v2a")}
+                                    className={`py-2.5 rounded-lg text-xs font-bold border transition-all ${yonDir === "v2a" ? "bg-amber-500/15 border-amber-500/40 text-amber-300" : "bg-background border-border text-secondary hover:text-foreground"}`}>
+                                    Verecekten → Alacağa
+                                </button>
+                            </div>
+                        </Field>
+                        <Field label="Tutar (₺)">
+                            <input value={yonAmount} inputMode="decimal"
+                                onChange={e => setYonAmount(e.target.value.replace(/[^0-9.,]/g, ""))}
+                                className={`${inp} font-mono`} placeholder="0,00" />
+                        </Field>
+                        <Field label="Açıklama (opsiyonel)">
+                            <input value={yonDesc} onChange={e => setYonDesc(e.target.value)} className={inp} placeholder="Mahsup / yön aktarımı" />
+                        </Field>
+                        <button onClick={yonAktar} disabled={yonSaving}
+                            className="w-full py-3 rounded-xl bg-amber-500 text-white font-bold flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 transition-all">
+                            {yonSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />} Aktar
+                        </button>
+                    </div>
+                </div>
+            </div>
         )}
         </>
     );

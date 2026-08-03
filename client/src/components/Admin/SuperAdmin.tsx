@@ -123,7 +123,7 @@ export default function SuperAdmin() {
         { code: 'diger', label: 'Diğer' },
     ];
     const [getirCarsiModal, setGetirCarsiModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
-    const [getirCarsiSettings, setGetirCarsiSettings] = useState({ shopId: '', username: '', password: '', storeType: 'market', active: true });
+    const [getirCarsiSettings, setGetirCarsiSettings] = useState({ shopId: '', username: '', password: '', storeType: 'market', agentName: 'JetPos', stage: true, stockBuffer: 0, active: true });
 
     // Ödeal A910S ödeme terminali (per-tenant, güvenli — server-side saklanır)
     const [odealModal, setOdealModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
@@ -680,6 +680,9 @@ export default function SuperAdmin() {
                     username: getirCarsiSettings.username.trim(),
                     password: getirCarsiSettings.password,
                     storeType: getirCarsiSettings.storeType,
+                    agentName: (getirCarsiSettings.agentName || '').trim() || 'JetPos',
+                    stage: getirCarsiSettings.stage,
+                    stockBuffer: Math.max(0, Number(getirCarsiSettings.stockBuffer) || 0),
                     active: getirCarsiSettings.active,
                 }
             };
@@ -1282,6 +1285,9 @@ export default function SuperAdmin() {
                                                         username: currentGc.username || '',
                                                         password: currentGc.password || '',
                                                         storeType: currentGc.storeType || 'market',
+                                                        agentName: currentGc.agentName || 'JetPos',
+                                                        stage: currentGc.stage !== false,
+                                                        stockBuffer: Number(currentGc.stockBuffer) || 0,
                                                         active: currentGc.active !== false
                                                     });
                                                 }}
@@ -2315,6 +2321,40 @@ export default function SuperAdmin() {
                                         <option key={st.code} value={st.code} className="bg-slate-900">{st.label}</option>
                                     ))}
                                 </select>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Entegratör Adı (User-Agent)</label>
+                                    <input
+                                        type="text"
+                                        value={getirCarsiSettings.agentName}
+                                        onChange={(e) => setGetirCarsiSettings({ ...getirCarsiSettings, agentName: e.target.value })}
+                                        placeholder="JetPos Yazılım"
+                                        className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-purple-500/50"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Stok Tamponu (adet)</label>
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        value={getirCarsiSettings.stockBuffer}
+                                        onChange={(e) => setGetirCarsiSettings({ ...getirCarsiSettings, stockBuffer: Number(e.target.value) })}
+                                        className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-purple-500/50"
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                                <div>
+                                    <span className="text-sm font-bold text-white block">Test Ortamı (Stage)</span>
+                                    <span className="text-[10px] text-slate-500">Açık: artisandev (test) · Kapalı: canlı (artisan)</span>
+                                </div>
+                                <button
+                                    onClick={() => setGetirCarsiSettings({ ...getirCarsiSettings, stage: !getirCarsiSettings.stage })}
+                                    className={`w-12 h-6 rounded-full transition-all relative ${getirCarsiSettings.stage ? 'bg-amber-500' : 'bg-slate-700'}`}
+                                >
+                                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${getirCarsiSettings.stage ? 'right-1' : 'left-1'}`} />
+                                </button>
                             </div>
                             <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
                                 <div>

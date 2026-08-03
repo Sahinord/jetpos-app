@@ -92,3 +92,31 @@ altında (SuperAdmin'den). Test shopId'yi pilot tenant'a (Kardeşler Kasap) bağ
 - Getir servis şifresini **rote et**.
 - Panel hesabını (destek@jetpos.shop) güçlü şifre + mümkünse 2FA.
 - Env değerleri yalnızca Vercel'de; repo'da/loglarda görünmesin (client `post()` gövde/başlık loglamıyor — Ödeal deseni gibi koru).
+
+---
+
+## 8. UYGULANDI (1 Ağustos 2026) — outbound tamamlandı
+
+Doküman V1.05 okundu, D2–D5 yazıldı. Yeni dosyalar:
+- `lib/getir-carsi/getir-carsi-client.ts` — `/v1/auth/token` (Basic, 1 saat cache) → Bearer;
+  `getUnapproved/getCancelled`, `verify/prepare/handover/deliver`, `cancelOptions/cancel`,
+  `pushPriceAndQuantity` (max 1000, oldPrice>price kuralı), `getShopProducts`, `setWorkingStatus`.
+  Base: test `locals-integration-api-gateway.artisandev...`, canlı `...artisan...` (stage toggle).
+- `lib/getir-carsi/creds.ts` — `tenants.settings.getirCarsi` → client config (+ stockBuffer).
+- `app/api/getir-carsi/sync-orders` — poll: unapproved+cancelled → `getir_carsi_orders` idempotent upsert, yeni sipariş bildirimi.
+- `app/api/getir-carsi/order-action` — verify/prepare/handover/deliver/cancel (+cancel-options). Teslimat modeline (dt1/dt2) göre buton akışı.
+- `app/api/getir-carsi/price-quantity` — mode=manual (elle) veya mode=sync (eşlemeden otomatik stok/fiyat, tampon uygulanır).
+- `supabase/migrations/20260801_getir_carsi_product_map.sql` — ürün↔getirId eşleme tablosu.
+- SuperAdmin Getir Çarşı formu: + agentName (User-Agent), + Test/Stage toggle, + stockBuffer.
+- `GetirCarsiWidget`: "Getir'den Çek" (poll) + 30 sn otomatik poll + sipariş kartında Onayla/Hazırla/Teslim/İptal butonları + yeni sipariş sesi.
+
+**Elle yapılacak adımlar (deploy):**
+1. **Migration çalıştır** (Supabase SQL Editor): `20260801_getir_carsi_product_map.sql`
+   (ilk kurulumda `20260702_getir_carsi_webhooks.sql` de).
+2. **SuperAdmin > Getir Çarşı** (pilot tenant Kardeşler Kasap):
+   - shopId `6a641cd751b0f125532f8aa8`, username `jetpos`, password `<reset sonrası>`, agentName `JetPos Yazılım`, **Test Ortamı = AÇIK**, stockBuffer `0`, Aktif.
+3. **ŞİFRE SIFIRLA (kritik):** doküman diyor ki bizim verilen şifre `/v1/suppliers/password/reset` ile yenilenmeli, sonra token o yeni şifreyle alınır. Panel reset linki tek kullanımlık — bugün kullan.
+4. Env (webhook için, opsiyonel): `GETIR_CARSI_WEBHOOK_API_KEY` (inbound webhook kullanılacaksa).
+5. Test siparişi: `web-workspace.development.getirapi.com/carsi/isletmeler/` → widget "Getir'den Çek" → sipariş düşer → Onayla → Hazırla → Teslim.
+
+**Şema teyidi (test sırasında doğrula):** token yanıt alanı (`token`/`accessToken`), `/unapproved` sipariş alan adları (client toleranslı okuyor ama gerçek yanıtla `F` map'i netleştirilebilir), `price-and-quantity` yanıtındaki `batchRequestId`.

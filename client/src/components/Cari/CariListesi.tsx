@@ -110,12 +110,15 @@ export default function CariListesi({ showToast }: CariListesiProps) {
 
     const totalPages = Math.ceil(filteredCariler.length / pageSize);
 
-    // Toplamlar
-    const toplamlar = useMemo(() => ({
-        borc: filteredCariler.reduce((sum, c) => sum + (c.borc_toplami || 0), 0),
-        alacak: filteredCariler.reduce((sum, c) => sum + (c.alacak_toplami || 0), 0),
-        bakiye: filteredCariler.reduce((sum, c) => sum + (c.bakiye || 0), 0),
-    }), [filteredCariler]);
+    // Toplamlar — NET bazlı (Alacak = net>0 olanların toplamı, Verecek = net<0 olanlar).
+    const toplamlar = useMemo(() => {
+        let alacakNet = 0, verecekNet = 0;
+        for (const c of filteredCariler) {
+            const net = (Number(c.borc_toplami) || 0) - (Number(c.alacak_toplami) || 0);
+            if (net > 0) alacakNet += net; else if (net < 0) verecekNet += -net;
+        }
+        return { borc: alacakNet, alacak: verecekNet, bakiye: alacakNet - verecekNet };
+    }, [filteredCariler]);
 
     // Sıralama
     const handleSort = (column: string) => {
@@ -315,14 +318,21 @@ export default function CariListesi({ showToast }: CariListesiProps) {
                                     </td>
                                     {visibleColumns.filter(c => c.visible).map(col => (
                                         <td key={col.id} className="px-3 py-2 text-foreground">
-                                            {col.id === 'borc_toplami' || col.id === 'alacak_toplami' || col.id === 'bakiye' ? (
-                                                <span className={`font-mono ${col.id === 'borc_toplami' ? 'text-emerald-400' :
-                                                    col.id === 'alacak_toplami' ? 'text-rose-400' :
-                                                        (cari.bakiye || 0) > 0 ? 'text-emerald-400' : (cari.bakiye || 0) < 0 ? 'text-rose-400' : 'text-slate-300'
-                                                    }`}>
-                                                    {((cari as any)[col.id] || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
-                                                </span>
-                                            ) : col.id === 'durum' ? (
+                                            {col.id === 'borc_toplami' || col.id === 'alacak_toplami' || col.id === 'bakiye' ? (() => {
+                                                // NET göster: Alacak = net>0, Verecek = net<0. Böylece aktarım/mahsup
+                                                // sonrası ilgili taraf sıfırlanır (brüt toplamlar birbirini götürmüyordu).
+                                                const net = (Number(cari.borc_toplami) || 0) - (Number(cari.alacak_toplami) || 0);
+                                                let val = 0; let cls = 'text-slate-600';
+                                                if (col.id === 'borc_toplami') { val = net > 0 ? net : 0; if (net > 0) cls = 'text-emerald-400'; }
+                                                else if (col.id === 'alacak_toplami') { val = net < 0 ? -net : 0; if (net < 0) cls = 'text-rose-400'; }
+                                                else { val = Math.abs(net); cls = net > 0 ? 'text-emerald-400' : net < 0 ? 'text-rose-400' : 'text-slate-600'; }
+                                                // Boş taraf: "—" tiresi "eksi" gibi okunuyordu → soluk "0,00" göster.
+                                                return (
+                                                    <span className={`font-mono ${cls}`}>
+                                                        {val.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                                                    </span>
+                                                );
+                                            })() : col.id === 'durum' ? (
                                                 <span className={`px-2 py-0.5 rounded text-xs ${cari.durum === 'Aktif' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
                                                     }`}>
                                                     {cari.durum || 'Aktif'}

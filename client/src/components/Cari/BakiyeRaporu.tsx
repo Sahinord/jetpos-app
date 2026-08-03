@@ -129,7 +129,7 @@ export default function BakiyeRaporu({ showToast }: BakiyeRaporuProps) {
 
     // CSV Export
     const exportToCSV = () => {
-        const headers = 'Cari Kodu;Ünvanı;Vergi Dairesi;Vergi No;Grup Kodu;Borç;Alacak;Bakiye';
+        const headers = 'Cari Kodu;Ünvanı;Vergi Dairesi;Vergi No;Grup Kodu;Alacak;Verecek;Bakiye';
         const rows = cariler.map(c =>
             `${c.cari_kodu};${c.unvani};${c.vergi_dairesi || ''};${c.vergi_no || ''};${c.grup_kodu || ''};${c.borc_toplami || 0};${c.alacak_toplami || 0};${c.bakiye || 0}`
         ).join('\n');
@@ -264,8 +264,8 @@ export default function BakiyeRaporu({ showToast }: BakiyeRaporuProps) {
                                 className="w-full bg-white/5 border border-white/10 rounded px-3 py-1.5 text-white text-sm"
                             >
                                 <option value="all">Tümü</option>
-                                <option value="borclu">Borçlu</option>
-                                <option value="alacakli">Alacaklı</option>
+                                <option value="borclu">Alacaklı (size borçlu)</option>
+                                <option value="alacakli">Verecekli (siz borçlu)</option>
                                 <option value="sifir">Sıfır Bakiye</option>
                             </select>
                         </div>
@@ -340,32 +340,32 @@ export default function BakiyeRaporu({ showToast }: BakiyeRaporuProps) {
 
                     {/* Özet Kartları */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
-                        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
-                            <div className="flex items-center gap-2 text-red-400 text-xs mb-1">
-                                <TrendingUp className="w-3.5 h-3.5" />
-                                Toplam Borç
-                            </div>
-                            <div className="text-lg font-bold text-red-500 font-mono">
-                                {toplamlar.borc.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
-                            </div>
-                            <div className="text-xs text-red-400/60 mt-1">{toplamlar.borcluSayisi} borçlu cari</div>
-                        </div>
                         <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3">
                             <div className="flex items-center gap-2 text-emerald-400 text-xs mb-1">
-                                <TrendingDown className="w-3.5 h-3.5" />
+                                <TrendingUp className="w-3.5 h-3.5" />
                                 Toplam Alacak
                             </div>
                             <div className="text-lg font-bold text-emerald-500 font-mono">
+                                {toplamlar.borc.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
+                            </div>
+                            <div className="text-xs text-emerald-400/60 mt-1">{toplamlar.borcluSayisi} alacaklı cari</div>
+                        </div>
+                        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+                            <div className="flex items-center gap-2 text-red-400 text-xs mb-1">
+                                <TrendingDown className="w-3.5 h-3.5" />
+                                Toplam Verecek
+                            </div>
+                            <div className="text-lg font-bold text-red-500 font-mono">
                                 {toplamlar.alacak.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
                             </div>
-                            <div className="text-xs text-emerald-400/60 mt-1">{toplamlar.alacakliSayisi} alacaklı cari</div>
+                            <div className="text-xs text-red-400/60 mt-1">{toplamlar.alacakliSayisi} verecekli cari</div>
                         </div>
-                        <div className={`border rounded-lg p-3 ${toplamlar.bakiye >= 0 ? 'bg-red-500/10 border-red-500/30' : 'bg-emerald-500/10 border-emerald-500/30'}`}>
-                            <div className="flex items-center gap-2 text-xs mb-1" style={{ color: toplamlar.bakiye >= 0 ? '#f87171' : '#34d399' }}>
+                        <div className={`border rounded-lg p-3 ${toplamlar.bakiye >= 0 ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
+                            <div className="flex items-center gap-2 text-xs mb-1" style={{ color: toplamlar.bakiye >= 0 ? '#34d399' : '#f87171' }}>
                                 <DollarSign className="w-3.5 h-3.5" />
                                 Net Bakiye
                             </div>
-                            <div className={`text-lg font-bold font-mono ${toplamlar.bakiye >= 0 ? 'text-red-500' : 'text-emerald-500'}`}>
+                            <div className={`text-lg font-bold font-mono ${toplamlar.bakiye >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                                 {toplamlar.bakiye.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
                             </div>
                         </div>
@@ -392,8 +392,8 @@ export default function BakiyeRaporu({ showToast }: BakiyeRaporuProps) {
                                     <th className="px-3 py-2">Vergi Dairesi</th>
                                     <th className="px-3 py-2">Vergi No</th>
                                     <th className="px-3 py-2">Grup</th>
-                                    <th className="px-3 py-2 text-right">Borç</th>
                                     <th className="px-3 py-2 text-right">Alacak</th>
+                                    <th className="px-3 py-2 text-right">Verecek</th>
                                     <th className="px-3 py-2 text-right">Bakiye</th>
                                 </tr>
                             </thead>
@@ -405,13 +405,13 @@ export default function BakiyeRaporu({ showToast }: BakiyeRaporuProps) {
                                         <td className="px-3 py-2 text-secondary">{cari.vergi_dairesi || '-'}</td>
                                         <td className="px-3 py-2 text-secondary">{cari.vergi_no || '-'}</td>
                                         <td className="px-3 py-2 text-secondary">{cari.grup_kodu || '-'}</td>
-                                        <td className="px-3 py-2 text-right text-red-400 font-mono">
+                                        <td className="px-3 py-2 text-right text-emerald-400 font-mono">
                                             {(cari.borc_toplami || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
                                         </td>
-                                        <td className="px-3 py-2 text-right text-emerald-400 font-mono">
+                                        <td className="px-3 py-2 text-right text-red-400 font-mono">
                                             {(cari.alacak_toplami || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
                                         </td>
-                                        <td className={`px-3 py-2 text-right font-mono font-bold ${(cari.bakiye || 0) > 0 ? 'text-red-500' : (cari.bakiye || 0) < 0 ? 'text-emerald-500' : 'text-secondary'
+                                        <td className={`px-3 py-2 text-right font-mono font-bold ${(cari.bakiye || 0) > 0 ? 'text-emerald-500' : (cari.bakiye || 0) < 0 ? 'text-red-500' : 'text-secondary'
                                             }`}>
                                             {(cari.bakiye || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
                                         </td>

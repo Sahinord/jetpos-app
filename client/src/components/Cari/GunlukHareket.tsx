@@ -151,17 +151,20 @@ export default function GunlukHareket({ showToast }: GunlukHareketProps) {
 
     const getHareketLabel = (tip: string) => {
         switch (tip) {
-            case 'BORC_DEKONTU': return 'Borç';
-            case 'ALACAK_DEKONTU': return 'Alacak';
-            case 'VIRMAN': return 'Virman';
+            case 'BORC_DEKONTU': return 'Verecek Dekontu';
+            case 'ALACAK_DEKONTU': return 'Alacak Dekontu';
+            case 'VIRMAN': case 'VIRMAN_DEKONTU': return 'Virman';
             case 'DEVIR': return 'Devir';
+            case 'MAHSUP': return 'Mahsup';
+            case 'GERI_ALMA': return 'Geri Alma';
+            case 'SATIS': return 'Satış';
             default: return tip;
         }
     };
 
     // CSV Export
     const exportToCSV = () => {
-        const headers = 'Tarih;İşlem Sayısı;Borç;Alacak;Net';
+        const headers = 'Tarih;İşlem Sayısı;Alacak;Verecek;Net';
         const rows = gunlukVeriler.map(g =>
             `${g.tarih};${g.islem_sayisi};${g.borc};${g.alacak};${g.borc - g.alacak}`
         ).join('\n');
@@ -231,7 +234,7 @@ export default function GunlukHareket({ showToast }: GunlukHareketProps) {
                                 className="w-full bg-white/5 border border-white/10 rounded px-3 py-1.5 text-white text-sm"
                             >
                                 <option value="all">Tümü</option>
-                                <option value="BORC_DEKONTU">Borç Dekontu</option>
+                                <option value="BORC_DEKONTU">Verecek Dekontu</option>
                                 <option value="ALACAK_DEKONTU">Alacak Dekontu</option>
                                 <option value="VIRMAN">Virman</option>
                                 <option value="DEVIR">Devir</option>
@@ -314,21 +317,21 @@ export default function GunlukHareket({ showToast }: GunlukHareketProps) {
                                 {toplamlar.islem}
                             </div>
                         </div>
-                        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
-                            <div className="flex items-center gap-2 text-red-400 text-xs mb-1">
-                                <ArrowUp className="w-3.5 h-3.5" />
-                                Toplam Borç
-                            </div>
-                            <div className="text-lg font-bold text-red-500 font-mono">
-                                {toplamlar.borc.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
-                            </div>
-                        </div>
                         <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3">
                             <div className="flex items-center gap-2 text-emerald-400 text-xs mb-1">
                                 <ArrowDown className="w-3.5 h-3.5" />
                                 Toplam Alacak
                             </div>
                             <div className="text-lg font-bold text-emerald-500 font-mono">
+                                {toplamlar.borc.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
+                            </div>
+                        </div>
+                        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+                            <div className="flex items-center gap-2 text-red-400 text-xs mb-1">
+                                <ArrowUp className="w-3.5 h-3.5" />
+                                Toplam Verecek
+                            </div>
+                            <div className="text-lg font-bold text-red-500 font-mono">
                                 {toplamlar.alacak.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
                             </div>
                         </div>
@@ -354,20 +357,20 @@ export default function GunlukHareket({ showToast }: GunlukHareketProps) {
                                     </div>
                                     <div className="flex items-center gap-4">
                                         <div className="text-right">
-                                            <div className="text-xs text-secondary">Borç</div>
-                                            <div className="text-red-400 font-mono font-bold">
+                                            <div className="text-xs text-secondary">Alacak</div>
+                                            <div className="text-emerald-400 font-mono font-bold">
                                                 {gun.borc.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <div className="text-xs text-secondary">Alacak</div>
-                                            <div className="text-emerald-400 font-mono font-bold">
+                                            <div className="text-xs text-secondary">Verecek</div>
+                                            <div className="text-red-400 font-mono font-bold">
                                                 {gun.alacak.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
                                             </div>
                                         </div>
                                         <div className="text-right min-w-[100px]">
                                             <div className="text-xs text-secondary">Net</div>
-                                            <div className={`font-mono font-bold ${gun.borc - gun.alacak > 0 ? 'text-red-500' : 'text-emerald-500'
+                                            <div className={`font-mono font-bold ${gun.borc - gun.alacak > 0 ? 'text-emerald-500' : 'text-red-500'
                                                 }`}>
                                                 {(gun.borc - gun.alacak).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
                                             </div>
@@ -387,8 +390,8 @@ export default function GunlukHareket({ showToast }: GunlukHareketProps) {
                                                     <th className="px-3 py-2">Tip</th>
                                                     <th className="px-3 py-2">Belge No</th>
                                                     <th className="px-3 py-2">Açıklama</th>
-                                                    <th className="px-3 py-2 text-right">Borç</th>
                                                     <th className="px-3 py-2 text-right">Alacak</th>
+                                                    <th className="px-3 py-2 text-right">Verecek</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-white/5">
