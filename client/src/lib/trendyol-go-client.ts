@@ -67,6 +67,19 @@ interface StockUpdateItem {
     storeId?: string;
 }
 
+// Market paket statü değerleri — stage'de teyit edilecek TEK nokta.
+// Trendyol yanıtındaki packageStatus ile birebir eşleşmeli (gerekirse burayı düzelt).
+export const TGO_PACKAGE_STATUS = {
+    CREATED: 'Created',
+    PICKING: 'Picking',
+    INVOICED: 'Invoiced',
+    SHIPPED: 'Shipped',
+    DELIVERED: 'Delivered',
+    CANCELLED: 'Cancelled',
+} as const;
+
+export type TgoOrderAction = 'accept' | 'invoiced' | 'shipped' | 'unsupply' | 'status';
+
 export class TrendyolGoClient {
     private config: TrendyolGoConfig;
 
@@ -331,6 +344,60 @@ export class TrendyolGoClient {
         const url = `${this.config.baseUrl}/order/grocery/suppliers/${this.config.sellerId}/packages/order-number/${orderNumber}`;
         const data = await this.request(url);
         return data.content?.[0] || null;
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    //  SİPARİŞ YÖNETİMİ (paket statü akışı)
+    //  Market paket yaşam döngüsü: Created → Picking → Invoiced → Shipped → Delivered
+    //  Endpoint deseni onaylı base ile: /order/grocery/suppliers/{sellerId}/packages/{packageId}/status
+    //  ⚠️ Statü değerleri (Picking/Invoiced/Shipped...) stage panelinde teyit edilecek;
+    //     gerekirse yalnızca TGO_PACKAGE_STATUS haritası güncellenir, çağrı kodu değişmez.
+    // ─────────────────────────────────────────────────────────────
+
+    private packagePath(packageId: string, seg = ''): string {
+        return `${this.config.baseUrl}/order/grocery/suppliers/${this.config.sellerId}/packages/${packageId}${seg}`;
+    }
+
+    /** Paket statüsünü güncelle (PUT .../packages/{id}/status). lines: kısmi/hazırlama detayı. */
+    async updatePackageStatus(packageId: string, status: string, lines?: unknown[]): Promise<any> {
+        const body: Record<string, unknown> = { status };
+        if (lines && lines.length) body.lines = lines;
+        return this.request(this.packagePath(packageId, '/status'), 'PUT', body);
+    }
+
+    /** Siparişi onayla / toplamaya başla (Created → Picking). */
+    async acceptPackage(packageId: string): Promise<any> {
+        return this.updatePackageStatus(packageId, TGO_PACKAGE_STATUS.PICKING);
+    }
+
+    /** Toplandı / faturalandı olarak işaretle (Picking → Invoiced). */
+    async markInvoiced(packageId: string): Promise<any> {
+        return this.updatePackageStatus(packageId, TGO_PACKAGE_STATUS.INVOICED);
+    }
+
+    /** Kargoya/kuryeye teslim (Invoiced → Shipped). */
+    async shipPackage(packageId: string): Promise<any> {
+        return this.updatePackageStatus(packageId, TGO_PACKAGE_STATUS.SHIPPED);
+    }
+
+    /**
+     * Stokta olmayan/eksik kalemleri bildir (unsupplied).
+     * items: [{ lineId, quantity }] — sipariş satırındaki id ve iptal edilecek adet.
+     */
+    async unsupplyItems(packageId: string, items: Array<{ lineId: string; quantity: number }>): Promise<any> {
+        return this.request(this.packagePath(packageId, '/items/unsupplied'), 'POST', { items });
+    }
+
+    /** Genel aksiyon dağıtıcısı (route'tan tek noktadan çağrılır). */
+    async orderAction(packageId: string, action: TgoOrderAction, payload?: any): Promise<any> {
+        switch (action) {
+            case 'accept': return this.acceptPackage(packageId);
+            case 'invoiced': return this.markInvoiced(packageId);
+            case 'shipped': return this.shipPackage(packageId);
+            case 'unsupply': return this.unsupplyItems(packageId, payload?.items || []);
+            case 'status': return this.updatePackageStatus(packageId, payload?.status, payload?.lines);
+            default: throw new Error(`Bilinmeyen aksiyon: ${action}`);
+        }
     }
 
     async testConnection(): Promise<boolean> {

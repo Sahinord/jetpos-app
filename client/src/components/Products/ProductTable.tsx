@@ -755,23 +755,28 @@ export default function ProductTable({ products, categories = [], onEdit, onDele
                                     placeholder="Barkod okutun veya ürün arayın..."
                                     className="w-full bg-primary/5 border border-border rounded-2xl py-3.5 pl-12 pr-4 focus:outline-none focus:border-primary/50 transition-all text-lg font-medium placeholder:text-secondary/40 text-foreground"
                                     value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
+                                    // Barkod okuyucu/yapıştırmadan gelen \n \r \t kontrol karakterlerini temizle
+                                    // ki yapıştırınca arama ANINDA tetiklensin (space beklemeye gerek kalmasın).
+                                    onChange={(e) => setSearch(e.target.value.replace(/[\r\n\t]/g, ''))}
                                     onKeyDown={(e) => {
-                                        if (e.key === 'Enter' && search.trim() !== '') {
-                                            const exactMatch = products.find((p: any) => p.barcode?.toLowerCase() === search.trim().toLowerCase());
-                                            if (exactMatch) {
-                                                onEdit(exactMatch);
+                                        if (e.key === 'Enter') {
+                                            const q = (e.currentTarget.value || search).trim();
+                                            if (q) {
+                                                const exactMatch = products.find((p: any) => p.barcode?.toLowerCase() === q.toLowerCase());
+                                                if (exactMatch) onEdit(exactMatch);
                                             }
                                         }
                                     }}
                                     onPaste={(e) => {
-                                        e.preventDefault();
-                                        const pastedText = e.clipboardData.getData('text').trim();
-                                        setSearch(pastedText);
-                                        const exactMatch = products.find((p: any) => p.barcode?.toLowerCase() === pastedText.toLowerCase());
-                                        if (exactMatch) {
-                                            onEdit(exactMatch);
-                                        }
+                                        // preventDefault YOK: native yapıştırma onChange'i tetikler (asıl aramayı o yapar).
+                                        // Yapıştıktan hemen sonra tam barkod eşleşmesi varsa ürünü aç.
+                                        const pasted = (e.clipboardData?.getData('text') || '').replace(/[\r\n\t]/g, '').trim();
+                                        setTimeout(() => {
+                                            const q = pasted || (e.target as HTMLInputElement)?.value?.trim() || '';
+                                            if (!q) return;
+                                            const exactMatch = products.find((p: any) => p.barcode?.toLowerCase() === q.toLowerCase());
+                                            if (exactMatch) onEdit(exactMatch);
+                                        }, 0);
                                     }}
                                 />
                             </div>

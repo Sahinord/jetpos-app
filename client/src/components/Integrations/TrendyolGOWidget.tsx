@@ -339,6 +339,26 @@ export default function TrendyolGOWidget({ activeSubTab = 'overview' }: { active
         }
     };
 
+    // Sipariş aksiyonu (Onayla / Faturala / Kargola) → API'ye bildir, sonra listeyi tazele
+    const [actionOrderId, setActionOrderId] = useState<string | null>(null);
+    const handleOrderAction = async (order: any, action: string) => {
+        if (!currentTenant?.id) return;
+        setActionOrderId(order.order_number);
+        try {
+            const res = await apiFetch('/api/trendyol/order-action', {
+                method: 'POST',
+                body: JSON.stringify({ tenantId: currentTenant.id, orderNumber: order.order_number, action }),
+            });
+            if (!res?.success) throw new Error(res?.error || 'Aksiyon başarısız');
+            await fetchOrders(syncDays);
+        } catch (err: any) {
+            console.error('Trendyol order-action error:', err?.message);
+            alert('İşlem başarısız: ' + (err?.message || 'bilinmeyen'));
+        } finally {
+            setActionOrderId(null);
+        }
+    };
+
     // 🔄 Otomatik senkronizasyon: ekrana her girişte ve periyodik olarak Trendyol'dan
     // siparişleri ceker, boylece istatistikler manuel "Siparişleri Çek" tıklanmadan da
     // guncel kalir. lastSyncAtRef ile spam korumasi: cok sik tetiklenmeyi engeller.
@@ -416,7 +436,7 @@ export default function TrendyolGOWidget({ activeSubTab = 'overview' }: { active
     const renderTab = () => {
         switch (activeSubTab) {
             case 'orders':
-                return <OrdersTab orders={orders} syncDays={syncDays} setSyncDays={setSyncDays} fetchOrders={fetchOrders} handleSyncOrders={handleSyncOrders} syncing={syncing} isConfigured={isConfigured} />;
+                return <OrdersTab orders={orders} syncDays={syncDays} setSyncDays={setSyncDays} fetchOrders={fetchOrders} handleSyncOrders={handleSyncOrders} syncing={syncing} isConfigured={isConfigured} handleOrderAction={handleOrderAction} actionOrderId={actionOrderId} />;
             case 'finance':
                 return <FinanceTab orders={orders} syncDays={syncDays} />;
             case 'settings':
@@ -679,9 +699,18 @@ function OverviewTab({ stats, orders, isConfigured, isSystemLevel, settings, syn
 // =====================================================
 // TAB 2: SİPARİŞLER (Orders)
 // =====================================================
-function OrdersTab({ orders, syncDays, setSyncDays, fetchOrders, handleSyncOrders, syncing, isConfigured }: any) {
+function OrdersTab({ orders, syncDays, setSyncDays, fetchOrders, handleSyncOrders, syncing, isConfigured, handleOrderAction, actionOrderId }: any) {
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const [searchQuery, setSearchQuery] = useState('');
+
+    // Statüye göre sonraki aksiyon(lar)
+    const nextActions = (status: string): { key: string; label: string; cls: string }[] => {
+        const s = (status || '').toLowerCase();
+        if (['created', 'accepted'].includes(s)) return [{ key: 'accept', label: 'Onayla / Topla', cls: 'bg-emerald-500 hover:bg-emerald-600 text-white' }];
+        if (['picking', 'picked', 'packing', 'readyforcollection'].includes(s)) return [{ key: 'invoiced', label: 'Faturala / Hazır', cls: 'bg-blue-500 hover:bg-blue-600 text-white' }];
+        if (['invoiced'].includes(s)) return [{ key: 'shipped', label: 'Kargola', cls: 'bg-purple-500 hover:bg-purple-600 text-white' }];
+        return [];
+    };
 
     const filteredOrders = useMemo(() => {
         let filtered = orders;
@@ -826,6 +855,27 @@ function OrdersTab({ orders, syncDays, setSyncDays, fetchOrders, handleSyncOrder
                                     <p className="text-xl font-black text-foreground">{order.total_price} <span className="text-xs text-orange-400">₺</span></p>
                                 </div>
                             </div>
+
+                            {/* Sipariş aksiyon butonları */}
+                            {(() => {
+                                const acts = nextActions(order.status);
+                                if (acts.length === 0) return null;
+                                const busy = actionOrderId === order.order_number;
+                                return (
+                                    <div className="flex gap-2 mt-4 pt-3 border-t border-white/5">
+                                        {acts.map(a => (
+                                            <button
+                                                key={a.key}
+                                                disabled={busy}
+                                                onClick={() => handleOrderAction?.(order, a.key)}
+                                                className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all disabled:opacity-50 ${a.cls}`}
+                                            >
+                                                {busy ? '…' : a.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                );
+                            })()}
                         </div>
                     ))
                 ) : (
