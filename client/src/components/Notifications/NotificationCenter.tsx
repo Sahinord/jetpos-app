@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { Bell, X, Info, CheckCircle, AlertTriangle, AlertCircle, Trash2, Download, Rocket } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Bell, X, Info, CheckCircle, AlertTriangle, AlertCircle, Trash2, Download, Rocket, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import { useTenant } from '@/lib/tenant-context';
@@ -17,9 +17,29 @@ export default function NotificationCenter() {
     const [updateProgress, setUpdateProgress] = useState(0);
     const [updateVersion, setUpdateVersion] = useState<any>(null);
 
-    // Bubble visibility tracking
-    const [hasLooked, setHasLooked] = useState(false);
-    const [prevUnreadCount, setPrevUnreadCount] = useState(0);
+    // Panel/baloncuk konumu (buton ekranın solundaysa panel sağa açılsın, taşmasın)
+    const rootRef = useRef<HTMLDivElement>(null);
+    const [alignLeft, setAlignLeft] = useState(false);
+
+    // Baloncuk: bir kez görülünce YENİ güncelleme/bildirim gelene kadar susar (localStorage).
+    const SEEN_KEY = 'jp_notif_seen_sig';
+    const [seenSig, setSeenSig] = useState<string>('');
+    useEffect(() => {
+        try { setSeenSig(localStorage.getItem(SEEN_KEY) || ''); } catch { /* yut */ }
+    }, []);
+
+    // Butonun ekrandaki konumuna göre hizayı hesapla (mount + resize)
+    useEffect(() => {
+        const compute = () => {
+            const el = rootRef.current;
+            if (!el) return;
+            const rect = el.getBoundingClientRect();
+            setAlignLeft(rect.left < window.innerWidth / 2);
+        };
+        compute();
+        window.addEventListener('resize', compute);
+        return () => window.removeEventListener('resize', compute);
+    }, []);
 
     useEffect(() => {
         if (currentTenant) {
@@ -112,16 +132,21 @@ export default function NotificationCenter() {
 
     const unreadCount = notifications.filter(n => !n.is_read).length + (updateStatus !== 'none' ? 1 : 0);
 
-    useEffect(() => {
-        if (unreadCount > prevUnreadCount) {
-            setHasLooked(false);
-        }
-        setPrevUnreadCount(unreadCount);
-    }, [unreadCount, prevUnreadCount]);
+    // Baloncuk imzası: en yeni güncelleme sürümü + en yeni bildirim id.
+    // Bu imza değişmediği sürece (aynı güncelleme) baloncuk bir daha çıkmaz.
+    const currentSig = `${updateStatus !== 'none' ? (updateVersion?.version || 'upd') : ''}|${notifications[0]?.id || ''}`;
+    const showBubble = unreadCount > 0 && !isOpen && seenSig !== currentSig;
+
+    const markSeen = () => {
+        try { localStorage.setItem(SEEN_KEY, currentSig); } catch { /* yut */ }
+        setSeenSig(currentSig);
+    };
 
     const handleToggle = () => {
         if (!isOpen) {
-            setHasLooked(true);
+            markSeen();
+            const el = rootRef.current;
+            if (el) setAlignLeft(el.getBoundingClientRect().left < window.innerWidth / 2);
         }
         setIsOpen(!isOpen);
     };
@@ -136,7 +161,7 @@ export default function NotificationCenter() {
     };
 
     return (
-        <div className="relative">
+        <div ref={rootRef} className="relative">
             <button
                 onClick={handleToggle}
                 className="relative p-2.5 text-secondary hover:text-white hover:bg-white/5 rounded-xl transition-all"
@@ -147,15 +172,25 @@ export default function NotificationCenter() {
                 )}
             </button>
 
-            {unreadCount > 0 && !isOpen && !hasLooked && (
-                <div className="absolute top-14 right-0 bg-primary text-white text-[9px] font-black uppercase tracking-widest px-3 py-2 rounded-xl shadow-lg shadow-primary/40 border border-primary/20 whitespace-nowrap animate-bounce z-50 flex items-center gap-1.5 pointer-events-none">
-                    <span className="relative flex h-1.5 w-1.5">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white"></span>
+            {showBubble && (
+                <button
+                    onClick={handleToggle}
+                    className={`absolute top-14 ${alignLeft ? 'left-0' : 'right-0'} z-50 group`}
+                >
+                    {/* parlayan dış katman (nabız) */}
+                    <span className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500 opacity-60 blur-md animate-pulse" />
+                    {/* pill */}
+                    <span className="relative flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500 text-white text-[10px] font-black uppercase tracking-widest whitespace-nowrap shadow-lg shadow-violet-500/40 ring-1 ring-white/20 group-hover:scale-[1.03] transition-transform">
+                        <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-80" />
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
+                        </span>
+                        <Zap className="w-3.5 h-3.5 fill-white" />
+                        <span>Jet Hızında Güncelleme Var!</span>
                     </span>
-                    <span>⚡ JET HIZINDA GÜNCELLEME VAR!</span>
-                    <div className="absolute -top-1 right-4 w-2 h-2 bg-primary border-l border-t border-primary/20 rotate-45"></div>
-                </div>
+                    {/* ok ucu */}
+                    <span className={`absolute -top-1 ${alignLeft ? 'left-5' : 'right-5'} w-2.5 h-2.5 bg-indigo-500 rotate-45 ring-1 ring-white/20`} />
+                </button>
             )}
 
             <AnimatePresence>
@@ -169,7 +204,7 @@ export default function NotificationCenter() {
                             initial={{ opacity: 0, y: 10, scale: 0.95 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                            className="absolute right-0 mt-4 w-96 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden"
+                            className={`absolute ${alignLeft ? 'left-0' : 'right-0'} mt-4 w-96 max-w-[calc(100vw-1.5rem)] bg-slate-900 border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden`}
                         >
                             <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5">
                                 <h3 className="font-bold text-white flex items-center gap-2">
