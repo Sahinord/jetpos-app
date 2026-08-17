@@ -39,10 +39,17 @@ export async function POST(req: NextRequest) {
     let body: { total?: number; items?: OdealBasketItem[]; siparisNo?: string; paymentType?: string };
     try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid_json" }, { status: 400 }); }
 
-    const total = Number(body.total) || 0;
     const items = Array.isArray(body.items) ? body.items : [];
+    // Sepet toplamını KALEMLERİN grossPrice toplamından hesapla — Ödeal, kalem
+    // toplamı ile sepet toplamı birebir tutmazsa "Geçersiz satış fiyatı" (2044) döner.
+    // (body.total'a güvenmiyoruz; yuvarlama farkı bile hata verdiriyordu.)
+    const total = Number(items.reduce((s, it) => s + (Number((it as any).grossPrice) || 0), 0).toFixed(2));
     if (total <= 0 || items.length === 0) {
         return NextResponse.json({ error: "Geçerli tutar ve ürünler gerekli." }, { status: 400 });
+    }
+    // Her kalemin fiyatı > 0 ve en fazla 2 ondalık olmalı (Ödeal 2044 önlemi).
+    if (items.some(it => !(Number((it as any).grossPrice) > 0))) {
+        return NextResponse.json({ error: "Kalem fiyatı 0 veya geçersiz. Ödeal'e gönderilemez." }, { status: 400 });
     }
 
     // Ödeme tipi: CASH → tutarın tamamı cihaza NAKİT olarak bildirilir; cihaz

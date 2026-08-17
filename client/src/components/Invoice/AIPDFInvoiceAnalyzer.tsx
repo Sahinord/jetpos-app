@@ -289,7 +289,7 @@ export default function AIPDFInvoiceAnalyzer({ onAnalyzed, onClose }: Props) {
                         <div>
                             <h2 className="text-base font-bold text-white">JetPos AI Analiz</h2>
                             <p className="text-[10px] text-secondary uppercase tracking-widest font-medium">
-                                {file?.type.startsWith('image/') ? 'GPT-4o-mini Vision Engine' : 'DeepSeek V4 Flash Engine'}
+                                {file?.type.startsWith('image/') ? 'Görsel Okuma (Vision AI)' : 'Fatura Metni Okuma AI'}
                             </p>
                         </div>
                     </div>

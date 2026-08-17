@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import { Camera, X, Sparkles, RefreshCw, ShoppingCart, TrendingUp, AlertCircle, CheckCircle2, Search, Calculator } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTenant } from "@/lib/tenant-context";
+import { apiFetch } from "@/lib/api";
 
 interface SmartScannerProps {
     isOpen: boolean;
@@ -12,6 +14,7 @@ interface SmartScannerProps {
 }
 
 export default function SmartScanner({ isOpen, onClose, onProductDetected, apiKey }: SmartScannerProps) {
+    const { currentTenant } = useTenant();
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [stream, setStream] = useState<MediaStream | null>(null);
@@ -82,15 +85,13 @@ export default function SmartScanner({ isOpen, onClose, onProductDetected, apiKe
         const base64Image = canvas.toDataURL("image/jpeg", 0.8).split(",")[1];
 
         try {
-            const response = await fetch("/api/vision-analyze", {
+            // apiFetch tenant başlıklarını (x-tenant-id / x-license-key) ekler; anahtar sunucuda gizli.
+            const result = await apiFetch("/api/vision-analyze", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ image: base64Image, api_key: apiKey })
+                body: JSON.stringify({ image: base64Image, tenant_id: currentTenant?.id })
             });
-
-            if (!response.ok) throw new Error("AI Analizi başarısız oldu");
-
-            const result = await response.json();
+            if (result?.error) throw new Error(result.error);
             setScanResult(result);
         } catch (err: any) {
             setError(err.message || "Bir hata oluştu");

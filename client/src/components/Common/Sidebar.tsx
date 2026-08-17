@@ -410,6 +410,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
             label: "JetEntegre",
             icon: Blocks,
             items: [
+                { id: "live_orders", label: "Canlı Siparişler", icon: Activity, feature: "getir,trendyol_go,tgo_yemek,yemeksepeti", description: "Getir · Trendyol GO · Yemek siparişleri tek canlı ekranda — yeni sipariş bildirimi ve tek yerden onayla/hazırla." },
                 { id: "trendyol_integration", label: "Trendyol Pazaryeri", icon: ShoppingBag, feature: "trendyol_marketplace", description: "Trendyol Pazaryeri siparişleri ve stok senkronizasyonu." },
                 { id: "trendyol_go_integration", label: "Trendyol GO / Yemek", icon: ShoppingCart, feature: "trendyol_go", description: "Trendyol GO ve Yemek siparişleri, gelir ve net kar analizi." },
                 { id: "yemeksepeti_integration", label: "Yemeksepeti", icon: Store, feature: "yemeksepeti", description: "Yemeksepeti siparişleri, gelir ve net kar analizi." },
@@ -624,6 +625,10 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
     const isFeatureEnabled = (feature: string | null | undefined): boolean => {
         if (!feature) return true;
         if (!currentTenant?.features) return false;
+        // Virgülle ayrılmış = "herhangi biri açıksa göster" (ör. canlı sipariş panosu)
+        if (feature.includes(',')) {
+            return feature.split(',').some(f => currentTenant.features[f.trim()] === true);
+        }
         return currentTenant.features[feature] === true;
     };
 

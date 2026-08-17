@@ -125,6 +125,41 @@ export default function SuperAdmin() {
     const [getirCarsiModal, setGetirCarsiModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
     const [getirCarsiSettings, setGetirCarsiSettings] = useState({ shopId: '', username: '', password: '', storeType: 'market', agentName: 'JetPos', stage: true, stockBuffer: 0, active: true });
 
+    // AI Kredi yönetimi
+    const [aiCreditModal, setAiCreditModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
+    const [aiCredit, setAiCredit] = useState<{ enabled: boolean; daily_limit: number; used_today: number; remaining_daily: number; extra_credits: number }>({ enabled: true, daily_limit: 20, used_today: 0, remaining_daily: 20, extra_credits: 0 });
+    const [aiAddAmount, setAiAddAmount] = useState(50);
+    const [aiLoading, setAiLoading] = useState(false);
+
+    const openAiCredit = async (tenantId: string, tenantName: string) => {
+        setAiCreditModal({ tenantId, tenantName });
+        setAiLoading(true);
+        try {
+            const r = await apiFetch('/api/admin/ai-credits', { method: 'POST', body: JSON.stringify({ action: 'get', tenantId }) });
+            if (r?.status) setAiCredit({ enabled: r.status.enabled, daily_limit: r.status.daily_limit, used_today: r.status.used_today, remaining_daily: r.status.remaining_daily, extra_credits: r.status.extra_credits });
+        } catch { /* yut */ } finally { setAiLoading(false); }
+    };
+    const saveAiSet = async () => {
+        if (!aiCreditModal) return;
+        setSaving(true);
+        try {
+            const r = await apiFetch('/api/admin/ai-credits', { method: 'POST', body: JSON.stringify({ action: 'set', tenantId: aiCreditModal.tenantId, enabled: aiCredit.enabled, dailyLimit: aiCredit.daily_limit }) });
+            if (!r?.success) throw new Error(r?.error || 'Kaydedilemedi');
+            alert('✅ AI ayarları güncellendi');
+            await openAiCredit(aiCreditModal.tenantId, aiCreditModal.tenantName);
+        } catch (e: any) { alert('❌ ' + e.message); } finally { setSaving(false); }
+    };
+    const addAiCredits = async () => {
+        if (!aiCreditModal) return;
+        setSaving(true);
+        try {
+            const r = await apiFetch('/api/admin/ai-credits', { method: 'POST', body: JSON.stringify({ action: 'addCredits', tenantId: aiCreditModal.tenantId, addCredits: aiAddAmount }) });
+            if (!r?.success) throw new Error(r?.error || 'Eklenemedi');
+            alert(`✅ ${aiAddAmount} ekstra kredi eklendi`);
+            await openAiCredit(aiCreditModal.tenantId, aiCreditModal.tenantName);
+        } catch (e: any) { alert('❌ ' + e.message); } finally { setSaving(false); }
+    };
+
     // Ödeal A910S ödeme terminali (per-tenant, güvenli — server-side saklanır)
     const [odealModal, setOdealModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
     const [odealSettings, setOdealSettings] = useState({
@@ -1297,6 +1332,13 @@ export default function SuperAdmin() {
                                                 <span className="font-black text-[9px]">ÇARŞI</span>
                                             </button>
                                             <button
+                                                onClick={() => openAiCredit(tenant.id, tenant.company_name || tenant.license_key)}
+                                                className="p-3 bg-white/5 hover:bg-fuchsia-500/20 rounded-xl text-slate-400 hover:text-fuchsia-400 transition-all font-bold"
+                                                title="AI Kredi Yönetimi"
+                                            >
+                                                <span className="font-black text-[9px]">AI</span>
+                                            </button>
+                                            <button
                                                 onClick={() => {
                                                     const currentOd = tenant.settings?.odeal || {};
                                                     setOdealModal({
@@ -2383,6 +2425,86 @@ export default function SuperAdmin() {
                                     {saving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><Save className="w-4 h-4" /> Kaydet</>}
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* AI Kredi Yönetimi Modal */}
+            {aiCreditModal && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6" onClick={() => setAiCreditModal(null)}>
+                    <div onClick={e => e.stopPropagation()} className="bg-slate-900 border border-white/10 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden">
+                        <div className="p-6 border-b border-white/10 flex items-center justify-between">
+                            <div>
+                                <h3 className="text-lg font-black text-white flex items-center gap-2">
+                                    <span className="w-8 h-8 rounded-xl bg-fuchsia-500/20 text-fuchsia-400 flex items-center justify-center text-xs font-black">AI</span>
+                                    AI Kredi Yönetimi
+                                </h3>
+                                <p className="text-xs text-slate-500 mt-1">{aiCreditModal.tenantName}</p>
+                            </div>
+                            <button onClick={() => setAiCreditModal(null)} className="w-8 h-8 rounded-lg hover:bg-white/5 flex items-center justify-center text-slate-400">✕</button>
+                        </div>
+
+                        <div className="p-6 space-y-5">
+                            {aiLoading ? (
+                                <div className="py-8 text-center text-slate-500 text-sm">Yükleniyor…</div>
+                            ) : (
+                                <>
+                                    {/* Durum kartları */}
+                                    <div className="grid grid-cols-3 gap-2">
+                                        <div className="bg-white/[0.03] border border-white/5 rounded-xl p-3 text-center">
+                                            <div className="text-[9px] uppercase tracking-widest text-slate-500 font-black">Bugün</div>
+                                            <div className="text-lg font-black text-white">{aiCredit.used_today}/{aiCredit.daily_limit}</div>
+                                        </div>
+                                        <div className="bg-emerald-500/[0.06] border border-emerald-500/20 rounded-xl p-3 text-center">
+                                            <div className="text-[9px] uppercase tracking-widest text-emerald-400/70 font-black">Kalan</div>
+                                            <div className="text-lg font-black text-emerald-400">{aiCredit.remaining_daily}</div>
+                                        </div>
+                                        <div className="bg-fuchsia-500/[0.06] border border-fuchsia-500/20 rounded-xl p-3 text-center">
+                                            <div className="text-[9px] uppercase tracking-widest text-fuchsia-400/70 font-black">Ekstra</div>
+                                            <div className="text-lg font-black text-fuchsia-400">{aiCredit.extra_credits}</div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                                        <div>
+                                            <span className="text-sm font-bold text-white block">AI Analiz Aktif</span>
+                                            <span className="text-[10px] text-slate-500">Kapalıysa bu işletme AI kullanamaz</span>
+                                        </div>
+                                        <button onClick={() => setAiCredit({ ...aiCredit, enabled: !aiCredit.enabled })}
+                                            className={`w-12 h-6 rounded-full transition-all relative ${aiCredit.enabled ? 'bg-fuchsia-500' : 'bg-slate-700'}`}>
+                                            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${aiCredit.enabled ? 'right-1' : 'left-1'}`} />
+                                        </button>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Günlük Limit (adet/gün)</label>
+                                        <input type="number" min={0} value={aiCredit.daily_limit}
+                                            onChange={(e) => setAiCredit({ ...aiCredit, daily_limit: Math.max(0, Number(e.target.value) || 0) })}
+                                            className="w-full px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-fuchsia-500/50" />
+                                    </div>
+
+                                    <button onClick={saveAiSet} disabled={saving}
+                                        className="w-full py-3 bg-fuchsia-500 hover:bg-fuchsia-600 text-white rounded-xl font-black transition-all disabled:opacity-50">
+                                        Ayarları Kaydet
+                                    </button>
+
+                                    {/* Ekstra kredi ekle */}
+                                    <div className="pt-4 border-t border-white/10 space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Ekstra Kredi Ekle (satın alma)</label>
+                                        <div className="flex gap-2">
+                                            <input type="number" min={1} value={aiAddAmount}
+                                                onChange={(e) => setAiAddAmount(Math.max(1, Number(e.target.value) || 1))}
+                                                className="flex-1 px-5 py-3 bg-slate-950 border border-white/5 rounded-xl text-white outline-none focus:border-fuchsia-500/50" />
+                                            <button onClick={addAiCredits} disabled={saving}
+                                                className="px-5 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black transition-all disabled:opacity-50 whitespace-nowrap">
+                                                + Ekle
+                                            </button>
+                                        </div>
+                                        <p className="text-[10px] text-slate-500">Ekstra krediler süresizdir; günlük hak bitince kullanılır.</p>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>

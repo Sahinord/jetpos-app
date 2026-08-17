@@ -703,10 +703,15 @@ export default function POS({
         const qty = Number(c.quantity ?? c.miktar ?? 1) || 1;
         // Sepet fiyatı `sale_price` alanında tutuluyor (bkz. addToCart / subtotal).
         const unit = Number(c.sale_price ?? c.price ?? c.fiyat ?? 0) || 0;
+        // Ödeal'de grossPrice birim fiyat kabul edilip quantity ile çarpılıyor.
+        // Tartılı/çoklu miktarlarda hesap tutmasın diye satırı quantity=1'e sabitleyip
+        // satır TOPLAMINI grossPrice olarak veriyoruz (2 ondalık). Miktar bilgisi ada eklenir.
+        const lineTotal = Number((unit * qty).toFixed(2));
+        const qtyLabel = qty !== 1 ? ` x${Number(qty.toFixed(3))}` : "";
         return {
-            name: String(c.name || c.ad || "Ürün"),
-            quantity: qty,
-            grossPrice: Number((unit * qty).toFixed(2)), // satır toplamı (KDV dahil), > 0 olmalı
+            name: String(c.name || c.ad || "Ürün") + qtyLabel,
+            quantity: 1,
+            grossPrice: lineTotal, // satır toplamı (KDV dahil), > 0 olmalı
             vatRatio: Number(c.vat_rate ?? c.kdv ?? c.vat ?? 10),
             referenceCode: String(c.id || c.barcode || c.barkod || ""),
         };

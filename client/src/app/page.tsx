@@ -28,6 +28,7 @@ import PriceChangeHistory from "@/components/Products/PriceChangeHistory";
 import ProductChangeLogs from "@/components/Products/ProductChangeLogs";
 import TrendyolGOWidget from "@/components/Integrations/TrendyolGOWidget";
 import IntegrationsDashboard from "@/components/Integrations/IntegrationsDashboard";
+import LiveOrdersBoard from "@/components/Integrations/LiveOrdersBoard";
 import LicenseGate from "@/components/Auth/LicenseGate";
 import StoreSelectionOverlay from "@/components/Auth/StoreSelectionOverlay";
 import { useTenant } from "@/lib/tenant-context";
@@ -2171,6 +2172,12 @@ export default function Home() {
                 showToast={showToast}
                 currentTenant={currentTenant}
               />
+            </div>
+          )}
+
+          {activeTab === "live_orders" && (
+            <div className="max-w-[1500px] mx-auto w-full">
+              <LiveOrdersBoard />
             </div>
           )}
 
