@@ -414,22 +414,25 @@ export default function SuperAdmin() {
 
         setSaving(true);
         try {
-            const { error } = await supabase
-                .from('tenants')
-                .insert([{
-                    license_key: editingTenant.license_key,
-                    company_name: editingTenant.company_name || null,
-                    logo_url: editingTenant.logo_url,
-                    contact_email: editingTenant.contact_email,
-                    features: editingTenant.features,
-                    openrouter_api_key: editingTenant.openrouter_api_key,
-                    max_stores: editingTenant.max_stores || 1,
-                    max_online_stores: editingTenant.max_online_stores || 0,
-                    status: editingTenant.status,
-                    fixed_warehouses: editingTenant.fixed_warehouses || []
-                }]);
-
-            if (error) throw error;
+            // RLS anon INSERT'e izin vermiyor → servis-role admin route'undan oluştur.
+            const res = await apiFetch('/api/admin/create-tenant', {
+                method: 'POST',
+                body: JSON.stringify({
+                    tenant: {
+                        license_key: editingTenant.license_key,
+                        company_name: editingTenant.company_name || null,
+                        logo_url: editingTenant.logo_url,
+                        contact_email: editingTenant.contact_email,
+                        features: editingTenant.features,
+                        openrouter_api_key: editingTenant.openrouter_api_key,
+                        max_stores: editingTenant.max_stores || 1,
+                        max_online_stores: editingTenant.max_online_stores || 0,
+                        status: editingTenant.status,
+                        fixed_warehouses: editingTenant.fixed_warehouses || []
+                    }
+                })
+            });
+            if (!res?.success) throw new Error(res?.error || 'Lisans oluşturulamadı');
 
             alert(`✅ Yeni lisans oluşturuldu!\n\nLisans Anahtarı: ${editingTenant.license_key}`);
             setEditingTenant(null);
