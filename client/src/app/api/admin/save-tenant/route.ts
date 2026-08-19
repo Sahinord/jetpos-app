@@ -32,9 +32,17 @@ export async function POST(req: NextRequest) {
         if (!auth.ok) {
             return NextResponse.json({ error: auth.error }, { status: auth.status });
         }
-        const licenseKey = req.headers.get('x-license-key');
-        if (!process.env.ADMIN_SECRET_TOKEN || licenseKey !== process.env.ADMIN_SECRET_TOKEN) {
-            return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
+        // Yetki: env ADMIN_SECRET_TOKEN VEYA DB'de is_super_admin=true aktif lisans
+        // (login ile aynı mantık — env token'a bağımlı değil).
+        const licenseKey = req.headers.get('x-license-key') || '';
+        const isEnvAdmin = !!process.env.ADMIN_SECRET_TOKEN && licenseKey === process.env.ADMIN_SECRET_TOKEN;
+        let isDbAdmin = false;
+        if (!isEnvAdmin && licenseKey) {
+            const { data: sa } = await supabaseAdmin.from('tenants').select('id').eq('license_key', licenseKey).eq('is_super_admin', true).eq('status', 'active').maybeSingle();
+            isDbAdmin = !!sa;
+        }
+        if (!isEnvAdmin && !isDbAdmin) {
+            return NextResponse.json({ error: 'Yetkisiz erişim (süperadmin değil)' }, { status: 403 });
         }
 
         if (!tenantId || !updateData) {

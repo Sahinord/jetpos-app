@@ -15,14 +15,21 @@ export async function POST(req: NextRequest) {
     try {
         const auth = await verifyTenantAccess(req);
         if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
-        const licenseKey = req.headers.get('x-license-key');
-        if (!process.env.ADMIN_SECRET_TOKEN || licenseKey !== process.env.ADMIN_SECRET_TOKEN) {
-            return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
+        const sb = admin();
+        // Yetki: env token VEYA DB'de is_super_admin=true aktif lisans (login ile aynı).
+        const licenseKey = req.headers.get('x-license-key') || '';
+        const isEnvAdmin = !!process.env.ADMIN_SECRET_TOKEN && licenseKey === process.env.ADMIN_SECRET_TOKEN;
+        let isDbAdmin = false;
+        if (!isEnvAdmin && licenseKey) {
+            const { data: sa } = await sb.from('tenants').select('id').eq('license_key', licenseKey).eq('is_super_admin', true).eq('status', 'active').maybeSingle();
+            isDbAdmin = !!sa;
+        }
+        if (!isEnvAdmin && !isDbAdmin) {
+            return NextResponse.json({ error: 'Yetkisiz erişim (süperadmin değil)' }, { status: 403 });
         }
 
         const { action, tenantId, enabled, dailyLimit, addCredits } = await req.json();
         if (!tenantId) return NextResponse.json({ error: 'tenantId gerekli' }, { status: 400 });
-        const sb = admin();
 
         // Durum getir
         if (action === 'get') {

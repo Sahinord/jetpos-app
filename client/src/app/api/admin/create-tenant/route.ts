@@ -16,9 +16,19 @@ export async function POST(req: NextRequest) {
     try {
         const auth = await verifyTenantAccess(req);
         if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
-        const licenseKey = req.headers.get('x-license-key');
-        if (!process.env.ADMIN_SECRET_TOKEN || licenseKey !== process.env.ADMIN_SECRET_TOKEN) {
-            return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
+
+        const sbAuth = admin();
+        // Yetki: env ADMIN_SECRET_TOKEN'a bağlı kalmadan, çağıranın DB'de
+        // is_super_admin=true aktif bir lisans olması yeterli (login ile aynı mantık).
+        const licenseKey = req.headers.get('x-license-key') || '';
+        const isEnvAdmin = !!process.env.ADMIN_SECRET_TOKEN && licenseKey === process.env.ADMIN_SECRET_TOKEN;
+        let isDbAdmin = false;
+        if (!isEnvAdmin && licenseKey) {
+            const { data: sa } = await sbAuth.from('tenants').select('id').eq('license_key', licenseKey).eq('is_super_admin', true).eq('status', 'active').maybeSingle();
+            isDbAdmin = !!sa;
+        }
+        if (!isEnvAdmin && !isDbAdmin) {
+            return NextResponse.json({ error: 'Yetkisiz erişim (süperadmin değil)' }, { status: 403 });
         }
 
         const { tenant } = await req.json();
@@ -26,7 +36,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'license_key gerekli' }, { status: 400 });
         }
 
-        const sb = admin();
+        const sb = sbAuth;
 
         // Aynı lisans var mı? (unique çakışması net mesaj olsun)
         const { data: existing } = await sb.from('tenants').select('id').eq('license_key', tenant.license_key).maybeSingle();
