@@ -507,11 +507,13 @@ export function createTrendyolGoClient(settings?: { trendyolGo?: any }): Trendyo
     const agentName = tGo.agentName || process.env.TRENDYOL_GO_AGENT_NAME || 'Self Integration';
     const token = tGo.token || process.env.TRENDYOL_GO_TOKEN;
 
-    // allow explicitly setting stage to false in db config, otherwise fallback to env
-    const stageVal = tGo.stage !== undefined ? String(tGo.stage) : process.env.TRENDYOL_GO_STAGE;
-    const isStage = stageVal === 'true';
+    // Stage bayrağı: UI `isStage`, eski kayıtlar `stage` kullanıyor — ikisini de destekle.
+    // Hiçbiri yoksa env'e düş. (Bu uyuşmazlık stage creds'in prod'a gidip 401 almasına yol açıyordu.)
+    const stageRaw = tGo.isStage !== undefined ? tGo.isStage
+        : (tGo.stage !== undefined ? tGo.stage : process.env.TRENDYOL_GO_STAGE);
+    const isStage = String(stageRaw) === 'true';
 
-    console.log(`[Trendyol Client] Init - Stage: ${isStage} (Val: ${stageVal}), Seller: ${sellerId}, Store: ${storeId}`);
+    console.log(`[Trendyol Client] Init - Stage: ${isStage} (Val: ${stageRaw}), Seller: ${sellerId}, Store: ${storeId}`);
 
     if (!sellerId || !apiKey || !apiSecret) {
         console.error('❌ Trendyol GO credentials eksik!', { sellerId, hasApiKey: !!apiKey, hasApiSecret: !!apiSecret });
