@@ -295,11 +295,14 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
             id: "jet_muhasebe",
             label: "JetMuhasebe",
             icon: Landmark,
+            // Dört muhasebe feature'ından biri bile açık değilse TÜM kategori gizlenir.
+            feature: "cari_hesap,cash_management,bank_management,invoice_management",
             subCategories: [
                 {
                     id: "cari_hesap",
                     label: "Cari Hesap Takibi",
                     icon: Users,
+                    feature: "cari_hesap",
                     items: [
                         { id: "cari_tanim", label: "Cari Tanıtımı", icon: UserPlus, feature: null, description: "Müşteri ve tedarikçilerinizin sisteme tanımlanması." },
                         { id: "cari_borc", label: "Borç Dekontu", icon: FileOutput, feature: null, description: "Cari hesaplara borç kaydı girmek için dekont ekranı." },
@@ -313,6 +316,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                     id: "cash_ops",
                     label: "Kasa İşlemleri",
                     icon: Wallet,
+                    feature: "cash_management",
                     items: [
                         { id: "cash_define", label: "Kasa Tanıtımı", icon: Wallet, feature: null, description: "Kasa ve banka hesaplarının tanımlanması." },
                         { id: "cash_in", label: "Kasa Tahsil Fişi", icon: FileInput, feature: null, description: "Tahsil edilen nakit paraların kasaya giriş kaydı." },
@@ -325,6 +329,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                     id: "bank_ops",
                     label: "Banka İşlemleri",
                     icon: Landmark,
+                    feature: "bank_management",
                     items: [
                         { id: "bank_define", label: "Banka Tanıtımı", icon: Landmark, feature: null, description: "Banka hesaplarının tanımlanması." },
                         { id: "bank_deposit", label: "Bankaya Para Yatırma", icon: FileInput, feature: null, description: "Banka hesabına nakit yatırım işlemleri." },
@@ -337,6 +342,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                     id: "irsaliyeler",
                     label: "İrsaliyeler",
                     icon: FileOutput,
+                    feature: "invoice_management",
                     items: [
                         { id: "alis_irsaliyesi", label: "Alış İrsaliyesi", icon: FileInput, description: "Mal alımında gelen irsaliyelerin kaydı." },
                         { id: "satis_irsaliyesi", label: "Satış İrsaliyesi", icon: FileOutput, description: "Müşterilere sevkiyat öncesi kesilen sevk irsaliyesi." },
@@ -349,6 +355,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                     id: "faturalar",
                     label: "Faturalar",
                     icon: FileText,
+                    feature: "invoice_management",
                     items: [
                         { id: "alis_faturasi", label: "Alış Faturası", icon: FilePlus, description: "Tedarikçilerden gelen mal ve stok faturaları." },
                         { id: "satis_faturasi", label: "Satış Faturası", icon: FileText, description: "Toptan müşterilere kesilen kurumsal faturalar." },
@@ -362,6 +369,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                     id: "hizmet_faturalari",
                     label: "Hizmet Faturaları",
                     icon: FilePlus,
+                    feature: "invoice_management",
                     items: [
                         { id: "alinan_hizmet_faturasi", label: "Alınan Hizmet Faturası", icon: FileInput, description: "Dışarıdan alınan hizmetlerin fatura kaydı." },
                         { id: "yapilan_hizmet_faturasi", label: "Yapılan Hizmet Faturası", icon: FileOutput, description: "Verilen hizmetler için düzenlenen fatura." },
@@ -373,6 +381,7 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                     id: "fatura_raporlari",
                     label: "Fatura Raporları",
                     icon: FileBarChart,
+                    feature: "invoice_management",
                     items: [
                         { id: "fatura_listesi", label: "Fatura Listesi", icon: FileText, description: "Kesilen ve alınan tüm faturaların detaylı dökümü." },
                         { id: "fatura_kdv_listesi", label: "Fatura KDV Listesi", icon: FileBarChart, description: "KDV bazlı fatura dökümü ve özeti." },
@@ -384,8 +393,8 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                     label: "Finans & Giderler",
                     icon: Receipt,
                     items: [
-                        { id: "mali_takvim", label: "Mali Takvim", icon: CalendarDays, feature: null, description: "Ödemelerinizi, tahsilatlarınızı ve vergi takviminizi yönetin." },
-                        { id: "expenses", label: "Gider Yönetimi", icon: Receipt, feature: null, description: "İşletme giderlerinin kaydedilmesi ve takibi." },
+                        { id: "mali_takvim", label: "Mali Takvim", icon: CalendarDays, feature: "cash_management", description: "Ödemelerinizi, tahsilatlarınızı ve vergi takviminizi yönetin." },
+                        { id: "expenses", label: "Gider Yönetimi", icon: Receipt, feature: "cash_management", description: "İşletme giderlerinin kaydedilmesi ve takibi." },
                         { id: "calculator", label: "Kâr Hesaplama", icon: Calculator, feature: "profit_calculator", description: "Ürün bazlı veya genel kâr oranlarını hesaplama aracı." },
                     ]
                 }
@@ -910,6 +919,10 @@ export default function Sidebar({ activeTab, onTabChange, showHelpIcons, showToa
                                                     const subFilteredItems = getFilteredItems(subCategory.items);
                                                     const subIsOpen = openCategories.includes(subCategory.id);
                                                     const subHasActiveItem = hasActiveItemInCategory(subCategory);
+
+                                                    // Alt kategori lisansı: feature açık değilse veya hiç görünür item yoksa gizle
+                                                    if ((subCategory as any).feature && !isFeatureEnabled((subCategory as any).feature)) return null;
+                                                    if (subFilteredItems.length === 0) return null;
 
                                                     return (
                                                         <div key={subCategory.id} className="mb-1 relative group/subcat">

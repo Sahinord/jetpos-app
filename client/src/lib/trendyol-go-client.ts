@@ -400,6 +400,69 @@ export class TrendyolGoClient {
         }
     }
 
+    // ─────────────────────────────────────────────────────────────
+    //  ÜRÜN AKTARIMI (createProducts) — JetPos ürününü Trendyol GO'ya OLUŞTURUR
+    //  Doküman: urun-entegrasyonu/hm-urun-aktarimi
+    //  Zorunlu alanlar: barcode, title, brandId, categoryId, vatRate(0/1/10/20)
+    //  Yanıt: { batchRequestId } → checkBatchStatus ile kontrol edilir.
+    //  NOT: brandId/categoryId global servislerden (getBrands/getCategories) alınır.
+    // ─────────────────────────────────────────────────────────────
+
+    /** Ürün(ler)i Trendyol GO kataloğuna aktar (oluştur). Max önerilen: 1000/istek. */
+    async createProducts(items: Array<{
+        barcode: string;
+        title: string;
+        brandId: number;
+        categoryId: number;
+        vatRate: number;            // 0 | 1 | 10 | 20
+        description?: string;
+        stockCode?: string;
+        images?: string[];          // https url listesi
+    }>): Promise<string> {
+        const url = `${this.config.baseUrl}/product/grocery/suppliers/${this.config.sellerId}/products`;
+        const body = {
+            items: items.map(it => ({
+                barcode: String(it.barcode),
+                title: String(it.title),
+                brandId: Number(it.brandId),
+                categoryId: Number(it.categoryId),
+                vatRate: Number(it.vatRate),
+                ...(it.description ? { description: it.description } : {}),
+                ...(it.stockCode ? { stockCode: it.stockCode } : {}),
+                ...(Array.isArray(it.images) && it.images.length ? { images: it.images.map(u => ({ url: u })) } : {}),
+            })),
+        };
+        const res = await this.request(url, 'POST', body);
+        return res.batchRequestId;
+    }
+
+    /** Markaları getir (brandId için). GET /product/grocery/brands?page&size */
+    async getBrands(page: number = 1, size: number = 200): Promise<Array<{ id: number; name: string }>> {
+        const url = `${this.config.baseUrl}/product/grocery/brands`;
+        const params = new URLSearchParams({ page: String(page), size: String(size) });
+        const data = await this.request(`${url}?${params}`);
+        return Array.isArray(data) ? data : (data.content || []);
+    }
+
+    /** Markayı isimden bul (büyük/küçük harf duyarlı). */
+    async findBrandByName(name: string): Promise<Array<{ id: number; name: string }>> {
+        const url = `${this.config.baseUrl}/product/grocery/brands/by-name`;
+        const params = new URLSearchParams({ name });
+        const data = await this.request(`${url}?${params}`);
+        return Array.isArray(data) ? data : (data.content || []);
+    }
+
+    /** Kategori ağacı (categoryId için). Ürün oluştururken EN ALT (leaf) kategori kullanılmalı. */
+    async getCategories(page: number = 0, size: number = 200, leafOnly: boolean = false): Promise<Array<{
+        id: number; name: string; parentId: number | null; isActive: boolean; leaf: boolean; hierarchyPath: string;
+    }>> {
+        const url = `${this.config.baseUrl}/product/grocery/categories`;
+        const params = new URLSearchParams({ page: String(page), size: String(size) });
+        if (leafOnly) { params.append('withSellerAttributes', 'true'); params.append('leaf', 'true'); }
+        const data = await this.request(`${url}?${params}`);
+        return Array.isArray(data) ? data : (data.content || []);
+    }
+
     async testConnection(): Promise<boolean> {
         try {
             const endDate = new Date();

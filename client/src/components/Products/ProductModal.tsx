@@ -18,11 +18,11 @@ const PLATFORM_REGISTRY: { key: string; label: string; color: string }[] = [
 ];
 
 export default function ProductModal({ isOpen, onClose, onSave, product, categories, isSaving, enabledPlatforms, onMinimize }: any) {
-    // Tenant'ta açık platformlar (fixed_warehouses'tan gelir). Boşsa geriye
-    // uyumluluk için sadece Trendyol gösterilir (eski davranış).
+    // Tenant'ta açık platformlar lisans özelliklerinden gelir. Boşsa HİÇBİR platform
+    // gösterme (eskiden varsayılan "trendyol" gösterip GO tenant'ında yanlış etiketliyordu).
     const activePlatforms: string[] = (Array.isArray(enabledPlatforms) && enabledPlatforms.length)
         ? enabledPlatforms
-        : ["trendyol"];
+        : [];
     const shownPlatforms = PLATFORM_REGISTRY.filter(p => activePlatforms.includes(p.key));
 
     const [formData, setFormData] = useState({

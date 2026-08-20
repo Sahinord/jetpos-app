@@ -817,6 +817,20 @@ export default function Home() {
 
         if (pError) throw pError;
         savedProductId = pData.id;
+
+        // Otomatik Trendyol GO aktarımı (ayar açıksa). Fire-and-forget — kayıt akışını bloklamaz.
+        if (barcodeValue) {
+          import('@/lib/trendyol-auto-push').then(({ autoPushProductToTrendyol }) => {
+            autoPushProductToTrendyol(currentTenant.id, {
+              name: formData.name,
+              barcode: barcodeValue,
+              sale_price: formData.sale_price,
+              vat_rate: formData.vat_rate,
+              stock_quantity: formData.stock_quantity,
+              category_id: catId,
+            });
+          }).catch(() => { });
+        }
       }
 
       // 3. Handle Warehouse Local Prices & Stock
@@ -2318,11 +2332,21 @@ export default function Home() {
         product={editingProduct}
         categories={categories}
         isSaving={isSaving}
-        enabledPlatforms={Array.from(new Set(
-          (currentTenant?.fixed_warehouses || [])
-            .map((w: any) => w?.platform)
-            .filter(Boolean)
-        ))}
+        enabledPlatforms={(() => {
+          // Platformları LİSANS ÖZELLİKLERİNDEN türet (trendyol GO ≠ pazaryeri trendyol).
+          const f = (currentTenant?.features || {}) as Record<string, any>;
+          const FEAT_TO_PLATFORM: Record<string, string> = {
+            trendyol_marketplace: 'trendyol',
+            trendyol_go: 'trendyol_go',
+            getir: 'getir',
+            yemeksepeti: 'yemeksepeti',
+            hepsiburada_marketplace: 'hepsiburada',
+            tgo_yemek: 'tgo_yemek',
+          };
+          const fromFeat = Object.entries(FEAT_TO_PLATFORM).filter(([feat]) => f[feat] === true).map(([, p]) => p);
+          const fromWh = (currentTenant?.fixed_warehouses || []).map((w: any) => w?.platform).filter(Boolean);
+          return Array.from(new Set([...fromFeat, ...fromWh]));
+        })()}
       />
 
       {/* Arka plandaki ürün düzenleme taslakları — alt köşe çubuğu */}

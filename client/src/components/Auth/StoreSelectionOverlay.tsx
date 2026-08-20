@@ -13,10 +13,13 @@ export default function StoreSelectionOverlay() {
     const handleQuickSetup = async () => {
         setIsInternalLoading(true);
         
-        // Sabit mağazalar varsa onları kullan, yoksa varsayılanları oluştur
+        // Sabit mağazalar varsa onları kullan, yoksa LİSANS ÖZELLİKLERİNE göre oluştur.
+        // Trendyol GO (platform 'trendyol_go') ile Pazaryeri Trendyol (platform 'trendyol')
+        // AYRI mağazalardır — hangisi lisansta açıksa o oluşturulur.
         const fixedWarehouses = currentTenant?.fixed_warehouses || [];
-        const storesToCreate = fixedWarehouses.length > 0 
-            ? fixedWarehouses.map((fw: any, idx: number) => ({
+        let storesToCreate: any[];
+        if (fixedWarehouses.length > 0) {
+            storesToCreate = fixedWarehouses.map((fw: any, idx: number) => ({
                 name: fw.name,
                 type: fw.type || 'storage',
                 platform: fw.platform || null,
@@ -24,26 +27,26 @@ export default function StoreSelectionOverlay() {
                 tenant_id: currentTenant?.id,
                 is_active: true,
                 code: fw.code || `SBT-00${idx + 1}`
-            }))
-            : [
-                { 
-                    name: 'Fiziksel Mağaza (Kasa)', 
-                    type: 'storage', 
-                    is_default: true, 
-                    tenant_id: currentTenant?.id,
-                    is_active: true,
-                    code: 'FIZ-001'
-                },
-                { 
-                    name: 'Trendyol Mağazası', 
-                    type: 'virtual', 
-                    is_default: false, 
-                    tenant_id: currentTenant?.id,
-                    is_active: true,
-                    code: 'TRN-001',
-                    platform: 'trendyol'
-                }
+            }));
+        } else {
+            const feat = (currentTenant?.features || {}) as Record<string, any>;
+            storesToCreate = [
+                { name: 'Fiziksel Mağaza (Kasa)', type: 'storage', is_default: true, tenant_id: currentTenant?.id, is_active: true, code: 'FIZ-001' },
             ];
+            // Platform mağazaları: yalnızca lisansta açık olanlar, her biri ayrı platform
+            const platformStores: { feat: string; name: string; code: string; platform: string }[] = [
+                { feat: 'trendyol',     name: 'Trendyol Mağazası',      code: 'TRN-001',  platform: 'trendyol' },
+                { feat: 'trendyol_go',  name: 'Trendyol GO Mağazası',   code: 'TGO-001',  platform: 'trendyol_go' },
+                { feat: 'getir',        name: 'Getir Çarşı Mağazası',   code: 'GTR-001',  platform: 'getir' },
+                { feat: 'yemeksepeti',  name: 'Yemeksepeti Mağazası',   code: 'YMS-001',  platform: 'yemeksepeti' },
+                { feat: 'hepsiburada_marketplace', name: 'Hepsiburada Mağazası', code: 'HPS-001', platform: 'hepsiburada' },
+            ];
+            for (const ps of platformStores) {
+                if (feat[ps.feat] === true) {
+                    storesToCreate.push({ name: ps.name, type: 'virtual', is_default: false, tenant_id: currentTenant?.id, is_active: true, code: ps.code, platform: ps.platform });
+                }
+            }
+        }
 
         const { error } = await supabase
             .from('warehouses')

@@ -9,10 +9,19 @@ interface TrendyolGoSettings {
     token?: string;
     isStage: boolean;
     isStockSyncActive: boolean;
+    // Otomatik ürün aktarımı: JetPos'ta yeni ürün eklenince Trendyol'a gönder
+    autoPushProducts?: boolean;
+    defaultCategoryId?: number;
+    defaultCategoryName?: string;
+    defaultBrandId?: number;
+    defaultBrandName?: string;
+    // JetPos kategorisi -> Trendyol (leaf) kategorisi eşlemesi. Anahtar: JetPos category_id.
+    categoryMap?: Record<string, { id: number; name?: string }>;
 }
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { apiFetch } from '@/lib/api';
+import TrendyolProductPush from './TrendyolProductPush';
 import {
     Package,
     TrendingUp,
@@ -65,7 +74,8 @@ export default function TrendyolGOWidget({ activeSubTab = 'overview' }: { active
         agentName: "JetPos_Entegrasyon",
         token: "",
         isStage: false,
-        isStockSyncActive: false
+        isStockSyncActive: false,
+        autoPushProducts: false
     });
 
     const [stats, setStats] = useState({
@@ -239,7 +249,13 @@ export default function TrendyolGOWidget({ activeSubTab = 'overview' }: { active
                     agentName: config.agentName || "JetPos_Entegrasyon",
                     token: config.token || "",
                     isStage: config.isStage || config.stage || false,
-                    isStockSyncActive: config.isStockSyncActive || false
+                    isStockSyncActive: config.isStockSyncActive || false,
+                    autoPushProducts: config.autoPushProducts || false,
+                    defaultCategoryId: config.defaultCategoryId,
+                    defaultCategoryName: config.defaultCategoryName,
+                    defaultBrandId: config.defaultBrandId,
+                    defaultBrandName: config.defaultBrandName,
+                    categoryMap: config.categoryMap || {}
                 });
                 setIsConfigured(intData.is_active);
                 setStats(prev => ({ ...prev, lastSync: intData.last_sync_at }));
@@ -262,7 +278,13 @@ export default function TrendyolGOWidget({ activeSubTab = 'overview' }: { active
                     agentName: "JetPos_Entegrasyon",
                     token: tg.token || "",
                     isStage: tg.stage || false,
-                    isStockSyncActive: tg.isStockSyncActive || false
+                    isStockSyncActive: tg.isStockSyncActive || false,
+                    autoPushProducts: tg.autoPushProducts || false,
+                    defaultCategoryId: tg.defaultCategoryId,
+                    defaultCategoryName: tg.defaultCategoryName,
+                    defaultBrandId: tg.defaultBrandId,
+                    defaultBrandName: tg.defaultBrandName,
+                    categoryMap: tg.categoryMap || {}
                 });
                 setIsConfigured(true);
             } else {
@@ -1230,6 +1252,9 @@ function SettingsTab({ settings, setSettings, handleSaveSettings, handleTestConn
                     Ayarları Kaydet
                 </button>
             </div>
+
+            {/* JetPos ürünlerini Trendyol kataloğuna aktar */}
+            {isConfigured && <TrendyolProductPush settings={settings} setSettings={setSettings} handleSaveSettings={handleSaveSettings} savingSettings={loading} />}
         </div>
     );
 }
