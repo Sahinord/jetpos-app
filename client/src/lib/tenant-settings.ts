@@ -1,4 +1,5 @@
 import { supabaseAdmin } from './supabase-admin';
+import { decryptSecret } from './crypto-settings';
 
 export interface TenantSettings {
     qnb?: {
@@ -80,11 +81,14 @@ export async function getTenantSettings(tenantId: string): Promise<TenantSetting
                 const config = item.api_config || item.settings;
                 if (!config) return;
 
-                // Trendyol Go Mapping
+                // Trendyol Go Mapping — sırlar DB'de şifreli tutulur, burada çöz.
                 if (item.type === 'trendyol_go' || item.platform === 'trendyol') {
                     settings.trendyolGo = {
                         ...settings.trendyolGo,
-                        ...config
+                        ...config,
+                        ...(config.apiKey ? { apiKey: decryptSecret(config.apiKey) } : {}),
+                        ...(config.apiSecret ? { apiSecret: decryptSecret(config.apiSecret) } : {}),
+                        ...(config.token ? { token: decryptSecret(config.token) } : {}),
                     };
                 }
                 

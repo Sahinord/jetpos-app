@@ -77,6 +77,8 @@ export default function TrendyolGOWidget({ activeSubTab = 'overview' }: { active
         isStockSyncActive: false,
         autoPushProducts: false
     });
+    // Kayıtlı sırların maskesi/varlığı (gerçek değer tarayıcıya gelmez)
+    const [credMask, setCredMask] = useState<{ apiKey?: string; apiSecret?: string; token?: string; hasApiKey?: boolean; hasApiSecret?: boolean; hasToken?: boolean }>({});
 
     const [stats, setStats] = useState({
         totalOrders: 0,
@@ -241,13 +243,16 @@ export default function TrendyolGOWidget({ activeSubTab = 'overview' }: { active
 
             if (intData) {
                 const config = intData.api_config || intData.settings || {};
+                // Sırlar (apiKey/apiSecret/token) DB'de şifreli; forma BLOB koymayız.
+                // Boş bırakırız, "kayıtlı" olduğunu maskeyle gösteririz.
+                setCredMask({ hasApiKey: !!config.apiKey, hasApiSecret: !!config.apiSecret, hasToken: !!config.token });
                 setSettings({
                     sellerId: config.sellerId || "",
                     storeId: config.storeId || "",
-                    apiKey: config.apiKey || "",
-                    apiSecret: config.apiSecret || "",
+                    apiKey: "",
+                    apiSecret: "",
                     agentName: config.agentName || "JetPos_Entegrasyon",
-                    token: config.token || "",
+                    token: "",
                     isStage: config.isStage || config.stage || false,
                     isStockSyncActive: config.isStockSyncActive || false,
                     autoPushProducts: config.autoPushProducts || false,
@@ -270,13 +275,14 @@ export default function TrendyolGOWidget({ activeSubTab = 'overview' }: { active
 
             if (tenantData?.settings?.trendyolGo) {
                 const tg = tenantData.settings.trendyolGo;
+                setCredMask({ hasApiKey: !!tg.apiKey, hasApiSecret: !!tg.apiSecret, hasToken: !!tg.token });
                 setSettings({
                     sellerId: tg.sellerId || "",
                     storeId: tg.storeId || "",
-                    apiKey: tg.apiKey || "",
-                    apiSecret: tg.apiSecret || "",
+                    apiKey: "",
+                    apiSecret: "",
                     agentName: "JetPos_Entegrasyon",
-                    token: tg.token || "",
+                    token: "",
                     isStage: tg.stage || false,
                     isStockSyncActive: tg.isStockSyncActive || false,
                     autoPushProducts: tg.autoPushProducts || false,
@@ -315,20 +321,23 @@ export default function TrendyolGOWidget({ activeSubTab = 'overview' }: { active
     };
 
     const handleSaveSettings = async () => {
+        if (!currentTenant?.id) return;
         setLoading(true);
         try {
-            if (currentTenant?.id) {
-                await setCurrentTenant(currentTenant.id);
-            }
-            const { error } = await supabase.rpc('upsert_integration_settings', {
-                p_tenant_id: currentTenant?.id,
-                p_type: 'trendyol_go',
-                p_settings: settings,
-                p_is_active: true
+            // Güvenli kaydetme: sırları şifreler, BOŞ bırakılan sır alanları eskiyi EZMEZ.
+            const res = await apiFetch('/api/trendyol/save-settings', {
+                method: 'POST',
+                body: JSON.stringify({ tenantId: currentTenant.id, settings }),
             });
-            if (error) throw error;
+            if (!res?.success) throw new Error(res?.error || 'Kaydedilemedi');
+            // Kaydettikten sonra sır alanlarını formda tutma; maskeyi güncelle.
+            setCredMask({
+                apiKey: res.masked?.apiKey, apiSecret: res.masked?.apiSecret, token: res.masked?.token,
+                hasApiKey: res.hasApiKey, hasApiSecret: res.hasApiSecret, hasToken: res.hasToken,
+            });
+            setSettings(prev => ({ ...prev, apiKey: "", apiSecret: "", token: "" }));
             setIsConfigured(true);
-            alert("✅ Trendyol GO ayarları kaydedildi.");
+            alert("✅ Trendyol GO ayarları güvenli şekilde kaydedildi (sırlar şifreli).");
         } catch (err: any) {
             alert("❌ Ayarlar kaydedilemedi: " + err.message);
         } finally {
@@ -425,19 +434,24 @@ export default function TrendyolGOWidget({ activeSubTab = 'overview' }: { active
     const handleTestConnection = async () => {
         setSyncing(true);
         try {
-            const client = new TrendyolGoClient(settings);
-            const success = await client.testConnection();
-            if (success) {
-                setStats(prev => ({ ...prev, status: "success" }));
-                alert("✅ Bağlantı başarılı!");
-                handleSyncOrders();
+            // Formda yeni sır varsa tarayıcıdan test et; yoksa (kayıtlı & şifreli)
+            // sunucu üzerinden dener — gerçek sır tarayıcıya inmez.
+            if (settings.apiKey && settings.apiSecret) {
+                const client = new TrendyolGoClient(settings);
+                const success = await client.testConnection();
+                if (!success) throw new Error("Bilgileri kontrol edin.");
+            } else if (currentTenant?.id) {
+                const res = await apiFetch(`/api/trendyol/sync-orders?tenantId=${currentTenant.id}&days=1`, { method: 'POST' });
+                if (!res?.success) throw new Error(res?.error || "Kayıtlı bilgilerle bağlanılamadı.");
             } else {
-                setStats(prev => ({ ...prev, status: "error" }));
-                alert("❌ Bağlantı başarısız! Bilgileri kontrol edin.");
+                throw new Error("Önce bilgileri girin.");
             }
+            setStats(prev => ({ ...prev, status: "success" }));
+            alert("✅ Bağlantı başarılı!");
+            handleSyncOrders();
         } catch (err: any) {
             setStats(prev => ({ ...prev, status: "error" }));
-            alert("❌ Hata: " + err.message);
+            alert("❌ Bağlantı başarısız: " + (err?.message || 'Hata'));
         } finally {
             setSyncing(false);
         }
@@ -462,7 +476,7 @@ export default function TrendyolGOWidget({ activeSubTab = 'overview' }: { active
             case 'finance':
                 return <FinanceTab orders={orders} syncDays={syncDays} />;
             case 'settings':
-                return <SettingsTab settings={settings} setSettings={setSettings} handleSaveSettings={handleSaveSettings} handleTestConnection={handleTestConnection} loading={loading} syncing={syncing} isConfigured={isConfigured} isSystemLevel={isSystemLevel} handleSyncStock={handleSyncStock} />;
+                return <SettingsTab settings={settings} setSettings={setSettings} handleSaveSettings={handleSaveSettings} handleTestConnection={handleTestConnection} loading={loading} syncing={syncing} isConfigured={isConfigured} isSystemLevel={isSystemLevel} handleSyncStock={handleSyncStock} credMask={credMask} />;
             default:
                 return <OverviewTab stats={stats} orders={orders} isConfigured={isConfigured} isSystemLevel={isSystemLevel} settings={settings} syncing={syncing} handleSyncOrders={handleSyncOrders} handleSyncStock={handleSyncStock} syncDays={syncDays} setSyncDays={setSyncDays} fetchOrders={fetchOrders} />;
         }
@@ -1070,7 +1084,7 @@ function FinanceTab({ orders, syncDays }: { orders: any[]; syncDays: number }) {
 // =====================================================
 // TAB 4: AYARLAR (Settings)
 // =====================================================
-function SettingsTab({ settings, setSettings, handleSaveSettings, handleTestConnection, loading, syncing, isConfigured, isSystemLevel, handleSyncStock }: any) {
+function SettingsTab({ settings, setSettings, handleSaveSettings, handleTestConnection, loading, syncing, isConfigured, isSystemLevel, handleSyncStock, credMask = {} }: any) {
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Durum Bilgisi */}
@@ -1133,7 +1147,7 @@ function SettingsTab({ settings, setSettings, handleSaveSettings, handleTestConn
                                 value={settings.apiKey}
                                 onChange={e => setSettings({ ...settings, apiKey: e.target.value })}
                                 className="w-full bg-background border border-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-foreground focus:border-orange-500/50 outline-none transition-all"
-                                placeholder="qMAPJ..."
+                                placeholder={credMask.hasApiKey ? `${credMask.apiKey || '••••'} — kayıtlı (değiştirmek için yaz)` : "qMAPJ..."}
                             />
                         </div>
                     </div>
@@ -1146,7 +1160,7 @@ function SettingsTab({ settings, setSettings, handleSaveSettings, handleTestConn
                                 value={settings.apiSecret}
                                 onChange={e => setSettings({ ...settings, apiSecret: e.target.value })}
                                 className="w-full bg-background border border-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-foreground focus:border-orange-500/50 outline-none transition-all"
-                                placeholder="••••••••"
+                                placeholder={credMask.hasApiSecret ? "•••••••• — kayıtlı (değiştirmek için yaz)" : "••••••••"}
                             />
                         </div>
                     </div>
@@ -1167,7 +1181,7 @@ function SettingsTab({ settings, setSettings, handleSaveSettings, handleTestConn
                             value={settings.token || ""}
                             onChange={e => setSettings({ ...settings, token: e.target.value })}
                             className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:border-orange-500/50 outline-none transition-all font-mono"
-                            placeholder="Trendyol panelindeki Token bilgisini buraya yapıştırın"
+                            placeholder={credMask.hasToken ? `${credMask.token || '••••'} — kayıtlı (değiştirmek için yaz)` : "Trendyol panelindeki Token bilgisini buraya yapıştırın"}
                         />
                     </div>
                 </div>
