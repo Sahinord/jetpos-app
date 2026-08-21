@@ -23,6 +23,12 @@ import { SyncService } from "@/lib/sync-service";
 import { offlineDB } from "@/lib/offline-db";
 import { useLiveQuery } from "dexie-react-hooks";
 
+// Türkçe-duyarlı arama katlaması: büyük/küçük harf farkı ve İ/I/i/ı ayrımı gözetilmez.
+// "İSTANBUL", "istanbul", "Istanbul" hepsi eşleşir.
+const trFold = (s: any): string => String(s || '')
+    .toLocaleLowerCase('tr-TR')
+    .replace(/i̇/g, 'i') // olası birleşik nokta
+    .replace(/ı/g, 'i');
 
 export default function POS({
     products = [],
@@ -195,24 +201,25 @@ export default function POS({
     const filteredProducts = useMemo(() => {
         if (deferredSearch) {
             const lowSearch = deferredSearch.toLowerCase();
+            const foldSearch = trFold(deferredSearch);
 
             // 1. Exact Barcode Match (Best Case) - O(1)
             const exactMatch = barcodeMap.get(lowSearch);
             if (exactMatch) return [exactMatch];
 
-            // 2. Filter by Name Includes OR Barcode Includes
+            // 2. Filter by Name Includes OR Barcode Includes (Türkçe-duyarsız)
             const matches = products.filter((p: any) => {
-                const nameMatch = p.name?.toLowerCase().includes(lowSearch);
+                const nameMatch = trFold(p.name).includes(foldSearch);
                 const barcodeMatch = p.barcode?.toLowerCase().includes(lowSearch);
                 return nameMatch || barcodeMatch;
             });
 
             // 3. Sort by Relevance
             return matches.sort((a: any, b: any) => {
-                const aName = a.name?.toLowerCase() || "";
-                const bName = b.name?.toLowerCase() || "";
-                const aStarts = aName.startsWith(lowSearch);
-                const bStarts = bName.startsWith(lowSearch);
+                const aName = trFold(a.name);
+                const bName = trFold(b.name);
+                const aStarts = aName.startsWith(foldSearch);
+                const bStarts = bName.startsWith(foldSearch);
                 if (aStarts && !bStarts) return -1;
                 if (!aStarts && bStarts) return 1;
                 return aName.localeCompare(bName);
@@ -513,9 +520,10 @@ export default function POS({
     };
 
     const handleWeightSubmit = () => {
-        const grams = parseFloat(weightInput.replace(',', '.'));
-        if (isNaN(grams) || grams <= 0) return showToast("Geçerli gramaj girin!", "error");
-        addToCart(weightModalProduct, grams / 1000);
+        // Artık doğrudan KG girilir: "1.200" → 1.2 kg. (Nokta/virgül ondalık ayıracı.)
+        const kg = parseFloat(weightInput.replace(',', '.'));
+        if (isNaN(kg) || kg <= 0) return showToast("Geçerli ağırlık (kg) girin!", "error");
+        addToCart(weightModalProduct, kg);
         setWeightModalProduct(null);
     };
 
@@ -523,7 +531,7 @@ export default function POS({
         try {
             showToast("Teraziden veri bekleniyor...", "info");
             const weight = await readScaleWeight();
-            setWeightInput((weight * 1000).toString()); // g cinsinden set et
+            setWeightInput(String(weight)); // kg cinsinden set et
             showToast(`Ağırlık okundu: ${weight} kg`, "success");
         } catch (err: any) {
             showToast("Terazi okunamadı: " + err.message, "error");
@@ -1649,7 +1657,7 @@ export default function POS({
                         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="glass-card w-full max-w-sm !p-8 shadow-2xl border-primary/20 space-y-6">
                             <div className="text-center">
                                 <h3 className="text-xl font-black text-white uppercase">{weightModalProduct.name}</h3>
-                                <div className="text-[10px] font-bold text-secondary tracking-widest mt-2 uppercase">KG BİRİMİ - GRAMAJ GİRİN</div>
+                                <div className="text-[10px] font-bold text-secondary tracking-widest mt-2 uppercase">AĞIRLIK GİRİN (KG) — örn. 1.200 = 1,2 kg</div>
                             </div>
                             <div className="relative">
                                 <input
@@ -1665,7 +1673,7 @@ export default function POS({
                                     }}
                                     onKeyDown={(e) => e.key === 'Enter' && handleWeightSubmit()}
                                 />
-                                <span className="absolute right-6 top-1/2 -translate-y-1/2 text-xl font-black text-secondary opacity-30">GR</span>
+                                <span className="absolute right-6 top-1/2 -translate-y-1/2 text-xl font-black text-secondary opacity-30">KG</span>
                             </div>
                             <div className="space-y-4">
                                 <button

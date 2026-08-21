@@ -48,6 +48,10 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
         includeVat: true
     });
 
+    // Hızlı kâr ile fiyatla: yüzde (%) ya da tutar (₺) bazında
+    const [karMode, setKarMode] = useState<'yuzde' | 'tl'>('yuzde');
+    const [karValue, setKarValue] = useState<string>("");
+
     const [showAdvancedPricing, setShowAdvancedPricing] = useState(false);
     // Platform Fiyatları bölümü açık/kapalı (kalabalık olmasın diye katlanabilir)
     const [showPlatformPrices, setShowPlatformPrices] = useState(true);
@@ -117,6 +121,15 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
             Number(pricingPrefs.shipping_cost) || 0
         );
         setFormData({ ...formData, sale_price: String(suggested) });
+    };
+
+    // Kâr'a göre satış fiyatı belirle: yüzde → alış*(1+%); tutar → alış + ₺kâr.
+    const handleApplyKar = () => {
+        const purchase = Number(formData.purchase_price) || 0;
+        const val = Number(String(karValue).replace(',', '.')) || 0;
+        if (purchase <= 0 || val <= 0) return;
+        const sale = karMode === 'yuzde' ? purchase * (1 + val / 100) : purchase + val;
+        setFormData((f: any) => ({ ...f, sale_price: String(Math.round(sale * 100) / 100) }));
     };
 
     const handleNumericInput = (field: string, value: string, isPrefs: boolean = false) => {
@@ -407,6 +420,28 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                         <option value={20} className="bg-[#0c1222]">%20</option>
                                     </select>
                                 </div>
+                            </div>
+
+                            {/* Kâra göre fiyatla — yüzde (%) veya tutar (₺) seçilebilir */}
+                            <div className="flex items-center gap-2">
+                                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wide">Kârla Fiyatla</span>
+                                <div className="flex bg-white/[0.03] border border-white/[0.06] rounded-lg overflow-hidden">
+                                    <button type="button" onClick={() => setKarMode('yuzde')}
+                                        className={`px-2.5 py-1.5 text-xs font-black transition-all ${karMode === 'yuzde' ? 'bg-primary text-white' : 'text-slate-400 hover:text-white'}`}>%</button>
+                                    <button type="button" onClick={() => setKarMode('tl')}
+                                        className={`px-2.5 py-1.5 text-xs font-black transition-all ${karMode === 'tl' ? 'bg-primary text-white' : 'text-slate-400 hover:text-white'}`}>₺</button>
+                                </div>
+                                <input
+                                    type="text" inputMode="decimal"
+                                    value={karValue}
+                                    onChange={e => setKarValue(e.target.value.replace(/[^0-9.,]/g, ''))}
+                                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleApplyKar(); } }}
+                                    onFocus={e => e.target.select()}
+                                    placeholder={karMode === 'yuzde' ? 'örn. 30' : 'örn. 5'}
+                                    className="flex-1 min-w-0 bg-white/[0.03] border border-white/[0.06] rounded-lg px-3 py-1.5 text-sm font-bold text-white outline-none focus:border-primary/30 tabular-nums"
+                                />
+                                <button type="button" onClick={handleApplyKar}
+                                    className="px-3 py-1.5 rounded-lg bg-primary/15 hover:bg-primary/25 text-primary text-xs font-black whitespace-nowrap transition-all">Uygula</button>
                             </div>
 
                             {/* Profit Strip */}
