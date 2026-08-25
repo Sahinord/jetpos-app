@@ -45,6 +45,41 @@ async function post(url: string, creds: OdealCreds, body: unknown) {
     return last;
 }
 
+async function get(url: string, creds: OdealCreds) {
+    const res = await fetch(url, { method: "GET", headers: headers(creds) });
+    const text = await res.text();
+    let json: unknown = null;
+    try { json = text ? JSON.parse(text) : null; } catch { /* text kalır */ }
+    return { ok: res.ok, status: res.status, body: json ?? text };
+}
+
+/**
+ * İşlem Raporu — GET /report/transactions
+ * Callback kaçarsa ödeme sonucunu ÇEKEREK öğrenmek için (poll fallback).
+ * Zorunlu: beginDate, endDate (YYYY-MM-DD). Opsiyonel: basketReferenceCode.
+ * Doküman: docs.odeal.com/entegrasyon/tr/api/ortak-servisler/islem-rapor
+ */
+export async function getTransactionReport(
+    creds: OdealCreds,
+    params: { beginDate: string; endDate: string; basketReferenceCode?: string }
+): Promise<{ ok: boolean; status: number; body: unknown }> {
+    const base = resolveBase(creds);
+    const q = new URLSearchParams({ beginDate: params.beginDate, endDate: params.endDate });
+    if (params.basketReferenceCode) q.append("basketReferenceCode", params.basketReferenceCode);
+    return get(`${base}/report/transactions?${q.toString()}`, creds);
+}
+
+// Rapor kaydından tekil işlem durumunu çıkar: succeeded | failed | cancelled | pending
+export function statusFromReportRecord(rec: any): "succeeded" | "failed" | "cancelled" | "pending" {
+    const raw = String(
+        rec?.status ?? rec?.paymentStatus ?? rec?.transactionStatus ?? rec?.result ?? rec?.state ?? ""
+    ).toUpperCase();
+    if (/SUCCE|SUCCESS|PAID|COMPLET|APPROVE|OK|BASARILI/.test(raw)) return "succeeded";
+    if (/CANCEL|IPTAL|REFUND/.test(raw)) return "cancelled";
+    if (/FAIL|ERROR|DECLINE|REJECT|HATA|BASARISIZ/.test(raw)) return "failed";
+    return "pending";
+}
+
 export type OdealBasketItem = {
     name: string;
     quantity: number;
