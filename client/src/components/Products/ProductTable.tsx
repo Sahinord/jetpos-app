@@ -1189,9 +1189,9 @@ export default function ProductTable({ products, categories = [], onEdit, onDele
                                                     <span className={`text-base font-black tracking-tight ${currentStock <= lowStockThreshold ? 'text-rose-500 animate-pulse' : 'text-foreground'}`}>
                                                         {product.unit?.toLowerCase() === 'kg'
                                                             ? (currentStock >= 1
-                                                                ? `${currentStock.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
+                                                                ? `${currentStock.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} kg`
                                                                 : `${(currentStock * 1000).toFixed(0)} gr`)
-                                                            : currentStock
+                                                            : `${currentStock} ${product.unit || 'Adet'}`
                                                         }
                                                     </span>
                                                     <div className={`mt-1 h-1 w-12 rounded-full bg-primary/10 overflow-hidden`}>

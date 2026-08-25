@@ -520,9 +520,16 @@ export default function POS({
     };
 
     const handleWeightSubmit = () => {
-        // Artık doğrudan KG girilir: "1.200" → 1.2 kg. (Nokta/virgül ondalık ayıracı.)
-        const kg = parseFloat(weightInput.replace(',', '.'));
-        if (isNaN(kg) || kg <= 0) return showToast("Geçerli ağırlık (kg) girin!", "error");
+        // AKILLI BİRİM (barkod*miktar ile aynı mantık):
+        //   • Ondalık (1.2 / 0,5)        → KG    → 1,2 kg
+        //   • Tam sayı ve ≥100 (10000)   → GRAM  → 10 kg   (10000 g = 10 kg)
+        //   • Tam sayı ve <100 (2)       → KG    → 2 kg
+        // Fiyat = kilo fiyatı × kg (sale_price × quantity). Stok da kg olarak düşer.
+        const raw = weightInput.replace(',', '.');
+        const val = parseFloat(raw);
+        if (isNaN(val) || val <= 0) return showToast("Geçerli ağırlık girin!", "error");
+        const hadDecimal = /\./.test(raw);
+        const kg = (!hadDecimal && val >= 100) ? val / 1000 : val;
         addToCart(weightModalProduct, kg);
         setWeightModalProduct(null);
     };
@@ -1658,7 +1665,7 @@ export default function POS({
                         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="glass-card w-full max-w-sm !p-8 shadow-2xl border-primary/20 space-y-6">
                             <div className="text-center">
                                 <h3 className="text-xl font-black text-white uppercase">{weightModalProduct.name}</h3>
-                                <div className="text-[10px] font-bold text-secondary tracking-widest mt-2 uppercase">AĞIRLIK GİRİN (KG) — örn. 1.200 = 1,2 kg</div>
+                                <div className="text-[10px] font-bold text-secondary tracking-widest mt-2 uppercase">AĞIRLIK GİR — 1.2 = 1,2 KG · 10000 = 10 KG (GRAM)</div>
                             </div>
                             <div className="relative">
                                 <input
@@ -1674,7 +1681,7 @@ export default function POS({
                                     }}
                                     onKeyDown={(e) => e.key === 'Enter' && handleWeightSubmit()}
                                 />
-                                <span className="absolute right-6 top-1/2 -translate-y-1/2 text-xl font-black text-secondary opacity-30">KG</span>
+                                <span className="absolute right-6 top-1/2 -translate-y-1/2 text-xl font-black text-secondary opacity-30">KG/GR</span>
                             </div>
                             <div className="space-y-4">
                                 <button
