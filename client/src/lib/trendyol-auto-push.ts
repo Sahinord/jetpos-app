@@ -11,6 +11,7 @@ export interface AutoPushProduct {
     vat_rate?: number | null;
     stock_quantity?: number | null;
     category_id?: string | number | null;
+    image_url?: string | null;
 }
 
 export async function autoPushProductToTrendyol(tenantId: string, product: AutoPushProduct): Promise<void> {
@@ -55,6 +56,7 @@ export async function autoPushProductToTrendyol(tenantId: string, product: AutoP
                     brandId: Number(cfg.defaultBrandId),
                     categoryId,
                     vatRate: vatOk,
+                    images: typeof product.image_url === 'string' && product.image_url.startsWith('https://') ? [product.image_url] : undefined,
                 }],
                 pushStock: [{
                     barcode,

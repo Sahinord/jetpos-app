@@ -828,6 +828,7 @@ export default function Home() {
               vat_rate: formData.vat_rate,
               stock_quantity: formData.stock_quantity,
               category_id: catId,
+              image_url: formData.image_url,
             });
           }).catch(() => { });
         }

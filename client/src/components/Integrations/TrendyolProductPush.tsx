@@ -23,6 +23,8 @@ export default function TrendyolProductPush({ settings, setSettings, handleSaveS
     const [loadingCat, setLoadingCat] = useState(false);
     const [pushing, setPushing] = useState(false);
     const [flash, setFlash] = useState<string | null>(null);
+    const [lastBatch, setLastBatch] = useState<string>("");
+    const [checkingBatch, setCheckingBatch] = useState(false);
 
     const tid = currentTenant?.id;
 
@@ -47,7 +49,7 @@ export default function TrendyolProductPush({ settings, setSettings, handleSaveS
         if (!tid) return;
         const [{ data: prods }, { data: jc }] = await Promise.all([
             supabase.from("products")
-                .select("id, name, barcode, sale_price, vat_rate, stock_quantity")
+                .select("id, name, barcode, sale_price, vat_rate, stock_quantity, image_url")
                 .eq("tenant_id", tid).is("deleted_at", null)
                 .not("barcode", "is", null).limit(300),
             supabase.from("categories").select("id, name").eq("tenant_id", tid).order("name"),
@@ -74,6 +76,8 @@ export default function TrendyolProductPush({ settings, setSettings, handleSaveS
                 barcode: String(p.barcode).replace(/\s+/g, ""),
                 title: String(p.name || "Ürün").slice(0, 100),
                 brandId: Number(brandId), categoryId: Number(catId), vatRate: vatOk(p.vat_rate),
+                // Görsel yalnızca https URL ise gönder (içerik onayı için önerilir).
+                images: typeof p.image_url === "string" && p.image_url.startsWith("https://") ? [p.image_url] : undefined,
             }));
             const pushStock = chosen.map(p => ({
                 barcode: String(p.barcode).replace(/\s+/g, ""),
@@ -83,11 +87,27 @@ export default function TrendyolProductPush({ settings, setSettings, handleSaveS
                 method: "POST", body: JSON.stringify({ tenantId: tid, items, pushStock }),
             });
             if (!res?.success) throw new Error(res?.error || "gönderilemedi");
-            setFlash(`✓ ${res.count} ürün Trendyol'a gönderildi (batch: ${res.batchRequestId}). Onay için birkaç dk sonra Trendyol panelini kontrol et.`);
+            if (res.batchRequestId) setLastBatch(res.batchRequestId);
+            setFlash(`✓ ${res.count} ürün gönderildi (batch: ${res.batchRequestId}). Ürünler İÇERİK ONAYINA düştü; onaylanıp fiyat/stok beslenince satışa çıkar. Görselsiz ürünler onaydan geçmeyebilir.`);
             setSelected(new Set());
         } catch (e: any) {
             setFlash(`Gönderim hatası: ${e?.message || "bilinmeyen"}`);
         } finally { setPushing(false); }
+    };
+
+    // Son gönderimin batch sonucunu sorgula (toplu işlem kontrolü)
+    const checkBatch = async () => {
+        if (!tid || !lastBatch) return;
+        setCheckingBatch(true);
+        try {
+            const res = await apiFetch(`/api/trendyol/batch-status?tenantId=${tid}&batchRequestId=${encodeURIComponent(lastBatch)}`);
+            if (!res?.success) throw new Error(res?.error || "durum alınamadı");
+            const base = `Durum: ${res.successCount} başarılı / ${res.failedCount} hatalı (toplam ${res.total}).`;
+            const reasons = res.failReasons?.length ? ` Hatalar: ${res.failReasons.join(" | ")}` : "";
+            setFlash(`${base}${reasons}${res.note ? " " + res.note : ""}`);
+        } catch (e: any) {
+            setFlash(`Durum kontrol hatası: ${e?.message || "hata"}`);
+        } finally { setCheckingBatch(false); }
     };
 
     return (
@@ -221,12 +241,20 @@ export default function TrendyolProductPush({ settings, setSettings, handleSaveS
                 </div>
             </div>
 
-            <button onClick={push} disabled={pushing || !catId || !brandId || selected.size === 0}
-                className="w-full py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-black flex items-center justify-center gap-2 disabled:opacity-50 transition-all">
-                {pushing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                Seçili Ürünleri Trendyol'a Gönder
-            </button>
-            <p className="text-[10px] text-secondary/40">Ürün oluşturulduktan sonra stok/fiyat da gönderilir. Onay Trendyol tarafında birkaç dk sürebilir (Toplu İşlem Kontrolü).</p>
+            <div className="flex gap-2">
+                <button onClick={push} disabled={pushing || !catId || !brandId || selected.size === 0}
+                    className="flex-1 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-black flex items-center justify-center gap-2 disabled:opacity-50 transition-all">
+                    {pushing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                    Seçili Ürünleri Trendyol'a Gönder
+                </button>
+                {lastBatch && (
+                    <button onClick={checkBatch} disabled={checkingBatch} title={`Son gönderim: ${lastBatch}`}
+                        className="px-4 py-3 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-white text-sm font-bold flex items-center gap-2 disabled:opacity-50 whitespace-nowrap">
+                        <RefreshCw className={`w-4 h-4 ${checkingBatch ? "animate-spin" : ""}`} /> Durum Kontrol
+                    </button>
+                )}
+            </div>
+            <p className="text-[10px] text-secondary/40">Ürün oluşturulduktan sonra stok/fiyat da gönderilir. Onay Trendyol tarafında birkaç dk sürebilir. Gönderim sonrası “Durum Kontrol” ile batch sonucunu (başarılı/hatalı) görebilirsin.</p>
         </div>
     );
 }

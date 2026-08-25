@@ -779,6 +779,7 @@ export default function POS({
             });
             const ref = res?.referenceCode;
             if (!ref) throw new Error("Referans alınamadı");
+            if (res?.callbackWarning) showToast(res.callbackWarning, "warning");
             setOdealPay({ status: "waiting", ref });
 
             // ══ Sonucu öğrenme: 1) Realtime broadcast (anında) 2) yedek poll (garanti) ══

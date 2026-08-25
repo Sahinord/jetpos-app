@@ -4,6 +4,7 @@ import AnalyticsLoader from "@/components/AnalyticsLoader";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://jetpos.shop"),
   title: "JetPOS - Yeni Nesil Akıllı İşletme Yönetim Platformu | Satış, Stok, E-Fatura",
   description: "JetPOS ile satış, stok, raporlama, cari hesap, e-fatura, çoklu şube, JetKDS mutfak ekranı ve JetQR dijital menü süreçlerinizi tek ekrandan yönetin. Bulut tabanlı, yapay zeka destekli omnichannel işletme çözümü.",
   keywords: ["pos sistemi", "stok yönetimi", "barkod sistemi", "e-fatura", "bulut tabanlı", "işletme yönetimi", "mutfak ekranı", "KDS", "QR menü", "çoklu şube", "raporlama", "cari hesap", "yazarkasa", "restoran pos", "market pos"],

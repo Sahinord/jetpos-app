@@ -58,20 +58,26 @@ export async function POST(req: NextRequest) {
     const paymentType = String(body.paymentType || "CARD").toUpperCase() === "CASH" ? "CASH" : "CARD";
     const paymentOptions = paymentType === "CASH" ? [{ type: "CASH", amount: total }] : undefined;
 
-    // Callback URL'lerini Ödeal'e kaydet (bu tenant için ilk sefer; sonuçların
-    // webhook'la gelmesi için gerekir). Ödeme akışını bloklamaması için await'siz.
+    // Callback URL'lerini Ödeal'e kaydet. Sonuç (succeeded/failed) SADECE bu
+    // webhook'larla geliyor; kayıt olmazsa POS "Gönderiliyor"da takılır. Bu yüzden
+    // ilk seferde AWAIT ederek sepeti göndermeden ÖNCE kaydı garanti ediyoruz.
     const base = (process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin).replace(/\/+$/, "");
     const isLocal = /localhost|127\.0\.0\.1/.test(base);
-    // Local'de callback kaydını ATLA — Ödeal localhost'a ulaşamaz ve merchant'ın
-    // gerçek (public) callback URL'lerini localhost'la ezmesin.
+    let callbackWarning: string | undefined;
+    // Local'de callback kaydını ATLA — Ödeal localhost'a ulaşamaz.
     if (!isLocal && !registeredTenants.has(auth.tenantId)) {
-        registeredTenants.add(auth.tenantId);
-        saveConfiguration(creds, {
-            paymentSucceededUrl: `${base}/api/odeal/payment-succeeded`,
-            paymentFailedUrl: `${base}/api/odeal/payment-failed`,
-            paymentCancelledUrl: `${base}/api/odeal/payment-cancelled`,
-            eInvoiceCreatedUrl: `${base}/api/odeal/e-invoice-created`,
-        }).catch(() => registeredTenants.delete(auth.tenantId)); // hata olursa tekrar denesin
+        try {
+            const cfg = await saveConfiguration(creds, {
+                paymentSucceededUrl: `${base}/api/odeal/payment-succeeded`,
+                paymentFailedUrl: `${base}/api/odeal/payment-failed`,
+                paymentCancelledUrl: `${base}/api/odeal/payment-cancelled`,
+                eInvoiceCreatedUrl: `${base}/api/odeal/e-invoice-created`,
+            });
+            if (cfg.ok) registeredTenants.add(auth.tenantId);
+            else callbackWarning = `Ödeal callback kaydı başarısız (HTTP ${cfg.status}). Ödeme sonucu ekrana düşmeyebilir; SuperAdmin > Ödeal'den callback URL'lerini yeniden kaydedin.`;
+        } catch (e: any) {
+            callbackWarning = `Ödeal callback kaydı hatası: ${e?.message || "bilinmeyen"}`;
+        }
     }
 
     // Benzersiz referans (idempotency + webhook eşleşmesi)
@@ -108,5 +114,5 @@ export async function POST(req: NextRequest) {
     }
 
     // Cihaz uyanacak; POS sonuç için status'u poll eder ya da webhook düşer
-    return NextResponse.json({ success: true, referenceCode });
+    return NextResponse.json({ success: true, referenceCode, callbackWarning });
 }

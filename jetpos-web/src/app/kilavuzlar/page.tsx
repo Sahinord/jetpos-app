@@ -2,18 +2,20 @@
 
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { 
-    BookOpen, 
-    ArrowRight, 
-    Search, 
-    Zap, 
-    Package, 
-    ShoppingCart, 
-    Users, 
-    BarChart3, 
+import Link from "next/link";
+import {
+    BookOpen,
+    ArrowRight,
+    Search,
+    Zap,
+    Package,
+    ShoppingCart,
+    Users,
+    BarChart3,
     ShieldCheck,
     ChevronRight,
-    PlayCircle
+    PlayCircle,
+    Plug
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -123,6 +125,26 @@ export default function KilavuzlarPage() {
                                 className="w-full h-16 bg-white/5 border border-white/10 rounded-2xl pl-16 pr-6 text-xl text-white outline-none focus:border-primary/50 backdrop-blur-xl transition-all"
                             />
                         </motion.div>
+                    </div>
+                </section>
+
+                {/* Öne çıkan: Entegrasyon Rehberleri (tıklanır) */}
+                <section className="px-4 pb-4">
+                    <div className="max-w-7xl mx-auto">
+                        <Link href="/kilavuzlar/entegrasyonlar" className="group block rounded-[2.5rem] p-8 md:p-10 bg-gradient-to-r from-orange-500/[0.07] via-primary/[0.07] to-purple-500/[0.07] bg-white border border-slate-200/80 shadow-sm hover:border-primary/40 transition-all relative overflow-hidden">
+                            <div className="flex flex-col md:flex-row md:items-center gap-5">
+                                <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                    <Plug className="w-8 h-8 text-primary" />
+                                </div>
+                                <div className="flex-1">
+                                    <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight mb-1">Entegrasyon Rehberleri</h2>
+                                    <p className="text-slate-500 font-medium">Trendyol GO, Getir Çarşı, Yemek platformları ve Ödeal’i adım adım, teknik bilgi gerekmeden bağlayın; ürün ekleme ve eşleştirmeyi öğrenin.</p>
+                                </div>
+                                <div className="flex items-center gap-2 text-primary font-black uppercase text-sm tracking-widest group-hover:gap-3 transition-all flex-shrink-0">
+                                    Rehberi Aç <ChevronRight size={18} />
+                                </div>
+                            </div>
+                        </Link>
                     </div>
                 </section>
 

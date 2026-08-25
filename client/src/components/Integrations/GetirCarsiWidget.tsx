@@ -8,6 +8,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { useTenant } from "@/lib/tenant-context";
 import { apiFetch } from "@/lib/api";
+import GetirProductMapping from "./GetirProductMapping";
 
 type SubTab = "overview" | "orders" | "finance" | "settings" | "mapping";
 
@@ -476,17 +477,5 @@ export default function GetirCarsiWidget({ activeSubTab = "overview" }: { active
     }
 
     // ══════════ ÜRÜN EŞLEŞTİRME ══════════
-    return (
-        <div className="flex flex-col items-center justify-center min-h-[40vh] text-center space-y-4 animate-in fade-in duration-300">
-            <div className="w-20 h-20 bg-purple-500/10 rounded-full flex items-center justify-center border border-purple-500/20">
-                <Package className="w-9 h-9 text-purple-400/60" />
-            </div>
-            <div>
-                <h3 className="text-2xl font-black text-white mb-1">Ürün Eşleştirme — Çok Yakında</h3>
-                <p className="text-secondary/50 text-sm max-w-md">
-                    Getir Çarşı ürün kartlarınızı JetPos stoklarınızla eşleştirme özelliği yakında burada olacak.
-                </p>
-            </div>
-        </div>
-    );
+    return <GetirProductMapping />;
 }
