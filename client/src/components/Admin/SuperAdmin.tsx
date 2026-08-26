@@ -371,20 +371,20 @@ export default function SuperAdmin() {
     };
 
     const handleDelete = async (id: string, name: string) => {
-        if (!confirm(`"${name}" lisansını silmek istediğinize emin misiniz?`)) return;
+        if (!confirm(`"${name}" lisansını silmek istediğinize emin misiniz?\n\nBu işlem geri alınamaz; lisansa bağlı tüm veriler (ürünler, satışlar, cari vb.) silinir.`)) return;
 
         try {
-            const { error } = await supabase
-                .from('tenants')
-                .delete()
-                .eq('id', id);
-
-            if (error) throw error;
+            // Service-role route: RLS'i aşar + FK'ya takılırsa bağlı kayıtları temizler.
+            const res = await apiFetch('/api/admin/delete-tenant', {
+                method: 'POST',
+                body: JSON.stringify({ id }),
+            });
+            if (!res?.success) throw new Error(res?.error || 'Silinemedi');
 
             alert('✅ Lisans silindi!');
             await fetchTenants();
         } catch (err: any) {
-            alert('❌ Hata: ' + err.message);
+            alert('❌ Hata: ' + (err?.message || 'Silinemedi'));
         }
     };
 
