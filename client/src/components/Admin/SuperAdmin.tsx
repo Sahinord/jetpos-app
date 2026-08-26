@@ -1098,8 +1098,19 @@ export default function SuperAdmin() {
 
     return (
         <div className="space-y-8 pb-12">
+            {/* Sayfa Başlığı */}
+            <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-blue-500 flex items-center justify-center shadow-lg shadow-primary/20">
+                    <Shield className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                    <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight leading-none">Süper Admin</h1>
+                    <p className="text-xs text-secondary/60 font-bold mt-1">Lisans, destek, bildirim ve CRM yönetim merkezi</p>
+                </div>
+            </div>
+
             {/* Tab System */}
-            <div className="flex items-center gap-4 bg-white/5 border border-white/10 p-2 rounded-2xl w-fit">
+            <div className="flex items-center gap-2 bg-white/5 border border-white/10 p-2 rounded-2xl w-fit overflow-x-auto">
                 <button
                     onClick={() => setActiveTab('tenants')}
                     className={`flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all font-bold ${activeTab === 'tenants' ? 'bg-primary text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
@@ -1136,6 +1147,35 @@ export default function SuperAdmin() {
                 </div>
             ) : activeTab === 'tenants' ? (
                 <>
+                    {/* KPI İstatistik Şeridi */}
+                    {(() => {
+                        const list = tenants.filter(t => !t.is_super_admin);
+                        const active = list.filter(t => t.status === 'active').length;
+                        const suspended = list.filter(t => t.status === 'suspended').length;
+                        const expired = list.filter(t => t.status === 'expired').length;
+                        const cards = [
+                            { label: 'Toplam Lisans', value: list.length, icon: Building2, color: 'text-primary', ring: 'from-primary/20 to-blue-500/10' },
+                            { label: 'Aktif', value: active, icon: Check, color: 'text-emerald-400', ring: 'from-emerald-500/20 to-emerald-500/5' },
+                            { label: 'Askıda', value: suspended, icon: Shield, color: 'text-amber-400', ring: 'from-amber-500/20 to-amber-500/5' },
+                            { label: 'Süresi Dolmuş', value: expired, icon: X, color: 'text-rose-400', ring: 'from-rose-500/20 to-rose-500/5' },
+                        ];
+                        return (
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                {cards.map((c, i) => (
+                                    <div key={i} className="glass-card !p-5 flex items-center gap-4 relative overflow-hidden">
+                                        <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${c.ring} border border-white/10 flex items-center justify-center flex-shrink-0`}>
+                                            <c.icon className={`w-6 h-6 ${c.color}`} />
+                                        </div>
+                                        <div>
+                                            <div className={`text-3xl font-black tabular-nums leading-none ${c.color}`}>{c.value}</div>
+                                            <div className="text-[10px] font-black uppercase tracking-widest text-secondary/60 mt-1">{c.label}</div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        );
+                    })()}
+
                     <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                         <div>
                             <h2 className="text-3xl font-black text-white">Lisans Yönetimi</h2>
@@ -1202,8 +1242,8 @@ export default function SuperAdmin() {
                                                     <div className="flex items-center gap-3">
                                                         <span className="bg-white/10 px-2 py-0.5 rounded-lg text-[10px] font-black text-white border border-white/10">ID: {tenant.license_id}</span>
                                                         <span className="text-sm text-primary font-mono font-bold tracking-widest">{tenant.license_key}</span>
-                                                        <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase ${tenant.status === 'active' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border border-rose-500/20'}`}>
-                                                            {tenant.status}
+                                                        <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase border ${tenant.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : tenant.status === 'suspended' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'}`}>
+                                                            {tenant.status === 'active' ? 'Aktif' : tenant.status === 'suspended' ? 'Askıda' : tenant.status === 'expired' ? 'Süresi Dolmuş' : tenant.status}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -1671,11 +1711,16 @@ export default function SuperAdmin() {
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
                     <div className="bg-slate-900 border border-white/10 rounded-[2.5rem] max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
                         <div className="sticky top-0 bg-slate-900/80 backdrop-blur-md border-b border-white/10 p-8 flex items-center justify-between z-10">
-                            <div>
-                                <h3 className="text-2xl font-black text-white">
-                                    {editingTenant.id === 'new' ? 'Yeni Lisans Tanımla' : 'Lisans Profilini Düzenle'}
-                                </h3>
-                                <p className="text-xs text-slate-500 mt-1 uppercase tracking-widest font-bold">ID: {editingTenant.id}</p>
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-blue-500 flex items-center justify-center shadow-lg shadow-primary/20 flex-shrink-0">
+                                    <Building2 className="w-6 h-6 text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="text-2xl font-black text-white">
+                                        {editingTenant.id === 'new' ? 'Yeni Lisans Tanımla' : 'Lisans Profilini Düzenle'}
+                                    </h3>
+                                    <p className="text-xs text-slate-500 mt-1 uppercase tracking-widest font-bold">ID: {editingTenant.id}</p>
+                                </div>
                             </div>
                             <button onClick={() => setEditingTenant(null)} className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-all">
                                 <X className="w-6 h-6 text-slate-400" />
