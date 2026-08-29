@@ -285,8 +285,9 @@ export default function Home() {
     if (tenantLoading || !currentTenant) return;
     if (activeTab !== 'home' && activeTab !== 'dashboard') return;
 
-    fetchData(true); // sekmeye dönünce hemen taze
-    const interval = setInterval(() => fetchData(true), 90000); // 90 sn'de bir tazele
+    fetchData(true); // sekmeye dönünce hemen TAM taze (silinenleri de yakalar)
+    // Periyodik yenileme ARTIMLI: sadece değişen ürünleri çeker (DB trafiği ~%90 azalır).
+    const interval = setInterval(() => incrementalRefresh(), 90000);
     return () => clearInterval(interval);
     // fetchData/activeWarehouse deps'e eklenmedi: bu dosyadaki diğer effect'lerle
     // aynı desen — fetchData her render'da yeniden oluşuyor ve döngü riski var.
@@ -377,12 +378,19 @@ export default function Home() {
   }, [theme, isBeepEnabled, showHelpIcons, isEmployeeModuleEnabled, isPriceSyncEnabled, isStockSyncEnabled, isWarehouseStockDeductionEnabled, isCashDrawerEnabled, isAdisyonReceiptEnabled, cashDrawerPrinterName, receiptPrinterName, labelPrinterName, isAdisyonStoreSpecificEnabled, isAdisyonAutoOpenReservationEnabled, lowStockThreshold, receiptSettings]);
 
   const isRefetchingRef = useRef(false);
+  // Artımlı ürün yenileme için: son başarılı senkron zamanı + tur sayacı.
+  const lastProductSyncRef = useRef<string | null>(null);
+  const incrementalCountRef = useRef(0);
 
   const fetchData = async (silent = false) => {
     // Üst üste binen çekimleri engelle: arka plan tazeleme (polling/realtime) yavaş
     // bir çekimle çakışırsa ikinci çağrı atlanır — büyük katalogda gereksiz yük olmaz.
     if (isRefetchingRef.current) return;
     isRefetchingRef.current = true;
+    // Artımlı yenilemenin bundan sonrasını yakalayabilmesi için, çekim BAŞLAMADAN
+    // önceki anı temel al (küçük örtüşme zararsız; gt exclusive olsa da aynı satırı
+    // en fazla bir kez tekrar çeker).
+    const syncStartIso = new Date().toISOString();
     // silent=true iken görünür "loading" durumuna dokunma (arka planda sessiz tazeleme);
     // aksi halde her tazelemede ekranda spinner yanıp söner.
     if (!silent) setLoading(true);
@@ -470,6 +478,8 @@ export default function Home() {
         page++;
       }
       setProducts(allProducts);
+      // Tam çekim başarılı → artımlı yenileme için temel zamanı güncelle.
+      lastProductSyncRef.current = syncStartIso;
 
       // Sync to local DB
       if (allProducts.length > 0) {
@@ -487,6 +497,50 @@ export default function Home() {
       isRefetchingRef.current = false;
       fetchTrashProducts();
       fetchArchiveProducts();
+    }
+  };
+
+  // ARTIMLI ÜRÜN YENİLEME (arka plan 90 sn poll'u için).
+  // Tüm kataloğu (20k'ya kadar) her seferinde çekmek yerine, yalnızca son senkrondan
+  // beri DEĞİŞEN ürünleri çeker ve state/offline DB'ye işler. Bu, DB trafiğini büyük
+  // ölçüde azaltır. Güvenlik ağı: her 10 turda bir + temel zaman yoksa TAM çekim yapılır
+  // (silinen/arşivlenen ürünleri de yakalamak için). `updated_at` kolonu yoksa veya
+  // herhangi bir hata olursa sessizce TAM çekime düşer — davranış bozulmaz.
+  const incrementalRefresh = async () => {
+    if (isRefetchingRef.current) return;
+    if (!currentTenant || !SyncService.isOnline()) return;
+    incrementalCountRef.current++;
+    if (!lastProductSyncRef.current || incrementalCountRef.current % 10 === 0) {
+      return fetchData(true);
+    }
+    const since = lastProductSyncRef.current;
+    const nowIso = new Date().toISOString();
+    isRefetchingRef.current = true;
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*, categories(name), warehouse_stock(*)')
+        .eq('tenant_id', currentTenant.id)
+        .is('deleted_at', null)
+        .gt('updated_at', since);
+      if (error) throw error;
+      if (data && data.length > 0) {
+        setProducts(prev => {
+          const map = new Map((prev as any[]).map(p => [p.id, p]));
+          for (const p of data) map.set(p.id, p);
+          return Array.from(map.values());
+        });
+        try {
+          await offlineDB.products.bulkPut(data.map((p: any) => ({ ...p, warehouse_id: activeWarehouse?.id || '' })));
+        } catch { /* offline cache best-effort */ }
+      }
+      lastProductSyncRef.current = nowIso;
+    } catch {
+      // updated_at yok / hata → güvenli tam çekime düş
+      isRefetchingRef.current = false;
+      return fetchData(true);
+    } finally {
+      isRefetchingRef.current = false;
     }
   };
 
