@@ -726,7 +726,7 @@ export default function Home() {
     }
   };
 
-  const handleSave = async (formData: any) => {
+  const handleSave = async (formData: any, opts?: { printLabel?: boolean }) => {
     if (!currentTenant) return;
     setIsSaving(true);
     try {
@@ -1006,6 +1006,22 @@ export default function Home() {
       ));
       await fetchData();
       setIsModalOpen(false);
+
+      // "Barkod Bas" ile kaydedildiyse: ürünü etiket kuyruğuna at, sabit şablonu
+      // (Market Raf 72x40mm) seç ve doğrudan Etiket Tasarımı ekranına geç.
+      if (opts?.printLabel && savedProductId) {
+        try {
+          const q = JSON.parse(localStorage.getItem('jetpos_label_queue') || '[]');
+          const next = Array.isArray(q) ? q.filter((x: any) => x !== savedProductId) : [];
+          next.push(savedProductId);
+          localStorage.setItem('jetpos_label_queue', JSON.stringify(next));
+          localStorage.setItem('last_label_template', 'raf');
+          // Etiket ekranı bu bayrağı görünce: ürünü seçer, editörü açar ve
+          // bağlı yazıcıdan OTOMATİK bastırır (ekstra tık gerekmez).
+          localStorage.setItem('jetpos_label_autoprint', '1');
+        } catch { /* localStorage yoksa yut */ }
+        setActiveTab('label_designer');
+      }
     } catch (error: any) {
       let errorMessage = error.message || "Bir hata oluştu";
       if (errorMessage.includes("products_tenant_barcode_unique")) {

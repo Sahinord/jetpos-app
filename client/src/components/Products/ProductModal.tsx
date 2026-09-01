@@ -669,6 +669,15 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                 className="px-5 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-white/[0.04] transition-all disabled:opacity-50">
                                 İptal
                             </button>
+                            {/* Kaydet + direkt Barkod (Market Raf 72x40mm) yazdırma ekranına git */}
+                            <button
+                                onClick={() => onSave(buildFinalData(), { printLabel: true })}
+                                disabled={isSaving}
+                                title="Kaydet ve barkod/etiket yazdır (Market Raf 72x40mm)"
+                                className="px-5 py-2.5 bg-white/[0.04] hover:bg-white/[0.08] text-white rounded-xl text-xs font-bold transition-all flex items-center gap-2 disabled:opacity-50 active:scale-95"
+                            >
+                                <Barcode size={14} /> Barkod Bas
+                            </button>
                             <button
                                 onClick={() => onSave(buildFinalData())}
                                 disabled={isSaving}

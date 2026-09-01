@@ -92,57 +92,9 @@ const TEMPLATES: LabelConfig[] = [
         defaultWidths: { name: 215, price: 215, brand: 215, frame: 0, logo: 120, barcode: 200 },
         defaultHeights: { frame: 0 }
     },
-    {
-        id: 'rp80', name: '💎 JetPOS Premium (80×40mm)',
-        widthMm: 72, heightMm: 40,
-        showLogo: false, showBrand: true, showName: true, showBarcode: true, showPrice: true, showVat: true,
-        nameFontMm: 9, priceFontMm: 18, brandFontMm: 6, barcodeHMm: 10,
-        defaultPos: {
-            brand: { xMm: 4, yMm: 4 },
-            barcode: { xMm: 36, yMm: 4 },
-            name: { xMm: 4, yMm: 14 },
-            price: { xMm: 4, yMm: 28 }
-        },
-        defaultAligns: { brand: 'left', name: 'left', price: 'left' },
-        defaultWidths: { brand: 110, name: 238, price: 238, barcode: 120 }
-    },
-    {
-        id: 'market', name: '🏪 Market Etiketi (58×40mm)',
-        widthMm: 58, heightMm: 40,
-        showLogo: false, showBrand: true, showName: true, showBarcode: true, showPrice: true, showVat: false,
-        nameFontMm: 7, priceFontMm: 11, brandFontMm: 4.5, barcodeHMm: 10,
-        defaultPos: { brand: { xMm: 2, yMm: 2 }, name: { xMm: 2, yMm: 7 }, barcode: { xMm: 3, yMm: 19 }, price: { xMm: 3, yMm: 31 } },
-        defaultWidths: { name: 190, price: 180, barcode: 180 }
-    },
-    {
-        id: 'standard', name: 'Standart (50×30mm)',
-        widthMm: 50, heightMm: 30,
-        showLogo: false, showBrand: false, showName: true, showBarcode: true, showPrice: true, showVat: false,
-        nameFontMm: 6, priceFontMm: 10, brandFontMm: 4, barcodeHMm: 9,
-        defaultPos: { name: { xMm: 2.5, yMm: 2 }, barcode: { xMm: 2.5, yMm: 10 }, price: { xMm: 2.5, yMm: 22 } },
-        defaultWidths: { name: 160, price: 160, barcode: 160 }
-    },
-    {
-        id: 'large', name: 'Büyük (80×50mm)',
-        widthMm: 80, heightMm: 50,
-        showLogo: true, showBrand: true, showName: true, showBarcode: true, showPrice: true, showVat: true,
-        nameFontMm: 9, priceFontMm: 14, brandFontMm: 6, barcodeHMm: 14,
-        defaultPos: { brand: { xMm: 2, yMm: 2 }, name: { xMm: 2, yMm: 9 }, logo: { xMm: 2, yMm: 40 }, barcode: { xMm: 40, yMm: 2 }, price: { xMm: 40, yMm: 22 } },
-        defaultWidths: { name: 260, price: 130, barcode: 130 }
-    },
-    {
-        id: 'square-40', name: '🔲 Kare (40×40mm)',
-        widthMm: 40, heightMm: 40,
-        showLogo: false, showBrand: true, showName: true, showBarcode: true, showPrice: true, showVat: true,
-        nameFontMm: 4.8, priceFontMm: 10, brandFontMm: 3.5, barcodeHMm: 9,
-        defaultPos: {
-            name: { xMm: 3, yMm: 4 },
-            barcode: { xMm: 3, yMm: 13 },
-            price: { xMm: 3, yMm: 24 },
-            brand: { xMm: 3, yMm: 33 }
-        },
-        defaultWidths: { name: 120, price: 120, barcode: 120 }
-    },
+    // Not: Tek sabit tasarım "Market Raf (72×40mm)" bırakıldı (özel çerçeveli/statik
+    // düzen). Jenerik şablonlar aynı kaliteyi vermediği için kaldırıldı.
+    // Kullanıcı isterse "+" ile kendi özel şablonunu ekleyebilir (customTemplates).
 ];
 
 /* ── Price renderer helpers ── */
@@ -232,6 +184,14 @@ export default function ProductLabelDesigner({ products, showToast, printerName,
         try {
             const q = JSON.parse(localStorage.getItem('jetpos_label_queue') || '[]');
             setPriceQueue(q);
+            // "Barkod Bas"tan gelindiyse: kuyruktaki ürünleri seç, editörü aç ve
+            // aşağıdaki effect otomatik yazdırsın.
+            if (localStorage.getItem('jetpos_label_autoprint') === '1' && Array.isArray(q) && q.length > 0) {
+                localStorage.removeItem('jetpos_label_autoprint');
+                setSelectedProducts(prev => Array.from(new Set([...prev, ...q])));
+                setShowPreview(true);
+                autoPrintRef.current = true;
+            }
         } catch (e) { }
     }, []);
 
@@ -249,10 +209,14 @@ export default function ProductLabelDesigner({ products, showToast, printerName,
 
     /* ─ template ─ */
     const [templateId, setTemplateId] = useState<TemplateId>(() => {
+        // Varsayılan sabit şablon: Market Raf ('raf'). Kayıtlı değer artık mevcut
+        // şablonlarda yoksa (eski 'rp80' vb. kaldırıldı) 'raf'a düş — aksi halde
+        // bulunamayan şablon render'da çökme yaratıyordu.
         if (typeof window !== 'undefined') {
-            return (localStorage.getItem('last_label_template') as TemplateId) || 'rp80';
+            const saved = localStorage.getItem('last_label_template');
+            if (saved && TEMPLATES.some(t => t.id === saved)) return saved as TemplateId;
         }
-        return 'rp80';
+        return 'raf';
     });
 
     useEffect(() => {
@@ -275,6 +239,8 @@ export default function ProductLabelDesigner({ products, showToast, printerName,
     const [positions, setPositions] = useState<Partial<Record<ElemId, Pos>>>({});
     const dragRef = useRef<{ id: ElemId; startX: number; startY: number; origX: number; origY: number } | null>(null);
     const canvasRef = useRef<HTMLDivElement>(null);
+    // "Barkod Bas" ile gelindiğinde otomatik yazdırma bayrağı.
+    const autoPrintRef = useRef(false);
 
     /* ─ preview ─ */
     const [showPreview, setShowPreview] = useState(false);
@@ -635,6 +601,20 @@ export default function ProductLabelDesigner({ products, showToast, printerName,
             setIsPrintingProgress(false);
         }
     };
+
+    // "Barkod Bas"tan gelindiyse: ürün seçili + editör açık + canvas hazır olunca
+    // otomatik olarak bağlı yazıcıya bastır (ekstra tık gerektirmez). Yalnızca bir kez.
+    useEffect(() => {
+        if (!autoPrintRef.current) return;
+        if (!showPreview || selectedProducts.length === 0) return;
+        if (!canvasRef.current) return;
+        // Seçili ürün(ler) gerçekten yüklü mü?
+        if (!selectedProducts.some(id => products.find(p => p.id === id))) return;
+        autoPrintRef.current = false;
+        const t = setTimeout(() => { handlePrint(); }, 600); // canvas/barkod render payı
+        return () => clearTimeout(t);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [showPreview, selectedProducts, products]);
 
 
     /* ─ utils ─ */
