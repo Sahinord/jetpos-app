@@ -144,10 +144,15 @@ export async function POST(req: NextRequest) {
             p_tenant_id: tenantId,
             p_password: password,
         });
-        const ok = !error && data?.success === true;
+        // verify_tenant_password iki farklı şekilde dönebiliyor (DB'deki sürüme göre):
+        //   • düz boolean:  true / false
+        //   • obje:         { success: bool, message: text }
+        // Her iki şekli de kabul et; aksi halde boolean dönen sürümde doğru şifre bile
+        // "Hatalı şifre" olarak reddediliyordu.
+        const ok = !error && (data === true || data?.success === true);
         await logAttempt(ip, tenantId, ok);
         if (!ok) {
-            return NextResponse.json({ error: data?.message || "Hatalı şifre." }, { status: 403 });
+            return NextResponse.json({ error: (typeof data === "object" ? data?.message : null) || "Hatalı şifre." }, { status: 403 });
         }
         return NextResponse.json({ success: true });
     }
