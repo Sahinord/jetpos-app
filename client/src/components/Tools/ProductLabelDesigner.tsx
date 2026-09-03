@@ -157,7 +157,7 @@ function priceHtmlMm(cfg: LabelConfig, product: Product, pos: Pos, effectivePric
 }
 
 /* ── Main Component ── */
-export default function ProductLabelDesigner({ products, showToast, printerName, isPriceSyncEnabled = false }: { products: Product[]; showToast: any; printerName?: string; isPriceSyncEnabled?: boolean }) {
+export default function ProductLabelDesigner({ products, showToast, printerName, isPriceSyncEnabled = false, onAutoPrintDone }: { products: Product[]; showToast: any; printerName?: string; isPriceSyncEnabled?: boolean; onAutoPrintDone?: () => void }) {
     const { currentTenant, activeWarehouse } = useTenant();
 
     /* ── Effective Price Helper: Mağaza özel fiyat veya master fiyat ── */
@@ -633,7 +633,10 @@ export default function ProductLabelDesigner({ products, showToast, printerName,
         autoPrintRef.current = false;
         // Not: clearTimeout ile temizlemiyoruz; re-render (ör. products yenilenmesi)
         // zamanlanan yazdırmayı iptal etmesin. Çift basım printingRef ile engellenir.
-        setTimeout(() => { handlePrint(); }, 600); // canvas/barkod render payı
+        setTimeout(() => {
+            // Basım bitince (gizli/arka plan mount ise) üst bileşene haber ver → kaldırılsın.
+            handlePrint().finally(() => { setTimeout(() => onAutoPrintDone?.(), 300); });
+        }, 600); // canvas/barkod render payı
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [showPreview, selectedProducts, products]);
 

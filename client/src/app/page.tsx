@@ -76,6 +76,8 @@ export default function Home() {
   const [isLicenseValid, setIsLicenseValid] = useState(false);
   const [activeTab, setActiveTab] = useState("home");
   const [products, setProducts] = useState<any[]>([]);
+  // "Barkod Bas": bu id set olunca arka planda (görünmez) etiket bastırılır.
+  const [printLabelProductId, setPrintLabelProductId] = useState<string | null>(null);
   const [trashProducts, setTrashProducts] = useState<any[]>([]);
   const [archiveProducts, setArchiveProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
@@ -1013,11 +1015,12 @@ export default function Home() {
         try {
           localStorage.setItem('last_label_template', 'raf');
           localStorage.setItem('jetpos_label_autoprint_id', savedProductId);
-          // Etiket ekranı bu bayrağı görünce: yalnızca bu ürünü seçer ve
-          // bağlı yazıcıdan 1 ADET otomatik bastırır (bütün kuyruğu basmaz).
           localStorage.setItem('jetpos_label_autoprint', '1');
         } catch { /* localStorage yoksa yut */ }
-        setActiveTab('label_designer');
+        // Etiket ekranına GEÇME — arka planda (görünmez) etiket tasarımcısını mount
+        // edip yalnızca bu ürünü sabit şablonla (Market Raf) 1 adet bastır. Kullanıcı
+        // ürün ekranında kalır. Basım bitince gizli bileşen kaldırılır.
+        setPrintLabelProductId(String(savedProductId));
       }
     } catch (error: any) {
       let errorMessage = error.message || "Bir hata oluştu";
@@ -2109,6 +2112,20 @@ export default function Home() {
           {activeTab === "label_designer" && (
             <div className="max-w-[1500px] mx-auto w-full">
               <ProductLabelDesigner products={products} showToast={showToast} printerName={labelPrinterName || receiptPrinterName} isPriceSyncEnabled={isPriceSyncEnabled} />
+            </div>
+          )}
+
+          {/* "Barkod Bas" gizli basım: etiket ekranına geçmeden, ekran dışında mount
+              edilip sabit şablonla 1 adet bastırır; bitince kaldırılır. */}
+          {printLabelProductId && activeTab !== "label_designer" && (
+            <div aria-hidden="true" style={{ position: 'fixed', left: -100000, top: 0, width: 900, height: 600, overflow: 'hidden', opacity: 0, pointerEvents: 'none', zIndex: -1 }}>
+              <ProductLabelDesigner
+                products={products}
+                showToast={showToast}
+                printerName={labelPrinterName || receiptPrinterName}
+                isPriceSyncEnabled={isPriceSyncEnabled}
+                onAutoPrintDone={() => setPrintLabelProductId(null)}
+              />
             </div>
           )}
 
