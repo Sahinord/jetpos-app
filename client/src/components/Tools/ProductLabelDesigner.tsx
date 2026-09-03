@@ -184,11 +184,22 @@ export default function ProductLabelDesigner({ products, showToast, printerName,
         try {
             const q = JSON.parse(localStorage.getItem('jetpos_label_queue') || '[]');
             setPriceQueue(q);
-            // "Barkod Bas"tan gelindiyse: kuyruktaki ürünleri seç, editörü aç ve
-            // aşağıdaki effect otomatik yazdırsın.
-            if (localStorage.getItem('jetpos_label_autoprint') === '1' && Array.isArray(q) && q.length > 0) {
+            // "Barkod Bas"tan gelindiyse:
+            if (localStorage.getItem('jetpos_label_autoprint') === '1') {
                 localStorage.removeItem('jetpos_label_autoprint');
-                setSelectedProducts(prev => Array.from(new Set([...prev, ...q])));
+                const singleId = localStorage.getItem('jetpos_label_autoprint_id');
+                if (singleId) {
+                    localStorage.removeItem('jetpos_label_autoprint_id');
+                    // SADECE bu ürünü seç ve adedini 1 yap
+                    setSelectedProducts([singleId]);
+                    setLabelCount({ [singleId]: 1 });
+                    // Tekli basılan ürünü bekleyen fiyat kuyruğundan düş
+                    const nextQ = Array.isArray(q) ? q.filter((x: any) => x !== singleId) : [];
+                    localStorage.setItem('jetpos_label_queue', JSON.stringify(nextQ));
+                    setPriceQueue(nextQ);
+                } else if (Array.isArray(q) && q.length > 0) {
+                    setSelectedProducts(prev => Array.from(new Set([...prev, ...q])));
+                }
                 setShowPreview(true);
                 autoPrintRef.current = true;
             }
@@ -241,6 +252,11 @@ export default function ProductLabelDesigner({ products, showToast, printerName,
     const canvasRef = useRef<HTMLDivElement>(null);
     // "Barkod Bas" ile gelindiğinde otomatik yazdırma bayrağı.
     const autoPrintRef = useRef(false);
+    // Çift yazdırma kilidi: handlePrint aynı anda birden fazla kez çağrılırsa
+    // (effect + render / hızlı çift tık) ikinci çağrı ANINDA atlanır → tek etiket.
+    const printingRef = useRef(false);
+    const autoPrintExecutedRef = useRef(false);
+    const isPrintingRef = useRef(false);
 
     /* ─ preview ─ */
     const [showPreview, setShowPreview] = useState(false);
@@ -475,10 +491,13 @@ export default function ProductLabelDesigner({ products, showToast, printerName,
 
     /* ─ print (Raster Image – Tüm ürünler için sırayla) ─ */
     const handlePrint = async () => {
+        // Zaten yazdırıyorsa ikinci çağrıyı yut (mükerrer etiket önlemi).
+        if (printingRef.current) return;
         if (selectedProducts.length === 0) {
             showToast('Lütfen en az bir ürün seçin', 'error');
             return;
         }
+        printingRef.current = true;
 
         const electron = (window as any).electron;
         if (!electron?.isElectron) {
@@ -599,6 +618,7 @@ export default function ProductLabelDesigner({ products, showToast, printerName,
         } finally {
             setActivePrintProduct(null);
             setIsPrintingProgress(false);
+            printingRef.current = false;
         }
     };
 
@@ -611,8 +631,9 @@ export default function ProductLabelDesigner({ products, showToast, printerName,
         // Seçili ürün(ler) gerçekten yüklü mü?
         if (!selectedProducts.some(id => products.find(p => p.id === id))) return;
         autoPrintRef.current = false;
-        const t = setTimeout(() => { handlePrint(); }, 600); // canvas/barkod render payı
-        return () => clearTimeout(t);
+        // Not: clearTimeout ile temizlemiyoruz; re-render (ör. products yenilenmesi)
+        // zamanlanan yazdırmayı iptal etmesin. Çift basım printingRef ile engellenir.
+        setTimeout(() => { handlePrint(); }, 600); // canvas/barkod render payı
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [showPreview, selectedProducts, products]);
 

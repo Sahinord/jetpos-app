@@ -1007,17 +1007,14 @@ export default function Home() {
       await fetchData();
       setIsModalOpen(false);
 
-      // "Barkod Bas" ile kaydedildiyse: ürünü etiket kuyruğuna at, sabit şablonu
-      // (Market Raf 72x40mm) seç ve doğrudan Etiket Tasarımı ekranına geç.
+      // "Barkod Bas" ile kaydedildiyse: sabit şablonu (Market Raf 72x40mm) seç,
+      // SADECE bu ürünün ID'sini tekli basım için sakla ve Etiket Tasarımı ekranına geç.
       if (opts?.printLabel && savedProductId) {
         try {
-          const q = JSON.parse(localStorage.getItem('jetpos_label_queue') || '[]');
-          const next = Array.isArray(q) ? q.filter((x: any) => x !== savedProductId) : [];
-          next.push(savedProductId);
-          localStorage.setItem('jetpos_label_queue', JSON.stringify(next));
           localStorage.setItem('last_label_template', 'raf');
-          // Etiket ekranı bu bayrağı görünce: ürünü seçer, editörü açar ve
-          // bağlı yazıcıdan OTOMATİK bastırır (ekstra tık gerekmez).
+          localStorage.setItem('jetpos_label_autoprint_id', savedProductId);
+          // Etiket ekranı bu bayrağı görünce: yalnızca bu ürünü seçer ve
+          // bağlı yazıcıdan 1 ADET otomatik bastırır (bütün kuyruğu basmaz).
           localStorage.setItem('jetpos_label_autoprint', '1');
         } catch { /* localStorage yoksa yut */ }
         setActiveTab('label_designer');
