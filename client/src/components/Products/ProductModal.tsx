@@ -123,12 +123,25 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
         setFormData({ ...formData, sale_price: String(suggested) });
     };
 
-    // Kâr'a göre satış fiyatı belirle: yüzde → alış*(1+%); tutar → alış + ₺kâr.
+    // Kâr'a göre satış fiyatı belirle.
+    //  • yüzde → alış*(1+%)
+    //  • tutar → NET ₺ kârı hedefler: platform komisyonu + kargo gideri düşüldükten
+    //    SONRA elde kalan kâr girilen tutar olsun. Böylece "Net Kâr" şeridiyle tutarlı
+    //    (komisyon/kargo 0 ise sonuç yine alış + ₺kâr olur → eski davranış korunur).
     const handleApplyKar = () => {
         const purchase = Number(formData.purchase_price) || 0;
         const val = Number(String(karValue).replace(',', '.')) || 0;
         if (purchase <= 0 || val <= 0) return;
-        const sale = karMode === 'yuzde' ? purchase * (1 + val / 100) : purchase + val;
+        let sale: number;
+        if (karMode === 'yuzde') {
+            sale = purchase * (1 + val / 100);
+        } else {
+            const commission = Number(pricingPrefs.platform_commission) || 0;
+            const shipping = Number(pricingPrefs.shipping_cost) || 0;
+            const commFactor = commission < 100 ? 1 - commission / 100 : 1;
+            // net = sale - sale*komisyon% - kargo - alış = val  →  sale = (alış + kargo + val) / (1 - komisyon%)
+            sale = (purchase + shipping + val) / commFactor;
+        }
         setFormData((f: any) => ({ ...f, sale_price: String(Math.round(sale * 100) / 100) }));
     };
 
