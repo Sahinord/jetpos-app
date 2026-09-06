@@ -145,6 +145,23 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
         setFormData((f: any) => ({ ...f, sale_price: String(Math.round(sale * 100) / 100) }));
     };
 
+    // Yapıştırılan metin (Excel/web) çoğu zaman gizli karakter taşır: satır sonu,
+    // tab, nbsp, zero-width, kontrol karakterleri. Bunlar başlığı bozar ve barkod
+    // karşılaştırmasını yanıltır (görünüşte aynı ama eşleşmeyen barkod → ürün
+    // yanlışlıkla 'Hatalı Ürünler'e düşer). Temizle:
+    const cleanPastedText = (s: string) =>
+        String(s ?? '')
+            .replace(/[\u200B-\u200D\uFEFF]/g, '')   // zero-width → sil
+            .replace(/[\u0000-\u001F\u007F]/g, ' ')  // kontrol/satır sonu/tab → boşluk
+            .replace(/\u00A0/g, ' ')                   // nbsp → normal boşluk
+            .replace(/[ \t]{2,}/g, ' ');               // ardışık boşlukları teke indir
+    // Barkodda boşluk asla olmaz — tüm boşluk ve gizli karakterleri tamamen kaldır.
+    const cleanPastedBarcode = (s: string) =>
+        String(s ?? '')
+            .replace(/[\u200B-\u200D\uFEFF]/g, '')
+            .replace(/[\u0000-\u001F\u007F]/g, '')
+            .replace(/\s+/g, '');
+
     const handleNumericInput = (field: string, value: string, isPrefs: boolean = false) => {
         let cleaned = value.replace(/[^0-9.,]/g, '');
         cleaned = cleaned.replace(',', '.');
@@ -344,7 +361,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                             type="text"
                                             className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-3 py-2.5 text-sm font-medium text-white placeholder:text-slate-600 outline-none focus:border-primary/30 transition-all"
                                             value={formData.name || ""}
-                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                            onChange={(e) => setFormData({ ...formData, name: cleanPastedText(e.target.value) })}
                                             placeholder="Ürün adı"
                                         />
                                     </div>
@@ -355,7 +372,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                                                 type="text"
                                                 className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl pl-8 pr-3 py-2 text-xs font-medium text-white placeholder:text-slate-600 outline-none focus:border-primary/30 transition-all font-mono"
                                                 value={formData.barcode || ""}
-                                                onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
+                                                onChange={(e) => setFormData({ ...formData, barcode: cleanPastedBarcode(e.target.value) })}
                                                 placeholder="Barkod"
                                             />
                                         </div>

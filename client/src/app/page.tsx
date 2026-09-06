@@ -19,7 +19,6 @@ import CategoryManager from "@/components/Products/CategoryManager";
 import ProfitCalculator from "@/components/Tools/ProfitCalculator";
 import PriceSimulator from "@/components/Simulator/PriceSimulator";
 import SmartReports from "@/components/Reports/SmartReports";
-import AdminPortal from "@/components/Admin/AdminPortal";
 import SalesHistory from "@/components/Dashboard/SalesHistory";
 import AppSettings from "@/components/Settings/AppSettings";
 import SuperAdmin from "@/components/Admin/SuperAdmin";
@@ -737,7 +736,21 @@ export default function Home() {
       // bu durumda yeni ürün gibi davranmalı (insert). isExisting bunu ayırır.
       const isExisting = !!(editingProduct && (editingProduct as any).id);
       // Duplicate Barcode Check & Auto-handling
-      let finalBarcode = formData.barcode ? String(formData.barcode).trim() : "";
+      // Yapıştırılan değerlerdeki gizli karakterleri (zero-width, kontrol, nbsp)
+      // temizle — aksi halde görünüşte aynı barkod eşleşmez / başlık bozulur.
+      const cleanName = String(formData.name ?? '')
+        .replace(/[\u200B-\u200D\uFEFF]/g, '')
+        .replace(/[\u0000-\u001F\u007F]/g, ' ')
+        .replace(/\u00A0/g, ' ')
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+      formData.name = cleanName;
+      let finalBarcode = formData.barcode
+        ? String(formData.barcode)
+            .replace(/[\u200B-\u200D\uFEFF]/g, '')
+            .replace(/[\u0000-\u001F\u007F]/g, '')
+            .replace(/\s+/g, '')
+        : "";
       let finalCategoryId = !formData.category_id || formData.category_id === "undefined" ? null : formData.category_id;
       let isDuplicateHandled = false;
 

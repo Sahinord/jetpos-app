@@ -1,7 +1,13 @@
 /**
  * JetPos AI - OpenRouter Integration
  * OpenAI Compatible API Client
+ *
+ * GÜVENLİK: Bu istemci ARTIK AI sağlayıcısına doğrudan istek ATMAZ ve anahtar
+ * TAŞIMAZ. Tüm çağrılar /api/ai/chat sunucu route'una gider; anahtar orada,
+ * sunucuda çözülür (bkz. app/api/ai/chat/route.ts). Böylece NEXT_PUBLIC anahtar
+ * bundle'a gömülmez ve tarayıcıdan sızmaz.
  */
+import { apiFetch } from "@/lib/api";
 
 export interface SalesDataPoint {
     date: string;
@@ -16,8 +22,10 @@ export class AIClient {
     private defaultModel: string = "deepseek-chat";
 
     constructor(apiKey?: string) {
-        // Eğer özel bir key gelmezse sistem genelindeki key'i kullan (Admin Panel gibi)
-        this.apiKey = (apiKey || process.env.NEXT_PUBLIC_OPENROUTER_API_KEY || "").trim();
+        // NOT: apiKey artık yalnızca "AI yapılandırılmış mı?" bilgisini taşıyan bir
+        // işarettir; SUNUCUYA GÖNDERİLMEZ. Gerçek anahtar /api/ai/chat içinde çözülür.
+        // Boş bırakılırsa bile sunucu platform anahtarına düşebilir.
+        this.apiKey = (apiKey || "server").trim();
     }
 
     async getSalesInsights(salesData: SalesDataPoint[]): Promise<string> {
@@ -72,33 +80,16 @@ export class AIClient {
     }
 
     private async executeRequest(messages: any[], modelOverride?: string): Promise<string> {
-        const response = await fetch(this.baseUrl, {
+        // Anahtarı SUNUCU çözer; istemci yalnızca mesajları gönderir. apiFetch
+        // tenant header'larını (x-tenant-id / x-license-key) ve Electron imzasını ekler.
+        const data = await apiFetch("/api/ai/chat", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${this.apiKey}`,
-                "HTTP-Referer": "https://jetpos.app",
-                "X-Title": "JetPos AI"
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 model: modelOverride || this.defaultModel,
-                messages: messages,
-                temperature: 0.7,
-            })
+                messages,
+            }),
         });
-
-        if (!response.ok) {
-            let errorMsg = "DeepSeek API hatası";
-            try {
-                const error = await response.json();
-                errorMsg = error.error?.message || errorMsg;
-            } catch (e) {
-                errorMsg = `HTTP ${response.status}: ${response.statusText}`;
-            }
-            throw new Error(errorMsg);
-        }
-
-        const result = await response.json();
-        return result.choices[0].message.content;
+        return data?.content ?? "";
     }
 }

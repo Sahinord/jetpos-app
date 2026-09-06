@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { PdfReader } from 'pdfreader';
 import { verifyTenantAccess } from '@/lib/server-tenant-auth';
+import { isSafePublicHttpUrl } from '@/lib/ssrf-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,6 +32,15 @@ export async function POST(request: NextRequest) {
 
         if ((!pdf_url && !image_url) || !tenant_id) {
             return NextResponse.json({ error: 'PDF/Fotoğraf URL ve Tenant ID gerekli' }, { status: 400 });
+        }
+
+        // SSRF koruması: sunucunun fetch edeceği URL'ler iç ağa / bulut metadata'ya
+        // yönlendirilemesin (yalnızca https + public host).
+        if (pdf_url && !isSafePublicHttpUrl(pdf_url)) {
+            return NextResponse.json({ error: 'Geçersiz PDF adresi' }, { status: 400 });
+        }
+        if (image_url && !isSafePublicHttpUrl(image_url)) {
+            return NextResponse.json({ error: 'Geçersiz görsel adresi' }, { status: 400 });
         }
 
         const auth = await verifyTenantAccess(request, tenant_id);

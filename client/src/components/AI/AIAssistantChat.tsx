@@ -62,23 +62,19 @@ export default function AIAssistantChat() {
                 setupGreeting();
                 setShowKeyInput(false);
             }
-            // 3. ENV'den bak
-            else if (process.env.NEXT_PUBLIC_OPENROUTER_API_KEY && process.env.NEXT_PUBLIC_OPENROUTER_API_KEY !== 'undefined') {
-                setApiKey(process.env.NEXT_PUBLIC_OPENROUTER_API_KEY);
+            // 3. Tenant'ın kendi anahtarı yoksa platform anahtarına düş. Anahtar
+            // artık SUNUCUDA (/api/ai/chat) çözülür; istemci 'server' işaretiyle
+            // sohbeti açar, gerçek anahtarı asla görmez. (Eski NEXT_PUBLIC anahtar
+            // kaldırıldı — bundle'a sır gömülmüyor.)
+            else {
+                setApiKey('server');
                 setupGreeting();
                 setShowKeyInput(false);
-            }
-            else {
-                setShowKeyInput(true);
             }
         } catch (err) {
-            if (process.env.NEXT_PUBLIC_OPENROUTER_API_KEY && process.env.NEXT_PUBLIC_OPENROUTER_API_KEY !== 'undefined') {
-                setApiKey(process.env.NEXT_PUBLIC_OPENROUTER_API_KEY);
-                setupGreeting();
-                setShowKeyInput(false);
-            } else {
-                setShowKeyInput(true);
-            }
+            setApiKey('server');
+            setupGreeting();
+            setShowKeyInput(false);
         }
     };
 
