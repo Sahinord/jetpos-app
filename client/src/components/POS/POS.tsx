@@ -117,7 +117,7 @@ export default function POS({
     // UI States
     const [numpadValue, setNumpadValue] = useState("");
     // NAKİT satış sonrası şık "Satış Tamamlandı" ekranı (fiş/adisyon ÇIKMAZ)
-    const [saleDone, setSaleDone] = useState<{ saleId: string; total: number; received: number; change: number } | null>(null);
+    const [saleDone, setSaleDone] = useState<{ saleId: string; total: number; received: number; change: number; method?: string } | null>(null);
     // Gizli yazıcı sadece bu dolunca yazdırır → NAKİT'te boş bırakılır (otomatik fiş olmaz)
     const [printData, setPrintData] = useState<any>(null);
     useEffect(() => {
@@ -751,7 +751,7 @@ export default function POS({
             // Sepet cihaza gitti → cihaz nakit fişi basıyor. Satışı tamamla.
             setOdealPay({ status: "idle" });
             showToast("Nakit fiş Ödeal cihazından yazdırılıyor.", "success");
-            handleCheckout("NAKİT");
+            handleCheckout("NAKİT", { deviceReceipt: true });
         } catch (e: any) {
             const msg = String(e?.message || "");
             setOdealPay({ status: "idle" });
@@ -800,7 +800,7 @@ export default function POS({
                 stopOdealPoll();
                 if (st === "succeeded") {
                     setOdealPay({ status: "success", ref });
-                    handleCheckout("KART"); // satışı tamamla
+                    handleCheckout("KART", { deviceReceipt: true }); // Ödeal cihazı fişi bastı
                     setTimeout(() => setOdealPay({ status: "idle" }), 1500);
                 } else {
                     setOdealPay({ status: "failed", message: st === "cancelled" ? "Ödeme iptal edildi." : "Ödeme başarısız." });
@@ -861,7 +861,10 @@ export default function POS({
         }
     };
 
-    const handleCheckout = (method: string) => {
+    // opts.deviceReceipt: ödeme Ödeal cihazından geçtiyse TRUE. Ödeal fişi kendi
+    // cihazından bastığı için, adisyon fişi KAPALIYKEN JetPOS ayrıca fiş açmaz
+    // (çift fiş olmasın). Adisyon fişi açıksa mevcut davranış korunur (JetPOS da basar).
+    const handleCheckout = (method: string, opts?: { deviceReceipt?: boolean }) => {
         if (cart.length === 0) return;
 
         // VERESİYE kontrolü: Müşteri seçili değilse modalı aç ve dur.
@@ -898,10 +901,13 @@ export default function POS({
             paymentMethod: method,
             customerName: selectedCari?.unvani
         });
-        // Adisyon Fişi ayarı KAPALIYSA nakit satışta fiş çıkmaz → şık "Satış Tamamlandı" ekranı.
-        // Açıksa (veya diğer ödeme türlerinde) fişi otomatik yazdır (printData) + önizleme modalı.
-        if (method === 'NAKİT' && !isAdisyonReceiptEnabled) {
-            setSaleDone({ saleId, total, received: receivedAmount, change: changeAmount });
+        // Adisyon Fişi ayarı KAPALIYSA:
+        //  • NAKİT satışta fiş çıkmaz, VEYA
+        //  • ödeme Ödeal cihazından geçtiyse (deviceReceipt) — fiş zaten cihazdan çıktı —
+        // JetPOS fiş açmaz → şık "Satış Tamamlandı" ekranı.
+        // Adisyon fişi AÇIKSA (veya diğer manuel ödeme türlerinde) fişi yazdır + önizleme.
+        if ((method === 'NAKİT' || opts?.deviceReceipt) && !isAdisyonReceiptEnabled) {
+            setSaleDone({ saleId, total, received: receivedAmount, change: changeAmount, method });
         } else {
             setPrintData(tx);
             setShowReceiptModal(true);
@@ -1883,22 +1889,35 @@ export default function POS({
                                     <p className="text-secondary font-bold text-[10px] tracking-[3px] uppercase mt-1.5">Fiş No: {saleDone.saleId}</p>
                                 </div>
 
-                                {/* Para Üstü — vurgulu */}
-                                <div className="w-full mt-1 p-5 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/5 border border-emerald-500/30">
-                                    <p className="text-[10px] font-black uppercase tracking-[4px] text-emerald-300/80">Para Üstü</p>
-                                    <p className="text-4xl font-black text-emerald-400 mt-1 tracking-tight">₺{saleDone.change.toFixed(2)}</p>
-                                </div>
+                                {saleDone.method === 'NAKİT' ? (
+                                    <>
+                                        {/* Para Üstü — vurgulu (yalnızca nakit) */}
+                                        <div className="w-full mt-1 p-5 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/5 border border-emerald-500/30">
+                                            <p className="text-[10px] font-black uppercase tracking-[4px] text-emerald-300/80">Para Üstü</p>
+                                            <p className="text-4xl font-black text-emerald-400 mt-1 tracking-tight">₺{saleDone.change.toFixed(2)}</p>
+                                        </div>
 
-                                <div className="w-full grid grid-cols-2 gap-3 text-left">
-                                    <div className="p-3 rounded-xl bg-white/5 border border-white/10">
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-secondary">Toplam</p>
-                                        <p className="text-lg font-black text-white leading-tight">₺{saleDone.total.toFixed(2)}</p>
-                                    </div>
-                                    <div className="p-3 rounded-xl bg-white/5 border border-white/10">
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-secondary">Alınan</p>
-                                        <p className="text-lg font-black text-white leading-tight">₺{saleDone.received.toFixed(2)}</p>
-                                    </div>
-                                </div>
+                                        <div className="w-full grid grid-cols-2 gap-3 text-left">
+                                            <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-secondary">Toplam</p>
+                                                <p className="text-lg font-black text-white leading-tight">₺{saleDone.total.toFixed(2)}</p>
+                                            </div>
+                                            <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-secondary">Alınan</p>
+                                                <p className="text-lg font-black text-white leading-tight">₺{saleDone.received.toFixed(2)}</p>
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        {/* Kart / cihaz ödemesi — para üstü yok; tutar + fiş notu */}
+                                        <div className="w-full mt-1 p-5 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/5 border border-emerald-500/30">
+                                            <p className="text-[10px] font-black uppercase tracking-[4px] text-emerald-300/80">Tahsil Edildi</p>
+                                            <p className="text-4xl font-black text-emerald-400 mt-1 tracking-tight">₺{saleDone.total.toFixed(2)}</p>
+                                        </div>
+                                        <p className="text-[10px] font-bold uppercase tracking-[2px] text-secondary">Fiş Ödeal cihazından yazdırıldı</p>
+                                    </>
+                                )}
 
                                 <button
                                     onClick={() => setSaleDone(null)}
