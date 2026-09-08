@@ -195,9 +195,21 @@ export async function processOdealWebhook(
 function json(obj: unknown, status: number): Response {
     return new Response(JSON.stringify(obj), { status, headers: { "Content-Type": "application/json" } });
 }
+// Ödeal callback alanlarını BÜYÜK/küçük harfe DUYARSIZ okur. Ödeal gerçek
+// payload'ı PascalCase gönderiyor (BasketDetail.BasketRefCode, PaymentDetail.Amount,
+// PaymentRefCode…); bizim yollar camelCase olduğundan tam eşleşme başarısız olup
+// referenceCode boş kalıyor ve callback 400 (missing_reference) dönüyordu — Ödeal'in
+// "Request failed with status code BadRequest" hatasının sebebi buydu. Her segment
+// önce birebir, sonra harf-duyarsız aranır; böylece iki casing de çalışır.
 export function pick(obj: Record<string, unknown>, paths: string[]): string {
     for (const p of paths) {
-        const val = p.split(".").reduce<unknown>((o, k) => (o && typeof o === "object" ? (o as Record<string, unknown>)[k] : undefined), obj);
+        const val = p.split(".").reduce<unknown>((o, k) => {
+            if (!o || typeof o !== "object") return undefined;
+            const rec = o as Record<string, unknown>;
+            if (k in rec) return rec[k];
+            const ci = Object.keys(rec).find((kk) => kk.toLowerCase() === k.toLowerCase());
+            return ci !== undefined ? rec[ci] : undefined;
+        }, obj);
         if (val !== undefined && val !== null && String(val).length > 0) return String(val);
     }
     return "";

@@ -73,24 +73,19 @@ export default function Navbar() {
                     }}>
 
                         {/* Logo */}
-                        <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.75rem", textDecoration: "none" }}>
+                        <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.35rem", textDecoration: "none" }}>
                             <div style={{
                                 width: "2.5rem", height: "2.5rem",
-                                borderRadius: "50%",
-                                border: "1px solid rgba(120, 134, 199, 0.15)",
-                                background: "white",
                                 display: "flex", alignItems: "center", justifyContent: "center",
-                                overflow: "hidden",
-                                boxShadow: "0 2px 8px rgba(120, 134, 199, 0.05)",
                                 flexShrink: 0,
                                 transition: "all 0.4s"
                             }}>
-                                <Image 
-                                    src="/logo.png" 
-                                    alt="JetPOS Logo" 
-                                    width={40} 
-                                    height={40} 
-                                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                <Image
+                                    src="/logo-v2.png"
+                                    alt="JetPOS Logo"
+                                    width={40}
+                                    height={40}
+                                    style={{ width: "100%", height: "100%", objectFit: "contain" }}
                                 />
                             </div>
                             <span style={{

@@ -18,20 +18,15 @@ export default function Footer() {
                         <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.875rem", textDecoration: "none" }}>
                             <div style={{
                                 width: "3.25rem", height: "3.25rem",
-                                borderRadius: "50%",
-                                border: "1px solid rgba(120, 134, 199, 0.15)",
-                                background: "#ffffff",
                                 display: "flex", alignItems: "center", justifyContent: "center",
-                                overflow: "hidden",
-                                boxShadow: "0 2px 8px rgba(120, 134, 199, 0.05)",
                                 flexShrink: 0,
                             }}>
-                                <Image 
-                                    src="/logo.png" 
-                                    alt="JetPOS Logo" 
-                                    width={64} 
-                                    height={64} 
-                                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                <Image
+                                    src="/logo-v2.png"
+                                    alt="JetPOS Logo"
+                                    width={64}
+                                    height={64}
+                                    style={{ width: "100%", height: "100%", objectFit: "contain" }}
                                 />
                             </div>
                             <span style={{

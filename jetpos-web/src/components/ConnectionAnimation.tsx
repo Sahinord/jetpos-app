@@ -1,8 +1,9 @@
 "use client";
 
 import React from "react";
-import { FileText, ShoppingCart, Package, CreditCard, BarChart3, User } from "lucide-react";
+import { FileText, ShoppingCart, Package, CreditCard, BarChart3, User, Wallet, ShoppingBag, Bike, UtensilsCrossed } from "lucide-react";
 
+// Sol: bizim JetPOS modüllerimiz → logoya soldan akar
 const leftItems = [
     { label: "JetMuhasebe", icon: FileText },
     { label: "JetKasa", icon: ShoppingCart },
@@ -11,19 +12,35 @@ const leftItems = [
     { label: "JetRapor", icon: BarChart3 },
 ];
 
+// Alt: dış entegrasyonlar → logoya ALTTAN akar
+const bottomItems = [
+    { label: "Ödeal", icon: Wallet },
+    { label: "Trendyol GO", icon: ShoppingBag },
+    { label: "Getir", icon: Bike },
+    { label: "Yemeksepeti", icon: UtensilsCrossed },
+];
+
 const W = 860;
-const H = 320;
+const H = 440;
 const CX = W / 2;
-const CY = H / 2;
+const CY = 150;                 // logo + sol sütun + sağ kullanıcı dikey merkezi
 const LEFT_X = 148;
 const RIGHT_X = W - 60;
 const BOX_W = 136;
-const BOX_H = 34;
+const BOX_H = 32;
 const SPACING = 52;
 const TOTAL_H = (leftItems.length - 1) * SPACING;
 const TOP_Y = CY - TOTAL_H / 2;
 const LOGO_R = 36;
 const USER_R = 26;
+
+// Alt sıra geometrisi
+const B_BOX_W = 128;
+const B_BOX_H = 32;
+const B_GAP = 20;
+const B_TOTAL_W = bottomItems.length * B_BOX_W + (bottomItems.length - 1) * B_GAP;
+const B_START_X = CX - B_TOTAL_W / 2;
+const B_ROW_Y = 388;            // alt kutuların dikey merkezi
 
 export default function ConnectionAnimation() {
     return (
@@ -104,48 +121,34 @@ export default function ConnectionAnimation() {
                             <style>{`
                                 /* Total Cycle: 2.8s */
 
-                                @keyframes ca-draw-left {
-                                    0%, 10%   { stroke-dashoffset: 1; opacity: 0; }
-                                    15%       { opacity: 1; }
-                                    45%, 85%  { stroke-dashoffset: 0; opacity: 1; }
-                                    92%, 100% { opacity: 0; }
+                                /* pathLength="1" normalize eder → tüm çizgilerde akış AYNI
+                                   normalize hızda gider (uzunluk fark etmez). linear = sabit hız,
+                                   ivmesiz → eşit ve senkron görünür. dasharray 0.22/0.78 = akan paket. */
+
+                                /* GİRİŞ akışı: düğüm → logo (0%–45%), hepsi aynı anda */
+                                @keyframes ca-flow-in {
+                                    0%        { stroke-dashoffset: 1.22; opacity: 0; }
+                                    6%        { opacity: 1; }
+                                    45%       { stroke-dashoffset: 0.22; opacity: 1; }
+                                    52%, 100% { stroke-dashoffset: 0.22; opacity: 0; }
                                 }
-                                .ca-line-ani {
-                                    stroke-dasharray: 1;
-                                    stroke-dashoffset: 1;
-                                    animation: ca-draw-left 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+                                .ca-flow-in {
+                                    stroke-dasharray: 0.22 0.78;
+                                    stroke-dashoffset: 1.22;
+                                    animation: ca-flow-in 2.8s linear infinite;
                                 }
 
-                                @keyframes ca-dot-left {
-                                    0%, 10%   { offset-distance: 0%; opacity: 0; }
-                                    15%       { opacity: 1; }
-                                    45%       { offset-distance: 100%; opacity: 1; }
-                                    46%, 100% { opacity: 0; offset-distance: 100%; }
+                                /* ÇIKIŞ akışı: logo → müşteri (50%–92%) */
+                                @keyframes ca-flow-out {
+                                    0%, 48%   { stroke-dashoffset: 1.22; opacity: 0; }
+                                    54%       { opacity: 1; }
+                                    92%       { stroke-dashoffset: 0.22; opacity: 1; }
+                                    98%, 100% { stroke-dashoffset: 0.22; opacity: 0; }
                                 }
-                                .ca-dot-ani {
-                                    animation: ca-dot-left 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-                                }
-
-                                @keyframes ca-draw-right {
-                                    0%, 50%   { stroke-dashoffset: 1; opacity: 0; }
-                                    55%       { opacity: 1; }
-                                    85%       { stroke-dashoffset: 0; opacity: 1; }
-                                    95%, 100% { opacity: 0; }
-                                }
-                                .ca-right-line-ani {
-                                    stroke-dasharray: 1;
-                                    stroke-dashoffset: 1;
-                                    animation: ca-draw-right 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-                                }
-
-                                @keyframes ca-dot-right {
-                                    0%, 55%   { offset-distance: 0%; opacity: 0; }
-                                    60%       { opacity: 1; }
-                                    85%       { offset-distance: 100%; opacity: 1; }
-                                    86%, 100% { opacity: 0; }
-                                }
-                                .ca-dot-right-ani {
-                                    animation: ca-dot-right 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+                                .ca-flow-out {
+                                    stroke-dasharray: 0.22 0.78;
+                                    stroke-dashoffset: 1.22;
+                                    animation: ca-flow-out 2.8s linear infinite;
                                 }
 
                                 @keyframes ca-logo-pulse-v2 {
@@ -191,11 +194,9 @@ export default function ConnectionAnimation() {
                                         strokeWidth="2.4"
                                         strokeLinecap="round"
                                         fill="none"
-                                        filter="url(#ca-glow-v2)"
-                                        className="ca-line-ani"
-                                        style={{ strokeDasharray: 1, strokeDashoffset: 1 }}
+                                       
+                                        className="ca-flow-in"
                                     />
-                                    <circle r="3.8" fill="#7886C7" filter="url(#ca-glow-v2)" className="ca-dot-ani" style={{ offsetPath: `path('${pathData}')` }} />
                                 </g>
                             );
                         })}
@@ -213,14 +214,34 @@ export default function ConnectionAnimation() {
                                         strokeWidth="2.8"
                                         strokeLinecap="round"
                                         fill="none"
-                                        filter="url(#ca-glow-v2)"
-                                        className="ca-right-line-ani"
-                                        style={{ strokeDasharray: 1, strokeDashoffset: 1 }}
+                                       
+                                        className="ca-flow-out"
                                     />
-                                    <circle r="4.5" fill="#7886C7" filter="url(#ca-glow-v2)" className="ca-dot-right-ani" style={{ offsetPath: `path('${pathData}')` }} />
                                 </g>
                             );
                         })()}
+
+                        {/* ── Bottom lines (entegrasyonlar → logonun ALTI) ── */}
+                        {bottomItems.map((_, i) => {
+                            const bcx = B_START_X + i * (B_BOX_W + B_GAP) + B_BOX_W / 2;
+                            const startY = B_ROW_Y - B_BOX_H / 2;
+                            const pathData = `M ${bcx} ${startY} L ${CX} ${CY + LOGO_R}`;
+                            return (
+                                <g key={`bl-${i}`}>
+                                    <path d={pathData} stroke="rgba(120, 134, 199, 0.15)" strokeWidth="1.2" fill="none" />
+                                    <path
+                                        d={pathData}
+                                        pathLength="1"
+                                        stroke="#7886C7"
+                                        strokeWidth="2.4"
+                                        strokeLinecap="round"
+                                        fill="none"
+                                       
+                                        className="ca-flow-in"
+                                    />
+                                </g>
+                            );
+                        })}
 
                         {/* ── Left item boxes ── */}
                         {leftItems.map((item, i) => {
@@ -246,40 +267,40 @@ export default function ConnectionAnimation() {
                             );
                         })}
 
-                        {/* ── Center logo ── */}
+                        {/* ── Bottom item boxes (entegrasyonlar, yatay sıra) ── */}
+                        {bottomItems.map((item, i) => {
+                            const bx = B_START_X + i * (B_BOX_W + B_GAP);
+                            const by = B_ROW_Y - B_BOX_H / 2;
+                            const bcx = bx + B_BOX_W / 2;
+                            const LucideIcon = item.icon;
+                            return (
+                                <g key={`bb-${i}`}>
+                                    <circle cx={bcx} cy={B_ROW_Y - B_BOX_H / 2} r="3.5" fill="#7886C7" />
+                                    <rect x={bx} y={by} width={B_BOX_W} height={B_BOX_H} rx={10}
+                                        fill="#ffffff" stroke="#E5E7EB" strokeWidth="1.2" style={{ filter: "drop-shadow(0 2px 4px rgba(120,134,199,0.02))" }} />
+                                    <rect x={bx + 6} y={by + 4} width={24} height={24} rx={7} fill="rgba(120, 134, 199, 0.08)" />
+                                    <foreignObject x={bx + 10} y={by + 8} width="16" height="16">
+                                        <div style={{ color: "#7886C7", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                            <LucideIcon size={14} strokeWidth={2.5} />
+                                        </div>
+                                    </foreignObject>
+                                    <text x={bx + 36} y={by + 20} fill="#111827" fontSize="11" fontWeight="600" fontFamily="Inter, system-ui, sans-serif">
+                                        {item.label}
+                                    </text>
+                                </g>
+                            );
+                        })}
+
+                        {/* ── Center logo (sade — daire/halka/glow kaldırıldı) ── */}
                         <g className="ca-logo-group">
-                            {/* Outer Glow Ring */}
-                            <circle cx={CX} cy={CY} r={LOGO_R + 12} fill="url(#ca-logo-glow)" />
-
-                            {/* Rotating Orbit Ring */}
-                            <circle
-                                cx={CX} cy={CY} r={LOGO_R + 4}
-                                fill="none"
-                                stroke="#7886C7"
-                                strokeWidth="1"
-                                strokeDasharray="10 20"
-                                opacity="0.3"
-                                style={{ transformOrigin: "center", animation: "spin 12s linear infinite" }}
-                            />
-
-                            {/* Main Circle Body (The border ring) */}
-                            <circle
-                                cx={CX} cy={CY} r={LOGO_R}
-                                fill="#ffffff"
-                                stroke="rgba(120, 134, 199, 0.4)"
-                                strokeWidth="2"
-                                style={{ filter: "drop-shadow(0 4px 12px rgba(120,134,199,0.08))" }}
-                            />
-
-                            {/* The Logo Image clipped to a perfect circle */}
+                            {/* Logo — tam görünsün diye kırpma yok, orantılı (meet) */}
                             <image
-                                href="/logo.png"
-                                x={CX - LOGO_R + 2}
-                                y={CY - LOGO_R + 2}
-                                width={(LOGO_R - 2) * 2}
-                                height={(LOGO_R - 2) * 2}
-                                clipPath="url(#logo-circle-clip)"
-                                preserveAspectRatio="xMidYMid slice"
+                                href="/logo-v2.png"
+                                x={CX - LOGO_R * 0.8}
+                                y={CY - LOGO_R * 0.8}
+                                width={LOGO_R * 1.6}
+                                height={LOGO_R * 1.6}
+                                preserveAspectRatio="xMidYMid meet"
                             />
                         </g>
 
@@ -296,8 +317,12 @@ export default function ConnectionAnimation() {
                     </svg>
                 </div>
 
-                <p style={{ textAlign: "center", color: "#6B7280", fontSize: "0.85rem", marginTop: "1.5rem" }}>
-                    Tüm operasyonlarınız Jetpos ekosistemi içinde senkronize ve güvenli.
+                <p style={{ textAlign: "center", color: "#111827", fontSize: "1.05rem", fontWeight: 700, marginTop: "1.5rem" }}>
+                    Kısacası, işletmenizin kalbi JetPOS&apos;ta atıyor.
+                </p>
+
+                <p style={{ textAlign: "center", color: "#9CA3AF", fontSize: "0.82rem", marginTop: "0.6rem" }}>
+                    Modülleriniz ve Ödeal, Trendyol GO, Getir, Yemeksepeti entegrasyonları tek çatı altında; senkronize ve güvenli.
                 </p>
             </div>
 

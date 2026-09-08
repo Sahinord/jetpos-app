@@ -199,7 +199,7 @@ function DashboardPageInner() {
                             <h1 className={`font-black text-white tracking-tight leading-none uppercase truncate ${companyName.length > 15 ? 'text-sm' : 'text-base sm:text-lg'}`}>
                                 {companyName}
                             </h1>
-                            <p className="text-[7px] sm:text-[8px] font-black text-[#5B8CFF] tracking-[2px] sm:tracking-[3px] uppercase mt-1.5 opacity-80">JETPOS MOBILE</p>
+                            <p className="text-[10px] sm:text-[10px] font-black text-[#5B8CFF] tracking-[2px] sm:tracking-[3px] uppercase mt-1.5 opacity-80">JETPOS MOBILE</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
@@ -230,17 +230,17 @@ function DashboardPageInner() {
                     
                     <div className="relative z-10 flex items-center justify-between gap-3">
                         <div className="space-y-1 min-w-0 flex-1">
-                            <p className="text-[8px] sm:text-[9px] font-black text-[#5B8CFF] uppercase tracking-[3px] sm:tracking-[4px]">BUGÜNKÜ AKIŞ</p>
+                            <p className="text-[10px] sm:text-[11px] font-black text-[#5B8CFF] uppercase tracking-[3px] sm:tracking-[4px]">BUGÜNKÜ AKIŞ</p>
                             <div className="flex items-baseline gap-1.5 flex-wrap">
                                 <span className="text-2xl sm:text-3xl font-black text-white tracking-tighter truncate">
                                     ₺{stats.salesToday.toLocaleString('tr-TR')}
                                 </span>
                             </div>
                             <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full border text-[7px] sm:text-[8px] font-black ${performancePercent >= 100 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}>
+                                <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full border text-[10px] sm:text-[10px] font-black ${performancePercent >= 100 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}>
                                     {performancePercent >= 100 ? 'VERİMLİ' : 'DÜŞÜK'}
                                 </div>
-                                <span className="text-[8px] sm:text-[9px] font-bold text-slate-500 uppercase tracking-widest truncate">
+                                <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-widest truncate">
                                     DÜNE GÖRE %{performancePercent}
                                 </span>
                             </div>
@@ -253,7 +253,7 @@ function DashboardPageInner() {
                                 <circle cx="50%" cy="50%" r="40%" fill="transparent" stroke="#2563FF" strokeWidth="5" strokeDasharray="100" strokeDashoffset={100 - Math.min(performancePercent, 100)} strokeLinecap="round" className="transition-all duration-1000" />
                             </svg>
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                <span className="text-[9px] sm:text-[xs] font-black text-white">%{performancePercent}</span>
+                                <span className="text-[11px] sm:text-xs font-black text-white">%{performancePercent}</span>
                             </div>
                             <div className="absolute inset-0 bg-[#2563FF]/20 blur-xl rounded-full -z-10" />
                         </div>
@@ -271,7 +271,7 @@ function DashboardPageInner() {
                             <div className="w-6 h-6 shrink-0 rounded-lg bg-orange-500/10 flex items-center justify-center border border-orange-500/20">
                                 <Globe size={12} className="text-orange-400" />
                             </div>
-                            <span className="text-[8px] sm:text-[9px] font-black text-white/60 tracking-[2px] uppercase truncate">TRENDYOL</span>
+                            <span className="text-[10px] sm:text-[11px] font-black text-white/60 tracking-[2px] uppercase truncate">TRENDYOL</span>
                         </div>
                         <div className="w-1.5 h-1.5 shrink-0 rounded-full bg-emerald-400 animate-pulse ml-1" />
                     </div>
@@ -280,7 +280,7 @@ function DashboardPageInner() {
                             <div className="w-6 h-6 shrink-0 rounded-lg bg-pink-500/10 flex items-center justify-center border border-pink-500/20">
                                 <RefreshCcw size={12} className="text-pink-400" />
                             </div>
-                            <span className="text-[8px] sm:text-[9px] font-black text-white/60 tracking-[2px] uppercase truncate">SYNC</span>
+                            <span className="text-[10px] sm:text-[11px] font-black text-white/60 tracking-[2px] uppercase truncate">SYNC</span>
                         </div>
                         <div className="w-1.5 h-1.5 shrink-0 rounded-full bg-blue-400 ml-1" />
                     </div>
@@ -289,7 +289,7 @@ function DashboardPageInner() {
                 {/* Innovative Stats Section */}
                 <div className="space-y-4">
                     <div className="flex items-center gap-3 px-1">
-                        <span className="text-[9px] font-black text-[#5B8CFF] uppercase tracking-[3px] shrink-0">SİSTEM ANALİZİ</span>
+                        <span className="text-[11px] font-black text-[#5B8CFF] uppercase tracking-[3px] shrink-0">SİSTEM ANALİZİ</span>
                         <div className="h-px flex-1 bg-gradient-to-r from-[#2D6BFF]/20 to-transparent" />
                     </div>
                     
@@ -302,7 +302,7 @@ function DashboardPageInner() {
                                     <Package className="w-4 h-4 text-emerald-400" />
                                 </div>
                                 <div className="min-w-0">
-                                    <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest truncate">TOPLAM STOK</p>
+                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest truncate">TOPLAM STOK</p>
                                     <h4 className="text-xl font-black text-white tracking-tight mt-0.5 truncate">
                                         {stats.totalStockCount.toLocaleString('tr-TR')}
                                     </h4>
@@ -318,7 +318,7 @@ function DashboardPageInner() {
                                     <AlertTriangle className="w-4 h-4 text-rose-400" />
                                 </div>
                                 <div className="min-w-0">
-                                    <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest truncate">KRİTİK STOK</p>
+                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest truncate">KRİTİK STOK</p>
                                     <h4 className="text-xl font-black text-white tracking-tight mt-0.5 truncate">{stats.activeLowStock}</h4>
                                 </div>
                             </div>
@@ -328,9 +328,9 @@ function DashboardPageInner() {
                         <div className="col-span-2 glass-dark border border-[#2D6BFF]/20 rounded-[1.75rem] sm:rounded-[2rem] p-4 sm:p-5 relative overflow-hidden flex items-center justify-between gap-4 shadow-[0_10px_30px_rgba(37,99,255,0.1)]">
                             <div className="absolute inset-0 bg-gradient-to-r from-[#2563FF]/5 to-transparent pointer-events-none" />
                             <div className="space-y-1 relative z-10 min-w-0 flex-1">
-                                <p className="text-[8px] sm:text-[9px] font-black text-slate-500 uppercase tracking-[2px] sm:tracking-widest truncate">TOPLAM ENVANTER DEĞERİ (MALİYET)</p>
+                                <p className="text-[10px] sm:text-[11px] font-black text-slate-500 uppercase tracking-[2px] sm:tracking-widest truncate">TOPLAM ENVANTER DEĞERİ (MALİYET)</p>
                                 <div className="flex items-baseline gap-1 min-w-0">
-                                    <span className="text-[9px] font-bold text-slate-400 shrink-0">₺</span>
+                                    <span className="text-[11px] font-bold text-slate-400 shrink-0">₺</span>
                                     <span className="text-xl sm:text-2xl font-black text-white tracking-tighter truncate">
                                         {stats.allValue.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </span>
@@ -346,7 +346,7 @@ function DashboardPageInner() {
                 {/* Innovative Actions Grid */}
                 <div className="space-y-4">
                     <div className="flex items-center gap-3 px-1">
-                        <span className="text-[9px] font-black text-[#5B8CFF] uppercase tracking-[3px] shrink-0">HIZLI ERİŞİM</span>
+                        <span className="text-[11px] font-black text-[#5B8CFF] uppercase tracking-[3px] shrink-0">HIZLI ERİŞİM</span>
                         <div className="h-px flex-1 bg-gradient-to-r from-[#2D6BFF]/20 to-transparent" />
                     </div>
                     
@@ -370,7 +370,7 @@ function DashboardPageInner() {
                                     <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-50" />
                                     <action.icon className="w-5 h-5 sm:w-7 sm:h-7 transition-transform group-hover:scale-110" style={{ color: action.color }} />
                                 </div>
-                                <span className="text-[6px] sm:text-[8px] font-black text-slate-500 uppercase tracking-widest truncate w-full text-center leading-none">{action.label}</span>
+                                <span className="text-[9px] sm:text-[10px] font-black text-slate-500 uppercase tracking-widest truncate w-full text-center leading-none">{action.label}</span>
                             </button>
                         ))}
                     </div>
@@ -381,9 +381,9 @@ function DashboardPageInner() {
                     <div className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-2 min-w-0">
                             <RefreshCcw className="w-3 h-3 text-[#5B8CFF] animate-spin [animation-duration:15s] shrink-0" />
-                            <span className="text-[8px] font-black text-white/60 tracking-widest uppercase truncate">Pazaryeri Senkronu</span>
+                            <span className="text-[10px] font-black text-white/60 tracking-widest uppercase truncate">Pazaryeri Senkronu</span>
                         </div>
-                        <span className="text-[6px] font-black text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 shrink-0 uppercase">STABİL</span>
+                        <span className="text-[9px] font-black text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 shrink-0 uppercase">STABİL</span>
                     </div>
                     <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
                         <motion.div 
